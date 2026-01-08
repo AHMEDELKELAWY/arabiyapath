@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Loader2, Mic } from "lucide-react";
 import { toast } from "sonner";
 
 interface LessonForm {
@@ -65,6 +65,8 @@ export function LessonsTab() {
   const [previewLesson, setPreviewLesson] = useState<any>(null);
   const [deleteLesson, setDeleteLesson] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<any>(null);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null);
   const [form, setForm] = useState<LessonForm>({
     title: "",
     unit_id: "",
@@ -117,6 +119,7 @@ export function LessonsTab() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingLesson(null);
+    setGeneratedAudioUrl(null);
     setForm({
       title: "",
       unit_id: "",
@@ -126,6 +129,61 @@ export function LessonsTab() {
       image_url: "",
       audio_url: "",
     });
+  };
+
+  const generateAudio = async () => {
+    if (!form.arabic_text.trim()) {
+      toast.error("Please enter Arabic text first");
+      return;
+    }
+
+    setIsGeneratingAudio(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: form.arabic_text }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate audio");
+      }
+
+      const audioBlob = await response.blob();
+      
+      // Upload to Supabase storage
+      const fileName = `lessons/${editingLesson?.id || Date.now()}_${Date.now()}.mp3`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("content")
+        .upload(fileName, audioBlob, {
+          contentType: "audio/mpeg",
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("content")
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+      setForm({ ...form, audio_url: publicUrl });
+      setGeneratedAudioUrl(publicUrl);
+      toast.success("Audio generated successfully!");
+    } catch (error) {
+      console.error("Audio generation error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate audio");
+    } finally {
+      setIsGeneratingAudio(false);
+    }
   };
 
   const openEdit = (lesson: any) => {
@@ -334,15 +392,6 @@ export function LessonsTab() {
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="audio_url">Audio URL</Label>
-                <Input
-                  id="audio_url"
-                  value={form.audio_url}
-                  onChange={(e) => setForm({ ...form, audio_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
                 <Label htmlFor="arabic_text">Arabic Text</Label>
                 <Textarea
                   id="arabic_text"
@@ -363,6 +412,45 @@ export function LessonsTab() {
                   rows={2}
                   placeholder="al-naṣṣ al-ʿarabī..."
                 />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="audio_url">Audio URL</Label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={generateAudio}
+                    disabled={isGeneratingAudio || !form.arabic_text.trim()}
+                    className="gap-2"
+                  >
+                    {isGeneratingAudio ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="h-4 w-4" />
+                        Generate with ElevenLabs
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <Input
+                  id="audio_url"
+                  value={form.audio_url}
+                  onChange={(e) => setForm({ ...form, audio_url: e.target.value })}
+                  placeholder="https://..."
+                />
+                {(generatedAudioUrl || form.audio_url) && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Volume2 className="h-4 w-4 text-muted-foreground" />
+                    <audio controls className="flex-1 h-10">
+                      <source src={generatedAudioUrl || form.audio_url} type="audio/mpeg" />
+                    </audio>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>

@@ -103,8 +103,11 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          current_uses: number | null
+          discount_percent: number | null
           expires_at: string | null
           id: string
+          is_active: boolean | null
           max_per_user: number | null
           max_redemptions: number | null
           percent_off: number
@@ -113,8 +116,11 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
+          current_uses?: number | null
+          discount_percent?: number | null
           expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           max_per_user?: number | null
           max_redemptions?: number | null
           percent_off?: number
@@ -123,8 +129,11 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
+          current_uses?: number | null
+          discount_percent?: number | null
           expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           max_per_user?: number | null
           max_redemptions?: number | null
           percent_off?: number
@@ -337,27 +346,61 @@ export type Database = {
       }
       purchases: {
         Row: {
+          amount: number | null
+          coupon_id: string | null
           created_at: string
+          currency: string | null
+          dialect_id: string | null
           id: string
+          payment_method: string | null
+          paypal_capture_id: string | null
+          paypal_order_id: string | null
           product_id: string
+          product_name: string | null
+          product_type: string | null
           status: string
           user_id: string
         }
         Insert: {
+          amount?: number | null
+          coupon_id?: string | null
           created_at?: string
+          currency?: string | null
+          dialect_id?: string | null
           id?: string
+          payment_method?: string | null
+          paypal_capture_id?: string | null
+          paypal_order_id?: string | null
           product_id: string
+          product_name?: string | null
+          product_type?: string | null
           status?: string
           user_id: string
         }
         Update: {
+          amount?: number | null
+          coupon_id?: string | null
           created_at?: string
+          currency?: string | null
+          dialect_id?: string | null
           id?: string
+          payment_method?: string | null
+          paypal_capture_id?: string | null
+          paypal_order_id?: string | null
           product_id?: string
+          product_name?: string | null
+          product_type?: string | null
           status?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchases_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchases_product_id_fkey"
             columns: ["product_id"]
@@ -568,6 +611,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_coupon_usage: {
+        Args: { coupon_id: string }
+        Returns: undefined
       }
     }
     Enums: {

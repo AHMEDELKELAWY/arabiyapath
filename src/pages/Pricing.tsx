@@ -1,34 +1,45 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
+import { useAuth } from "@/contexts/AuthContext";
 
 const plans = [
   {
-    name: "Single Dialect",
+    id: "gulf-arabic-beginner",
+    name: "Gulf Arabic - Beginner",
     description: "Perfect for focused learning",
     price: 49,
     period: "one-time",
     features: [
-      "1 dialect of your choice",
+      "Gulf Arabic dialect",
       "Beginner level (8 units)",
-      "80+ audio lessons",
+      "64+ audio lessons",
       "Unit quizzes",
       "Completion certificate",
       "Lifetime access",
     ],
     highlighted: false,
-    cta: "Choose Dialect",
+    cta: "Get Started",
   },
   {
+    id: "all-access-bundle",
     name: "All Access Bundle",
     description: "Best value for serious learners",
     price: 99,
     period: "one-time",
     originalPrice: 147,
     features: [
-      "All 3 dialects included",
+      "All dialects included",
       "Gulf, Egyptian & MSA",
       "240+ audio lessons",
       "All quizzes & certificates",
@@ -62,6 +73,13 @@ const faqs = [
 ];
 
 export default function Pricing() {
+  const { user } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
+
+  const handleSelectPlan = (plan: typeof plans[0]) => {
+    setSelectedPlan(plan);
+  };
+
   return (
     <Layout>
       {/* Hero */}
@@ -132,11 +150,11 @@ export default function Pricing() {
 
                 <Button
                   size="lg"
-                  variant={plan.highlighted ? "hero" : "outline"}
+                  variant={plan.highlighted ? "default" : "outline"}
                   className="w-full"
-                  asChild
+                  onClick={() => handleSelectPlan(plan)}
                 >
-                  <Link to="/signup">{plan.cta}</Link>
+                  {plan.cta}
                 </Button>
               </div>
             ))}
@@ -163,7 +181,7 @@ export default function Pricing() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 bg-cream">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-foreground text-center mb-12">
@@ -180,6 +198,37 @@ export default function Pricing() {
           </div>
         </div>
       </section>
+
+      {/* Checkout Dialog */}
+      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Your Purchase</DialogTitle>
+          </DialogHeader>
+          {selectedPlan && (
+            <div className="space-y-6">
+              {!user && (
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Please sign in to continue with your purchase
+                  </p>
+                  <Button asChild>
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                </div>
+              )}
+              {user && (
+                <PayPalCheckout
+                  productType={selectedPlan.id}
+                  productName={selectedPlan.name}
+                  price={selectedPlan.price}
+                  onSuccess={() => setSelectedPlan(null)}
+                />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
