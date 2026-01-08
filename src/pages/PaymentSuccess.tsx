@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
@@ -47,6 +51,10 @@ export default function PaymentSuccess() {
         setStatus("success");
         setMessage("Your payment was successful! You now have access to your course.");
         toast.success("Payment successful!");
+        
+        // Invalidate purchases query to refresh access immediately
+        await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
       } catch (error) {
         console.error("Capture error:", error);
         setStatus("error");

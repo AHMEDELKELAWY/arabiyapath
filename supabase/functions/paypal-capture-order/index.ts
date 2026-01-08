@@ -64,6 +64,25 @@ serve(async (req) => {
       throw new Error("Invalid authentication");
     }
 
+    // Check for existing capture (idempotency)
+    const { data: existingPurchase } = await supabase
+      .from("purchases")
+      .select("id")
+      .eq("paypal_order_id", orderId)
+      .maybeSingle();
+
+    if (existingPurchase) {
+      console.log("Order already captured:", orderId);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: "Order already processed",
+          alreadyCaptured: true,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Capture the order
     const accessToken = await getPayPalAccessToken();
 
@@ -87,13 +106,24 @@ serve(async (req) => {
     const captureData = await captureResponse.json();
     console.log("PayPal payment captured:", captureData.id);
 
-    // Parse custom data
+    // Parse custom data from the correct location
     const purchaseUnit = captureData.purchase_units[0];
-    const customData = JSON.parse(purchaseUnit.payments.captures[0].custom_id || "{}");
     const capture = purchaseUnit.payments.captures[0];
+    
+    // custom_id is stored on the purchase unit level, not on capture
+    const customIdString = purchaseUnit.custom_id || capture.custom_id || "{}";
+    let customData;
+    try {
+      customData = JSON.parse(customIdString);
+    } catch (e) {
+      console.error("Failed to parse custom_id:", customIdString);
+      customData = {};
+    }
+
+    console.log("Custom data parsed:", customData);
 
     // Verify user matches
-    if (customData.userId !== user.id) {
+    if (customData.userId && customData.userId !== user.id) {
       throw new Error("User mismatch");
     }
 
@@ -107,21 +137,22 @@ serve(async (req) => {
       }
     }
 
-    // Create purchase record
+    // Create purchase record with status "active" (grants access)
     const { error: purchaseError } = await supabase
       .from("purchases")
       .insert({
         user_id: user.id,
+        product_id: customData.productId,
         product_type: customData.productType,
         product_name: purchaseUnit.description,
         amount: parseFloat(capture.amount.value),
         currency: capture.amount.currency_code,
-        status: "completed",
+        status: "active",
         payment_method: "paypal",
         paypal_order_id: captureData.id,
         paypal_capture_id: capture.id,
-        coupon_id: customData.couponId,
-        dialect_id: customData.dialectId,
+        coupon_id: customData.couponId || null,
+        dialect_id: customData.dialectId || null,
       });
 
     if (purchaseError) {

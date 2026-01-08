@@ -51,26 +51,20 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Create client with user's token for auth verification
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user using getClaims
+    // Verify user
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(token);
-    if (authError || !claims?.claims?.sub) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
       console.error("Auth error:", authError);
       throw new Error("Invalid authentication");
     }
 
-    const userId = claims.claims.sub as string;
-
-    // Create service role client for database operations
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const userId = user.id;
 
     // Fetch product from database
     const { data: product, error: productError } = await supabase
@@ -117,15 +111,17 @@ serve(async (req) => {
 
     // If 100% discount, skip PayPal and create purchase directly
     if (finalPrice === 0) {
-      // Update coupon usage
+      // Update coupon usage using the increment_coupon_usage function
       if (couponId) {
-        await supabase
-          .from("coupons")
-          .update({ current_uses: supabase.rpc("increment", { x: 1 }) })
-          .eq("id", couponId);
+        const { error: couponUpdateError } = await supabase.rpc("increment_coupon_usage", {
+          coupon_id: couponId,
+        });
+        if (couponUpdateError) {
+          console.error("Coupon update error:", couponUpdateError);
+        }
       }
 
-      // Create purchase record
+      // Create purchase record with status "active" (grants access)
       const { error: purchaseError } = await supabase
         .from("purchases")
         .insert({
@@ -135,7 +131,7 @@ serve(async (req) => {
           product_name: product.name,
           amount: 0,
           currency: "USD",
-          status: "completed",
+          status: "active",
           payment_method: "free_coupon",
           coupon_id: couponId,
           dialect_id: product.dialect_id,
@@ -145,6 +141,8 @@ serve(async (req) => {
         console.error("Purchase error:", purchaseError);
         throw new Error("Failed to create purchase record");
       }
+
+      console.log("Free access granted for user:", userId);
 
       return new Response(
         JSON.stringify({ 
