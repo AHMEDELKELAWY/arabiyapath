@@ -269,14 +269,16 @@ export function useDashboardData() {
     if (!purchases || purchases.length === 0) return false;
     
     return purchases.some((purchase) => {
-      if (purchase.products?.scope === "bundle") return true;
+      // Check for all-access bundle (scope can be "all" or "bundle")
+      if (purchase.products?.scope === "all" || purchase.products?.scope === "bundle") return true;
+      // Check for individual dialect purchase
       return purchase.products?.dialect_id === dialectId;
     });
   };
 
-  // Check if user has any purchases (has bundle access)
+  // Check if user has any all-access purchases
   const hasBundleAccess = purchases?.some(
-    (p) => p.products?.scope === "bundle"
+    (p) => p.products?.scope === "all" || p.products?.scope === "bundle"
   ) || false;
 
   return {
