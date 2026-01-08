@@ -24,6 +24,11 @@ import AdminUserDetails from "./pages/admin/AdminUserDetails";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminPurchases from "./pages/admin/AdminPurchases";
 import AdminCertificates from "./pages/admin/AdminCertificates";
+import DialectOverview from "./pages/learn/DialectOverview";
+import LevelOverview from "./pages/learn/LevelOverview";
+import UnitOverview from "./pages/learn/UnitOverview";
+import LessonPlayer from "./pages/learn/LessonPlayer";
+import QuizPage from "./pages/learn/QuizPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +52,12 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/progress" element={<ProtectedRoute><DashboardProgress /></ProtectedRoute>} />
             <Route path="/dashboard/account" element={<ProtectedRoute><DashboardAccount /></ProtectedRoute>} />
+            {/* Learning Routes */}
+            <Route path="/learn/dialect/:dialectId" element={<DialectOverview />} />
+            <Route path="/learn/level/:levelId" element={<LevelOverview />} />
+            <Route path="/learn/unit/:unitId" element={<UnitOverview />} />
+            <Route path="/learn/lesson/:lessonId" element={<LessonPlayer />} />
+            <Route path="/learn/quiz/:quizId" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/content" element={<AdminRoute><AdminContent /></AdminRoute>} />
