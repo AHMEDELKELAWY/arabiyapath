@@ -172,7 +172,9 @@ export function DialectsTab() {
                       {dialect.description || "-"}
                     </TableCell>
                     <TableCell>
-                      {formatDistanceToNow(new Date(dialect.created_at), { addSuffix: true })}
+                      {dialect.created_at 
+                        ? formatDistanceToNow(new Date(dialect.created_at), { addSuffix: true })
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
