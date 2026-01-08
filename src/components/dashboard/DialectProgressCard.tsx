@@ -86,7 +86,7 @@ export function DialectProgressCard({
 
         {/* Continue Button */}
         {hasAccess && (
-          <Link to={`/learn/${dialectId}`}>
+          <Link to={`/learn/dialect/${dialectId}`}>
             <Button className="w-full" variant="outline">
               Continue Learning
               <ArrowRight className="w-4 h-4 ml-2" />

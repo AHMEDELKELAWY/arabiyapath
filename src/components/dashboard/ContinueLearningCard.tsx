@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Calendar } from "lucide-react";
+import { Play, BookOpen, Calendar, GraduationCap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RecentActivity } from "@/hooks/useDashboardData";
@@ -58,7 +58,11 @@ export function ContinueLearningCard({ lastActivity, hasAnyProgress }: ContinueL
             <h2 className="text-2xl lg:text-3xl font-bold mb-2">
               {lastActivity?.lessonTitle || "Your next lesson"}
             </h2>
-            <div className="flex items-center gap-4 text-sm text-primary-foreground/80">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-primary-foreground/80">
+              <span className="flex items-center gap-1">
+                <GraduationCap className="w-4 h-4" />
+                {lastActivity?.levelName}
+              </span>
               <span className="flex items-center gap-1">
                 <BookOpen className="w-4 h-4" />
                 {lastActivity?.unitTitle} • {lastActivity?.dialectName}
