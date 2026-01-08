@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/admin/AdminRoute";
 import Index from "./pages/Index";
 import Dialects from "./pages/Dialects";
 import Pricing from "./pages/Pricing";
@@ -16,6 +17,13 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import DashboardProgress from "./pages/DashboardProgress";
 import DashboardAccount from "./pages/DashboardAccount";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminContent from "./pages/admin/AdminContent";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetails from "./pages/admin/AdminUserDetails";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminPurchases from "./pages/admin/AdminPurchases";
+import AdminCertificates from "./pages/admin/AdminCertificates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +47,14 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/progress" element={<ProtectedRoute><DashboardProgress /></ProtectedRoute>} />
             <Route path="/dashboard/account" element={<ProtectedRoute><DashboardAccount /></ProtectedRoute>} />
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/content" element={<AdminRoute><AdminContent /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/users/:userId" element={<AdminRoute><AdminUserDetails /></AdminRoute>} />
+            <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/purchases" element={<AdminRoute><AdminPurchases /></AdminRoute>} />
+            <Route path="/admin/certificates" element={<AdminRoute><AdminCertificates /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

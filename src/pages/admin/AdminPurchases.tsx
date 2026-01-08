@@ -46,9 +46,9 @@ export default function AdminPurchases() {
   const filteredPurchases = purchases?.filter((p) => {
     const searchLower = search.toLowerCase();
     return (
-      p.profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      p.profiles?.last_name?.toLowerCase().includes(searchLower) ||
-      p.profiles?.email?.toLowerCase().includes(searchLower) ||
+      p.profile?.first_name?.toLowerCase().includes(searchLower) ||
+      p.profile?.last_name?.toLowerCase().includes(searchLower) ||
+      p.profile?.email?.toLowerCase().includes(searchLower) ||
       p.products?.name?.toLowerCase().includes(searchLower)
     );
   });
@@ -131,10 +131,10 @@ export default function AdminPurchases() {
                         <TableCell>
                           <div>
                             <p className="font-medium">
-                              {purchase.profiles?.first_name} {purchase.profiles?.last_name}
+                              {purchase.profile?.first_name} {purchase.profile?.last_name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {purchase.profiles?.email}
+                              {purchase.profile?.email}
                             </p>
                           </div>
                         </TableCell>

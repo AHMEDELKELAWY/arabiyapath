@@ -16,6 +16,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
+  loading: boolean; // Alias for isLoading
+  isAdmin: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -40,6 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error && data) {
       setProfile(data);
     }
+    
+    // Check admin role
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!roleData);
   };
 
   useEffect(() => {
@@ -130,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         isLoading,
+        loading: isLoading,
+        isAdmin,
         signUp,
         signIn,
         signOut,
