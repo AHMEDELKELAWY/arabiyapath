@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface DialectProgress {
+export interface LevelProgress {
+  levelId: string;
+  levelName: string;
   dialectId: string;
   dialectName: string;
   totalLessons: number;
@@ -10,12 +12,16 @@ export interface DialectProgress {
   completedUnits: number;
   totalUnits: number;
   progressPercent: number;
+  orderIndex: number;
 }
 
 export interface RecentActivity {
   lessonId: string;
   lessonTitle: string;
   unitTitle: string;
+  levelId: string;
+  levelName: string;
+  dialectId: string;
   dialectName: string;
   completedAt: string;
 }
@@ -61,6 +67,7 @@ export function useDashboardData() {
           levels (
             id,
             name,
+            order_index,
             units (
               id,
               title,
@@ -96,6 +103,7 @@ export function useDashboardData() {
               title,
               levels (
                 id,
+                name,
                 dialects (
                   id,
                   name
@@ -199,47 +207,65 @@ export function useDashboardData() {
     enabled: !!user,
   });
 
-  // Calculate dialect progress
-  const dialectProgress: DialectProgress[] = dialects?.map((dialect) => {
-    const allLessons = dialect.levels?.flatMap(
-      (level) => level.units?.flatMap((unit) => unit.lessons || []) || []
-    ) || [];
-    
-    const allUnits = dialect.levels?.flatMap((level) => level.units || []) || [];
-    
-    const completedLessonIds = new Set(
-      userProgress
-        ?.filter((p) => {
-          const lessonDialectId = p.lessons?.units?.levels?.dialects?.id;
-          return lessonDialectId === dialect.id;
-        })
-        .map((p) => p.lesson_id)
-    );
-    
-    const completedUnits = allUnits.filter((unit) => {
-      const unitLessons = unit.lessons || [];
-      return unitLessons.length > 0 && 
-        unitLessons.every((lesson) => completedLessonIds.has(lesson.id));
-    }).length;
-    
-    return {
-      dialectId: dialect.id,
-      dialectName: dialect.name,
-      totalLessons: allLessons.length,
-      completedLessons: completedLessonIds.size,
-      completedUnits,
-      totalUnits: allUnits.length,
-      progressPercent: allLessons.length > 0 
-        ? Math.round((completedLessonIds.size / allLessons.length) * 100) 
-        : 0,
-    };
-  }) || [];
+  // Calculate level progress (grouped by dialect)
+  const levelProgress: LevelProgress[] = dialects?.flatMap((dialect) => {
+    return (dialect.levels || []).map((level) => {
+      const allLessons = level.units?.flatMap((unit) => unit.lessons || []) || [];
+      const allUnits = level.units || [];
+      
+      const completedLessonIds = new Set(
+        userProgress
+          ?.filter((p) => {
+            const lessonLevelId = p.lessons?.units?.levels?.id;
+            return lessonLevelId === level.id;
+          })
+          .map((p) => p.lesson_id)
+      );
+      
+      const completedUnits = allUnits.filter((unit) => {
+        const unitLessons = unit.lessons || [];
+        return unitLessons.length > 0 && 
+          unitLessons.every((lesson) => completedLessonIds.has(lesson.id));
+      }).length;
+      
+      return {
+        levelId: level.id,
+        levelName: level.name,
+        dialectId: dialect.id,
+        dialectName: dialect.name,
+        totalLessons: allLessons.length,
+        completedLessons: completedLessonIds.size,
+        completedUnits,
+        totalUnits: allUnits.length,
+        progressPercent: allLessons.length > 0 
+          ? Math.round((completedLessonIds.size / allLessons.length) * 100) 
+          : 0,
+        orderIndex: level.order_index,
+      };
+    });
+  }).sort((a, b) => a.orderIndex - b.orderIndex) || [];
 
-  // Recent activity (last 5 lessons)
+  // Group levels by dialect
+  const levelsByDialect = levelProgress.reduce((acc, level) => {
+    if (!acc[level.dialectId]) {
+      acc[level.dialectId] = {
+        dialectId: level.dialectId,
+        dialectName: level.dialectName,
+        levels: [],
+      };
+    }
+    acc[level.dialectId].levels.push(level);
+    return acc;
+  }, {} as Record<string, { dialectId: string; dialectName: string; levels: LevelProgress[] }>);
+
+  // Recent activity (last 5 lessons) with level info
   const recentActivity: RecentActivity[] = userProgress?.slice(0, 5).map((p) => ({
     lessonId: p.lesson_id,
     lessonTitle: p.lessons?.title || "Unknown Lesson",
     unitTitle: p.lessons?.units?.title || "Unknown Unit",
+    levelId: p.lessons?.units?.levels?.id || "",
+    levelName: p.lessons?.units?.levels?.name || "Unknown Level",
+    dialectId: p.lessons?.units?.levels?.dialects?.id || "",
     dialectName: p.lessons?.units?.levels?.dialects?.name || "Unknown Dialect",
     completedAt: p.completed_at,
   })) || [];
@@ -282,7 +308,8 @@ export function useDashboardData() {
   ) || false;
 
   return {
-    dialectProgress,
+    levelProgress,
+    levelsByDialect: Object.values(levelsByDialect),
     recentActivity,
     quizResults,
     certificates: certificatesList,

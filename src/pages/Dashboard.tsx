@@ -2,16 +2,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
-import { DialectProgressCard } from "@/components/dashboard/DialectProgressCard";
+import { LevelProgressCard } from "@/components/dashboard/LevelProgressCard";
 import { RecentActivityList } from "@/components/dashboard/RecentActivityList";
 import { QuizResultsList } from "@/components/dashboard/QuizResultsList";
 import { CertificatesList } from "@/components/dashboard/CertificatesList";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const dialectEmojis: Record<string, string> = {
+  "Gulf Arabic": "🏜️",
+  "Egyptian Arabic": "🏛️",
+  "Modern Standard Arabic (Fusha)": "📚",
+};
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const { 
-    dialectProgress, 
+    levelsByDialect,
     recentActivity, 
     quizResults, 
     certificates, 
@@ -58,25 +64,41 @@ export default function Dashboard() {
           hasAnyProgress={hasAnyProgress} 
         />
 
-        {/* Progress by Dialect */}
+        {/* Progress by Dialect & Level */}
         <section>
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Your Progress
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dialectProgress.map((dialect) => (
-              <DialectProgressCard
-                key={dialect.dialectId}
-                dialectId={dialect.dialectId}
-                dialectName={dialect.dialectName}
-                completedLessons={dialect.completedLessons}
-                totalLessons={dialect.totalLessons}
-                completedUnits={dialect.completedUnits}
-                totalUnits={dialect.totalUnits}
-                progressPercent={dialect.progressPercent}
-                hasAccess={hasAccess(dialect.dialectId)}
-              />
-            ))}
+          <div className="space-y-6">
+            {levelsByDialect.map((dialectGroup) => {
+              const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+              return (
+                <div key={dialectGroup.dialectId} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{emoji}</span>
+                    <h3 className="text-lg font-medium text-foreground">
+                      {dialectGroup.dialectName}
+                    </h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {dialectGroup.levels.map((level) => (
+                      <LevelProgressCard
+                        key={level.levelId}
+                        levelId={level.levelId}
+                        levelName={level.levelName}
+                        dialectId={level.dialectId}
+                        completedLessons={level.completedLessons}
+                        totalLessons={level.totalLessons}
+                        completedUnits={level.completedUnits}
+                        totalUnits={level.totalUnits}
+                        progressPercent={level.progressPercent}
+                        hasAccess={hasAccess(level.dialectId)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
