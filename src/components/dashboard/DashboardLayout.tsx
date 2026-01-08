@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -41,9 +42,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="lg:hidden sticky top-0 z-50 glass border-b">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-hero-gradient flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">ع</span>
-            </div>
+            <img src={logoImage} alt="ArabiyaPath Logo" className="h-10 w-auto" />
             <span className="font-bold text-lg text-foreground">ArabiyaPath</span>
           </Link>
           <button
@@ -111,9 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg bg-hero-gradient flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">ع</span>
-              </div>
+              <img src={logoImage} alt="ArabiyaPath Logo" className="h-10 w-auto" />
               <span className="font-bold text-lg text-foreground">ArabiyaPath</span>
             </Link>
           </div>

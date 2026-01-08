@@ -260,7 +260,7 @@ export default function DashboardProgress() {
                         </Link>
                       )}
                       
-                      <Link to={`/unit/${unit.unitId}`}>
+                      <Link to={`/learn/unit/${unit.unitId}`}>
                         <Button size="sm" variant="ghost" className="gap-1">
                           <BookOpen className="w-3 h-3" />
                           View Unit
