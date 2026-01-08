@@ -3,6 +3,9 @@ project_id = "wruizzwgevxdsaiblmsd"
 [functions.elevenlabs-tts]
 verify_jwt = false
 
+[functions.generate-lesson-audio]
+verify_jwt = false
+
 [functions.paypal-create-order]
 verify_jwt = false
 
