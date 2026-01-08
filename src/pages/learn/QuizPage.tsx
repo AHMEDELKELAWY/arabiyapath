@@ -245,7 +245,8 @@ export default function QuizPage() {
             <CardContent className="p-8 space-y-8">
               {/* Question */}
               <div className="text-center space-y-4">
-                {question.type === "listen_select" && question.audio_url && (
+                {/* Audio play button for listening comprehension */}
+                {question.audio_url && (
                   <Button
                     variant="outline"
                     size="lg"
@@ -256,7 +257,7 @@ export default function QuizPage() {
                     }}
                   >
                     <Volume2 className="h-5 w-5" />
-                    Play Audio
+                    Listen to Arabic
                   </Button>
                 )}
                 <h2 className="text-2xl font-bold text-foreground">
