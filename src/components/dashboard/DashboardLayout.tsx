@@ -8,7 +8,8 @@ import {
   BookOpen,
   Award,
   Menu,
-  X
+  X,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +27,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -77,6 +78,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    location.pathname.startsWith("/admin")
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="font-medium">Admin Panel</span>
+                </Link>
+              )}
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -140,6 +156,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  location.pathname.startsWith("/admin")
+                    ? "bg-primary text-primary-foreground shadow-teal"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <Shield className="w-5 h-5" />
+                <span className="font-medium">Admin Panel</span>
+              </Link>
+            )}
           </nav>
 
           {/* Quick Actions */}

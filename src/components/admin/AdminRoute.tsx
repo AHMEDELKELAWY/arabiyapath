@@ -10,7 +10,8 @@ interface AdminRouteProps {
 export function AdminRoute({ children }: AdminRouteProps) {
   const { user, profile, loading, isAdmin } = useAuth();
 
-  if (loading) {
+  // Show loading while auth is initializing OR while determining admin status
+  if (loading || (user && isAdmin === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md">
@@ -25,7 +26,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
+  if (isAdmin === false) {
     return <Navigate to="/dashboard" replace />;
   }
 
