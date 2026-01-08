@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.generate-lesson-audio]
 verify_jwt = false
 
+[functions.generate-lesson-images]
+verify_jwt = false
+
 [functions.paypal-create-order]
 verify_jwt = false
 
@@ -13,4 +16,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.paypal-webhook]
+verify_jwt = false
+
+[functions.generate-quiz-audio]
 verify_jwt = false
