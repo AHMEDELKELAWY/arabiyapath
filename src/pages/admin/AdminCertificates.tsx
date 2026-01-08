@@ -76,7 +76,7 @@ export default function AdminCertificates() {
     onError: (error) => toast.error(error.message),
   });
 
-  const filteredCertificates = certificates?.filter((c) => {
+  const filteredCertificates = certificates?.filter((c: any) => {
     const searchLower = search.toLowerCase();
     const matchesSearch =
       c.cert_code.toLowerCase().includes(searchLower) ||
@@ -145,7 +145,7 @@ export default function AdminCertificates() {
                 </TableHeader>
                 <TableBody>
                   {filteredCertificates?.length ? (
-                    filteredCertificates.map((cert) => (
+                    filteredCertificates.map((cert: any) => (
                       <TableRow key={cert.id}>
                         <TableCell>
                           <div>
