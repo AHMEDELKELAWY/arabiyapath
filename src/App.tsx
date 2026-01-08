@@ -24,6 +24,7 @@ import AdminUserDetails from "./pages/admin/AdminUserDetails";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminPurchases from "./pages/admin/AdminPurchases";
 import AdminCertificates from "./pages/admin/AdminCertificates";
+import AdminProducts from "./pages/admin/AdminProducts";
 import DialectOverview from "./pages/learn/DialectOverview";
 import LevelOverview from "./pages/learn/LevelOverview";
 import UnitOverview from "./pages/learn/UnitOverview";
@@ -66,6 +67,7 @@ const App = () => (
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/content" element={<AdminRoute><AdminContent /></AdminRoute>} />
+            <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/users/:userId" element={<AdminRoute><AdminUserDetails /></AdminRoute>} />
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />

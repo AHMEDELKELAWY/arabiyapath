@@ -324,3 +324,42 @@ export function useAdminCertificates() {
     },
   });
 }
+
+export function useAdminProducts() {
+  return useQuery({
+    queryKey: ["admin-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, dialects(name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useQuizzes() {
+  return useQuery({
+    queryKey: ["quizzes"],
+    queryFn: async () => {
+      const { data: quizzes, error } = await supabase
+        .from("quizzes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      // Get question counts
+      const quizIds = quizzes?.map((q) => q.id) || [];
+      const { data: questions } = await supabase
+        .from("quiz_questions")
+        .select("quiz_id")
+        .in("quiz_id", quizIds);
+
+      return quizzes?.map((q) => ({
+        ...q,
+        questions_count: questions?.filter((qn) => qn.quiz_id === q.id).length || 0,
+      }));
+    },
+  });
+}
