@@ -75,9 +75,9 @@ export default function AdminUsers() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers?.length ? (
-                    filteredUsers.map((user) => {
+                    filteredUsers.map((user: any) => {
                       const roles = user.roles || [];
-                      const isAdmin = roles.some((r: any) => r.role === "admin");
+                      const isAdmin = Array.isArray(roles) && roles.some((r: any) => r.role === "admin");
                       
                       return (
                         <TableRow key={user.id}>

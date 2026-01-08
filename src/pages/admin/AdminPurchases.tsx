@@ -43,7 +43,7 @@ export default function AdminPurchases() {
     onError: (error) => toast.error(error.message),
   });
 
-  const filteredPurchases = purchases?.filter((p) => {
+  const filteredPurchases = purchases?.filter((p: any) => {
     const searchLower = search.toLowerCase();
     return (
       p.profile?.first_name?.toLowerCase().includes(searchLower) ||
@@ -126,7 +126,7 @@ export default function AdminPurchases() {
                 </TableHeader>
                 <TableBody>
                   {filteredPurchases?.length ? (
-                    filteredPurchases.map((purchase) => (
+                    filteredPurchases.map((purchase: any) => (
                       <TableRow key={purchase.id}>
                         <TableCell>
                           <div>
