@@ -72,21 +72,16 @@ serve(async (req) => {
     // Create service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Define products
-    const products: Record<string, { name: string; price: number; dialectId?: string }> = {
-      "gulf-arabic-beginner": {
-        name: "Gulf Arabic - Beginner",
-        price: 49,
-        dialectId: "gulf-arabic",
-      },
-      "all-access-bundle": {
-        name: "All Access Bundle",
-        price: 99,
-      },
-    };
+    // Fetch product from database
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id, name, price, dialect_id, scope")
+      .or(`name.ilike.%${productType.replace(/-/g, ' ')}%,scope.eq.${productType === 'all-access-bundle' ? 'all' : 'dialect'}`)
+      .limit(1)
+      .single();
 
-    const product = products[productType];
-    if (!product) {
+    if (productError || !product) {
+      console.error("Product lookup error:", productError);
       throw new Error("Invalid product type");
     }
 
@@ -135,6 +130,7 @@ serve(async (req) => {
         .from("purchases")
         .insert({
           user_id: userId,
+          product_id: product.id,
           product_type: productType,
           product_name: product.name,
           amount: 0,
@@ -142,7 +138,7 @@ serve(async (req) => {
           status: "completed",
           payment_method: "free_coupon",
           coupon_id: couponId,
-          dialect_id: product.dialectId,
+          dialect_id: product.dialect_id,
         });
 
       if (purchaseError) {
@@ -180,9 +176,10 @@ serve(async (req) => {
             description: product.name,
             custom_id: JSON.stringify({
               userId: userId,
+              productId: product.id,
               productType,
               couponId,
-              dialectId: product.dialectId,
+              dialectId: product.dialect_id,
             }),
           },
         ],
