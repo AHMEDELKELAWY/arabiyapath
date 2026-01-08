@@ -15,7 +15,8 @@ import {
   Trophy,
   RotateCcw,
   Home,
-  Volume2
+  Volume2,
+  Award
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -139,6 +140,12 @@ export default function QuizPage() {
                     ? "You've passed the quiz and completed this unit!"
                     : "You need 70% to pass. Review the lessons and try again."}
                 </p>
+                {passed && (
+                  <div className="flex items-center justify-center gap-2 mt-4 p-3 bg-primary/10 rounded-lg">
+                    <Award className="h-5 w-5 text-primary" />
+                    <span className="text-primary font-medium">Certificate Earned!</span>
+                  </div>
+                )}
               </div>
 
               <div className="py-6">
