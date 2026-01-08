@@ -46,21 +46,31 @@ serve(async (req) => {
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       throw new Error("Authorization required");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify user
+    // Create client with user's token for auth verification
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user using getClaims
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
+    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(token);
+    if (authError || !claims?.claims?.sub) {
+      console.error("Auth error:", authError);
       throw new Error("Invalid authentication");
     }
+
+    const userId = claims.claims.sub as string;
+
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Define products
     const products: Record<string, { name: string; price: number; dialectId?: string }> = {
@@ -124,7 +134,7 @@ serve(async (req) => {
       const { error: purchaseError } = await supabase
         .from("purchases")
         .insert({
-          user_id: user.id,
+          user_id: userId,
           product_type: productType,
           product_name: product.name,
           amount: 0,
@@ -169,7 +179,7 @@ serve(async (req) => {
             },
             description: product.name,
             custom_id: JSON.stringify({
-              userId: user.id,
+              userId: userId,
               productType,
               couponId,
               dialectId: product.dialectId,
