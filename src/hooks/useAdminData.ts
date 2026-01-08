@@ -52,28 +52,52 @@ export function useRecentActivity() {
   return useQuery({
     queryKey: ["admin-recent-activity"],
     queryFn: async () => {
-      const [signups, purchases, certificates] = await Promise.all([
+      const [signups, purchasesData, certificatesData] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, first_name, last_name, email, created_at")
+          .select("id, user_id, first_name, last_name, email, created_at")
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("purchases")
-          .select("id, status, created_at, product_id, user_id, products(name), profiles!inner(first_name, last_name)")
+          .select("id, status, created_at, product_id, user_id, products(name)")
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("certificates")
-          .select("id, cert_code, issued_at, user_id, dialects(name), levels(name), profiles!inner(first_name, last_name)")
+          .select("id, cert_code, issued_at, user_id, dialects(name), levels(name)")
           .order("issued_at", { ascending: false })
           .limit(5),
       ]);
 
+      // Fetch profiles for purchases
+      const purchaseUserIds = purchasesData.data?.map(p => p.user_id) || [];
+      const { data: purchaseProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", purchaseUserIds);
+
+      const purchases = purchasesData.data?.map(p => ({
+        ...p,
+        profile: purchaseProfiles?.find(pr => pr.user_id === p.user_id)
+      })) || [];
+
+      // Fetch profiles for certificates
+      const certUserIds = certificatesData.data?.map(c => c.user_id) || [];
+      const { data: certProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", certUserIds);
+
+      const certificates = certificatesData.data?.map(c => ({
+        ...c,
+        profile: certProfiles?.find(pr => pr.user_id === c.user_id)
+      })) || [];
+
       return {
         recentSignups: signups.data || [],
-        recentPurchases: purchases.data || [],
-        recentCertificates: certificates.data || [],
+        recentPurchases: purchases,
+        recentCertificates: certificates,
       };
     },
   });
@@ -145,12 +169,25 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch profiles
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*, user_roles(role)")
+        .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+
+      // Fetch all user roles
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      // Map roles to profiles
+      return profiles?.map(p => ({
+        ...p,
+        roles: roles?.filter(r => r.user_id === p.user_id) || []
+      })) || [];
     },
   });
 }
@@ -215,13 +252,24 @@ export function useCouponAnalytics(couponId: string) {
   return useQuery({
     queryKey: ["coupon-analytics", couponId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: redemptions, error } = await supabase
         .from("coupon_redemptions")
-        .select("*, profiles(first_name, last_name, email)")
+        .select("*")
         .eq("coupon_id", couponId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+
+      // Fetch profiles for redemptions
+      const userIds = redemptions?.map(r => r.user_id) || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, email")
+        .in("user_id", userIds);
+
+      return redemptions?.map(r => ({
+        ...r,
+        profile: profiles?.find(p => p.user_id === r.user_id)
+      })) || [];
     },
     enabled: !!couponId,
   });
@@ -231,12 +279,23 @@ export function useAdminPurchases() {
   return useQuery({
     queryKey: ["admin-purchases"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: purchases, error } = await supabase
         .from("purchases")
-        .select("*, products(name, price, scope), profiles!inner(first_name, last_name, email)")
+        .select("*, products(name, price, scope)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+
+      // Fetch profiles for purchases
+      const userIds = purchases?.map(p => p.user_id) || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, email")
+        .in("user_id", userIds);
+
+      return purchases?.map(p => ({
+        ...p,
+        profile: profiles?.find(pr => pr.user_id === p.user_id)
+      })) || [];
     },
   });
 }
@@ -245,12 +304,23 @@ export function useAdminCertificates() {
   return useQuery({
     queryKey: ["admin-certificates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: certificates, error } = await supabase
         .from("certificates")
-        .select("*, dialects(name), levels(name), profiles!inner(first_name, last_name, email)")
+        .select("*, dialects(name), levels(name)")
         .order("issued_at", { ascending: false });
       if (error) throw error;
-      return data;
+
+      // Fetch profiles for certificates
+      const userIds = certificates?.map(c => c.user_id) || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, email")
+        .in("user_id", userIds);
+
+      return certificates?.map(c => ({
+        ...c,
+        profile: profiles?.find(p => p.user_id === c.user_id)
+      })) || [];
     },
   });
 }

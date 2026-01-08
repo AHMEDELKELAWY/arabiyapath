@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdminCertificates, useDialects, useLevels } from "@/hooks/useAdminData";
+import { useAdminCertificates, useDialects } from "@/hooks/useAdminData";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,13 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Search, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -47,7 +39,6 @@ import { toast } from "sonner";
 export default function AdminCertificates() {
   const { data: certificates, isLoading } = useAdminCertificates();
   const { data: dialects } = useDialects();
-  const { data: levels } = useLevels();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterDialect, setFilterDialect] = useState<string>("all");
@@ -89,9 +80,9 @@ export default function AdminCertificates() {
     const searchLower = search.toLowerCase();
     const matchesSearch =
       c.cert_code.toLowerCase().includes(searchLower) ||
-      c.profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      c.profiles?.last_name?.toLowerCase().includes(searchLower) ||
-      c.profiles?.email?.toLowerCase().includes(searchLower);
+      c.profile?.first_name?.toLowerCase().includes(searchLower) ||
+      c.profile?.last_name?.toLowerCase().includes(searchLower) ||
+      c.profile?.email?.toLowerCase().includes(searchLower);
     const matchesDialect = filterDialect === "all" || c.dialect_id === filterDialect;
     return matchesSearch && matchesDialect;
   });
@@ -159,10 +150,10 @@ export default function AdminCertificates() {
                         <TableCell>
                           <div>
                             <p className="font-medium">
-                              {cert.profiles?.first_name} {cert.profiles?.last_name}
+                              {cert.profile?.first_name} {cert.profile?.last_name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {cert.profiles?.email}
+                              {cert.profile?.email}
                             </p>
                           </div>
                         </TableCell>
