@@ -174,7 +174,7 @@ export function useDashboardData() {
     enabled: !!user,
   });
 
-  // Fetch purchases
+  // Fetch purchases - include both "active" and "completed" statuses as valid
   const { data: purchases, isLoading: purchasesLoading } = useQuery({
     queryKey: ["purchases", user?.id],
     queryFn: async () => {
@@ -191,7 +191,7 @@ export function useDashboardData() {
           )
         `)
         .eq("user_id", user.id)
-        .eq("status", "active");
+        .in("status", ["active", "completed"]);
       
       if (error) throw error;
       return data;

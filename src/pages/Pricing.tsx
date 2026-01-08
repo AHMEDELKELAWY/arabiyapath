@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -73,7 +73,7 @@ const faqs = [
 ];
 
 export default function Pricing() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
 
   const handleSelectPlan = (plan: typeof plans[0]) => {
@@ -207,7 +207,13 @@ export default function Pricing() {
           </DialogHeader>
           {selectedPlan && (
             <div className="space-y-6">
-              {!user && (
+              {authLoading && (
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">جاري التحقق...</p>
+                </div>
+              )}
+              {!authLoading && !user && (
                 <div className="bg-muted/50 rounded-lg p-4 text-center">
                   <p className="text-sm text-muted-foreground mb-3">
                     Please sign in to continue with your purchase
@@ -217,7 +223,7 @@ export default function Pricing() {
                   </Button>
                 </div>
               )}
-              {user && (
+              {!authLoading && user && (
                 <PayPalCheckout
                   productType={selectedPlan.id}
                   productName={selectedPlan.name}

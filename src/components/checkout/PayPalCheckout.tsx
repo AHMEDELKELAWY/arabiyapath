@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Tag, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PayPalCheckoutProps {
   productType: string;
@@ -18,6 +19,7 @@ interface PayPalCheckoutProps {
 export function PayPalCheckout({ productType, productName, price, onSuccess }: PayPalCheckoutProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
@@ -103,6 +105,9 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
       // Check if it was a free order (100% coupon)
       if (data.freeAccess) {
         toast.success("Access granted! Enjoy your course.");
+        // Invalidate purchases query to refresh access
+        await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
         onSuccess?.();
         navigate("/dashboard");
         return;
