@@ -48,7 +48,7 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
           {activities.map((activity) => (
             <Link
               key={activity.lessonId}
-              to={`/lesson/${activity.lessonId}`}
+              to={`/learn/lesson/${activity.lessonId}`}
               className="flex items-center justify-between p-3 rounded-lg bg-accent hover:bg-accent/80 transition-colors group"
             >
               <div className="flex-1 min-w-0">
