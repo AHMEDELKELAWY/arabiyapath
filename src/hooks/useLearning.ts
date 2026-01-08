@@ -240,7 +240,7 @@ export function useQuiz(quizId?: string) {
         quiz,
         questions: questions.map(q => ({
           ...q,
-          options: JSON.parse(q.options_json as string),
+          options: q.options_json as string[],
         })),
         unit: quiz.units,
         level: quiz.units?.levels,
