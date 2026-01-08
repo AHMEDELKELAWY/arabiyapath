@@ -252,7 +252,7 @@ export default function DashboardProgress() {
                       </span>
                       
                       {unit.status !== "completed" && unit.lastLessonId && (
-                        <Link to={`/lesson/${unit.lastLessonId}`}>
+                        <Link to={`/learn/lesson/${unit.lastLessonId}`}>
                           <Button size="sm" variant="outline" className="gap-1">
                             {unit.status === "not_started" ? "Start" : "Continue"}
                             <ArrowRight className="w-3 h-3" />
