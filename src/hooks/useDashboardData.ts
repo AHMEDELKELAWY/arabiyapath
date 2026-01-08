@@ -1,0 +1,291 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+export interface DialectProgress {
+  dialectId: string;
+  dialectName: string;
+  totalLessons: number;
+  completedLessons: number;
+  completedUnits: number;
+  totalUnits: number;
+  progressPercent: number;
+}
+
+export interface RecentActivity {
+  lessonId: string;
+  lessonTitle: string;
+  unitTitle: string;
+  dialectName: string;
+  completedAt: string;
+}
+
+export interface QuizResult {
+  id: string;
+  unitTitle: string;
+  dialectName: string;
+  score: number;
+  passed: boolean;
+  createdAt: string;
+}
+
+export interface Certificate {
+  id: string;
+  dialectName: string;
+  levelName: string;
+  issuedAt: string;
+  certCode: string;
+  publicUrl: string | null;
+}
+
+export interface Purchase {
+  id: string;
+  productId: string;
+  dialectId: string | null;
+  scope: string;
+  status: string;
+}
+
+export function useDashboardData() {
+  const { user } = useAuth();
+
+  // Fetch all dialects with their levels, units, and lessons
+  const { data: dialects, isLoading: dialectsLoading } = useQuery({
+    queryKey: ["dialects-full"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dialects")
+        .select(`
+          id,
+          name,
+          levels (
+            id,
+            name,
+            units (
+              id,
+              title,
+              lessons (
+                id,
+                title
+              )
+            )
+          )
+        `);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch user progress
+  const { data: userProgress, isLoading: progressLoading } = useQuery({
+    queryKey: ["user-progress", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("user_progress")
+        .select(`
+          id,
+          lesson_id,
+          completed_at,
+          lessons (
+            id,
+            title,
+            units (
+              id,
+              title,
+              levels (
+                id,
+                dialects (
+                  id,
+                  name
+                )
+              )
+            )
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch quiz attempts
+  const { data: quizAttempts, isLoading: quizLoading } = useQuery({
+    queryKey: ["quiz-attempts", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("quiz_attempts")
+        .select(`
+          id,
+          score,
+          passed,
+          created_at,
+          quizzes (
+            units (
+              title,
+              levels (
+                dialects (
+                  name
+                )
+              )
+            )
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch certificates
+  const { data: certificates, isLoading: certificatesLoading } = useQuery({
+    queryKey: ["certificates", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("certificates")
+        .select(`
+          id,
+          issued_at,
+          cert_code,
+          public_url,
+          dialects (
+            name
+          ),
+          levels (
+            name
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("issued_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch purchases
+  const { data: purchases, isLoading: purchasesLoading } = useQuery({
+    queryKey: ["purchases", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("purchases")
+        .select(`
+          id,
+          product_id,
+          status,
+          products (
+            scope,
+            dialect_id
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("status", "active");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Calculate dialect progress
+  const dialectProgress: DialectProgress[] = dialects?.map((dialect) => {
+    const allLessons = dialect.levels?.flatMap(
+      (level) => level.units?.flatMap((unit) => unit.lessons || []) || []
+    ) || [];
+    
+    const allUnits = dialect.levels?.flatMap((level) => level.units || []) || [];
+    
+    const completedLessonIds = new Set(
+      userProgress
+        ?.filter((p) => {
+          const lessonDialectId = p.lessons?.units?.levels?.dialects?.id;
+          return lessonDialectId === dialect.id;
+        })
+        .map((p) => p.lesson_id)
+    );
+    
+    const completedUnits = allUnits.filter((unit) => {
+      const unitLessons = unit.lessons || [];
+      return unitLessons.length > 0 && 
+        unitLessons.every((lesson) => completedLessonIds.has(lesson.id));
+    }).length;
+    
+    return {
+      dialectId: dialect.id,
+      dialectName: dialect.name,
+      totalLessons: allLessons.length,
+      completedLessons: completedLessonIds.size,
+      completedUnits,
+      totalUnits: allUnits.length,
+      progressPercent: allLessons.length > 0 
+        ? Math.round((completedLessonIds.size / allLessons.length) * 100) 
+        : 0,
+    };
+  }) || [];
+
+  // Recent activity (last 5 lessons)
+  const recentActivity: RecentActivity[] = userProgress?.slice(0, 5).map((p) => ({
+    lessonId: p.lesson_id,
+    lessonTitle: p.lessons?.title || "Unknown Lesson",
+    unitTitle: p.lessons?.units?.title || "Unknown Unit",
+    dialectName: p.lessons?.units?.levels?.dialects?.name || "Unknown Dialect",
+    completedAt: p.completed_at,
+  })) || [];
+
+  // Quiz results
+  const quizResults: QuizResult[] = quizAttempts?.map((attempt) => ({
+    id: attempt.id,
+    unitTitle: attempt.quizzes?.units?.title || "Unknown Unit",
+    dialectName: attempt.quizzes?.units?.levels?.dialects?.name || "Unknown Dialect",
+    score: attempt.score,
+    passed: attempt.passed,
+    createdAt: attempt.created_at,
+  })) || [];
+
+  // Certificates list
+  const certificatesList: Certificate[] = certificates?.map((cert) => ({
+    id: cert.id,
+    dialectName: cert.dialects?.name || "Unknown Dialect",
+    levelName: cert.levels?.name || "Unknown Level",
+    issuedAt: cert.issued_at,
+    certCode: cert.cert_code,
+    publicUrl: cert.public_url,
+  })) || [];
+
+  // Check access to dialects
+  const hasAccess = (dialectId: string): boolean => {
+    if (!purchases || purchases.length === 0) return false;
+    
+    return purchases.some((purchase) => {
+      if (purchase.products?.scope === "bundle") return true;
+      return purchase.products?.dialect_id === dialectId;
+    });
+  };
+
+  // Check if user has any purchases (has bundle access)
+  const hasBundleAccess = purchases?.some(
+    (p) => p.products?.scope === "bundle"
+  ) || false;
+
+  return {
+    dialectProgress,
+    recentActivity,
+    quizResults,
+    certificates: certificatesList,
+    hasAccess,
+    hasBundleAccess,
+    isLoading: dialectsLoading || progressLoading || quizLoading || certificatesLoading || purchasesLoading,
+  };
+}
