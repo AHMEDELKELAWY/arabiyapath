@@ -29,6 +29,8 @@ import LevelOverview from "./pages/learn/LevelOverview";
 import UnitOverview from "./pages/learn/UnitOverview";
 import LessonPlayer from "./pages/learn/LessonPlayer";
 import QuizPage from "./pages/learn/QuizPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +54,9 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/progress" element={<ProtectedRoute><DashboardProgress /></ProtectedRoute>} />
             <Route path="/dashboard/account" element={<ProtectedRoute><DashboardAccount /></ProtectedRoute>} />
+            {/* Payment Routes */}
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
             {/* Learning Routes */}
             <Route path="/learn/dialect/:dialectId" element={<DialectOverview />} />
             <Route path="/learn/level/:levelId" element={<LevelOverview />} />
