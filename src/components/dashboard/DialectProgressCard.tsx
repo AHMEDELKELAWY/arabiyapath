@@ -40,14 +40,14 @@ export function DialectProgressCard({
       !hasAccess && "opacity-75"
     )}>
       {!hasAccess && (
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-              <Lock className="w-6 h-6 text-muted-foreground" />
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center p-4">
+          <div className="text-center max-w-[200px]">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <Lock className="w-7 h-7 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground mb-3">Content Locked</p>
+            <p className="text-sm text-muted-foreground mb-4">Content Locked</p>
             <Link to="/pricing">
-              <Button size="sm" variant="secondary">
+              <Button size="sm" className="w-full">
                 Upgrade to Access
               </Button>
             </Link>
