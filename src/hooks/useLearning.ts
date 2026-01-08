@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function useDialectLevels(dialectId?: string) {
   return useQuery({
     queryKey: ["dialect-levels", dialectId],
@@ -240,7 +250,7 @@ export function useQuiz(quizId?: string) {
         quiz,
         questions: questions.map(q => ({
           ...q,
-          options: q.options_json as string[],
+          options: shuffleArray(q.options_json as string[]),
         })),
         unit: quiz.units,
         level: quiz.units?.levels,
@@ -264,11 +274,43 @@ export function useSubmitQuiz() {
         .insert({ user_id: user.id, quiz_id: quizId, score, passed });
       
       if (error) throw error;
+
+      // Create certificate if passed
+      if (passed) {
+        const { data: quiz } = await supabase
+          .from("quizzes")
+          .select("unit_id, units(level_id, levels(dialect_id))")
+          .eq("id", quizId)
+          .single();
+
+        if (quiz?.units?.level_id && quiz?.units?.levels?.dialect_id) {
+          // Check if certificate already exists for this user/level/dialect
+          const { data: existingCert } = await supabase
+            .from("certificates")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("level_id", quiz.units.level_id)
+            .eq("dialect_id", quiz.units.levels.dialect_id)
+            .maybeSingle();
+
+          if (!existingCert) {
+            const certCode = `CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            await supabase.from("certificates").insert({
+              user_id: user.id,
+              level_id: quiz.units.level_id,
+              dialect_id: quiz.units.levels.dialect_id,
+              cert_code: certCode,
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quiz"] });
       queryClient.invalidateQueries({ queryKey: ["unit-lessons"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
     },
   });
 }
