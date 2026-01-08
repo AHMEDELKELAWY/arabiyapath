@@ -10,6 +10,7 @@ import {
   Award,
   ArrowLeft,
   LogOut,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ interface AdminLayoutProps {
 const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/content", label: "Content", icon: BookOpen },
+  { href: "/admin/products", label: "Products", icon: DollarSign },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },

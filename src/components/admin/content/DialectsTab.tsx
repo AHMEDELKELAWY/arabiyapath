@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { ImageUploader } from "../ImageUploader";
 
 interface DialectForm {
   name: string;
@@ -230,12 +231,11 @@ export function DialectsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
+                <Label>Image</Label>
+                <ImageUploader
                   value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="https://..."
+                  onChange={(url) => setForm({ ...form, image_url: url })}
+                  folder="dialects"
                 />
               </div>
             </div>
