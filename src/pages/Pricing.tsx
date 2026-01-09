@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -12,46 +12,43 @@ import {
 } from "@/components/ui/dialog";
 import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const plans = [
-  {
-    id: "gulf-arabic-beginner",
-    name: "Gulf Arabic - Beginner",
-    description: "Perfect for focused learning",
-    price: 49,
-    period: "one-time",
-    features: [
-      "Gulf Arabic dialect",
-      "Beginner level (8 units)",
-      "64+ audio lessons",
-      "Unit quizzes",
-      "Completion certificate",
-      "Lifetime access",
-    ],
-    highlighted: false,
-    cta: "Get Started",
-  },
-  {
-    id: "all-access-bundle",
-    name: "All Access Bundle",
-    description: "Best value for serious learners",
-    price: 99,
-    period: "one-time",
-    originalPrice: 147,
-    features: [
-      "All dialects included",
-      "Gulf, Egyptian & MSA",
-      "240+ audio lessons",
-      "All quizzes & certificates",
-      "Priority support",
-      "Lifetime access",
-      "Future content updates",
-    ],
-    highlighted: true,
-    cta: "Get Full Access",
-    badge: "Save 33%",
-  },
-];
+// Features are hardcoded since they're not in the database
+const planFeatures = {
+  dialect: [
+    "Gulf Arabic dialect",
+    "Beginner level (8 units)",
+    "64+ audio lessons",
+    "Unit quizzes",
+    "Completion certificate",
+    "Lifetime access",
+  ],
+  all: [
+    "All dialects included",
+    "Gulf, Egyptian & MSA",
+    "240+ audio lessons",
+    "All quizzes & certificates",
+    "Priority support",
+    "Lifetime access",
+    "Future content updates",
+  ],
+};
+
+interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  period: string;
+  originalPrice?: number;
+  features: string[];
+  highlighted: boolean;
+  cta: string;
+  badge?: string;
+}
 
 const faqs = [
   {
@@ -74,9 +71,56 @@ const faqs = [
 
 export default function Pricing() {
   const { user, isLoading: authLoading } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-  const handleSelectPlan = (plan: typeof plans[0]) => {
+  const { data: dbProducts, isLoading: productsLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const plans: Plan[] = useMemo(() => {
+    if (!dbProducts) return [];
+
+    const dialectProduct = dbProducts.find((p) => p.scope === "dialect");
+    const bundleProduct = dbProducts.find((p) => p.scope === "all");
+
+    const result: Plan[] = [];
+
+    if (dialectProduct) {
+      result.push({
+        id: dialectProduct.id,
+        name: dialectProduct.name,
+        description: dialectProduct.description || "Perfect for focused learning",
+        price: Number(dialectProduct.price),
+        period: "one-time",
+        features: planFeatures.dialect,
+        highlighted: false,
+        cta: "Get Started",
+      });
+    }
+
+    if (bundleProduct) {
+      result.push({
+        id: bundleProduct.id,
+        name: bundleProduct.name,
+        description: bundleProduct.description || "Best value for serious learners",
+        price: Number(bundleProduct.price),
+        period: "one-time",
+        features: planFeatures.all,
+        highlighted: true,
+        cta: "Get Full Access",
+        badge: "Best Value",
+      });
+    }
+
+    return result;
+  }, [dbProducts]);
+
+  const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
   };
 
@@ -101,7 +145,12 @@ export default function Pricing() {
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {plans.map((plan) => (
+            {productsLoading ? (
+              <>
+                <Skeleton className="h-[500px] rounded-3xl" />
+                <Skeleton className="h-[500px] rounded-3xl" />
+              </>
+            ) : plans.map((plan) => (
               <div
                 key={plan.name}
                 className={cn(
