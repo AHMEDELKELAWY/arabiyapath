@@ -21,7 +21,7 @@ export default function Dashboard() {
     recentActivity, 
     quizResults, 
     certificates, 
-    hasAccess,
+    hasLevelAccess,
     isLoading 
   } = useDashboardData();
 
@@ -92,7 +92,7 @@ export default function Dashboard() {
                         completedUnits={level.completedUnits}
                         totalUnits={level.totalUnits}
                         progressPercent={level.progressPercent}
-                        hasAccess={hasAccess(level.dialectId)}
+                        hasAccess={hasLevelAccess(level.levelId, level.dialectId)}
                       />
                     ))}
                   </div>

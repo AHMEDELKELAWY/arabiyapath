@@ -195,7 +195,8 @@ export function useDashboardData() {
           status,
           products (
             scope,
-            dialect_id
+            dialect_id,
+            level_id
           )
         `)
         .eq("user_id", user.id)
@@ -290,15 +291,29 @@ export function useDashboardData() {
     publicUrl: cert.public_url,
   })) || [];
 
-  // Check access to dialects
-  const hasAccess = (dialectId: string): boolean => {
+  // Check access to specific level (for level-based pricing)
+  const hasLevelAccess = (levelId: string, dialectId: string): boolean => {
     if (!purchases || purchases.length === 0) return false;
     
     return purchases.some((purchase) => {
       // Check for all-access bundle (scope can be "all" or "bundle")
       if (purchase.products?.scope === "all" || purchase.products?.scope === "bundle") return true;
-      // Check for individual dialect purchase
-      return purchase.products?.dialect_id === dialectId;
+      // Check for full dialect purchase (grants access to all levels in that dialect)
+      if (purchase.products?.scope === "dialect" && purchase.products?.dialect_id === dialectId) return true;
+      // Check for specific level purchase
+      if (purchase.products?.scope === "level" && purchase.products?.level_id === levelId) return true;
+      return false;
+    });
+  };
+
+  // Legacy function for dialect-level access (for backward compatibility)
+  const hasAccess = (dialectId: string): boolean => {
+    if (!purchases || purchases.length === 0) return false;
+    
+    return purchases.some((purchase) => {
+      if (purchase.products?.scope === "all" || purchase.products?.scope === "bundle") return true;
+      if (purchase.products?.scope === "dialect" && purchase.products?.dialect_id === dialectId) return true;
+      return false;
     });
   };
 
@@ -314,6 +329,7 @@ export function useDashboardData() {
     quizResults,
     certificates: certificatesList,
     hasAccess,
+    hasLevelAccess,
     hasBundleAccess,
     isLoading: dialectsLoading || progressLoading || quizLoading || certificatesLoading || purchasesLoading,
   };

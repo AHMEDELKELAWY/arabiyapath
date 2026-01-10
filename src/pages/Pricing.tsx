@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Loader2 } from "lucide-react";
+import { Check, Sparkles, Loader2, BookOpen, GraduationCap, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -16,26 +16,40 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Features are hardcoded since they're not in the database
-const planFeatures = {
-  dialect: [
-    "Gulf Arabic dialect",
-    "Beginner level (8 units)",
+// Features per level type
+const levelFeatures: Record<string, string[]> = {
+  Beginner: [
+    "8 foundational units",
     "64+ audio lessons",
     "Unit quizzes",
     "Completion certificate",
     "Lifetime access",
   ],
-  all: [
-    "All dialects included",
-    "Gulf, Egyptian & MSA",
-    "240+ audio lessons",
-    "All quizzes & certificates",
-    "Priority support",
+  Intermediate: [
+    "8 practical units",
+    "64+ audio lessons",
+    "Real-world scenarios",
+    "Completion certificate",
     "Lifetime access",
-    "Future content updates",
+  ],
+  Advanced: [
+    "8 mastery units",
+    "64+ audio lessons",
+    "Professional topics",
+    "Completion certificate",
+    "Lifetime access",
   ],
 };
+
+const bundleFeatures = [
+  "All dialects included",
+  "All levels (Beginner → Advanced)",
+  "190+ audio lessons",
+  "All quizzes & certificates",
+  "Priority support",
+  "Lifetime access",
+  "Future content updates",
+];
 
 interface Plan {
   id: string;
@@ -43,12 +57,25 @@ interface Plan {
   description: string;
   price: number;
   period: string;
-  originalPrice?: number;
   features: string[];
   highlighted: boolean;
   cta: string;
   badge?: string;
+  levelName?: string;
+  dialectName?: string;
 }
+
+const levelIcons: Record<string, typeof BookOpen> = {
+  Beginner: BookOpen,
+  Intermediate: GraduationCap,
+  Advanced: Trophy,
+};
+
+const levelColors: Record<string, string> = {
+  Beginner: "text-emerald-600 dark:text-emerald-400",
+  Intermediate: "text-blue-600 dark:text-blue-400",
+  Advanced: "text-purple-600 dark:text-purple-400",
+};
 
 const faqs = [
   {
@@ -67,6 +94,10 @@ const faqs = [
     q: "Is this a subscription?",
     a: "No, it's a one-time payment with lifetime access. No recurring charges.",
   },
+  {
+    q: "Can I upgrade later?",
+    a: "Absolutely! You can purchase additional levels anytime. Consider the All Access Bundle for best value.",
+  },
 ];
 
 export default function Pricing() {
@@ -74,50 +105,60 @@ export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   const { data: dbProducts, isLoading: productsLoading } = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products-with-levels"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*");
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, dialects(name), levels(name)")
+        .order("price", { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
-  const plans: Plan[] = useMemo(() => {
-    if (!dbProducts) return [];
+  // Group products: levels first, then bundle
+  const { levelPlans, bundlePlan } = useMemo(() => {
+    if (!dbProducts) return { levelPlans: [], bundlePlan: null };
 
-    const dialectProduct = dbProducts.find((p) => p.scope === "dialect");
-    const bundleProduct = dbProducts.find((p) => p.scope === "all");
+    const levels: Plan[] = [];
+    let bundle: Plan | null = null;
 
-    const result: Plan[] = [];
+    dbProducts.forEach((product) => {
+      if (product.scope === "level" && product.levels?.name) {
+        levels.push({
+          id: product.id,
+          name: product.name,
+          description: product.description || `Master ${product.levels.name} ${product.dialects?.name || "Arabic"}`,
+          price: Number(product.price),
+          period: "one-time",
+          features: levelFeatures[product.levels.name] || levelFeatures.Beginner,
+          highlighted: false,
+          cta: "Get Started",
+          levelName: product.levels.name,
+          dialectName: product.dialects?.name,
+        });
+      } else if (product.scope === "all" || product.scope === "bundle") {
+        bundle = {
+          id: product.id,
+          name: product.name,
+          description: product.description || "Complete access to all content",
+          price: Number(product.price),
+          period: "one-time",
+          features: bundleFeatures,
+          highlighted: true,
+          cta: "Get Full Access",
+          badge: "Best Value",
+        };
+      }
+    });
 
-    if (dialectProduct) {
-      result.push({
-        id: dialectProduct.id,
-        name: dialectProduct.name,
-        description: dialectProduct.description || "Perfect for focused learning",
-        price: Number(dialectProduct.price),
-        period: "one-time",
-        features: planFeatures.dialect,
-        highlighted: false,
-        cta: "Get Started",
-      });
-    }
+    // Sort levels by order: Beginner, Intermediate, Advanced
+    const levelOrder = ["Beginner", "Intermediate", "Advanced"];
+    levels.sort((a, b) => 
+      levelOrder.indexOf(a.levelName || "") - levelOrder.indexOf(b.levelName || "")
+    );
 
-    if (bundleProduct) {
-      result.push({
-        id: bundleProduct.id,
-        name: bundleProduct.name,
-        description: bundleProduct.description || "Best value for serious learners",
-        price: Number(bundleProduct.price),
-        period: "one-time",
-        features: planFeatures.all,
-        highlighted: true,
-        cta: "Get Full Access",
-        badge: "Best Value",
-      });
-    }
-
-    return result;
+    return { levelPlans: levels, bundlePlan: bundle };
   }, [dbProducts]);
 
   const handleSelectPlan = (plan: Plan) => {
@@ -135,78 +176,130 @@ export default function Pricing() {
               Simple, <span className="text-gradient">Transparent</span> Pricing
             </h1>
             <p className="text-lg text-muted-foreground">
-              One-time payment, lifetime access. No subscriptions, no hidden fees.
+              One-time payment, lifetime access. Choose your level or get everything with the bundle.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* Level Pricing Cards */}
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
+            {/* Section Title */}
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                🏜️ Gulf Arabic Levels
+              </h2>
+              <p className="text-muted-foreground">
+                Start with any level or get them all
+              </p>
+            </div>
+
             {productsLoading ? (
-              <>
-                <Skeleton className="h-[500px] rounded-3xl" />
-                <Skeleton className="h-[500px] rounded-3xl" />
-              </>
-            ) : plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={cn(
-                  "relative bg-card rounded-3xl border-2 p-8 transition-all duration-300",
-                  plan.highlighted
-                    ? "border-primary shadow-xl scale-105"
-                    : "border-border hover:border-primary/30 hover:shadow-lg"
-                )}
-              >
-                {plan.badge && (
+              <div className="grid md:grid-cols-3 gap-6">
+                <Skeleton className="h-[450px] rounded-3xl" />
+                <Skeleton className="h-[450px] rounded-3xl" />
+                <Skeleton className="h-[450px] rounded-3xl" />
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {levelPlans.map((plan) => {
+                  const Icon = levelIcons[plan.levelName || "Beginner"] || BookOpen;
+                  const colorClass = levelColors[plan.levelName || "Beginner"];
+                  
+                  return (
+                    <div
+                      key={plan.id}
+                      className="relative bg-card rounded-3xl border-2 border-border p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
+                    >
+                      <div className="text-center mb-6">
+                        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 bg-muted")}>
+                          <Icon className={cn("w-6 h-6", colorClass)} />
+                        </div>
+                        <h2 className="text-xl font-bold text-foreground mb-1">{plan.levelName}</h2>
+                        <p className="text-muted-foreground text-sm">{plan.description}</p>
+                      </div>
+
+                      <div className="text-center mb-6">
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold text-foreground">${plan.price}</span>
+                          <span className="text-muted-foreground text-sm">/{plan.period}</span>
+                        </div>
+                      </div>
+
+                      <ul className="space-y-3 mb-6">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Check className="w-3 h-3 text-primary" />
+                            </div>
+                            <span className="text-foreground text-sm">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleSelectPlan(plan)}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Bundle Card */}
+            {bundlePlan && (
+              <div className="max-w-xl mx-auto">
+                <div className="relative bg-card rounded-3xl border-2 border-primary shadow-xl p-8 scale-105">
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-semibold shadow-gold">
                       <Sparkles className="w-4 h-4" />
-                      {plan.badge}
+                      {bundlePlan.badge}
                     </div>
                   </div>
-                )}
 
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">{plan.name}</h2>
-                  <p className="text-muted-foreground text-sm">{plan.description}</p>
-                </div>
-
-                <div className="text-center mb-8">
-                  {plan.originalPrice && (
-                    <div className="text-muted-foreground line-through text-lg mb-1">
-                      ${plan.originalPrice}
-                    </div>
-                  )}
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-bold text-foreground">${plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
+                  <div className="text-center mb-8 pt-2">
+                    <h2 className="text-2xl font-bold text-foreground mb-2">{bundlePlan.name}</h2>
+                    <p className="text-muted-foreground text-sm">{bundlePlan.description}</p>
                   </div>
+
+                  <div className="text-center mb-8">
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-5xl font-bold text-foreground">${bundlePlan.price}</span>
+                      <span className="text-muted-foreground">/{bundlePlan.period}</span>
+                    </div>
+                    <p className="text-sm text-primary mt-2">
+                      Save ${(levelPlans.reduce((sum, p) => sum + p.price, 0) - bundlePlan.price).toFixed(2)} compared to buying separately
+                    </p>
+                  </div>
+
+                  <ul className="space-y-4 mb-8">
+                    {bundlePlan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-primary" />
+                        </div>
+                        <span className="text-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    onClick={() => handleSelectPlan(bundlePlan)}
+                  >
+                    {bundlePlan.cta}
+                  </Button>
                 </div>
-
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-primary" />
-                      </div>
-                      <span className="text-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  size="lg"
-                  variant={plan.highlighted ? "default" : "outline"}
-                  className="w-full"
-                  onClick={() => handleSelectPlan(plan)}
-                >
-                  {plan.cta}
-                </Button>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -256,6 +349,12 @@ export default function Pricing() {
           </DialogHeader>
           {selectedPlan && (
             <div className="space-y-6">
+              {/* Plan Summary */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="font-semibold text-foreground">{selectedPlan.name}</p>
+                <p className="text-2xl font-bold text-primary">${selectedPlan.price}</p>
+              </div>
+
               {authLoading && (
                 <div className="flex flex-col items-center justify-center py-8 gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />

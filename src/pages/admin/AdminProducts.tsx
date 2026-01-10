@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdminProducts, useDialects } from "@/hooks/useAdminData";
+import { useAdminProducts, useDialects, useLevels } from "@/hooks/useAdminData";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -51,11 +51,13 @@ interface ProductForm {
   price: number;
   scope: string;
   dialect_id: string | null;
+  level_id: string | null;
 }
 
 export default function AdminProducts() {
   const { data: products, isLoading } = useAdminProducts();
   const { data: dialects } = useDialects();
+  const { data: levels } = useLevels();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteProduct, setDeleteProduct] = useState<string | null>(null);
@@ -64,15 +66,20 @@ export default function AdminProducts() {
     name: "",
     description: "",
     price: 0,
-    scope: "dialect",
+    scope: "level",
     dialect_id: null,
+    level_id: null,
   });
+
+  // Filter levels based on selected dialect
+  const filteredLevels = levels?.filter(l => l.dialect_id === form.dialect_id) || [];
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductForm) => {
       const { error } = await supabase.from("products").insert({
         ...data,
         dialect_id: data.scope === "all" ? null : data.dialect_id,
+        level_id: data.scope === "level" ? data.level_id : null,
       });
       if (error) throw error;
     },
@@ -91,6 +98,7 @@ export default function AdminProducts() {
         .update({
           ...data,
           dialect_id: data.scope === "all" ? null : data.dialect_id,
+          level_id: data.scope === "level" ? data.level_id : null,
         })
         .eq("id", id);
       if (error) throw error;
@@ -123,8 +131,9 @@ export default function AdminProducts() {
       name: "",
       description: "",
       price: 0,
-      scope: "dialect",
+      scope: "level",
       dialect_id: null,
+      level_id: null,
     });
   };
 
@@ -136,6 +145,7 @@ export default function AdminProducts() {
       price: product.price,
       scope: product.scope,
       dialect_id: product.dialect_id,
+      level_id: product.level_id,
     });
     setIsDialogOpen(true);
   };
@@ -197,8 +207,12 @@ export default function AdminProducts() {
                           {product.description || "-"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={product.scope === "all" ? "default" : "secondary"}>
-                            {product.scope === "all" ? "All Access" : "Single Dialect"}
+                          <Badge variant={
+                            product.scope === "all" ? "default" : 
+                            product.scope === "level" ? "outline" : "secondary"
+                          }>
+                            {product.scope === "all" ? "All Access" : 
+                             product.scope === "level" ? "Single Level" : "Full Dialect"}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-semibold">
@@ -286,17 +300,18 @@ export default function AdminProducts() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dialect">Single Dialect</SelectItem>
+                    <SelectItem value="level">Single Level</SelectItem>
+                    <SelectItem value="dialect">Full Dialect (All Levels)</SelectItem>
                     <SelectItem value="all">All Access Bundle</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {form.scope === "dialect" && (
+              {(form.scope === "dialect" || form.scope === "level") && (
                 <div className="space-y-2">
-                  <Label htmlFor="dialect">Linked Dialect</Label>
+                  <Label htmlFor="dialect">Dialect</Label>
                   <Select
                     value={form.dialect_id || ""}
-                    onValueChange={(value) => setForm({ ...form, dialect_id: value || null })}
+                    onValueChange={(value) => setForm({ ...form, dialect_id: value || null, level_id: null })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select dialect" />
@@ -305,6 +320,26 @@ export default function AdminProducts() {
                       {dialects?.map((d) => (
                         <SelectItem key={d.id} value={d.id}>
                           {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {form.scope === "level" && form.dialect_id && (
+                <div className="space-y-2">
+                  <Label htmlFor="level">Level</Label>
+                  <Select
+                    value={form.level_id || ""}
+                    onValueChange={(value) => setForm({ ...form, level_id: value || null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredLevels.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
