@@ -279,6 +279,7 @@ export type Database = {
           description: string | null
           dialect_id: string | null
           id: string
+          level_id: string | null
           name: string
           price: number
           scope: string
@@ -288,6 +289,7 @@ export type Database = {
           description?: string | null
           dialect_id?: string | null
           id?: string
+          level_id?: string | null
           name: string
           price?: number
           scope?: string
@@ -297,6 +299,7 @@ export type Database = {
           description?: string | null
           dialect_id?: string | null
           id?: string
+          level_id?: string | null
           name?: string
           price?: number
           scope?: string
@@ -307,6 +310,13 @@ export type Database = {
             columns: ["dialect_id"]
             isOneToOne: false
             referencedRelation: "dialects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
             referencedColumns: ["id"]
           },
         ]

@@ -331,7 +331,7 @@ export function useAdminProducts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, dialects(name)")
+        .select("*, dialects(name), levels(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
