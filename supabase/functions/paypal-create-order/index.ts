@@ -66,12 +66,11 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Fetch product from database
+    // Fetch product from database by ID (UUID)
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, name, price, dialect_id, scope")
-      .or(`name.ilike.%${productType.replace(/-/g, ' ')}%,scope.eq.${productType === 'all-access-bundle' ? 'all' : 'dialect'}`)
-      .limit(1)
+      .select("id, name, price, dialect_id, level_id, scope")
+      .eq("id", productType)
       .single();
 
     if (productError || !product) {
@@ -127,7 +126,7 @@ serve(async (req) => {
         .insert({
           user_id: userId,
           product_id: product.id,
-          product_type: productType,
+          product_type: product.scope,
           product_name: product.name,
           amount: 0,
           currency: "USD",
@@ -135,6 +134,7 @@ serve(async (req) => {
           payment_method: "free_coupon",
           coupon_id: couponId,
           dialect_id: product.dialect_id,
+          level_id: product.level_id,
         });
 
       if (purchaseError) {
@@ -172,13 +172,14 @@ serve(async (req) => {
               value: finalPrice.toFixed(2),
             },
             description: product.name,
-            custom_id: JSON.stringify({
-              userId: userId,
-              productId: product.id,
-              productType,
-              couponId,
-              dialectId: product.dialect_id,
-            }),
+          custom_id: JSON.stringify({
+            userId: userId,
+            productId: product.id,
+            productType: product.scope,
+            couponId,
+            dialectId: product.dialect_id,
+            levelId: product.level_id,
+          }),
           },
         ],
         application_context: {
