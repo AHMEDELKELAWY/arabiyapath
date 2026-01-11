@@ -362,6 +362,7 @@ export type Database = {
           currency: string | null
           dialect_id: string | null
           id: string
+          level_id: string | null
           payment_method: string | null
           paypal_capture_id: string | null
           paypal_order_id: string | null
@@ -378,6 +379,7 @@ export type Database = {
           currency?: string | null
           dialect_id?: string | null
           id?: string
+          level_id?: string | null
           payment_method?: string | null
           paypal_capture_id?: string | null
           paypal_order_id?: string | null
@@ -394,6 +396,7 @@ export type Database = {
           currency?: string | null
           dialect_id?: string | null
           id?: string
+          level_id?: string | null
           payment_method?: string | null
           paypal_capture_id?: string | null
           paypal_order_id?: string | null
@@ -409,6 +412,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
             referencedColumns: ["id"]
           },
           {
