@@ -363,3 +363,38 @@ export function useQuizzes() {
     },
   });
 }
+
+export function useLessonsWithoutImages() {
+  return useQuery({
+    queryKey: ["lessons-without-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("id, title, units!inner(title, levels!inner(id, name, dialects!inner(name)))")
+        .or("image_url.is.null,image_url.eq.")
+        .order("order_index");
+      if (error) throw error;
+
+      // Group by level
+      const byLevel: Record<string, { levelId: string; levelName: string; dialectName: string; count: number; lessonIds: string[] }> = {};
+      
+      data?.forEach((lesson: any) => {
+        const levelId = lesson.units.levels.id;
+        const levelName = lesson.units.levels.name;
+        const dialectName = lesson.units.levels.dialects.name;
+        const key = levelId;
+        
+        if (!byLevel[key]) {
+          byLevel[key] = { levelId, levelName, dialectName, count: 0, lessonIds: [] };
+        }
+        byLevel[key].count++;
+        byLevel[key].lessonIds.push(lesson.id);
+      });
+
+      return {
+        total: data?.length || 0,
+        byLevel: Object.values(byLevel),
+      };
+    },
+  });
+}
