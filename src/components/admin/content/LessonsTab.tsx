@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLessons, useUnits, useLevels, useDialects } from "@/hooks/useAdminData";
+import { useLessons, useUnits, useLevels, useDialects, useLessonsWithoutImages } from "@/hooks/useAdminData";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -38,9 +39,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "../ImageUploader";
 import { AudioUploader } from "../AudioUploader";
@@ -60,6 +68,7 @@ export function LessonsTab() {
   const { data: units } = useUnits();
   const { data: levels } = useLevels();
   const { data: dialects } = useDialects();
+  const { data: lessonsWithoutImages, refetch: refetchMissingImages } = useLessonsWithoutImages();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterUnit, setFilterUnit] = useState<string>("all");
@@ -76,6 +85,65 @@ export function LessonsTab() {
     image_url: "",
     audio_url: "",
   });
+
+  // Image generation state
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0, currentLesson: "" });
+  const [showGenerationDialog, setShowGenerationDialog] = useState(false);
+
+  const generateImagesForLevel = async (levelId: string, lessonIds: string[]) => {
+    setIsGeneratingImages(true);
+    setGenerationProgress({ current: 0, total: lessonIds.length, currentLesson: "" });
+    setShowGenerationDialog(true);
+
+    const BATCH_SIZE = 5;
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (let i = 0; i < lessonIds.length; i += BATCH_SIZE) {
+        const batch = lessonIds.slice(i, i + BATCH_SIZE);
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          current: i,
+          currentLesson: `Processing batch ${Math.floor(i / BATCH_SIZE) + 1}...`
+        }));
+
+        const { data, error } = await supabase.functions.invoke("generate-lesson-images", {
+          body: { lessonIds: batch }
+        });
+
+        if (error) {
+          console.error("Batch error:", error);
+          errorCount += batch.length;
+        } else if (data?.results) {
+          successCount += data.results.filter((r: any) => r.success).length;
+          errorCount += data.results.filter((r: any) => !r.success).length;
+        }
+
+        setGenerationProgress(prev => ({
+          ...prev,
+          current: Math.min(i + BATCH_SIZE, lessonIds.length),
+        }));
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["lessons"] });
+      refetchMissingImages();
+      
+      if (errorCount === 0) {
+        toast.success(`Successfully generated ${successCount} images!`);
+      } else {
+        toast.warning(`Generated ${successCount} images, ${errorCount} failed`);
+      }
+    } catch (err) {
+      console.error("Generation error:", err);
+      toast.error("Failed to generate images");
+    } finally {
+      setIsGeneratingImages(false);
+      setShowGenerationDialog(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: LessonForm) => {
@@ -175,10 +243,32 @@ export function LessonsTab() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Lessons</CardTitle>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Lesson
-          </Button>
+          <div className="flex gap-2">
+            {lessonsWithoutImages && lessonsWithoutImages.total > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Wand2 className="h-4 w-4" />
+                    Generate Images ({lessonsWithoutImages.total})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {lessonsWithoutImages.byLevel.map((level) => (
+                    <DropdownMenuItem
+                      key={level.levelId}
+                      onClick={() => generateImagesForLevel(level.levelId, level.lessonIds)}
+                    >
+                      {level.dialectName} - {level.levelName} ({level.count} missing)
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Lesson
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex gap-4">
@@ -462,6 +552,32 @@ export function LessonsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Generation Progress Dialog */}
+      <Dialog open={showGenerationDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" hideCloseButton>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Generating Images...
+            </DialogTitle>
+            <DialogDescription>
+              Please wait while AI generates images for the lessons.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Progress value={(generationProgress.current / generationProgress.total) * 100} />
+            <p className="text-sm text-muted-foreground text-center">
+              {generationProgress.current} / {generationProgress.total} lessons processed
+            </p>
+            {generationProgress.currentLesson && (
+              <p className="text-xs text-muted-foreground text-center">
+                {generationProgress.currentLesson}
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
