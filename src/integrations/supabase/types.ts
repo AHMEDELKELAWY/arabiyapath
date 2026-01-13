@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_commissions: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          purchase_id: string
+          status: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          purchase_id: string
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          purchase_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          commission_rate: number | null
+          created_at: string
+          id: string
+          paid_earnings: number | null
+          status: string | null
+          total_earnings: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_code: string
+          commission_rate?: number | null
+          created_at?: string
+          id?: string
+          paid_earnings?: number | null
+          status?: string | null
+          total_earnings?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_code?: string
+          commission_rate?: number | null
+          created_at?: string
+          id?: string
+          paid_earnings?: number | null
+          status?: string | null
+          total_earnings?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           cert_code: string
@@ -101,6 +182,7 @@ export type Database = {
       coupons: {
         Row: {
           active: boolean
+          affiliate_id: string | null
           code: string
           created_at: string
           current_uses: number | null
@@ -114,6 +196,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          affiliate_id?: string | null
           code: string
           created_at?: string
           current_uses?: number | null
@@ -127,6 +210,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          affiliate_id?: string | null
           code?: string
           created_at?: string
           current_uses?: number | null
@@ -138,7 +222,15 @@ export type Database = {
           max_redemptions?: number | null
           percent_off?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coupons_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dialects: {
         Row: {
@@ -356,6 +448,7 @@ export type Database = {
       }
       purchases: {
         Row: {
+          affiliate_id: string | null
           amount: number | null
           coupon_id: string | null
           created_at: string
@@ -373,6 +466,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          affiliate_id?: string | null
           amount?: number | null
           coupon_id?: string | null
           created_at?: string
@@ -390,6 +484,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          affiliate_id?: string | null
           amount?: number | null
           coupon_id?: string | null
           created_at?: string
@@ -407,6 +502,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchases_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchases_coupon_id_fkey"
             columns: ["coupon_id"]
@@ -638,7 +740,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "affiliate"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -766,7 +868,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "affiliate"],
     },
   },
 } as const
