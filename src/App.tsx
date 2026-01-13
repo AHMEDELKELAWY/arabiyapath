@@ -25,6 +25,12 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminPurchases from "./pages/admin/AdminPurchases";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminProducts from "./pages/admin/AdminProducts";
+import AdminAffiliates from "./pages/admin/AdminAffiliates";
+import AdminAffiliatePayouts from "./pages/admin/AdminAffiliatePayouts";
+import { AffiliateRoute } from "@/components/affiliate/AffiliateRoute";
+import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
+import AffiliateCommissions from "./pages/affiliate/AffiliateCommissions";
+import AffiliateReferrals from "./pages/affiliate/AffiliateReferrals";
 import DialectOverview from "./pages/learn/DialectOverview";
 import LevelOverview from "./pages/learn/LevelOverview";
 import UnitOverview from "./pages/learn/UnitOverview";
@@ -73,6 +79,12 @@ const App = () => (
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
             <Route path="/admin/purchases" element={<AdminRoute><AdminPurchases /></AdminRoute>} />
             <Route path="/admin/certificates" element={<AdminRoute><AdminCertificates /></AdminRoute>} />
+            <Route path="/admin/affiliates" element={<AdminRoute><AdminAffiliates /></AdminRoute>} />
+            <Route path="/admin/affiliate-payouts" element={<AdminRoute><AdminAffiliatePayouts /></AdminRoute>} />
+            {/* Affiliate Routes */}
+            <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />
+            <Route path="/affiliate/commissions" element={<AffiliateRoute><AffiliateCommissions /></AffiliateRoute>} />
+            <Route path="/affiliate/referrals" element={<AffiliateRoute><AffiliateReferrals /></AffiliateRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

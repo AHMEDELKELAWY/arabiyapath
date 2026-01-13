@@ -3,39 +3,39 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  BookOpen,
+  DollarSign,
   Users,
-  Ticket,
-  ShoppingCart,
-  Award,
   ArrowLeft,
   LogOut,
-  DollarSign,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAffiliateCoupon } from "@/hooks/useAffiliateData";
+import { toast } from "sonner";
 import logoImage from "@/assets/logo.png";
 
-interface AdminLayoutProps {
+interface AffiliateLayoutProps {
   children: ReactNode;
 }
 
-import { UserCheck } from "lucide-react";
-
 const sidebarLinks = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/content", label: "Content", icon: BookOpen },
-  { href: "/admin/products", label: "Products", icon: DollarSign },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/affiliates", label: "Affiliates", icon: UserCheck },
-  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
-  { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
-  { href: "/admin/certificates", label: "Certificates", icon: Award },
+  { href: "/affiliate", label: "Overview", icon: LayoutDashboard },
+  { href: "/affiliate/commissions", label: "Commissions", icon: DollarSign },
+  { href: "/affiliate/referrals", label: "Referrals", icon: Users },
 ];
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AffiliateLayout({ children }: AffiliateLayoutProps) {
   const location = useLocation();
   const { signOut, profile } = useAuth();
+  const { data: couponData } = useAffiliateCoupon();
+
+  const copyLink = () => {
+    const link = `${window.location.origin}/pricing?coupon=${couponData?.coupon?.code || couponData?.affiliateCode}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Link copied to clipboard!");
+  };
 
   return (
     <div className="min-h-screen flex bg-muted/30">
@@ -48,17 +48,37 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <span className="text-lg font-bold text-foreground">
                 Arabiya<span className="text-primary">Path</span>
               </span>
-              <span className="block text-xs text-muted-foreground">Admin Panel</span>
+              <span className="block text-xs text-muted-foreground">Affiliate Portal</span>
             </div>
           </Link>
         </div>
+
+        {/* Coupon Code Card */}
+        {couponData?.coupon && (
+          <div className="p-4 border-b border-border">
+            <div className="bg-primary/10 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">Your Coupon Code</p>
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-bold text-primary">
+                  {couponData.coupon.code}
+                </span>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyLink}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {couponData.coupon.percent_off}% discount for your referrals
+              </p>
+            </div>
+          </div>
+        )}
 
         <nav className="flex-1 p-4 space-y-1">
           {sidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive =
-              link.href === "/admin"
-                ? location.pathname === "/admin"
+              link.href === "/affiliate"
+                ? location.pathname === "/affiliate"
                 : location.pathname.startsWith(link.href);
 
             return (
@@ -84,7 +104,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <span className="font-medium text-foreground">
               {profile?.first_name} {profile?.last_name}
             </span>
-            <span className="block text-xs">Administrator</span>
+            <span className="block text-xs">Affiliate Partner</span>
           </div>
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2" asChild>
             <Link to="/dashboard">
