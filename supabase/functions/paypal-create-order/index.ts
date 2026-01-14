@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PAYPAL_API_BASE = "https://api-m.paypal.com"; // Use sandbox for testing: https://api-m.sandbox.paypal.com
+const PAYPAL_API_BASE = "https://api-m.paypal.com";
 
 async function getPayPalAccessToken(): Promise<string> {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
@@ -81,6 +81,7 @@ serve(async (req) => {
     let finalPrice = product.price;
     let discountPercent = 0;
     let couponId: string | null = null;
+    let affiliateId: string | null = null;
 
     // Apply coupon if provided
     if (couponCode) {
@@ -100,9 +101,12 @@ serve(async (req) => {
           throw new Error("Coupon usage limit reached");
         }
 
-        discountPercent = coupon.discount_percent;
+        discountPercent = coupon.discount_percent || coupon.percent_off || 0;
         couponId = coupon.id;
+        affiliateId = coupon.affiliate_id || null;
         finalPrice = Math.round(product.price * (1 - discountPercent / 100) * 100) / 100;
+        
+        console.log(`Coupon ${couponCode} applied: ${discountPercent}% off, affiliate_id: ${affiliateId}`);
       }
     }
 
@@ -110,7 +114,7 @@ serve(async (req) => {
 
     // If 100% discount, skip PayPal and create purchase directly
     if (finalPrice === 0) {
-      // Update coupon usage using the increment_coupon_usage function
+      // Update coupon usage
       if (couponId) {
         const { error: couponUpdateError } = await supabase.rpc("increment_coupon_usage", {
           coupon_id: couponId,
@@ -120,8 +124,8 @@ serve(async (req) => {
         }
       }
 
-      // Create purchase record with status "active" (grants access)
-      const { error: purchaseError } = await supabase
+      // Create purchase record with affiliate tracking
+      const { data: purchase, error: purchaseError } = await supabase
         .from("purchases")
         .insert({
           user_id: userId,
@@ -133,13 +137,21 @@ serve(async (req) => {
           status: "active",
           payment_method: "free_coupon",
           coupon_id: couponId,
+          affiliate_id: affiliateId,
           dialect_id: product.dialect_id,
           level_id: product.level_id,
-        });
+        })
+        .select("id")
+        .single();
 
       if (purchaseError) {
         console.error("Purchase error:", purchaseError);
         throw new Error("Failed to create purchase record");
+      }
+
+      // If affiliate coupon, create commission record (0 commission for free orders but track it)
+      if (affiliateId && purchase) {
+        console.log(`Free order with affiliate ${affiliateId} - tracking referral`);
       }
 
       console.log("Free access granted for user:", userId);
@@ -154,7 +166,31 @@ serve(async (req) => {
       );
     }
 
-    // Create PayPal order
+    // Create pending order to store all data (PayPal custom_id has 127 char limit)
+    const { data: pendingOrder, error: pendingError } = await supabase
+      .from("pending_orders")
+      .insert({
+        user_id: userId,
+        product_id: product.id,
+        product_type: product.scope,
+        product_name: product.name,
+        amount: finalPrice,
+        coupon_id: couponId,
+        affiliate_id: affiliateId,
+        dialect_id: product.dialect_id,
+        level_id: product.level_id,
+      })
+      .select("id")
+      .single();
+
+    if (pendingError || !pendingOrder) {
+      console.error("Pending order error:", pendingError);
+      throw new Error("Failed to create pending order");
+    }
+
+    console.log(`Pending order created: ${pendingOrder.id}`);
+
+    // Create PayPal order with only pending_order.id in custom_id (36 chars)
     const accessToken = await getPayPalAccessToken();
 
     const orderResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
@@ -172,14 +208,7 @@ serve(async (req) => {
               value: finalPrice.toFixed(2),
             },
             description: product.name,
-          custom_id: JSON.stringify({
-            userId: userId,
-            productId: product.id,
-            productType: product.scope,
-            couponId,
-            dialectId: product.dialect_id,
-            levelId: product.level_id,
-          }),
+            custom_id: pendingOrder.id, // Just the UUID (36 chars) instead of full JSON
           },
         ],
         application_context: {
@@ -195,6 +224,8 @@ serve(async (req) => {
     if (!orderResponse.ok) {
       const error = await orderResponse.text();
       console.error("PayPal order error:", error);
+      // Clean up pending order on failure
+      await supabase.from("pending_orders").delete().eq("id", pendingOrder.id);
       throw new Error("Failed to create PayPal order");
     }
 

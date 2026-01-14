@@ -365,6 +365,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_orders: {
+        Row: {
+          affiliate_id: string | null
+          amount: number
+          coupon_id: string | null
+          created_at: string | null
+          dialect_id: string | null
+          expires_at: string | null
+          id: string
+          level_id: string | null
+          product_id: string
+          product_name: string | null
+          product_type: string | null
+          user_id: string
+        }
+        Insert: {
+          affiliate_id?: string | null
+          amount: number
+          coupon_id?: string | null
+          created_at?: string | null
+          dialect_id?: string | null
+          expires_at?: string | null
+          id?: string
+          level_id?: string | null
+          product_id: string
+          product_name?: string | null
+          product_type?: string | null
+          user_id: string
+        }
+        Update: {
+          affiliate_id?: string | null
+          amount?: number
+          coupon_id?: string | null
+          created_at?: string | null
+          dialect_id?: string | null
+          expires_at?: string | null
+          id?: string
+          level_id?: string | null
+          product_id?: string
+          product_name?: string | null
+          product_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_orders_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
