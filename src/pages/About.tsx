@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Target, Heart, Lightbulb, Users, ArrowRight } from "lucide-react";
+import { Target, Heart, Lightbulb, Users, ArrowRight, MapPin, Phone } from "lucide-react";
 
 const values = [
   {
@@ -28,22 +28,16 @@ const values = [
 
 const team = [
   {
-    name: "Dr. Fatima Al-Hassan",
-    role: "Curriculum Director",
-    bio: "PhD in Applied Linguistics with 15 years of Arabic education experience.",
+    name: "Ahmed Fawzy",
+    role: "CEO",
+    bio: "Founder and Chief Executive Officer of ArabiyaPath.",
+    avatar: "👨‍💼",
+  },
+  {
+    name: "Eng. Houria Shafik",
+    role: "Language & Islamic Studies Educator",
+    bio: "Engineer and teacher specializing in languages and Islamic sciences.",
     avatar: "👩‍🏫",
-  },
-  {
-    name: "Ahmed Al-Rashid",
-    role: "Lead Content Creator",
-    bio: "Native Gulf Arabic speaker and professional voice artist.",
-    avatar: "🎙️",
-  },
-  {
-    name: "Sarah Chen",
-    role: "Learning Experience",
-    bio: "Former language learner turned educator with expertise in EdTech.",
-    avatar: "💡",
   },
 ];
 
@@ -138,7 +132,7 @@ export default function About() {
               Passionate educators and native speakers dedicated to your success.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
             {team.map((member) => (
               <div
                 key={member.name}
@@ -152,6 +146,30 @@ export default function About() {
                 <p className="text-sm text-muted-foreground">{member.bio}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Info */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Contact Us</h2>
+            <div className="bg-card rounded-2xl p-8 border border-border space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <MapPin className="w-5 h-5 text-primary" />
+                <p className="text-muted-foreground">Egypt, Alexandria, El-Mandara</p>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <Phone className="w-5 h-5 text-primary" />
+                <a 
+                  href="tel:+201067070409" 
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  01067070409
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
