@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isFreeTrial, canAccessContent } from "@/lib/accessControl";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
@@ -33,6 +34,7 @@ export default function LessonPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showLessonList, setShowLessonList] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { playSound } = useSoundEffects();
 
   const handlePlayPause = () => {
     if (audioRef.current) {
@@ -64,6 +66,7 @@ export default function LessonPlayer() {
         });
         // Still allow navigation to next lesson in free trial
         if (data?.nextLesson) {
+          playSound('lessonTransition');
           navigate(`/learn/lesson/${data.nextLesson.id}`);
         }
         return;
@@ -75,10 +78,12 @@ export default function LessonPlayer() {
     
     try {
       await markComplete.mutateAsync(lessonId!);
+      playSound('lessonComplete');
       toast.success("Lesson marked as complete!");
       
       // Navigate to next lesson if available
       if (data?.nextLesson) {
+        playSound('lessonTransition');
         navigate(`/learn/lesson/${data.nextLesson.id}`);
       }
     } catch (error) {

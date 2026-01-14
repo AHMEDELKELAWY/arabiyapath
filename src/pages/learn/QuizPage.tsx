@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 export default function QuizPage() {
   const { quizId } = useParams();
@@ -27,6 +28,7 @@ export default function QuizPage() {
   const { user } = useAuth();
   const { data, isLoading } = useQuiz(quizId);
   const submitQuiz = useSubmitQuiz();
+  const { playSound } = useSoundEffects();
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -97,6 +99,15 @@ export default function QuizPage() {
       await submitQuiz.mutateAsync({ quizId: quizId!, score, passed });
       setSubmitted(true);
       setShowResults(true);
+      
+      // Play appropriate sound based on score
+      if (score >= 90) {
+        playSound('quizSuccess'); // High score celebration
+      } else if (passed) {
+        playSound('lessonComplete'); // Regular pass
+      } else {
+        playSound('quizFail'); // Encouragement to try again
+      }
     } catch (error) {
       toast.error("Failed to submit quiz");
     }
