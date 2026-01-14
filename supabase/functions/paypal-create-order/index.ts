@@ -149,10 +149,9 @@ serve(async (req) => {
         throw new Error("Failed to create purchase record");
       }
 
-      // If affiliate coupon, create commission record (0 commission for free orders but track it)
-      if (affiliateId && purchase) {
-        console.log(`Free order with affiliate ${affiliateId} - tracking referral`);
-      }
+      // Note: For free orders (100% discount), no commission is generated
+      // since the affiliate earns a percentage of the sale amount (which is $0)
+      console.log(`Free access granted via coupon. Affiliate ${affiliateId || 'none'} tracked but no commission on $0 sale.`);
 
       console.log("Free access granted for user:", userId);
 
