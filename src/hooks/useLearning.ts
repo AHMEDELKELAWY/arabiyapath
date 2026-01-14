@@ -275,7 +275,7 @@ export function useSubmitQuiz() {
       
       if (error) throw error;
 
-      // Create certificate if passed
+      // Check if user completed ALL quizzes in the level to grant level certificate
       if (passed) {
         const { data: quiz } = await supabase
           .from("quizzes")
@@ -284,24 +284,61 @@ export function useSubmitQuiz() {
           .single();
 
         if (quiz?.units?.level_id && quiz?.units?.levels?.dialect_id) {
-          // Check if certificate already exists for this user/level/dialect
-          const { data: existingCert } = await supabase
-            .from("certificates")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("level_id", quiz.units.level_id)
-            .eq("dialect_id", quiz.units.levels.dialect_id)
-            .maybeSingle();
+          const levelId = quiz.units.level_id;
+          const dialectId = quiz.units.levels.dialect_id;
 
-          if (!existingCert) {
-            const certCode = `CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          // Get all units in this level
+          const { data: levelUnits } = await supabase
+            .from("units")
+            .select("id")
+            .eq("level_id", levelId);
+
+          if (levelUnits && levelUnits.length > 0) {
+            const unitIds = levelUnits.map(u => u.id);
             
-            await supabase.from("certificates").insert({
-              user_id: user.id,
-              level_id: quiz.units.level_id,
-              dialect_id: quiz.units.levels.dialect_id,
-              cert_code: certCode,
-            });
+            // Get all quizzes for these units
+            const { data: allQuizzes } = await supabase
+              .from("quizzes")
+              .select("id")
+              .in("unit_id", unitIds);
+
+            if (allQuizzes && allQuizzes.length > 0) {
+              const allQuizIds = allQuizzes.map(q => q.id);
+              
+              // Get user's passed quizzes for this level
+              const { data: passedQuizzes } = await supabase
+                .from("quiz_attempts")
+                .select("quiz_id")
+                .eq("user_id", user.id)
+                .eq("passed", true)
+                .in("quiz_id", allQuizIds);
+
+              // Use Set to count unique passed quizzes
+              const passedQuizIds = new Set(passedQuizzes?.map(p => p.quiz_id) || []);
+              
+              // If all quizzes are passed, grant level certificate
+              if (passedQuizIds.size >= allQuizzes.length) {
+                // Check if certificate already exists
+                const { data: existingCert } = await supabase
+                  .from("certificates")
+                  .select("id")
+                  .eq("user_id", user.id)
+                  .eq("level_id", levelId)
+                  .eq("dialect_id", dialectId)
+                  .maybeSingle();
+
+                if (!existingCert) {
+                  const certCode = `CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+                  
+                  await supabase.from("certificates").insert({
+                    user_id: user.id,
+                    level_id: levelId,
+                    dialect_id: dialectId,
+                    cert_code: certCode,
+                  });
+                }
+              }
+            }
           }
         }
       }
