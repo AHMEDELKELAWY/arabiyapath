@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -6,13 +6,13 @@ import {
   User, 
   LogOut,
   BookOpen,
-  Award,
   Menu,
   X,
-  Shield
+  Shield,
+  Users
 } from "lucide-react";
-import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAffiliateProfile } from "@/hooks/useAffiliateData";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/logo.png";
@@ -29,8 +29,11 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut, isAdmin } = useAuth();
+  const { data: affiliateProfile } = useAffiliateProfile();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const isAffiliate = !!affiliateProfile;
 
   const handleSignOut = async () => {
     await signOut();
@@ -77,6 +80,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 );
               })}
+              {isAffiliate && (
+                <Link
+                  to="/affiliate"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    location.pathname.startsWith("/affiliate")
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  <Users className="w-5 h-5" />
+                  <span className="font-medium">Affiliate Panel</span>
+                </Link>
+              )}
               {isAdmin && (
                 <Link
                   to="/admin"
@@ -153,6 +171,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
+            {isAffiliate && (
+              <Link
+                to="/affiliate"
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  location.pathname.startsWith("/affiliate")
+                    ? "bg-primary text-primary-foreground shadow-teal"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <Users className="w-5 h-5" />
+                <span className="font-medium">Affiliate Panel</span>
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 to="/admin"
