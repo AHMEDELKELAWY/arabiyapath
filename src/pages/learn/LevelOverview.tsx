@@ -14,9 +14,11 @@ import {
   Lock,
   Trophy,
   BookOpen,
-  CheckCircle
+  CheckCircle,
+  Gift
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isFreeTrial } from "@/lib/accessControl";
 
 export default function LevelOverview() {
   const { levelId } = useParams();
@@ -165,6 +167,7 @@ export default function LevelOverview() {
                 ? (progress.completed / progress.total) * 100 
                 : 0;
               const isLocked = false; // For MVP, all units are unlocked
+              const isFreeTrialUnit = isFreeTrial(level.order_index, unit.order_index);
 
               return (
                 <Card 
@@ -172,6 +175,7 @@ export default function LevelOverview() {
                   className={cn(
                     "transition-all hover:shadow-md",
                     isCompleted && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20",
+                    isFreeTrialUnit && !isCompleted && "border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/20",
                     isLocked && "opacity-50"
                   )}
                 >
@@ -190,12 +194,16 @@ export default function LevelOverview() {
                           ? "bg-green-600 text-white"
                           : isLocked
                           ? "bg-muted text-muted-foreground"
+                          : isFreeTrialUnit
+                          ? "bg-amber-500 text-white"
                           : "bg-primary/10 text-primary"
                       )}>
                         {isCompleted ? (
                           <CheckCircle className="h-7 w-7" />
                         ) : isLocked ? (
                           <Lock className="h-6 w-6" />
+                        ) : isFreeTrialUnit ? (
+                          <Gift className="h-6 w-6" />
                         ) : (
                           index + 1
                         )}
@@ -203,10 +211,16 @@ export default function LevelOverview() {
 
                       {/* Unit Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-lg text-foreground">
                             {unit.title}
                           </h3>
+                          {isFreeTrialUnit && !isCompleted && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                              <Gift className="h-3 w-3 mr-1" />
+                              Free Trial
+                            </Badge>
+                          )}
                           {isCompleted && (
                             <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                               <Trophy className="h-3 w-3 mr-1" />
