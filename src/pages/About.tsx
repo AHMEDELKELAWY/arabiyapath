@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Target, Heart, Lightbulb, Users, ArrowRight, MapPin, Phone } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const values = [
   {
@@ -86,7 +87,7 @@ export default function About() {
               <div className="relative">
                 <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center">
                   <div className="text-center">
-                    <div className="text-8xl mb-4">🌍</div>
+                    <img src={logo} alt="ArabiyaPath Logo" className="w-32 h-32 mx-auto mb-4 object-contain" />
                     <p className="text-lg font-semibold text-foreground">Connecting Cultures</p>
                     <p className="text-sm text-muted-foreground">Through Language</p>
                   </div>
