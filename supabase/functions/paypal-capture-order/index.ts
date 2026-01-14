@@ -106,58 +106,131 @@ serve(async (req) => {
     const captureData = await captureResponse.json();
     console.log("PayPal payment captured:", captureData.id);
 
-    // Parse custom data from the correct location
+    // Get the pending order ID from custom_id
     const purchaseUnit = captureData.purchase_units[0];
     const capture = purchaseUnit.payments.captures[0];
-    
-    // custom_id is stored on the purchase unit level, not on capture
-    const customIdString = purchaseUnit.custom_id || capture.custom_id || "{}";
-    let customData;
-    try {
-      customData = JSON.parse(customIdString);
-    } catch (e) {
-      console.error("Failed to parse custom_id:", customIdString);
-      customData = {};
+    const pendingOrderId = purchaseUnit.custom_id;
+
+    console.log("Pending order ID from PayPal:", pendingOrderId);
+
+    // Fetch pending order data
+    const { data: pendingOrder, error: pendingError } = await supabase
+      .from("pending_orders")
+      .select("*")
+      .eq("id", pendingOrderId)
+      .single();
+
+    if (pendingError || !pendingOrder) {
+      console.error("Pending order not found:", pendingError);
+      throw new Error("Order data not found");
     }
 
-    console.log("Custom data parsed:", customData);
+    console.log("Pending order data:", pendingOrder);
 
     // Verify user matches
-    if (customData.userId && customData.userId !== user.id) {
+    if (pendingOrder.user_id !== user.id) {
       throw new Error("User mismatch");
     }
 
     // Update coupon usage if applicable
-    if (customData.couponId) {
+    if (pendingOrder.coupon_id) {
       const { error: couponError } = await supabase.rpc("increment_coupon_usage", {
-        coupon_id: customData.couponId,
+        coupon_id: pendingOrder.coupon_id,
       });
       if (couponError) {
         console.error("Coupon update error:", couponError);
       }
     }
 
-    // Create purchase record with status "active" (grants access)
-    const { error: purchaseError } = await supabase
+    // Create purchase record with affiliate tracking
+    const { data: purchase, error: purchaseError } = await supabase
       .from("purchases")
       .insert({
         user_id: user.id,
-        product_id: customData.productId,
-        product_type: customData.productType,
-        product_name: purchaseUnit.description,
+        product_id: pendingOrder.product_id,
+        product_type: pendingOrder.product_type,
+        product_name: pendingOrder.product_name,
         amount: parseFloat(capture.amount.value),
         currency: capture.amount.currency_code,
         status: "active",
         payment_method: "paypal",
         paypal_order_id: captureData.id,
         paypal_capture_id: capture.id,
-        coupon_id: customData.couponId || null,
-        dialect_id: customData.dialectId || null,
-      });
+        coupon_id: pendingOrder.coupon_id,
+        affiliate_id: pendingOrder.affiliate_id,
+        dialect_id: pendingOrder.dialect_id,
+        level_id: pendingOrder.level_id,
+      })
+      .select("id")
+      .single();
 
-    if (purchaseError) {
+    if (purchaseError || !purchase) {
       console.error("Purchase record error:", purchaseError);
       throw new Error("Failed to create purchase record");
+    }
+
+    console.log("Purchase created:", purchase.id);
+
+    // Handle affiliate commission if applicable
+    if (pendingOrder.affiliate_id) {
+      console.log("Processing affiliate commission for:", pendingOrder.affiliate_id);
+
+      // Get affiliate data
+      const { data: affiliate, error: affiliateError } = await supabase
+        .from("affiliates")
+        .select("id, commission_rate, total_earnings")
+        .eq("id", pendingOrder.affiliate_id)
+        .single();
+
+      if (affiliateError) {
+        console.error("Affiliate lookup error:", affiliateError);
+      } else if (affiliate) {
+        const commissionRate = affiliate.commission_rate || 10;
+        const commissionAmount = pendingOrder.amount * (commissionRate / 100);
+
+        console.log(`Commission: ${commissionRate}% of ${pendingOrder.amount} = ${commissionAmount}`);
+
+        // Create commission record
+        const { error: commissionError } = await supabase
+          .from("affiliate_commissions")
+          .insert({
+            affiliate_id: affiliate.id,
+            purchase_id: purchase.id,
+            commission_amount: commissionAmount,
+            status: "pending",
+          });
+
+        if (commissionError) {
+          console.error("Commission insert error:", commissionError);
+        } else {
+          console.log("Commission record created");
+
+          // Update affiliate total earnings
+          const newTotalEarnings = (affiliate.total_earnings || 0) + commissionAmount;
+          const { error: updateError } = await supabase
+            .from("affiliates")
+            .update({ total_earnings: newTotalEarnings })
+            .eq("id", affiliate.id);
+
+          if (updateError) {
+            console.error("Affiliate earnings update error:", updateError);
+          } else {
+            console.log(`Affiliate earnings updated to: ${newTotalEarnings}`);
+          }
+        }
+      }
+    }
+
+    // Delete the pending order after successful processing
+    const { error: deleteError } = await supabase
+      .from("pending_orders")
+      .delete()
+      .eq("id", pendingOrderId);
+
+    if (deleteError) {
+      console.error("Pending order cleanup error:", deleteError);
+    } else {
+      console.log("Pending order cleaned up");
     }
 
     console.log("Purchase completed for user:", user.id);
