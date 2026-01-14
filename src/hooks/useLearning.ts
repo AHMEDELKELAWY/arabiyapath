@@ -78,7 +78,7 @@ export function useUnitLessons(unitId?: string) {
       
       const { data: unit, error: unitError } = await supabase
         .from("units")
-        .select("*, levels(*, dialects(*))")
+        .select("id, title, description, order_index, levels(id, name, order_index, dialects(*))")
         .eq("id", unitId)
         .single();
       
@@ -150,7 +150,7 @@ export function useLesson(lessonId?: string) {
       
       const { data: lesson, error } = await supabase
         .from("lessons")
-        .select("*, units(*, levels(*, dialects(*)))")
+        .select("*, units(id, title, order_index, levels(id, name, order_index, dialects(*)))")
         .eq("id", lessonId)
         .single();
       

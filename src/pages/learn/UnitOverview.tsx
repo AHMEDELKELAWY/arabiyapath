@@ -14,9 +14,11 @@ import {
   Lock, 
   Trophy,
   BookOpen,
-  CheckCircle
+  CheckCircle,
+  Gift
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isFreeTrial, canAccessContent } from "@/lib/accessControl";
 
 export default function UnitOverview() {
   const { unitId } = useParams();
@@ -67,6 +69,10 @@ export default function UnitOverview() {
   // Find first incomplete lesson
   const firstIncompleteLesson = lessons.find(l => !l.completed);
   const continueLesson = firstIncompleteLesson || lessons[0];
+  
+  // Check if this unit is free trial (first unit of Beginner level)
+  const isFreeTrialUnit = isFreeTrial(level?.order_index || 0, unit.order_index || 0);
+  const canAccess = canAccessContent(!!user, level?.order_index || 0, unit.order_index || 0);
 
   return (
     <Layout>
@@ -108,19 +114,31 @@ export default function UnitOverview() {
               <Progress value={progressPercent} className="h-3" />
             </div>
 
+            {/* Free Trial Badge */}
+            {isFreeTrialUnit && !user && (
+              <Badge variant="secondary" className="mt-4 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-base py-1 px-3">
+                <Gift className="h-4 w-4 mr-2" />
+                Free Trial - No Account Required
+              </Badge>
+            )}
+
             {/* Continue Button */}
-            {user && continueLesson && !hasPassed && (
+            {canAccess && continueLesson && !hasPassed && (
               <Button
                 size="lg"
                 onClick={() => navigate(`/learn/lesson/${continueLesson.id}`)}
                 className="mt-6 gap-2"
               >
                 <Play className="h-5 w-5" />
-                {completedCount === 0 ? "Start Learning" : "Continue Learning"}
+                {!user && isFreeTrialUnit 
+                  ? "Try Free - Start Learning" 
+                  : completedCount === 0 
+                  ? "Start Learning" 
+                  : "Continue Learning"}
               </Button>
             )}
             
-            {!user && (
+            {!canAccess && (
               <Button asChild size="lg" className="mt-6">
                 <Link to="/login">Log in to Start Learning</Link>
               </Button>
@@ -142,7 +160,7 @@ export default function UnitOverview() {
                 {lessons.map((lesson, index) => (
                   <Link
                     key={lesson.id}
-                    to={user ? `/learn/lesson/${lesson.id}` : "/login"}
+                    to={canAccess ? `/learn/lesson/${lesson.id}` : "/login"}
                     className={cn(
                       "flex items-center gap-4 p-4 transition-colors hover:bg-muted/50",
                       lesson.completed && "bg-green-50 dark:bg-green-950/20"

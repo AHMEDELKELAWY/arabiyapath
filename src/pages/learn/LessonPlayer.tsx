@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { isFreeTrial, canAccessContent } from "@/lib/accessControl";
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
@@ -44,8 +45,29 @@ export default function LessonPlayer() {
     }
   };
 
+  // Check if this is free trial content
+  const levelOrderIndex = data?.level?.order_index || 0;
+  const unitOrderIndex = data?.unit?.order_index || 0;
+  const isFreeTrialContent = isFreeTrial(levelOrderIndex, unitOrderIndex);
+  const canAccess = canAccessContent(!!user, levelOrderIndex, unitOrderIndex);
+
   const handleMarkComplete = async () => {
     if (!user) {
+      if (isFreeTrialContent) {
+        // For free trial, show encouraging message and navigate to next lesson
+        toast.info("Create a free account to save your progress!", {
+          description: "Sign up to track your learning journey",
+          action: {
+            label: "Sign Up",
+            onClick: () => navigate("/signup"),
+          },
+        });
+        // Still allow navigation to next lesson in free trial
+        if (data?.nextLesson) {
+          navigate(`/learn/lesson/${data.nextLesson.id}`);
+        }
+        return;
+      }
       toast.error("Please log in to track progress");
       navigate("/login");
       return;
@@ -86,6 +108,26 @@ export default function LessonPlayer() {
           <Button asChild className="mt-6">
             <Link to="/dialects">Browse Dialects</Link>
           </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Redirect if user doesn't have access (not logged in and not free trial)
+  if (!canAccess) {
+    return (
+      <Layout>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-bold text-foreground">Access Required</h1>
+          <p className="text-muted-foreground mt-2">Please log in or sign up to access this lesson.</p>
+          <div className="flex gap-4 justify-center mt-6">
+            <Button asChild>
+              <Link to="/login">Log In</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/signup">Sign Up Free</Link>
+            </Button>
+          </div>
         </div>
       </Layout>
     );
