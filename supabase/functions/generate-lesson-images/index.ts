@@ -21,7 +21,7 @@ async function generateImageForLesson(
     console.log(`Generating image for lesson: ${lesson.id} - ${lesson.title}`);
     
     // Create a descriptive prompt for the image based on the lesson content
-    const prompt = `Create a simple, clean educational illustration for an Arabic language lesson about: "${lesson.title}". The image should be culturally appropriate for Gulf/Middle Eastern context, warm and inviting colors, suitable for language learning. Style: flat design, modern, minimalist. The image should clearly represent the concept without any text.`;
+    const prompt = `Create a simple, clean educational illustration for an Arabic language lesson about: "${lesson.title}". The image should be culturally appropriate for Middle Eastern context, warm and inviting colors, suitable for language learning. Style: flat design, modern, minimalist. The image should clearly represent the concept without any text.`;
     
     // Call Lovable AI Gateway with image generation model
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -121,6 +121,34 @@ async function generateImageForLesson(
   }
 }
 
+async function processLessonsInBackground(
+  supabase: any,
+  lessons: Lesson[],
+  lovableApiKey: string
+) {
+  console.log(`Starting background processing of ${lessons.length} lessons`);
+  
+  let successCount = 0;
+  let errorCount = 0;
+  
+  for (const lesson of lessons) {
+    const result = await generateImageForLesson(supabase, lesson, lovableApiKey);
+    if (result.success) {
+      successCount++;
+    } else {
+      errorCount++;
+    }
+    // Add delay between requests to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  
+  console.log(`Background processing complete: ${successCount} successful, ${errorCount} failed out of ${lessons.length} total`);
+}
+
+declare const EdgeRuntime: {
+  waitUntil: (promise: Promise<any>) => void;
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -142,9 +170,9 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { lessonId, lessonIds, limit = 5 } = await req.json().catch(() => ({}));
+    const { lessonId, lessonIds, levelId, limit = 5, background = false } = await req.json().catch(() => ({}));
 
-    // If specific lesson ID provided, generate for that lesson only
+    // If specific lesson ID provided, generate for that lesson only (sync)
     if (lessonId) {
       const { data: lesson, error } = await supabase
         .from("lessons")
@@ -166,6 +194,37 @@ serve(async (req) => {
       );
     }
 
+    // If levelId provided, get all lessons without images for that level
+    if (levelId) {
+      const { data: lessons, error } = await supabase
+        .from("lessons")
+        .select("id, title, arabic_text, units!inner(level_id)")
+        .eq("units.level_id", levelId)
+        .or("image_url.is.null,image_url.eq.")
+        .order("order_index");
+
+      if (error || !lessons || lessons.length === 0) {
+        return new Response(
+          JSON.stringify({ message: "No lessons without images found for this level", count: 0 }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Found ${lessons.length} lessons without images for level ${levelId}`);
+
+      // Process in background
+      EdgeRuntime.waitUntil(processLessonsInBackground(supabase, lessons, lovableApiKey));
+
+      return new Response(
+        JSON.stringify({ 
+          message: `Started background processing of ${lessons.length} lessons`,
+          count: lessons.length,
+          status: "processing"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // If array of lesson IDs provided
     if (lessonIds && Array.isArray(lessonIds)) {
       const { data: lessons, error } = await supabase
@@ -180,6 +239,21 @@ serve(async (req) => {
         );
       }
 
+      // If background mode, process in background and return immediately
+      if (background) {
+        EdgeRuntime.waitUntil(processLessonsInBackground(supabase, lessons, lovableApiKey));
+        
+        return new Response(
+          JSON.stringify({ 
+            message: `Started background processing of ${lessons.length} lessons`,
+            count: lessons.length,
+            status: "processing"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Sync processing (original behavior for small batches)
       const results = [];
       for (const lesson of lessons) {
         const result = await generateImageForLesson(supabase, lesson, lovableApiKey);
@@ -217,6 +291,20 @@ serve(async (req) => {
     }
 
     console.log(`Processing ${lessons.length} lessons without images`);
+
+    // Process in background if more than 5 lessons
+    if (lessons.length > 5 || background) {
+      EdgeRuntime.waitUntil(processLessonsInBackground(supabase, lessons, lovableApiKey));
+      
+      return new Response(
+        JSON.stringify({ 
+          message: `Started background processing of ${lessons.length} lessons`,
+          count: lessons.length,
+          status: "processing"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const results = [];
     for (const lesson of lessons) {
