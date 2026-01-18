@@ -154,19 +154,10 @@ export default function UnitOverview() {
             
             {!canAccess && (
               <div className="mt-6 space-y-4">
-                {!user ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button asChild size="lg">
-                      <Link to="/login">Log in to Continue</Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline">
-                      <Link to="/signup">Sign Up Free</Link>
-                    </Button>
-                  </div>
-                ) : (
+                {user ? (
                   <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                      <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400 shrink-0" />
                       <div>
                         <p className="font-medium text-amber-800 dark:text-amber-200">
                           This content requires purchase
@@ -176,12 +167,26 @@ export default function UnitOverview() {
                         </p>
                       </div>
                     </div>
-                    <Button asChild className="mt-4 gap-2">
+                    <Button asChild className="mt-4 gap-2 w-full sm:w-auto">
                       <Link to={`/checkout?levelId=${level?.id}&dialectId=${dialect?.id}`}>
                         <ShoppingCart className="h-4 w-4" />
                         Purchase Now
                       </Link>
                     </Button>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-muted/50 border rounded-lg">
+                    <p className="text-muted-foreground mb-4">
+                      Sign in to track your progress and unlock more content
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button asChild size="lg" className="w-full sm:w-auto">
+                        <Link to="/login">Log in</Link>
+                      </Button>
+                      <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
+                        <Link to="/signup">Sign Up Free</Link>
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

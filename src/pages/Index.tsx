@@ -76,7 +76,7 @@ export default function Index() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <Button size="xl" variant="hero" asChild>
-                <Link to="/signup">
+                <Link to="/free-trial">
                   Start Learning Free
                   <ArrowRight className="w-5 h-5" />
                 </Link>
@@ -224,7 +224,7 @@ export default function Index() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="xl" variant="hero" asChild>
-                <Link to="/signup">
+                <Link to="/free-trial">
                   Get Started Free
                   <ArrowRight className="w-5 h-5" />
                 </Link>

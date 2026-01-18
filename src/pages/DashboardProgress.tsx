@@ -181,21 +181,21 @@ export default function DashboardProgress() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
               Detailed Progress
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Track your learning progress across all units
             </p>
           </div>
 
           {/* Dialect Filter */}
           <Select value={selectedDialect} onValueChange={setSelectedDialect}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filter by dialect" />
             </SelectTrigger>
             <SelectContent>
@@ -241,46 +241,49 @@ export default function DashboardProgress() {
                 )}
                 
                 <CardContent className="p-0">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4 p-6">
-                    {/* Status Icon */}
-                    <div className="flex-shrink-0">
-                      {getStatusIcon(unit.status)}
-                    </div>
-
-                    {/* Unit Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-foreground">
-                          {unit.unitTitle}
-                        </h3>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {unit.dialectName}
-                        </span>
+                  <div className="flex flex-col gap-4 p-4 sm:p-6">
+                    {/* Top row - status and info */}
+                    <div className="flex items-start gap-3">
+                      {/* Status Icon */}
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getStatusIcon(unit.status)}
                       </div>
-                      {unit.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
-                          {unit.description}
+
+                      {/* Unit Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground text-sm sm:text-base">
+                            {unit.unitTitle}
+                          </h3>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                            {unit.dialectName}
+                          </span>
+                        </div>
+                        {unit.description && (
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2 sm:line-clamp-1">
+                            {unit.description}
+                          </p>
+                        )}
+                        
+                        {/* Progress Bar */}
+                        <div className="flex items-center gap-3">
+                          <Progress value={unit.progressPercent} className="h-2 flex-1" />
+                          <span className="text-xs sm:text-sm font-medium text-foreground w-10 sm:w-12 text-right">
+                            {unit.progressPercent}%
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {unit.completedLessons} of {unit.totalLessons} lessons completed
                         </p>
-                      )}
-                      
-                      {/* Progress Bar */}
-                      <div className="flex items-center gap-3">
-                        <Progress value={unit.progressPercent} className="h-2 flex-1" />
-                        <span className="text-sm font-medium text-foreground w-12 text-right">
-                          {unit.progressPercent}%
-                        </span>
                       </div>
-                      
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {unit.completedLessons} of {unit.totalLessons} lessons completed
-                      </p>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3 lg:flex-shrink-0">
+                    {/* Actions row - stacked on mobile */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2 border-t sm:border-0 sm:pt-0">
                       <span
                         className={cn(
-                          "text-xs font-medium px-2 py-1 rounded",
+                          "text-xs font-medium px-2 py-1 rounded text-center sm:text-left",
                           unit.status === "completed" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
                           unit.status === "in_progress" && "bg-primary/10 text-primary",
                           unit.status === "not_started" && "bg-muted text-muted-foreground"
@@ -289,23 +292,25 @@ export default function DashboardProgress() {
                         {getStatusLabel(unit.status)}
                       </span>
                       
-                      {unit.hasAccess && unit.status !== "completed" && unit.lastLessonId && (
-                        <Link to={`/learn/lesson/${unit.lastLessonId}`}>
-                          <Button size="sm" variant="outline" className="gap-1">
-                            {unit.status === "not_started" ? "Start" : "Continue"}
-                            <ArrowRight className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      )}
-                      
-                      {unit.hasAccess && (
-                        <Link to={`/learn/unit/${unit.unitId}`}>
-                          <Button size="sm" variant="ghost" className="gap-1">
-                            <BookOpen className="w-3 h-3" />
-                            View Unit
-                          </Button>
-                        </Link>
-                      )}
+                      <div className="flex gap-2 sm:ml-auto">
+                        {unit.hasAccess && unit.status !== "completed" && unit.lastLessonId && (
+                          <Link to={`/learn/lesson/${unit.lastLessonId}`} className="flex-1 sm:flex-initial">
+                            <Button size="sm" variant="outline" className="gap-1 w-full sm:w-auto">
+                              {unit.status === "not_started" ? "Start" : "Continue"}
+                              <ArrowRight className="w-3 h-3" />
+                            </Button>
+                          </Link>
+                        )}
+                        
+                        {unit.hasAccess && (
+                          <Link to={`/learn/unit/${unit.unitId}`} className="flex-1 sm:flex-initial">
+                            <Button size="sm" variant="ghost" className="gap-1 w-full sm:w-auto">
+                              <BookOpen className="w-3 h-3" />
+                              View
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
