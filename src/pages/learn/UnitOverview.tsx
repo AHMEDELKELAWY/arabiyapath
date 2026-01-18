@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useUnitLessons } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePurchases } from "@/hooks/usePurchases";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,18 +16,20 @@ import {
   Trophy,
   BookOpen,
   CheckCircle,
-  Gift
+  Gift,
+  ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isFreeTrial, canAccessContent } from "@/lib/accessControl";
+import { isFreeTrial } from "@/lib/accessControl";
 
 export default function UnitOverview() {
   const { unitId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data, isLoading } = useUnitLessons(unitId);
+  const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
 
-  if (isLoading) {
+  if (isLoading || purchasesLoading) {
     return (
       <Layout>
         <div className="container max-w-4xl py-8 space-y-6">
@@ -71,8 +74,19 @@ export default function UnitOverview() {
   const continueLesson = firstIncompleteLesson || lessons[0];
   
   // Check if this unit is free trial (first unit of Beginner level)
-  const isFreeTrialUnit = isFreeTrial(level?.order_index || 0, unit.order_index || 0);
-  const canAccess = canAccessContent(!!user, level?.order_index || 0, unit.order_index || 0);
+  const levelOrderIndex = level?.order_index || 0;
+  const unitOrderIndex = unit.order_index || 0;
+  const isFreeTrialUnit = isFreeTrial(levelOrderIndex, unitOrderIndex);
+  
+  // Check access: free trial OR logged in with purchase
+  const hasPurchaseAccess = user ? checkLevelAccess(
+    level?.id || '',
+    dialect?.id || '',
+    levelOrderIndex,
+    unitOrderIndex
+  ) : false;
+  
+  const canAccess = isFreeTrialUnit || hasPurchaseAccess;
 
   return (
     <Layout>
@@ -139,9 +153,38 @@ export default function UnitOverview() {
             )}
             
             {!canAccess && (
-              <Button asChild size="lg" className="mt-6">
-                <Link to="/login">Log in to Start Learning</Link>
-              </Button>
+              <div className="mt-6 space-y-4">
+                {!user ? (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button asChild size="lg">
+                      <Link to="/login">Log in to Continue</Link>
+                    </Button>
+                    <Button asChild size="lg" variant="outline">
+                      <Link to="/signup">Sign Up Free</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                      <div>
+                        <p className="font-medium text-amber-800 dark:text-amber-200">
+                          This content requires purchase
+                        </p>
+                        <p className="text-sm text-amber-600 dark:text-amber-400">
+                          Purchase {level?.name} to unlock all units
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild className="mt-4 gap-2">
+                      <Link to="/pricing">
+                        <ShoppingCart className="h-4 w-4" />
+                        View Pricing
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

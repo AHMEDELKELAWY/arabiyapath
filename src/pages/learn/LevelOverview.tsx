@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useLevelUnits, useUnitLessons } from "@/hooks/useLearning";
+import { useLevelUnits } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePurchases } from "@/hooks/usePurchases";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,8 @@ import {
   Trophy,
   BookOpen,
   CheckCircle,
-  Gift
+  Gift,
+  ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
@@ -25,6 +27,7 @@ export default function LevelOverview() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data, isLoading } = useLevelUnits(levelId);
+  const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
 
   // Get progress for all units
   const { data: progressData } = useQuery({
@@ -79,7 +82,7 @@ export default function LevelOverview() {
     enabled: !!user && !!data?.units,
   });
 
-  if (isLoading) {
+  if (isLoading || purchasesLoading) {
     return (
       <Layout>
         <div className="container max-w-4xl py-8 space-y-6">
@@ -110,6 +113,14 @@ export default function LevelOverview() {
 
   const { level, units } = data;
   const dialect = level.dialects as any;
+
+  // Check if user has purchased access to this level
+  const hasPurchaseAccess = user ? checkLevelAccess(
+    level.id,
+    dialect?.id || '',
+    level.order_index,
+    1 // Unit order index doesn't matter for level access check
+  ) : false;
 
   // Calculate overall progress
   const totalUnits = units.length;
@@ -166,8 +177,9 @@ export default function LevelOverview() {
               const lessonProgress = progress 
                 ? (progress.completed / progress.total) * 100 
                 : 0;
-              const isLocked = false; // For MVP, all units are unlocked
               const isFreeTrialUnit = isFreeTrial(level.order_index, unit.order_index);
+              // Unit is locked if: not free trial AND (not logged in OR no purchase access)
+              const isLocked = !isFreeTrialUnit && (!user || !hasPurchaseAccess);
 
               return (
                 <Card 
@@ -252,6 +264,25 @@ export default function LevelOverview() {
               );
             })}
           </div>
+
+          {/* Purchase prompt for logged-in users without access */}
+          {user && !hasPurchaseAccess && (
+            <Card className="mt-8 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/20">
+              <CardContent className="p-6 text-center">
+                <Lock className="h-12 w-12 mx-auto text-amber-600 dark:text-amber-400 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Unlock {level.name}</h3>
+                <p className="text-muted-foreground mb-4">
+                  Purchase this level to access all units and earn your certificate
+                </p>
+                <Button asChild className="gap-2">
+                  <Link to="/pricing">
+                    <ShoppingCart className="h-4 w-4" />
+                    View Pricing
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {!user && (
             <Card className="mt-8 border-primary/50 bg-primary/5">

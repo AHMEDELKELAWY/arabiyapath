@@ -296,12 +296,16 @@ export function useDashboardData() {
     if (!purchases || purchases.length === 0) return false;
     
     return purchases.some((purchase) => {
-      // Check for all-access bundle (scope can be "all" or "bundle")
-      if (purchase.products?.scope === "all" || purchase.products?.scope === "bundle") return true;
-      // Check for full dialect purchase (grants access to all levels in that dialect)
-      if (purchase.products?.scope === "dialect" && purchase.products?.dialect_id === dialectId) return true;
-      // Check for specific level purchase
-      if (purchase.products?.scope === "level" && purchase.products?.level_id === levelId) return true;
+      const scope = purchase.products?.scope;
+      const prodLevelId = purchase.products?.level_id;
+      const prodDialectId = purchase.products?.dialect_id;
+      
+      // All Access Bundle = full platform access
+      if (scope === "all") return true;
+      // Dialect Bundle = all levels in that specific dialect
+      if (scope === "bundle" && prodDialectId === dialectId) return true;
+      // Level = specific level purchase
+      if (scope === "level" && prodLevelId === levelId) return true;
       return false;
     });
   };
@@ -317,9 +321,9 @@ export function useDashboardData() {
     });
   };
 
-  // Check if user has any all-access purchases
+  // Check if user has any all-access purchases (full platform access only)
   const hasBundleAccess = purchases?.some(
-    (p) => p.products?.scope === "all" || p.products?.scope === "bundle"
+    (p) => p.products?.scope === "all"
   ) || false;
 
   return {

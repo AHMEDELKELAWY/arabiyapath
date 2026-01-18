@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useLesson, useMarkLessonComplete } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePurchases } from "@/hooks/usePurchases";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,11 +18,13 @@ import {
   Check, 
   CheckCircle,
   List,
-  X
+  X,
+  Lock,
+  ShoppingCart
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { isFreeTrial, canAccessContent } from "@/lib/accessControl";
+import { isFreeTrial } from "@/lib/accessControl";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 export default function LessonPlayer() {
@@ -29,6 +32,7 @@ export default function LessonPlayer() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data, isLoading } = useLesson(lessonId);
+  const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
   const markComplete = useMarkLessonComplete();
   
   const [isPlaying, setIsPlaying] = useState(false);
@@ -51,7 +55,16 @@ export default function LessonPlayer() {
   const levelOrderIndex = data?.level?.order_index || 0;
   const unitOrderIndex = data?.unit?.order_index || 0;
   const isFreeTrialContent = isFreeTrial(levelOrderIndex, unitOrderIndex);
-  const canAccess = canAccessContent(!!user, levelOrderIndex, unitOrderIndex);
+  
+  // Check access: free trial OR logged in with purchase
+  const hasPurchaseAccess = user ? checkLevelAccess(
+    data?.level?.id || '',
+    data?.dialect?.id || '',
+    levelOrderIndex,
+    unitOrderIndex
+  ) : false;
+  
+  const canAccess = isFreeTrialContent || hasPurchaseAccess;
 
   const handleMarkComplete = async () => {
     if (!user) {
@@ -91,7 +104,7 @@ export default function LessonPlayer() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || purchasesLoading) {
     return (
       <Layout>
         <div className="container max-w-4xl py-8 space-y-6">
@@ -118,21 +131,40 @@ export default function LessonPlayer() {
     );
   }
 
-  // Redirect if user doesn't have access (not logged in and not free trial)
+  // Redirect if user doesn't have access
   if (!canAccess) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Access Required</h1>
-          <p className="text-muted-foreground mt-2">Please log in or sign up to access this lesson.</p>
-          <div className="flex gap-4 justify-center mt-6">
-            <Button asChild>
-              <Link to="/login">Log In</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/signup">Sign Up Free</Link>
-            </Button>
+        <div className="container py-16 text-center max-w-lg mx-auto">
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
+          <h1 className="text-2xl font-bold text-foreground">Access Required</h1>
+          {!user ? (
+            <>
+              <p className="text-muted-foreground mt-2">Please log in or sign up to access this lesson.</p>
+              <div className="flex gap-4 justify-center mt-6">
+                <Button asChild>
+                  <Link to="/login">Log In</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/signup">Sign Up Free</Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground mt-2">
+                This lesson is part of {data?.level?.name}. Purchase to unlock access.
+              </p>
+              <Button asChild className="mt-6 gap-2">
+                <Link to="/pricing">
+                  <ShoppingCart className="h-4 w-4" />
+                  View Pricing
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
       </Layout>
     );
