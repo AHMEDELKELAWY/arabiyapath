@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/admin/AdminRoute";
@@ -40,6 +41,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
+import FreeTrial from "./pages/FreeTrial";
 
 const queryClient = new QueryClient();
 
@@ -50,8 +52,10 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/free-trial" element={<FreeTrial />} />
             <Route path="/dialects" element={<Dialects />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/about" element={<About />} />

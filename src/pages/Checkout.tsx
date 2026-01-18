@@ -188,53 +188,53 @@ export default function Checkout() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-8 md:py-12">
-        <div className="container max-w-4xl">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 sm:py-8 md:py-12">
+        <div className="container max-w-4xl px-4 sm:px-6">
           {/* Back Button */}
           <Button 
             variant="ghost" 
-            className="mb-6 gap-2"
+            className="mb-4 sm:mb-6 gap-2"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Product Info */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
                 <Badge variant="secondary" className="mb-3">
                   {dialectName}
                 </Badge>
-                <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{product.name}</h1>
                 {product.description && (
-                  <p className="text-muted-foreground">{product.description}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground">{product.description}</p>
                 )}
               </div>
 
               {/* Features */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary" />
                     What's Included
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2 sm:space-y-3">
                     {features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0 mt-0.5" />
+                        <span className="text-xs sm:text-sm">{feature}</span>
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
 
-              {/* Trust Signals */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Trust Signals - Hidden on mobile, shown on larger screens */}
+              <div className="hidden sm:grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Shield className="h-6 w-6 mx-auto mb-2 text-primary" />
                   <p className="text-xs font-medium">Secure Payment</p>
@@ -252,14 +252,14 @@ export default function Checkout() {
 
             {/* Checkout Form */}
             <div>
-              <Card className="sticky top-8 border-2 border-primary/20">
-                <CardHeader className="bg-primary/5 border-b">
-                  <CardTitle className="text-xl">Complete Your Purchase</CardTitle>
-                  <CardDescription>
+              <Card className="lg:sticky lg:top-8 border-2 border-primary/20">
+                <CardHeader className="bg-primary/5 border-b p-4 sm:p-6">
+                  <CardTitle className="text-lg sm:text-xl">Complete Your Purchase</CardTitle>
+                  <CardDescription className="text-sm">
                     One-time payment • Instant access
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
                   <PayPalCheckout
                     productType={product.id}
                     productName={product.name}
@@ -272,9 +272,9 @@ export default function Checkout() {
               </Card>
 
               {/* Money Back Guarantee */}
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-center">
-                <Shield className="h-6 w-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              <div className="mt-4 p-3 sm:p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-center">
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
+                <p className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200">
                   30-Day Money Back Guarantee
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400">

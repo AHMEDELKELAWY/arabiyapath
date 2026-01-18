@@ -9,6 +9,12 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface PurchaseInfo {
+  level_id: string | null;
+  dialect_id: string | null;
+  product_name: string | null;
+}
+
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -16,6 +22,7 @@ export default function PaymentSuccess() {
   const { user } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
+  const [purchaseInfo, setPurchaseInfo] = useState<PurchaseInfo | null>(null);
 
   useEffect(() => {
     const capturePayment = async () => {
@@ -48,12 +55,32 @@ export default function PaymentSuccess() {
           throw new Error(data.error || "Payment capture failed");
         }
 
+        // Fetch the most recent purchase to get level/dialect info
+        if (session.session?.user?.id) {
+          const { data: purchase } = await supabase
+            .from("purchases")
+            .select("level_id, dialect_id, product_name")
+            .eq("user_id", session.session.user.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (purchase) {
+            setPurchaseInfo({
+              level_id: purchase.level_id,
+              dialect_id: purchase.dialect_id,
+              product_name: purchase.product_name
+            });
+          }
+        }
+
         setStatus("success");
         setMessage("Your payment was successful! You now have access to your course.");
         toast.success("Payment successful!");
         
         // Invalidate purchases query to refresh access immediately
         await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["user-purchases", user?.id] });
         await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
       } catch (error) {
         console.error("Capture error:", error);
@@ -64,18 +91,28 @@ export default function PaymentSuccess() {
     };
 
     capturePayment();
-  }, [searchParams]);
+  }, [searchParams, queryClient, user?.id]);
+
+  const handleStartLearning = () => {
+    if (purchaseInfo?.level_id) {
+      navigate(`/learn/level/${purchaseInfo.level_id}`);
+    } else if (purchaseInfo?.dialect_id) {
+      navigate(`/learn/dialect/${purchaseInfo.dialect_id}`);
+    } else {
+      navigate("/dialects");
+    }
+  };
 
   return (
     <Layout>
-      <div className="container max-w-lg py-20">
+      <div className="container max-w-lg py-12 px-4 sm:py-20">
         <Card>
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 sm:p-8 text-center">
             {status === "loading" && (
               <div className="space-y-4">
-                <Loader2 className="h-16 w-16 animate-spin mx-auto text-primary" />
-                <h1 className="text-2xl font-bold">Processing Payment...</h1>
-                <p className="text-muted-foreground">
+                <Loader2 className="h-12 w-12 sm:h-16 sm:w-16 animate-spin mx-auto text-primary" />
+                <h1 className="text-xl sm:text-2xl font-bold">Processing Payment...</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Please wait while we confirm your payment.
                 </p>
               </div>
@@ -83,17 +120,22 @@ export default function PaymentSuccess() {
 
             {status === "success" && (
               <div className="space-y-6">
-                <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-                  <CheckCircle className="h-12 w-12 text-green-600" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground">Payment Successful!</h1>
-                <p className="text-muted-foreground">{message}</p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => navigate("/dashboard")}>
-                    Go to Dashboard
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Payment Successful!</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">{message}</p>
+                {purchaseInfo?.product_name && (
+                  <p className="text-sm font-medium text-primary">
+                    You purchased: {purchaseInfo.product_name}
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                  <Button onClick={handleStartLearning} className="w-full sm:w-auto">
+                    Start Learning Now
                   </Button>
-                  <Button variant="outline" onClick={() => navigate("/dialects")}>
-                    Start Learning
+                  <Button variant="outline" onClick={() => navigate("/dashboard")} className="w-full sm:w-auto">
+                    Go to Dashboard
                   </Button>
                 </div>
               </div>
@@ -101,16 +143,16 @@ export default function PaymentSuccess() {
 
             {status === "error" && (
               <div className="space-y-6">
-                <div className="w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
-                  <XCircle className="h-12 w-12 text-red-600" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
+                  <XCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground">Payment Failed</h1>
-                <p className="text-muted-foreground">{message}</p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => navigate("/pricing")}>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Payment Failed</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">{message}</p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                  <Button onClick={() => navigate("/pricing")} className="w-full sm:w-auto">
                     Try Again
                   </Button>
-                  <Button variant="outline" onClick={() => navigate("/contact")}>
+                  <Button variant="outline" onClick={() => navigate("/contact")} className="w-full sm:w-auto">
                     Contact Support
                   </Button>
                 </div>
