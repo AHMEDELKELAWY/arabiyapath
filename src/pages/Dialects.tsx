@@ -1,75 +1,73 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, MapPin, Users, BookOpen, Clock } from "lucide-react";
 
-const dialects = [
-  {
-    id: "gulf",
-    name: "Gulf Arabic",
+// Static config for dialect presentation
+const dialectConfig: Record<string, {
+  arabicName: string;
+  icon: string;
+  gradient: string;
+  bgLight: string;
+  stats: { speakers: string; lessons: string; duration: string };
+  regions: string[];
+  features: string[];
+}> = {
+  "Gulf Arabic": {
     arabicName: "العربية الخليجية",
-    description: "Spoken across the Arabian Gulf region including UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, and Oman. Essential for business and travel in these countries.",
     icon: "🏜️",
     gradient: "from-amber-500 to-orange-600",
     bgLight: "bg-amber-50",
-    stats: {
-      speakers: "36M+",
-      lessons: "80+",
-      duration: "3 months",
-    },
+    stats: { speakers: "36M+", lessons: "80+", duration: "3 months" },
     regions: ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman"],
-    features: [
-      "Business Arabic vocabulary",
-      "Daily conversation patterns",
-      "Cultural etiquette",
-      "Travel essentials",
-    ],
+    features: ["Business Arabic vocabulary", "Daily conversation patterns", "Cultural etiquette", "Travel essentials"],
   },
-  {
-    id: "egyptian",
-    name: "Egyptian Arabic",
+  "Egyptian Arabic": {
     arabicName: "العربية المصرية",
-    description: "The most widely understood Arabic dialect, thanks to Egypt's influential film and music industry. Perfect for understanding Arabic media and culture.",
     icon: "🏛️",
     gradient: "from-teal-500 to-emerald-600",
     bgLight: "bg-teal-50",
-    stats: {
-      speakers: "100M+",
-      lessons: "80+",
-      duration: "3 months",
-    },
+    stats: { speakers: "100M+", lessons: "80+", duration: "3 months" },
     regions: ["Egypt", "Sudan (partial)"],
-    features: [
-      "Everyday expressions",
-      "Media & entertainment vocabulary",
-      "Colloquial phrases",
-      "Cultural references",
-    ],
+    features: ["Everyday expressions", "Media & entertainment vocabulary", "Colloquial phrases", "Cultural references"],
   },
-  {
-    id: "msa",
-    name: "Modern Standard Arabic",
+  "Modern Standard Arabic": {
     arabicName: "العربية الفصحى",
-    description: "The formal variety used in official settings, news, literature, and education across all Arab countries. Foundation for understanding classical Arabic.",
     icon: "📜",
     gradient: "from-indigo-500 to-purple-600",
     bgLight: "bg-indigo-50",
-    stats: {
-      speakers: "420M+",
-      lessons: "80+",
-      duration: "3 months",
-    },
+    stats: { speakers: "420M+", lessons: "450+", duration: "6 months" },
     regions: ["All Arab Countries", "International Organizations"],
-    features: [
-      "Formal communication",
-      "News & media literacy",
-      "Academic Arabic",
-      "Literary foundations",
-    ],
+    features: ["Formal communication", "News & media literacy", "Academic Arabic", "Literary foundations"],
   },
-];
+};
+
+const defaultConfig = {
+  arabicName: "العربية",
+  icon: "📚",
+  gradient: "from-gray-500 to-gray-600",
+  bgLight: "bg-gray-50",
+  stats: { speakers: "N/A", lessons: "80+", duration: "3 months" },
+  regions: ["Multiple Regions"],
+  features: ["Core vocabulary", "Grammar fundamentals", "Conversation practice", "Cultural context"],
+};
 
 export default function Dialects() {
+  const { data: dialects, isLoading } = useQuery({
+    queryKey: ["dialects-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dialects")
+        .select("id, name, description")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <Layout>
       {/* Hero */}
@@ -91,89 +89,101 @@ export default function Dialects() {
       {/* Dialects Grid */}
       <section className="py-12 pb-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-8">
-            {dialects.map((dialect, index) => (
-              <div
-                key={dialect.id}
-                className="bg-card rounded-3xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="grid lg:grid-cols-3 gap-0">
-                  {/* Left - Icon & Basic Info */}
-                  <div className={`${dialect.bgLight} p-8 lg:p-12 flex flex-col justify-center`}>
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${dialect.gradient} flex items-center justify-center text-4xl mb-6 shadow-lg`}>
-                      {dialect.icon}
-                    </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                      {dialect.name}
-                    </h2>
-                    <p className="text-xl text-muted-foreground font-medium mb-4" dir="rtl">
-                      {dialect.arabicName}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {dialect.regions.map((region) => (
-                        <span
-                          key={region}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-background text-sm text-muted-foreground"
-                        >
-                          <MapPin className="w-3 h-3" />
-                          {region}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Middle - Description & Features */}
-                  <div className="p-8 lg:p-12 lg:col-span-2">
-                    <p className="text-muted-foreground mb-6 leading-relaxed">
-                      {dialect.description}
-                    </p>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                      <div className="bg-muted/50 rounded-xl p-4 text-center">
-                        <Users className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <div className="text-lg font-bold text-foreground">{dialect.stats.speakers}</div>
-                        <div className="text-xs text-muted-foreground">Native Speakers</div>
+          {isLoading ? (
+            <div className="space-y-8">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-80 rounded-3xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {dialects?.map((dialect) => {
+                const config = dialectConfig[dialect.name] || defaultConfig;
+                
+                return (
+                  <div
+                    key={dialect.id}
+                    className="bg-card rounded-3xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                  >
+                    <div className="grid lg:grid-cols-3 gap-0">
+                      {/* Left - Icon & Basic Info */}
+                      <div className={`${config.bgLight} p-8 lg:p-12 flex flex-col justify-center`}>
+                        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center text-4xl mb-6 shadow-lg`}>
+                          {config.icon}
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                          {dialect.name}
+                        </h2>
+                        <p className="text-xl text-muted-foreground font-medium mb-4" dir="rtl">
+                          {config.arabicName}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {config.regions.map((region) => (
+                            <span
+                              key={region}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-background text-sm text-muted-foreground"
+                            >
+                              <MapPin className="w-3 h-3" />
+                              {region}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                      <div className="bg-muted/50 rounded-xl p-4 text-center">
-                        <BookOpen className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <div className="text-lg font-bold text-foreground">{dialect.stats.lessons}</div>
-                        <div className="text-xs text-muted-foreground">Lessons</div>
-                      </div>
-                      <div className="bg-muted/50 rounded-xl p-4 text-center">
-                        <Clock className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <div className="text-lg font-bold text-foreground">{dialect.stats.duration}</div>
-                        <div className="text-xs text-muted-foreground">To Complete</div>
-                      </div>
-                    </div>
 
-                    {/* Features */}
-                    <div className="mb-8">
-                      <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
-                        What You'll Learn
-                      </h3>
-                      <div className="grid sm:grid-cols-2 gap-2">
-                        {dialect.features.map((feature) => (
-                          <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${dialect.gradient}`} />
-                            {feature}
+                      {/* Middle - Description & Features */}
+                      <div className="p-8 lg:p-12 lg:col-span-2">
+                        <p className="text-muted-foreground mb-6 leading-relaxed">
+                          {dialect.description || `Learn ${dialect.name} with our comprehensive curriculum designed for practical fluency.`}
+                        </p>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-3 gap-4 mb-8">
+                          <div className="bg-muted/50 rounded-xl p-4 text-center">
+                            <Users className="w-5 h-5 text-primary mx-auto mb-2" />
+                            <div className="text-lg font-bold text-foreground">{config.stats.speakers}</div>
+                            <div className="text-xs text-muted-foreground">Native Speakers</div>
                           </div>
-                        ))}
+                          <div className="bg-muted/50 rounded-xl p-4 text-center">
+                            <BookOpen className="w-5 h-5 text-primary mx-auto mb-2" />
+                            <div className="text-lg font-bold text-foreground">{config.stats.lessons}</div>
+                            <div className="text-xs text-muted-foreground">Lessons</div>
+                          </div>
+                          <div className="bg-muted/50 rounded-xl p-4 text-center">
+                            <Clock className="w-5 h-5 text-primary mx-auto mb-2" />
+                            <div className="text-lg font-bold text-foreground">{config.stats.duration}</div>
+                            <div className="text-xs text-muted-foreground">To Complete</div>
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        <div className="mb-8">
+                          <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                            What You'll Learn
+                          </h3>
+                          <div className="grid sm:grid-cols-2 gap-2">
+                            {config.features.map((feature) => (
+                              <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${config.gradient}`} />
+                                {feature}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* CTA - Links to the actual dialect overview */}
+                        <Button size="lg" asChild className="w-full sm:w-auto">
+                          <Link to={`/learn/dialect/${dialect.id}`}>
+                            Start Learning {dialect.name}
+                            <ArrowRight className="w-5 h-5" />
+                          </Link>
+                        </Button>
                       </div>
                     </div>
-
-                    {/* CTA */}
-                    <Button size="lg" asChild className="w-full sm:w-auto">
-                      <Link to="/signup">
-                        Start Learning {dialect.name}
-                        <ArrowRight className="w-5 h-5" />
-                      </Link>
-                    </Button>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
