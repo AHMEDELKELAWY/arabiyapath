@@ -387,7 +387,7 @@ export default function Pricing() {
                     Please sign in to continue with your purchase
                   </p>
                   <Button asChild className="w-full">
-                    <Link to="/login">Sign In to Continue</Link>
+                    <Link to={`/login?redirect=${encodeURIComponent(`/checkout?productId=${selectedPlan.id}`)}`}>Sign In to Continue</Link>
                   </Button>
                 </div>
               )}

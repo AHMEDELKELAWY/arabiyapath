@@ -82,9 +82,9 @@ export function LevelProgressCard({
               <Lock className="w-6 h-6 text-muted-foreground" />
             </div>
             <p className="text-xs text-muted-foreground mb-3">Content Locked</p>
-            <Link to="/pricing">
+            <Link to={`/checkout?levelId=${levelId}&dialectId=${dialectId}`}>
               <Button size="sm" className="w-full text-xs">
-                Upgrade
+                Purchase Level
               </Button>
             </Link>
           </div>

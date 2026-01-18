@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePurchases } from "@/hooks/usePurchases";
+import { isFreeTrial } from "@/lib/accessControl";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, Circle, ArrowRight, BookOpen } from "lucide-react";
+import { CheckCircle2, Circle, ArrowRight, BookOpen, Lock, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UnitProgress {
@@ -28,10 +30,14 @@ interface UnitProgress {
   progressPercent: number;
   lastLessonId?: string;
   lastLessonTitle?: string;
+  levelId: string;
+  levelOrderIndex: number;
+  unitOrderIndex: number;
 }
 
 export default function DashboardProgress() {
   const { user } = useAuth();
+  const { checkLevelAccess } = usePurchases();
   const [selectedDialect, setSelectedDialect] = useState<string>("all");
 
   // Fetch dialects
@@ -61,6 +67,7 @@ export default function DashboardProgress() {
           levels (
             id,
             name,
+            order_index,
             units (
               id,
               title,
@@ -93,11 +100,14 @@ export default function DashboardProgress() {
       const completedLessonIds = new Set(userProgress?.map((p) => p.lesson_id));
 
       // Build unit progress
-      const unitProgressList: (UnitProgress & { dialectName: string; dialectId: string })[] = [];
+      const unitProgressList: (UnitProgress & { dialectName: string; dialectId: string; hasAccess: boolean })[] = [];
 
       dialectsData?.forEach((dialect) => {
         dialect.levels?.forEach((level) => {
+          const levelOrderIndex = level.order_index || 1;
+          
           level.units?.forEach((unit) => {
+            const unitOrderIndex = unit.order_index || 1;
             const lessons = unit.lessons || [];
             const completedLessons = lessons.filter((l) => 
               completedLessonIds.has(l.id)
@@ -115,9 +125,16 @@ export default function DashboardProgress() {
               (l) => !completedLessonIds.has(l.id)
             );
 
+            // Check if free trial or purchased
+            const isFree = isFreeTrial(levelOrderIndex, unitOrderIndex);
+            const hasAccess = isFree || checkLevelAccess(level.id, dialect.id, levelOrderIndex, unitOrderIndex);
+
             unitProgressList.push({
               dialectId: dialect.id,
               dialectName: dialect.name,
+              levelId: level.id,
+              levelOrderIndex,
+              unitOrderIndex,
               unitId: unit.id,
               unitTitle: unit.title,
               description: unit.description,
@@ -129,6 +146,7 @@ export default function DashboardProgress() {
                 : 0,
               lastLessonId: lastIncompleteLesson?.id,
               lastLessonTitle: lastIncompleteLesson?.title,
+              hasAccess,
             });
           });
         });
@@ -201,7 +219,27 @@ export default function DashboardProgress() {
         ) : progressData && progressData.length > 0 ? (
           <div className="space-y-4">
             {progressData.map((unit) => (
-              <Card key={unit.unitId} className="overflow-hidden">
+              <Card key={unit.unitId} className={cn("overflow-hidden", !unit.hasAccess && "relative")}>
+                {/* Lock overlay for non-accessible content */}
+                {!unit.hasAccess && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                    <div className="text-center p-4">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                        <Lock className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Purchase to unlock this content
+                      </p>
+                      <Link to={`/checkout?levelId=${unit.levelId}&dialectId=${unit.dialectId}`}>
+                        <Button size="sm" className="gap-2">
+                          <ShoppingCart className="w-4 h-4" />
+                          Purchase Level
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                
                 <CardContent className="p-0">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4 p-6">
                     {/* Status Icon */}
@@ -251,7 +289,7 @@ export default function DashboardProgress() {
                         {getStatusLabel(unit.status)}
                       </span>
                       
-                      {unit.status !== "completed" && unit.lastLessonId && (
+                      {unit.hasAccess && unit.status !== "completed" && unit.lastLessonId && (
                         <Link to={`/learn/lesson/${unit.lastLessonId}`}>
                           <Button size="sm" variant="outline" className="gap-1">
                             {unit.status === "not_started" ? "Start" : "Continue"}
@@ -260,12 +298,14 @@ export default function DashboardProgress() {
                         </Link>
                       )}
                       
-                      <Link to={`/learn/unit/${unit.unitId}`}>
-                        <Button size="sm" variant="ghost" className="gap-1">
-                          <BookOpen className="w-3 h-3" />
-                          View Unit
-                        </Button>
-                      </Link>
+                      {unit.hasAccess && (
+                        <Link to={`/learn/unit/${unit.unitId}`}>
+                          <Button size="sm" variant="ghost" className="gap-1">
+                            <BookOpen className="w-3 h-3" />
+                            View Unit
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </CardContent>
