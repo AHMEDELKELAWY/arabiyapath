@@ -177,9 +177,9 @@ export default function UnitOverview() {
                       </div>
                     </div>
                     <Button asChild className="mt-4 gap-2">
-                      <Link to="/pricing">
+                      <Link to={`/checkout?levelId=${level?.id}&dialectId=${dialect?.id}`}>
                         <ShoppingCart className="h-4 w-4" />
-                        View Pricing
+                        Purchase Now
                       </Link>
                     </Button>
                   </div>

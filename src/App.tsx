@@ -38,6 +38,7 @@ import LessonPlayer from "./pages/learn/LessonPlayer";
 import QuizPage from "./pages/learn/QuizPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
             {/* Payment Routes */}
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="/checkout" element={<Checkout />} />
             {/* Learning Routes */}
             <Route path="/learn/dialect/:dialectId" element={<DialectOverview />} />
             <Route path="/learn/level/:levelId" element={<LevelOverview />} />

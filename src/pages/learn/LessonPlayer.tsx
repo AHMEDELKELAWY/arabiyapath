@@ -158,9 +158,9 @@ export default function LessonPlayer() {
                 This lesson is part of {data?.level?.name}. Purchase to unlock access.
               </p>
               <Button asChild className="mt-6 gap-2">
-                <Link to="/pricing">
+                <Link to={`/checkout?levelId=${data?.level?.id}&dialectId=${data?.dialect?.id}`}>
                   <ShoppingCart className="h-4 w-4" />
-                  View Pricing
+                  Purchase Now
                 </Link>
               </Button>
             </>
