@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,14 @@ export default function Login() {
   const { user, signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate(redirectUrl);
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ export default function Login() {
       });
     } else {
       toast({ title: "Welcome back!", description: "You have logged in successfully." });
-      navigate("/dashboard");
+      navigate(redirectUrl);
     }
     setIsLoading(false);
   };
@@ -83,7 +85,7 @@ export default function Login() {
 
               <div className="mt-6 text-center">
                 <p className="text-muted-foreground text-sm">
-                  Don't have an account? <Link to="/signup" className="text-primary font-medium hover:underline">Sign up free</Link>
+                  Don't have an account? <Link to={`/signup${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`} className="text-primary font-medium hover:underline">Sign up free</Link>
                 </p>
               </div>
             </div>
