@@ -275,9 +275,9 @@ export default function LevelOverview() {
                   Purchase this level to access all units and earn your certificate
                 </p>
                 <Button asChild className="gap-2">
-                  <Link to="/pricing">
+                  <Link to={`/checkout?levelId=${level.id}&dialectId=${dialect?.id}`}>
                     <ShoppingCart className="h-4 w-4" />
-                    View Pricing
+                    Purchase Now
                   </Link>
                 </Button>
               </CardContent>
