@@ -4,8 +4,10 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 
 const benefits = ["Access free trial lessons", "Track your progress", "Earn certificates", "Join the community"];
@@ -16,6 +18,7 @@ export default function Signup() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
@@ -39,10 +42,31 @@ export default function Signup() {
     const { error } = await signUp(email, password, firstName, lastName);
     if (error) {
       toast({ title: "Signup Failed", description: error.message || "Could not create account.", variant: "destructive" });
-    } else {
-      toast({ title: "Account Created!", description: "Welcome to ArabiyaPath!" });
-      navigate(redirectUrl);
+      setIsLoading(false);
+      return;
     }
+    
+    // Update marketing consent
+    if (marketingConsent) {
+      await supabase
+        .from('profiles')
+        .update({ marketing_consent: true })
+        .eq('email', email);
+    }
+    
+    // Send verification email
+    try {
+      await supabase.functions.invoke('send-verification-email', {
+        body: { email, firstName },
+      });
+      toast({ title: "Account Created!", description: "Please check your email to verify your account." });
+      navigate("/verify-email");
+    } catch (err) {
+      console.error('Failed to send verification email:', err);
+      toast({ title: "Account Created!", description: "Please verify your email to continue." });
+      navigate("/verify-email");
+    }
+    
     setIsLoading(false);
   };
 
@@ -88,6 +112,16 @@ export default function Signup() {
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                       </div>
                       <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox 
+                        id="marketing" 
+                        checked={marketingConsent}
+                        onCheckedChange={(checked) => setMarketingConsent(checked === true)}
+                      />
+                      <label htmlFor="marketing" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                        I'd like to receive updates, tips, and special offers from ArabiyaPath
+                      </label>
                     </div>
                     <Button type="submit" size="lg" variant="hero" className="w-full" disabled={isLoading}>
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-5 h-5" /></>}
