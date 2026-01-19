@@ -855,7 +855,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      certificates_public: {
+        Row: {
+          cert_code: string | null
+          dialect_id: string | null
+          id: string | null
+          issued_at: string | null
+          level_id: string | null
+          public_url: string | null
+        }
+        Insert: {
+          cert_code?: string | null
+          dialect_id?: string | null
+          id?: string | null
+          issued_at?: string | null
+          level_id?: string | null
+          public_url?: string | null
+        }
+        Update: {
+          cert_code?: string | null
+          dialect_id?: string | null
+          id?: string | null
+          issued_at?: string | null
+          level_id?: string | null
+          public_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_dialect_id_fkey"
+            columns: ["dialect_id"]
+            isOneToOne: false
+            referencedRelation: "dialects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

@@ -238,9 +238,10 @@ export function useQuiz(quizId?: string) {
       
       if (quizError) throw quizError;
       
+      // Only fetch public question data - no correct_answer
       const { data: questions, error: questionsError } = await supabase
         .from("quiz_questions")
-        .select("*")
+        .select("id, quiz_id, type, prompt, options_json, audio_url, order_index, created_at")
         .eq("quiz_id", quizId)
         .order("order_index");
       
@@ -261,87 +262,44 @@ export function useQuiz(quizId?: string) {
   });
 }
 
+export interface QuizSubmitResult {
+  success: boolean;
+  score: number;
+  passed: boolean;
+  correctCount: number;
+  totalQuestions: number;
+  results: { questionIndex: number; correct: boolean; correctAnswer: string }[];
+  certificateAwarded: boolean;
+}
+
 export function useSubmitQuiz() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ quizId, score, passed }: { quizId: string; score: number; passed: boolean }) => {
+    mutationFn: async ({ 
+      quizId, 
+      answers 
+    }: { 
+      quizId: string; 
+      answers: Record<number, string>; 
+    }): Promise<QuizSubmitResult> => {
       if (!user) throw new Error("Not authenticated");
       
-      const { error } = await supabase
-        .from("quiz_attempts")
-        .insert({ user_id: user.id, quiz_id: quizId, score, passed });
-      
-      if (error) throw error;
+      // Submit answers to server-side validation
+      const { data, error } = await supabase.functions.invoke('submit-quiz', {
+        body: { quizId, answers },
+      });
 
-      // Check if user completed ALL quizzes in the level to grant level certificate
-      if (passed) {
-        const { data: quiz } = await supabase
-          .from("quizzes")
-          .select("unit_id, units(level_id, levels(dialect_id))")
-          .eq("id", quizId)
-          .single();
-
-        if (quiz?.units?.level_id && quiz?.units?.levels?.dialect_id) {
-          const levelId = quiz.units.level_id;
-          const dialectId = quiz.units.levels.dialect_id;
-
-          // Get all units in this level
-          const { data: levelUnits } = await supabase
-            .from("units")
-            .select("id")
-            .eq("level_id", levelId);
-
-          if (levelUnits && levelUnits.length > 0) {
-            const unitIds = levelUnits.map(u => u.id);
-            
-            // Get all quizzes for these units
-            const { data: allQuizzes } = await supabase
-              .from("quizzes")
-              .select("id")
-              .in("unit_id", unitIds);
-
-            if (allQuizzes && allQuizzes.length > 0) {
-              const allQuizIds = allQuizzes.map(q => q.id);
-              
-              // Get user's passed quizzes for this level
-              const { data: passedQuizzes } = await supabase
-                .from("quiz_attempts")
-                .select("quiz_id")
-                .eq("user_id", user.id)
-                .eq("passed", true)
-                .in("quiz_id", allQuizIds);
-
-              // Use Set to count unique passed quizzes
-              const passedQuizIds = new Set(passedQuizzes?.map(p => p.quiz_id) || []);
-              
-              // If all quizzes are passed, grant level certificate
-              if (passedQuizIds.size >= allQuizzes.length) {
-                // Check if certificate already exists
-                const { data: existingCert } = await supabase
-                  .from("certificates")
-                  .select("id")
-                  .eq("user_id", user.id)
-                  .eq("level_id", levelId)
-                  .eq("dialect_id", dialectId)
-                  .maybeSingle();
-
-                if (!existingCert) {
-                  const certCode = `CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-                  
-                  await supabase.from("certificates").insert({
-                    user_id: user.id,
-                    level_id: levelId,
-                    dialect_id: dialectId,
-                    cert_code: certCode,
-                  });
-                }
-              }
-            }
-          }
-        }
+      if (error) {
+        throw new Error(error.message || "Failed to submit quiz");
       }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data as QuizSubmitResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quiz"] });
