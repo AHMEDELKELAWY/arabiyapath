@@ -23,3 +23,15 @@ verify_jwt = false
 
 [functions.paypal-client-token]
 verify_jwt = false
+
+[functions.translate-lesson-titles]
+verify_jwt = false
+
+[functions.send-verification-email]
+verify_jwt = false
+
+[functions.verify-email-code]
+verify_jwt = false
+
+[functions.send-marketing-email]
+verify_jwt = false

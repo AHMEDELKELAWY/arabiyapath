@@ -15,6 +15,8 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
+import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import Dashboard from "./pages/Dashboard";
 import DashboardProgress from "./pages/DashboardProgress";
 import DashboardAccount from "./pages/DashboardAccount";
@@ -63,6 +65,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-email" element={<ProtectedRoute requireEmailVerification={false}><VerifyEmail /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/progress" element={<ProtectedRoute><DashboardProgress /></ProtectedRoute>} />
             <Route path="/dashboard/account" element={<ProtectedRoute><DashboardAccount /></ProtectedRoute>} />
@@ -87,6 +90,7 @@ const App = () => (
             <Route path="/admin/certificates" element={<AdminRoute><AdminCertificates /></AdminRoute>} />
             <Route path="/admin/affiliates" element={<AdminRoute><AdminAffiliates /></AdminRoute>} />
             <Route path="/admin/affiliate-payouts" element={<AdminRoute><AdminAffiliatePayouts /></AdminRoute>} />
+            <Route path="/admin/email-campaigns" element={<AdminRoute><AdminEmailCampaigns /></AdminRoute>} />
             {/* Affiliate Routes */}
             <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />
             <Route path="/affiliate/commissions" element={<AffiliateRoute><AffiliateCommissions /></AffiliateRoute>} />
