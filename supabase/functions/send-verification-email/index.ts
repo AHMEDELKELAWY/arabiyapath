@@ -74,67 +74,65 @@ serve(async (req) => {
 
     const htmlContent = `
 <!DOCTYPE html>
-<html dir="ltr" lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your Email - ArabiyaPath</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa;">
-    <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-          <!-- Header -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.06);overflow:hidden;">
           <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #1a5f4a 0%, #2d8b6f 100%); border-radius: 16px 16px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">ArabiyaPath</h1>
-              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Your Journey to Arabic Fluency</p>
-            </td>
-          </tr>
-          
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <h2 style="margin: 0 0 16px; color: #1a1a1a; font-size: 22px; font-weight: 600;">Hi ${displayName}! 👋</h2>
-              <p style="margin: 0 0 24px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Welcome to ArabiyaPath! Please use the verification code below to confirm your email address:
-              </p>
-              
-              <!-- Code Box -->
-              <div style="background: linear-gradient(135deg, #f0f9f6 0%, #e8f5f1 100%); border: 2px solid #1a5f4a; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
-                <p style="margin: 0 0 8px; color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Your Verification Code</p>
-                <p style="margin: 0; color: #1a5f4a; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">${verificationCode}</p>
+            <td style="background:linear-gradient(135deg,#2f6b58 0%,#3d8b70 100%);padding:32px 24px;text-align:center;">
+              <div style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.5px;">
+                <span style="color:#d4a853;">Arabiy</span>Path
               </div>
-              
-              <p style="margin: 0 0 8px; color: #888; font-size: 14px; text-align: center;">
-                ⏰ This code expires in <strong>15 minutes</strong>
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
-              
-              <p style="margin: 0; color: #888; font-size: 13px; text-align: center;">
-                If you didn't create an account with ArabiyaPath, you can safely ignore this email.
-              </p>
+              <div style="margin-top:4px;font-size:13px;color:rgba(255,255,255,0.85);">
+                Your Journey to Arabic Fluency
+              </div>
             </td>
           </tr>
-          
-          <!-- Footer -->
           <tr>
-            <td style="padding: 24px 40px; background-color: #f8f9fa; border-radius: 0 0 16px 16px; text-align: center;">
-              <p style="margin: 0; color: #888; font-size: 12px;">
-                © ${new Date().getFullYear()} ArabiyaPath. All rights reserved.
-              </p>
-              <p style="margin: 8px 0 0; color: #aaa; font-size: 11px;">
-                Learn Arabic dialects the natural way.
-              </p>
+            <td style="padding:32px 24px;">
+              <div style="font-size:18px;font-weight:600;color:#1e293b;margin-bottom:8px;">
+                Hi ${displayName} 👋
+              </div>
+              <div style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px;">
+                Welcome to ArabiyPath! Please use the verification code below to confirm your email:
+              </div>
+
+              <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:8px;">
+                  YOUR VERIFICATION CODE
+                </div>
+                <div style="font-size:36px;font-weight:700;letter-spacing:6px;color:#2f6b58;">
+                  ${verificationCode}
+                </div>
+              </div>
+
+              <div style="font-size:13px;color:#94a3b8;text-align:center;margin-bottom:24px;">
+                This code expires in 15 minutes. If you didn't request this, ignore this email.
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+
+              <div style="font-size:13px;color:#64748b;text-align:center;">
+                Need help? Contact
+                <a href="mailto:admin@arabiyapath.com" style="color:#2f6b58;text-decoration:none;font-weight:700;">admin@arabiyapath.com</a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#fbfcfe;padding:16px 24px;text-align:center;font-size:12px;color:#94a3b8;">
+              © ${new Date().getFullYear()} ArabiyPath
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
-  </table>
-</body>
+      </td></tr>
+    </table>
+  </body>
 </html>
     `;
 
