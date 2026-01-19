@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_applications: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          full_name: string
+          how_will_promote: string
+          id: string
+          phone: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          full_name: string
+          how_will_promote: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          full_name?: string
+          how_will_promote?: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       affiliate_commissions: {
         Row: {
           affiliate_id: string

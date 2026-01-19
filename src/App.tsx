@@ -29,6 +29,7 @@ import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminAffiliates from "./pages/admin/AdminAffiliates";
 import AdminAffiliatePayouts from "./pages/admin/AdminAffiliatePayouts";
+import AdminAffiliateApplications from "./pages/admin/AdminAffiliateApplications";
 import { AffiliateRoute } from "@/components/affiliate/AffiliateRoute";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateCommissions from "./pages/affiliate/AffiliateCommissions";
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/admin/certificates" element={<AdminRoute><AdminCertificates /></AdminRoute>} />
             <Route path="/admin/affiliates" element={<AdminRoute><AdminAffiliates /></AdminRoute>} />
             <Route path="/admin/affiliate-payouts" element={<AdminRoute><AdminAffiliatePayouts /></AdminRoute>} />
+            <Route path="/admin/affiliate-applications" element={<AdminRoute><AdminAffiliateApplications /></AdminRoute>} />
             <Route path="/admin/email-campaigns" element={<AdminRoute><AdminEmailCampaigns /></AdminRoute>} />
             {/* Affiliate Routes */}
             <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />

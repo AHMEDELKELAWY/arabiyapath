@@ -5,6 +5,7 @@ const footerLinks = {
     { href: "/dialects", label: "Dialects" },
     { href: "/pricing", label: "Pricing" },
     { href: "/about", label: "About Us" },
+    { href: "/dashboard", label: "Become a Partner" },
   ],
   support: [
     { href: "/faq", label: "FAQ" },
