@@ -178,9 +178,10 @@ export default function LessonPlayer() {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header with breadcrumb and progress */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container max-w-6xl py-4">
+          <div className="container max-w-6xl py-3 sm:py-4 px-4 sm:px-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {/* Full breadcrumb - Desktop */}
+              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                 <Link to={`/learn/dialect/${dialect?.id}`} className="hover:text-foreground transition-colors">
                   {dialect?.name}
                 </Link>
@@ -193,38 +194,46 @@ export default function LessonPlayer() {
                   {unit?.title}
                 </Link>
               </div>
+              {/* Short breadcrumb - Mobile */}
+              <Link 
+                to={`/learn/unit/${unit?.id}`} 
+                className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronLeft className="h-3 w-3" />
+                {unit?.title}
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLessonList(!showLessonList)}
-                className="gap-2"
+                className="gap-1 sm:gap-2 px-2 sm:px-3"
               >
                 <List className="h-4 w-4" />
                 <span className="hidden sm:inline">Lessons</span>
               </Button>
             </div>
             
-            <div className="mt-3 flex items-center gap-3">
-              <Progress value={progressPercent} className="flex-1 h-2" />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {completedCount}/{totalCount} complete
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 sm:gap-3">
+              <Progress value={progressPercent} className="flex-1 h-1.5 sm:h-2" />
+              <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                {completedCount}/{totalCount}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="container max-w-6xl py-8">
+        <div className="container max-w-6xl py-4 sm:py-8 px-4 sm:px-6">
           <div className="flex gap-6">
             {/* Main Content */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-4 sm:space-y-6">
               {/* Lesson Title */}
               <div className="text-center">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground">
                   {lesson.title}
                 </h1>
                 {isCompleted && (
-                  <div className="inline-flex items-center gap-1 mt-2 text-sm text-green-600 dark:text-green-400">
-                    <CheckCircle className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-1 mt-1 sm:mt-2 text-xs sm:text-sm text-green-600 dark:text-green-400">
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                     Completed
                   </div>
                 )}
@@ -249,10 +258,10 @@ export default function LessonPlayer() {
 
               {/* Arabic Text & Transliteration */}
               <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/80">
-                <CardContent className="p-8 text-center space-y-6">
+                <CardContent className="p-4 sm:p-8 text-center space-y-4 sm:space-y-6">
                   {/* Arabic Script */}
                   <div 
-                    className="text-4xl md:text-5xl lg:text-6xl font-arabic leading-relaxed text-foreground"
+                    className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-arabic leading-relaxed text-foreground"
                     dir="rtl"
                     style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}
                   >
@@ -260,12 +269,12 @@ export default function LessonPlayer() {
                   </div>
                   
                   {/* Transliteration */}
-                  <div className="text-xl md:text-2xl text-muted-foreground italic">
+                  <div className="text-base sm:text-xl md:text-2xl text-muted-foreground italic">
                     {lesson.transliteration}
                   </div>
 
                   {/* Audio Player */}
-                  <div className="pt-4">
+                  <div className="pt-2 sm:pt-4">
                     <audio
                       ref={audioRef}
                       src={lesson.audio_url || undefined}
@@ -275,81 +284,90 @@ export default function LessonPlayer() {
                       size="lg"
                       variant="outline"
                       onClick={handlePlayPause}
-                      className="gap-3 px-8 py-6 text-lg rounded-full border-2 hover:bg-primary hover:text-primary-foreground transition-all"
+                      className="gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-6 text-sm sm:text-lg rounded-full border-2 hover:bg-primary hover:text-primary-foreground transition-all"
                       disabled={!lesson.audio_url}
                     >
                       {isPlaying ? (
                         <>
-                          <Pause className="h-6 w-6" />
-                          Pause Audio
+                          <Pause className="h-5 w-5 sm:h-6 sm:w-6" />
+                          <span className="hidden sm:inline">Pause Audio</span>
+                          <span className="sm:hidden">Pause</span>
                         </>
                       ) : (
                         <>
-                          <Play className="h-6 w-6" />
-                          Play Audio
+                          <Play className="h-5 w-5 sm:h-6 sm:w-6" />
+                          <span className="hidden sm:inline">Play Audio</span>
+                          <span className="sm:hidden">Play</span>
                         </>
                       )}
                     </Button>
                     {!lesson.audio_url && (
-                      <p className="text-sm text-muted-foreground mt-2">Audio coming soon</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-2">Audio coming soon</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Navigation Buttons */}
-              <div className="flex items-center justify-between gap-4">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => prevLesson && navigate(`/learn/lesson/${prevLesson.id}`)}
-                  disabled={!prevLesson}
-                  className="gap-2"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                  Previous
-                </Button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                {/* Main Action Button - Top on mobile */}
+                <div className="order-first sm:order-none w-full sm:w-auto">
+                  {!isCompleted ? (
+                    <Button
+                      size="lg"
+                      onClick={handleMarkComplete}
+                      disabled={markComplete.isPending}
+                      className="gap-2 w-full sm:w-auto px-6 sm:px-8 bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                      {markComplete.isPending ? "Saving..." : "Mark as Complete"}
+                    </Button>
+                  ) : nextLesson ? (
+                    <Button
+                      size="lg"
+                      onClick={() => navigate(`/learn/lesson/${nextLesson.id}`)}
+                      className="gap-2 w-full sm:w-auto px-6 sm:px-8"
+                    >
+                      Next Lesson
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={() => navigate(`/learn/unit/${unit?.id}`)}
+                      className="gap-2 w-full sm:w-auto px-6 sm:px-8"
+                    >
+                      Take Quiz
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </Button>
+                  )}
+                </div>
 
-                {!isCompleted ? (
+                {/* Prev & Next - Row on mobile */}
+                <div className="flex items-center gap-2 sm:contents order-last sm:order-none">
                   <Button
-                    size="lg"
-                    onClick={handleMarkComplete}
-                    disabled={markComplete.isPending}
-                    className="gap-2 px-8 bg-green-600 hover:bg-green-700"
+                    variant="outline"
+                    size="default"
+                    onClick={() => prevLesson && navigate(`/learn/lesson/${prevLesson.id}`)}
+                    disabled={!prevLesson}
+                    className="flex-1 sm:flex-none gap-1 sm:gap-2 sm:order-first"
                   >
-                    <Check className="h-5 w-5" />
-                    {markComplete.isPending ? "Saving..." : "Mark as Complete"}
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">Prev</span>
                   </Button>
-                ) : nextLesson ? (
-                  <Button
-                    size="lg"
-                    onClick={() => navigate(`/learn/lesson/${nextLesson.id}`)}
-                    className="gap-2 px-8"
-                  >
-                    Next Lesson
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    onClick={() => navigate(`/learn/unit/${unit?.id}`)}
-                    className="gap-2 px-8"
-                  >
-                    Take Quiz
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
-                )}
 
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => nextLesson && navigate(`/learn/lesson/${nextLesson.id}`)}
-                  disabled={!nextLesson}
-                  className="gap-2"
-                >
-                  Next
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    onClick={() => nextLesson && navigate(`/learn/lesson/${nextLesson.id}`)}
+                    disabled={!nextLesson}
+                    className="flex-1 sm:flex-none gap-1 sm:gap-2 sm:order-last"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
 

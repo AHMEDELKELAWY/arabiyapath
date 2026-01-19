@@ -93,8 +93,8 @@ export default function UnitOverview() {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm">
-          <div className="container max-w-4xl py-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <div className="container max-w-4xl py-4 sm:py-6 px-4 sm:px-6">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
               <Link to={`/learn/dialect/${dialect?.id}`} className="hover:text-foreground transition-colors">
                 {dialect?.name}
               </Link>
@@ -104,35 +104,37 @@ export default function UnitOverview() {
               </Link>
             </div>
             
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">{unit.title}</h1>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{unit.title}</h1>
                 {unit.description && (
-                  <p className="text-muted-foreground mt-1">{unit.description}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground mt-1">{unit.description}</p>
                 )}
               </div>
               {hasPassed && (
-                <Badge variant="default" className="gap-1 bg-green-600">
+                <Badge variant="default" className="gap-1 bg-green-600 text-xs sm:text-sm">
                   <Trophy className="h-3 w-3" />
-                  Completed
+                  <span className="hidden sm:inline">Completed</span>
+                  <span className="sm:hidden">✓</span>
                 </Badge>
               )}
             </div>
 
             {/* Progress */}
-            <div className="mt-6 space-y-2">
-              <div className="flex items-center justify-between text-sm">
+            <div className="mt-4 sm:mt-6 space-y-2">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="text-muted-foreground">Lesson Progress</span>
                 <span className="font-medium">{completedCount}/{totalCount} lessons</span>
               </div>
-              <Progress value={progressPercent} className="h-3" />
+              <Progress value={progressPercent} className="h-2 sm:h-3" />
             </div>
 
             {/* Free Trial Badge */}
             {isFreeTrialUnit && !user && (
-              <Badge variant="secondary" className="mt-4 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-base py-1 px-3">
-                <Gift className="h-4 w-4 mr-2" />
-                Free Trial - No Account Required
+              <Badge variant="secondary" className="mt-3 sm:mt-4 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-xs sm:text-base py-0.5 px-2 sm:py-1 sm:px-3">
+                <Gift className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Free Trial - No Account Required</span>
+                <span className="sm:hidden">Free Trial</span>
               </Badge>
             )}
 
@@ -194,12 +196,12 @@ export default function UnitOverview() {
           </div>
         </div>
 
-        <div className="container max-w-4xl py-8 space-y-8">
+        <div className="container max-w-4xl py-4 sm:py-8 px-4 sm:px-6 space-y-4 sm:space-y-8">
           {/* Lessons List */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                 Lessons
               </CardTitle>
             </CardHeader>
@@ -210,31 +212,31 @@ export default function UnitOverview() {
                     key={lesson.id}
                     to={canAccess ? `/learn/lesson/${lesson.id}` : "/login"}
                     className={cn(
-                      "flex items-center gap-4 p-4 transition-colors hover:bg-muted/50",
+                      "flex items-center gap-3 sm:gap-4 p-3 sm:p-4 transition-colors hover:bg-muted/50",
                       lesson.completed && "bg-green-50 dark:bg-green-950/20"
                     )}
                   >
                     <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center font-medium shrink-0",
+                      "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-medium shrink-0 text-sm sm:text-base",
                       lesson.completed
                         ? "bg-green-600 text-white"
                         : "bg-muted text-muted-foreground"
                     )}>
                       {lesson.completed ? (
-                        <Check className="h-5 w-5" />
+                        <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                       ) : (
                         index + 1
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground">{lesson.title}</p>
-                      <p className="text-sm text-muted-foreground truncate" dir="rtl">
+                      <p className="font-medium text-sm sm:text-base text-foreground">{lesson.title}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate" dir="rtl">
                         {lesson.arabic_text}
                       </p>
                     </div>
 
-                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -251,11 +253,11 @@ export default function UnitOverview() {
                 ? "border-primary" 
                 : "border-muted"
             )}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center",
+                      "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0",
                       hasPassed
                         ? "bg-green-600 text-white"
                         : allLessonsComplete
@@ -263,26 +265,26 @@ export default function UnitOverview() {
                         : "bg-muted text-muted-foreground"
                     )}>
                       {hasPassed ? (
-                        <Trophy className="h-6 w-6" />
+                        <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                       ) : allLessonsComplete ? (
-                        <Play className="h-6 w-6" />
+                        <Play className="h-5 w-5 sm:h-6 sm:w-6" />
                       ) : (
-                        <Lock className="h-6 w-6" />
+                        <Lock className="h-5 w-5 sm:h-6 sm:w-6" />
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Unit Quiz</h3>
+                      <h3 className="font-semibold text-base sm:text-lg">Unit Quiz</h3>
                       {hasPassed ? (
-                        <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4" />
+                        <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                           Passed with {bestScore}% score
                         </p>
                       ) : allLessonsComplete ? (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Complete all lessons to unlock • Pass with 70%
                         </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Complete all {totalCount} lessons to unlock
                         </p>
                       )}
@@ -293,6 +295,8 @@ export default function UnitOverview() {
                     <Button
                       onClick={() => navigate(`/learn/quiz/${quiz.id}`)}
                       variant={hasPassed ? "outline" : "default"}
+                      className="w-full sm:w-auto"
+                      size="default"
                     >
                       {hasPassed ? "Retake Quiz" : "Start Quiz"}
                     </Button>
@@ -300,14 +304,14 @@ export default function UnitOverview() {
                 </div>
 
                 {quizAttempts && quizAttempts.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm text-muted-foreground mb-2">Previous Attempts</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">Previous Attempts</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {quizAttempts.slice(0, 5).map((attempt: any, i: number) => (
                         <Badge
                           key={i}
                           variant={attempt.passed ? "default" : "secondary"}
-                          className={attempt.passed ? "bg-green-600" : ""}
+                          className={cn("text-xs", attempt.passed ? "bg-green-600" : "")}
                         >
                           {attempt.score}%
                         </Badge>
