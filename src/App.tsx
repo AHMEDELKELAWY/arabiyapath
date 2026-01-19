@@ -44,6 +44,7 @@ import PaymentCancel from "./pages/PaymentCancel";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 import FreeTrial from "./pages/FreeTrial";
+import BecomeAffiliate from "./pages/BecomeAffiliate";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/become-affiliate" element={<BecomeAffiliate />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/progress" element={<ProtectedRoute><DashboardProgress /></ProtectedRoute>} />
