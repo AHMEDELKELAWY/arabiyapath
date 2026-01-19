@@ -64,8 +64,10 @@ export default function AdminAffiliateApplications() {
         userId: selectedApp.user_id,
         affiliateCode: affiliateCode.trim().toUpperCase(),
         commissionRate: parseFloat(commissionRate) || 10,
+        email: selectedApp.email,
+        fullName: selectedApp.full_name,
       });
-      toast.success("Application approved successfully!");
+      toast.success("Application approved! Welcome email sent.");
       setApproveDialogOpen(false);
       setSelectedApp(null);
       setAffiliateCode("");
