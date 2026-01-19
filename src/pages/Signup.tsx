@@ -56,10 +56,16 @@ export default function Signup() {
     
     // Send verification email
     try {
-      await supabase.functions.invoke('send-verification-email', {
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
         body: { email, firstName },
       });
-      toast({ title: "Account Created!", description: "Please check your email to verify your account." });
+      
+      if (error || data?.error) {
+        console.error('Verification email error:', error || data?.error);
+        toast({ title: "Account Created!", description: "Please check your email or request a new code on the next page." });
+      } else {
+        toast({ title: "Account Created!", description: "Please check your email to verify your account." });
+      }
       navigate("/verify-email");
     } catch (err) {
       console.error('Failed to send verification email:', err);

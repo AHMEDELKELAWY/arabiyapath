@@ -54,13 +54,15 @@ serve(async (req) => {
     const smtpUser = Deno.env.get('ZOHO_SMTP_USER')!;
     const smtpPass = Deno.env.get('ZOHO_SMTP_PASS')!;
 
-    console.log(`Connecting to SMTP: ${smtpHost}:${smtpPort}`);
+    // Port 465 uses direct TLS, port 587 uses STARTTLS (tls: false in denomailer)
+    const useTls = smtpPort === 465;
+    console.log(`Connecting to SMTP: ${smtpHost}:${smtpPort} (TLS: ${useTls})`);
 
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
         port: smtpPort,
-        tls: true,
+        tls: useTls,
         auth: {
           username: smtpUser,
           password: smtpPass,
@@ -136,16 +138,17 @@ serve(async (req) => {
 </html>
     `;
 
-    await client.send({
-      from: `ArabiyaPath <${smtpUser}>`,
-      to: email,
-      subject: `${verificationCode} - Your ArabiyaPath Verification Code`,
-      html: htmlContent,
-    });
-
-    await client.close();
-
-    console.log(`Verification email sent to ${email}`);
+    try {
+      await client.send({
+        from: `ArabiyaPath <${smtpUser}>`,
+        to: email,
+        subject: `${verificationCode} - Your ArabiyaPath Verification Code`,
+        html: htmlContent,
+      });
+      console.log(`Verification email sent successfully to ${email}`);
+    } finally {
+      await client.close();
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Verification email sent' }),
