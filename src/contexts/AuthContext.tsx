@@ -9,6 +9,8 @@ interface Profile {
   last_name: string | null;
   email: string | null;
   preferred_dialect_id: string | null;
+  email_verified: boolean | null;
+  marketing_consent: boolean | null;
 }
 
 interface AuthContextType {
