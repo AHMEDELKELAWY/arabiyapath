@@ -112,11 +112,15 @@ export function useApproveAffiliateApplication() {
       userId,
       affiliateCode,
       commissionRate = 10,
+      email,
+      fullName,
     }: {
       applicationId: string;
       userId: string;
       affiliateCode: string;
       commissionRate?: number;
+      email?: string;
+      fullName: string;
     }) => {
       // 1. Update application status
       const { error: updateError } = await supabase
@@ -145,6 +149,24 @@ export function useApproveAffiliateApplication() {
       });
 
       if (roleError) throw roleError;
+
+      // 4. Send welcome email (non-blocking)
+      if (email) {
+        try {
+          await supabase.functions.invoke("send-affiliate-welcome-email", {
+            body: {
+              email,
+              fullName,
+              affiliateCode,
+              commissionRate,
+            },
+          });
+          console.log("Affiliate welcome email sent to", email);
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
+          // Don't throw - email is not critical
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
