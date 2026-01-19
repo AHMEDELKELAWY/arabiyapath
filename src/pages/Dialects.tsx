@@ -105,65 +105,70 @@ export default function Dialects() {
                     key={dialect.id}
                     className="bg-card rounded-3xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300"
                   >
-                    <div className="grid lg:grid-cols-3 gap-0">
+                    <div className="flex flex-col lg:grid lg:grid-cols-3 gap-0">
                       {/* Left - Icon & Basic Info */}
-                      <div className={`${config.bgLight} p-8 lg:p-12 flex flex-col justify-center`}>
-                        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center text-4xl mb-6 shadow-lg`}>
+                      <div className={`${config.bgLight} p-6 sm:p-8 lg:p-12 flex flex-col justify-center`}>
+                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center text-3xl sm:text-4xl mb-4 sm:mb-6 shadow-lg`}>
                           {config.icon}
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-2">
                           {dialect.name}
                         </h2>
-                        <p className="text-xl text-muted-foreground font-medium mb-4" dir="rtl">
+                        <p className="text-lg sm:text-xl text-muted-foreground font-medium mb-4" dir="rtl">
                           {config.arabicName}
                         </p>
-                        <div className="flex flex-wrap gap-2 mb-6">
-                          {config.regions.map((region) => (
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {config.regions.slice(0, 4).map((region) => (
                             <span
                               key={region}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-background text-sm text-muted-foreground"
+                              className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full bg-background text-xs sm:text-sm text-muted-foreground"
                             >
-                              <MapPin className="w-3 h-3" />
+                              <MapPin className="w-3 h-3 hidden sm:block" />
                               {region}
                             </span>
                           ))}
+                          {config.regions.length > 4 && (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full bg-background text-xs sm:text-sm text-muted-foreground">
+                              +{config.regions.length - 4} more
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       {/* Middle - Description & Features */}
-                      <div className="p-8 lg:p-12 lg:col-span-2">
-                        <p className="text-muted-foreground mb-6 leading-relaxed">
+                      <div className="p-6 sm:p-8 lg:p-12 lg:col-span-2">
+                        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 leading-relaxed">
                           {dialect.description || `Learn ${dialect.name} with our comprehensive curriculum designed for practical fluency.`}
                         </p>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-3 gap-4 mb-8">
-                          <div className="bg-muted/50 rounded-xl p-4 text-center">
-                            <Users className="w-5 h-5 text-primary mx-auto mb-2" />
-                            <div className="text-lg font-bold text-foreground">{config.stats.speakers}</div>
-                            <div className="text-xs text-muted-foreground">Native Speakers</div>
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                          <div className="bg-muted/50 rounded-xl p-3 sm:p-4 text-center">
+                            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+                            <div className="text-sm sm:text-lg font-bold text-foreground">{config.stats.speakers}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Speakers</div>
                           </div>
-                          <div className="bg-muted/50 rounded-xl p-4 text-center">
-                            <BookOpen className="w-5 h-5 text-primary mx-auto mb-2" />
-                            <div className="text-lg font-bold text-foreground">{config.stats.lessons}</div>
-                            <div className="text-xs text-muted-foreground">Lessons</div>
+                          <div className="bg-muted/50 rounded-xl p-3 sm:p-4 text-center">
+                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+                            <div className="text-sm sm:text-lg font-bold text-foreground">{config.stats.lessons}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Lessons</div>
                           </div>
-                          <div className="bg-muted/50 rounded-xl p-4 text-center">
-                            <Clock className="w-5 h-5 text-primary mx-auto mb-2" />
-                            <div className="text-lg font-bold text-foreground">{config.stats.duration}</div>
-                            <div className="text-xs text-muted-foreground">To Complete</div>
+                          <div className="bg-muted/50 rounded-xl p-3 sm:p-4 text-center">
+                            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+                            <div className="text-sm sm:text-lg font-bold text-foreground">{config.stats.duration}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Duration</div>
                           </div>
                         </div>
 
                         {/* Features */}
-                        <div className="mb-8">
-                          <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                        <div className="mb-6 sm:mb-8">
+                          <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-2 sm:mb-3 uppercase tracking-wide">
                             What You'll Learn
                           </h3>
-                          <div className="grid sm:grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                             {config.features.map((feature) => (
-                              <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${config.gradient}`} />
+                              <div key={feature} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${config.gradient} shrink-0`} />
                                 {feature}
                               </div>
                             ))}
@@ -171,10 +176,10 @@ export default function Dialects() {
                         </div>
 
                         {/* CTA - Links to the actual dialect overview */}
-                        <Button size="lg" asChild className="w-full sm:w-auto">
+                        <Button size="lg" asChild className="w-full sm:w-auto text-sm sm:text-base">
                           <Link to={`/learn/dialect/${dialect.id}`}>
                             Start Learning {dialect.name}
-                            <ArrowRight className="w-5 h-5" />
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                           </Link>
                         </Button>
                       </div>
