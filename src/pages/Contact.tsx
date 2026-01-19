@@ -11,7 +11,7 @@ const contactMethods = [
   {
     icon: Mail,
     title: "Email Us",
-    description: "support@arabiyapath.com",
+    description: "admin@arabiyapath.com",
     detail: "We respond within 24 hours",
   },
   {
