@@ -87,7 +87,15 @@ export default function VerifyEmail() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to extract server error message
+        const serverMessage = error.message || (error as any)?.context?.body?.error;
+        throw new Error(serverMessage || 'Failed to send email');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Code Sent!",
@@ -97,9 +105,10 @@ export default function VerifyEmail() {
       setCountdown(60); // 60 second cooldown
       setCode(""); // Clear current code
     } catch (error: any) {
+      console.error('Resend error:', error);
       toast({
         title: "Failed to Resend",
-        description: error.message || "Please try again later.",
+        description: error.message || "Unable to send email. Please check your spam folder or try again later.",
         variant: "destructive",
       });
     } finally {

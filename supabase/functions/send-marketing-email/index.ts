@@ -107,11 +107,15 @@ serve(async (req) => {
     const smtpUser = Deno.env.get('ZOHO_SMTP_USER')!;
     const smtpPass = Deno.env.get('ZOHO_SMTP_PASS')!;
 
+    // Port 465 uses direct TLS, port 587 uses STARTTLS
+    const useTls = smtpPort === 465;
+    console.log(`Connecting to SMTP: ${smtpHost}:${smtpPort} (TLS: ${useTls})`);
+
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
         port: smtpPort,
-        tls: true,
+        tls: useTls,
         auth: {
           username: smtpUser,
           password: smtpPass,
