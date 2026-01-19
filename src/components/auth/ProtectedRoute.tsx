@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -25,6 +25,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check if email is verified (allow access to verify-email page)
+  if (profile && profile.email_verified === false && location.pathname !== "/verify-email") {
+    return <Navigate to="/verify-email" replace />;
   }
 
   return <>{children}</>;
