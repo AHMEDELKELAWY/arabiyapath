@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuiz, useSubmitQuiz } from "@/hooks/useLearning";
+import { useQuiz, useSubmitQuiz, QuizSubmitResult } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export default function QuizPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
 
   if (isLoading) {
     return (
@@ -81,29 +81,17 @@ export default function QuizPage() {
     }
   };
 
-  const calculateScore = () => {
-    let correct = 0;
-    questions.forEach((q, index) => {
-      if (answers[index] === q.correct_answer) {
-        correct++;
-      }
-    });
-    return Math.round((correct / totalQuestions) * 100);
-  };
-
   const handleSubmit = async () => {
-    const score = calculateScore();
-    const passed = score >= 70;
-
     try {
-      await submitQuiz.mutateAsync({ quizId: quizId!, score, passed });
-      setSubmitted(true);
+      // Send answers to server for validation
+      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers });
+      setQuizResult(result);
       setShowResults(true);
       
       // Play appropriate sound based on score
-      if (score >= 90) {
+      if (result.score >= 90) {
         playSound('quizSuccess'); // High score celebration
-      } else if (passed) {
+      } else if (result.passed) {
         playSound('lessonComplete'); // Regular pass
       } else {
         playSound('quizFail'); // Encouragement to try again
@@ -117,15 +105,15 @@ export default function QuizPage() {
     setCurrentQuestion(0);
     setAnswers({});
     setShowResults(false);
-    setSubmitted(false);
+    setQuizResult(null);
   };
 
   const allAnswered = Object.keys(answers).length === totalQuestions;
-  const score = calculateScore();
-  const passed = score >= 70;
 
   // Results Screen
-  if (showResults) {
+  if (showResults && quizResult) {
+    const { score, passed, correctCount, results, certificateAwarded } = quizResult;
+    
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center py-12">
@@ -151,10 +139,10 @@ export default function QuizPage() {
                     ? "You've passed the quiz and completed this unit!"
                     : "You need 70% to pass. Review the lessons and try again."}
                 </p>
-                {passed && (
+                {certificateAwarded && (
                   <div className="flex items-center justify-center gap-2 mt-4 p-3 bg-primary/10 rounded-lg">
                     <Award className="h-5 w-5 text-primary" />
-                    <span className="text-primary font-medium">Certificate Earned!</span>
+                    <span className="text-primary font-medium">Level Certificate Earned!</span>
                   </div>
                 )}
               </div>
@@ -162,7 +150,7 @@ export default function QuizPage() {
               <div className="py-6">
                 <div className="text-6xl font-bold text-foreground">{score}%</div>
                 <p className="text-muted-foreground">
-                  {Object.values(answers).filter((a, i) => a === questions[i].correct_answer).length} of {totalQuestions} correct
+                  {correctCount} of {totalQuestions} correct
                 </p>
               </div>
 
@@ -193,31 +181,31 @@ export default function QuizPage() {
                 )}
               </div>
 
-              {/* Answer Review */}
+              {/* Answer Review - now with correct answers from server */}
               <div className="pt-6 border-t text-left">
                 <h3 className="font-semibold mb-4">Answer Review</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {questions.map((q, index) => {
-                    const isCorrect = answers[index] === q.correct_answer;
+                    const result = results[index];
                     return (
                       <div 
                         key={index}
                         className={cn(
                           "p-3 rounded-lg text-sm",
-                          isCorrect ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"
+                          result?.correct ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"
                         )}
                       >
                         <div className="flex items-start gap-2">
-                          {isCorrect ? (
+                          {result?.correct ? (
                             <Check className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
                           ) : (
                             <X className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                           )}
                           <div>
                             <p className="font-medium">{q.prompt}</p>
-                            {!isCorrect && (
+                            {!result?.correct && result?.correctAnswer && (
                               <p className="text-muted-foreground mt-1">
-                                Correct: {q.correct_answer}
+                                Correct: {result.correctAnswer}
                               </p>
                             )}
                           </div>
