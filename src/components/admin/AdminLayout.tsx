@@ -22,12 +22,15 @@ interface AdminLayoutProps {
 
 import { UserCheck } from "lucide-react";
 
+import { FileText } from "lucide-react";
+
 const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/content", label: "Content", icon: BookOpen },
   { href: "/admin/products", label: "Products", icon: DollarSign },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/affiliates", label: "Affiliates", icon: UserCheck },
+  { href: "/admin/affiliate-applications", label: "Applications", icon: FileText },
   { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
