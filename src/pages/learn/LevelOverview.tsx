@@ -134,43 +134,43 @@ export default function LevelOverview() {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm">
-          <div className="container max-w-4xl py-8">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
               <Link to={`/learn/dialect/${dialect?.id}`} className="hover:text-foreground transition-colors">
                 {dialect?.name}
               </Link>
             </div>
             
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-4xl font-bold text-foreground">{level.name}</h1>
-                <p className="text-muted-foreground mt-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">{level.name}</h1>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
                   {totalUnits} units • Master everyday {dialect?.name} conversations
                 </p>
               </div>
               {completedUnits === totalUnits && totalUnits > 0 && (
-                <Badge variant="default" className="gap-1 bg-green-600 text-lg py-1 px-3">
-                  <Trophy className="h-4 w-4" />
+                <Badge variant="default" className="gap-1 bg-green-600 text-sm sm:text-lg py-1 px-2 sm:px-3 w-fit">
+                  <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
                   Completed
                 </Badge>
               )}
             </div>
 
             {user && (
-              <div className="mt-6 space-y-2">
-                <div className="flex items-center justify-between text-sm">
+              <div className="mt-4 sm:mt-6 space-y-2">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="text-muted-foreground">Level Progress</span>
-                  <span className="font-medium">{completedUnits}/{totalUnits} units completed</span>
+                  <span className="font-medium">{completedUnits}/{totalUnits} units</span>
                 </div>
-                <Progress value={overallProgress} className="h-3" />
+                <Progress value={overallProgress} className="h-2 sm:h-3" />
               </div>
             )}
           </div>
         </div>
 
         {/* Units Grid */}
-        <div className="container max-w-4xl py-8">
-          <div className="grid gap-4">
+        <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
+          <div className="grid gap-3 sm:gap-4">
             {units.map((unit, index) => {
               const progress = progressData?.[unit.id];
               const isCompleted = progress?.quizPassed;
@@ -195,13 +195,13 @@ export default function LevelOverview() {
                     <Link
                       to={isLocked ? "#" : `/learn/unit/${unit.id}`}
                       className={cn(
-                        "flex items-center gap-4 p-6",
+                        "flex items-center gap-3 sm:gap-4 p-4 sm:p-6",
                         isLocked && "pointer-events-none"
                       )}
                     >
                       {/* Unit Number */}
                       <div className={cn(
-                        "w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg shrink-0",
+                        "w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-base sm:text-lg shrink-0",
                         isCompleted
                           ? "bg-green-600 text-white"
                           : isLocked
@@ -211,11 +211,11 @@ export default function LevelOverview() {
                           : "bg-primary/10 text-primary"
                       )}>
                         {isCompleted ? (
-                          <CheckCircle className="h-7 w-7" />
+                          <CheckCircle className="h-5 w-5 sm:h-7 sm:w-7" />
                         ) : isLocked ? (
-                          <Lock className="h-6 w-6" />
+                          <Lock className="h-4 w-4 sm:h-6 sm:w-6" />
                         ) : isFreeTrialUnit ? (
-                          <Gift className="h-6 w-6" />
+                          <Gift className="h-4 w-4 sm:h-6 sm:w-6" />
                         ) : (
                           index + 1
                         )}
@@ -223,41 +223,41 @@ export default function LevelOverview() {
 
                       {/* Unit Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-lg text-foreground">
+                        <div className="flex items-start sm:items-center gap-1.5 sm:gap-2 flex-wrap">
+                          <h3 className="font-semibold text-base sm:text-lg text-foreground line-clamp-1">
                             {unit.title}
                           </h3>
                           {isFreeTrialUnit && !isCompleted && (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-                              <Gift className="h-3 w-3 mr-1" />
-                              Free Trial
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5">
+                              <Gift className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                              Free
                             </Badge>
                           )}
                           {isCompleted && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                              <Trophy className="h-3 w-3 mr-1" />
-                              Complete
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5">
+                              <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                              Done
                             </Badge>
                           )}
                         </div>
                         {unit.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-1">
                             {unit.description}
                           </p>
                         )}
                         
                         {/* Progress Bar */}
                         {user && progress && !isLocked && (
-                          <div className="mt-3 flex items-center gap-3">
-                            <Progress value={lessonProgress} className="flex-1 h-1.5" />
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <div className="mt-2 sm:mt-3 flex items-center gap-2 sm:gap-3">
+                            <Progress value={lessonProgress} className="flex-1 h-1 sm:h-1.5" />
+                            <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                               {progress.completed}/{progress.total}
                             </span>
                           </div>
                         )}
                       </div>
 
-                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
                     </Link>
                   </CardContent>
                 </Card>
@@ -267,14 +267,14 @@ export default function LevelOverview() {
 
           {/* Purchase prompt for logged-in users without access */}
           {user && !hasPurchaseAccess && (
-            <Card className="mt-8 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/20">
-              <CardContent className="p-6 text-center">
-                <Lock className="h-12 w-12 mx-auto text-amber-600 dark:text-amber-400 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Unlock {level.name}</h3>
-                <p className="text-muted-foreground mb-4">
+            <Card className="mt-6 sm:mt-8 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/20">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <Lock className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-amber-600 dark:text-amber-400 mb-3 sm:mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Unlock {level.name}</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
                   Purchase this level to access all units and earn your certificate
                 </p>
-                <Button asChild className="gap-2">
+                <Button asChild className="gap-2 w-full sm:w-auto">
                   <Link to={`/checkout?levelId=${level.id}&dialectId=${dialect?.id}`}>
                     <ShoppingCart className="h-4 w-4" />
                     Purchase Now
@@ -285,14 +285,14 @@ export default function LevelOverview() {
           )}
 
           {!user && (
-            <Card className="mt-8 border-primary/50 bg-primary/5">
-              <CardContent className="p-6 text-center">
-                <BookOpen className="h-12 w-12 mx-auto text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Track Your Progress</h3>
-                <p className="text-muted-foreground mb-4">
+            <Card className="mt-6 sm:mt-8 border-primary/50 bg-primary/5">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-primary mb-3 sm:mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Track Your Progress</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
                   Create a free account to save your progress and earn certificates
                 </p>
-                <Button asChild>
+                <Button asChild className="w-full sm:w-auto">
                   <Link to="/signup">Get Started Free</Link>
                 </Button>
               </CardContent>
