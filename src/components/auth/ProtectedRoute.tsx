@@ -5,11 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requireEmailVerification?: boolean;
 }
 
-export function ProtectedRoute({ children, requireEmailVerification = true }: ProtectedRouteProps) {
-  const { user, isLoading, profile } = useAuth();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -26,14 +25,6 @@ export function ProtectedRoute({ children, requireEmailVerification = true }: Pr
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  // Check email verification if required (and profile is loaded)
-  if (requireEmailVerification && profile && !profile.email_verified) {
-    // Don't redirect if already on verify-email page
-    if (location.pathname !== "/verify-email") {
-      return <Navigate to="/verify-email" replace />;
-    }
   }
 
   return <>{children}</>;

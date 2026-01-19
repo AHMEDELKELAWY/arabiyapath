@@ -256,65 +256,6 @@ export type Database = {
         }
         Relationships: []
       }
-      email_campaigns: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          recipients_count: number | null
-          sent_at: string | null
-          subject: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          recipients_count?: number | null
-          sent_at?: string | null
-          subject: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          recipients_count?: number | null
-          sent_at?: string | null
-          subject?: string
-        }
-        Relationships: []
-      }
-      email_sends: {
-        Row: {
-          campaign_id: string | null
-          id: string
-          sent_at: string | null
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          campaign_id?: string | null
-          id?: string
-          sent_at?: string | null
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          campaign_id?: string | null
-          id?: string
-          sent_at?: string | null
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_sends_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "email_campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lessons: {
         Row: {
           arabic_text: string | null
@@ -536,44 +477,32 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
-          email_verified: boolean | null
           first_name: string | null
           id: string
           last_name: string | null
-          marketing_consent: boolean | null
           preferred_dialect_id: string | null
           updated_at: string
           user_id: string
-          verification_code: string | null
-          verification_code_expires_at: string | null
         }
         Insert: {
           created_at?: string
           email?: string | null
-          email_verified?: boolean | null
           first_name?: string | null
           id?: string
           last_name?: string | null
-          marketing_consent?: boolean | null
           preferred_dialect_id?: string | null
           updated_at?: string
           user_id: string
-          verification_code?: string | null
-          verification_code_expires_at?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
-          email_verified?: boolean | null
           first_name?: string | null
           id?: string
           last_name?: string | null
-          marketing_consent?: boolean | null
           preferred_dialect_id?: string | null
           updated_at?: string
           user_id?: string
-          verification_code?: string | null
-          verification_code_expires_at?: string | null
         }
         Relationships: []
       }

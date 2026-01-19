@@ -4,10 +4,8 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 
 const benefits = ["Access free trial lessons", "Track your progress", "Earn certificates", "Join the community"];
@@ -18,7 +16,6 @@ export default function Signup() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
@@ -39,33 +36,12 @@ export default function Signup() {
       return;
     }
     setIsLoading(true);
-    
     const { error } = await signUp(email, password, firstName, lastName);
-    
     if (error) {
       toast({ title: "Signup Failed", description: error.message || "Could not create account.", variant: "destructive" });
-      setIsLoading(false);
-      return;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const { data: { user: newUser } } = await supabase.auth.getUser();
-    
-    if (newUser) {
-      await supabase.from("profiles").update({ marketing_consent: marketingConsent }).eq("user_id", newUser.id);
-      
-      try {
-        await supabase.functions.invoke("send-verification-email", {
-          body: { email, userId: newUser.id, firstName },
-        });
-        toast({ title: "Account Created!", description: "Please check your email for the verification code." });
-      } catch (emailError) {
-        console.error("Failed to send verification email:", emailError);
-        toast({ title: "Account Created!", description: "Welcome to ArabiyaPath!" });
-      }
-      navigate("/verify-email");
     } else {
-      navigate("/verify-email");
+      toast({ title: "Account Created!", description: "Welcome to ArabiyaPath!" });
+      navigate(redirectUrl);
     }
     setIsLoading(false);
   };
@@ -113,12 +89,6 @@ export default function Signup() {
                       </div>
                       <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
                     </div>
-                    
-                    <div className="flex items-start space-x-3 space-x-reverse">
-                      <Checkbox id="marketing" checked={marketingConsent} onCheckedChange={(checked) => setMarketingConsent(checked === true)} className="mt-1" />
-                      <Label htmlFor="marketing" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">أوافق على استلام العروض والتحديثات عبر البريد الإلكتروني</Label>
-                    </div>
-                    
                     <Button type="submit" size="lg" variant="hero" className="w-full" disabled={isLoading}>
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-5 h-5" /></>}
                     </Button>
