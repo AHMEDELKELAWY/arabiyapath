@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Target, Heart, Lightbulb, Users, ArrowRight, MapPin, Phone } from "lucide-react";
@@ -43,6 +44,12 @@ const team = [
 
 export default function About() {
   return (
+    <>
+      <SEOHead
+        title="About Us"
+        description="ArabiyaPath makes Arabic accessible to everyone. Meet our team and learn about our mission to teach real Arabic through immersive, practical lessons."
+        canonicalPath="/about"
+      />
     <Layout>
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
@@ -193,7 +200,8 @@ export default function About() {
             </Button>
           </div>
         </div>
-      </section>
-    </Layout>
+        </section>
+      </Layout>
+    </>
   );
 }

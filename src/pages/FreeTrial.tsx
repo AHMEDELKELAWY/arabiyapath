@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Loader2 } from "lucide-react";
 
 export default function FreeTrial() {
@@ -65,13 +66,20 @@ export default function FreeTrial() {
   }, [navigate]);
 
   return (
-    <Layout>
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-          <p className="text-lg text-muted-foreground">Loading your free trial...</p>
+    <>
+      <SEOHead
+        title="Start Free Arabic Lessons"
+        description="Try ArabiyaPath free. No credit card required. Start learning Gulf, Egyptian, or Modern Standard Arabic with our first lesson today."
+        canonicalPath="/free-trial"
+      />
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+            <p className="text-lg text-muted-foreground">Loading your free trial...</p>
+          </div>
         </div>
-      </div>
-    </Layout>
+      </Layout>
+    </>
   );
 }
