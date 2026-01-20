@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, Star, Award } from "lucide-react";
 import {
@@ -210,7 +211,13 @@ export default function Pricing() {
   });
 
   return (
-    <Layout>
+    <>
+      <SEOHead
+        title="Pricing - Learn Arabic Online"
+        description="Affordable Arabic courses with certificates. Choose individual levels, dialect bundles, or get the All Access Bundle for best value. One-time payment, lifetime access."
+        canonicalPath="/pricing"
+      />
+      <Layout>
       {/* Hero */}
       <section className="relative py-16 md:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-hero-gradient opacity-[0.03]" />
@@ -403,6 +410,7 @@ export default function Pricing() {
           )}
         </DialogContent>
       </Dialog>
-    </Layout>
+      </Layout>
+    </>
   );
 }

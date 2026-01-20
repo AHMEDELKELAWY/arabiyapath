@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +98,12 @@ const faqCategories = [
 
 export default function FAQ() {
   return (
+    <>
+      <SEOHead
+        title="Frequently Asked Questions"
+        description="Find answers to common questions about learning Arabic with ArabiyaPath. Get started, courses, pricing, technical support, and more."
+        canonicalPath="/faq"
+      />
     <Layout>
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
@@ -160,7 +167,8 @@ export default function FAQ() {
             </Button>
           </div>
         </div>
-      </section>
-    </Layout>
+        </section>
+      </Layout>
+    </>
   );
 }

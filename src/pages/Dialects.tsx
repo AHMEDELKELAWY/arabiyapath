@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, MapPin, Users, BookOpen, Clock } from "lucide-react";
@@ -69,7 +70,13 @@ export default function Dialects() {
   });
 
   return (
-    <Layout>
+    <>
+      <SEOHead
+        title="Choose Your Arabic Dialect"
+        description="Compare Gulf, Egyptian, and Modern Standard Arabic. Find the perfect Arabic dialect for your goals and start learning with practical lessons."
+        canonicalPath="/dialects"
+      />
+      <Layout>
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-hero-gradient opacity-[0.03]" />
@@ -209,7 +216,8 @@ export default function Dialects() {
             </Button>
           </div>
         </div>
-      </section>
-    </Layout>
+        </section>
+      </Layout>
+    </>
   );
 }

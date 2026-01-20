@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,7 +50,13 @@ export default function Contact() {
   };
 
   return (
-    <Layout>
+    <>
+      <SEOHead
+        title="Contact Us"
+        description="Have a question about learning Arabic? Contact the ArabiyaPath team. We respond within 24 hours to help you on your Arabic learning journey."
+        canonicalPath="/contact"
+      />
+      <Layout>
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-hero-gradient opacity-[0.03]" />
@@ -185,6 +192,7 @@ export default function Contact() {
           </div>
         </div>
       </section>
-    </Layout>
+      </Layout>
+    </>
   );
 }

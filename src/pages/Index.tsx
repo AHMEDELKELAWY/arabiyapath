@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Award, Users, Globe, Headphones, CheckCircle2 } from "lucide-react";
 
@@ -56,6 +57,12 @@ const stats = [
 
 export default function Index() {
   return (
+    <>
+      <SEOHead
+        canonicalPath="/"
+        title=""
+        description="Learn Arabic dialects online with ArabiyaPath. Master Gulf, Egyptian, or Modern Standard Arabic through immersive lessons, native audio, and earn certificates."
+      />
     <Layout>
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -250,6 +257,7 @@ export default function Index() {
           </div>
         </div>
       </section>
-    </Layout>
+      </Layout>
+    </>
   );
 }
