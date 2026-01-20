@@ -12,3 +12,14 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Block private/admin areas
+Disallow: /admin/
+Disallow: /affiliate/
+Disallow: /dashboard/
+Disallow: /verify-email
+Disallow: /payment/
+Disallow: /checkout
+
+# Sitemap
+Sitemap: https://arabiyapath.com/sitemap.xml
