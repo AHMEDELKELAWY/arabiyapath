@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateOrganizationSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Award, Users, Globe, Headphones, CheckCircle2 } from "lucide-react";
+import { trackBookTrial } from "@/lib/analytics";
 
 const organizationSchema = generateOrganizationSchema();
 
@@ -85,7 +86,12 @@ export default function Index() {
               The most effective way for foreigners to learn Arabic.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.2s" }}>
-              <Button size="xl" variant="hero" asChild>
+              <Button 
+                size="xl" 
+                variant="hero" 
+                asChild
+                onClick={() => trackBookTrial("Start Learning Free", "hero_section")}
+              >
                 <Link to="/free-trial">
                   Start Learning Free
                   <ArrowRight className="w-5 h-5" />
@@ -233,7 +239,12 @@ export default function Index() {
               Start with free lessons today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="xl" variant="hero" asChild>
+              <Button 
+                size="xl" 
+                variant="hero" 
+                asChild
+                onClick={() => trackBookTrial("Get Started Free", "cta_section")}
+              >
                 <Link to="/free-trial">
                   Get Started Free
                   <ArrowRight className="w-5 h-5" />
