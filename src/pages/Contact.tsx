@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, MessageSquare, Clock, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { trackGenerateLead } from "@/lib/analytics";
 
 const contactMethods = [
   {
@@ -37,6 +38,9 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Track lead generation event
+    trackGenerateLead("contact_form");
 
     // Simulate form submission
     await new Promise((resolve) => setTimeout(resolve, 1000));
