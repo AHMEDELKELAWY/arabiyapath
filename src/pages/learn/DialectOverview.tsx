@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useDialectLevels } from "@/hooks/useLearning";
 import { Layout } from "@/components/layout/Layout";
-import { SEOHead, getDialectSEO } from "@/components/seo/SEOHead";
+import { SEOHead, getDialectSEO, generateCourseSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,8 @@ export default function DialectOverview() {
 
   const { dialect, levels } = data;
   const seoData = getDialectSEO(dialect.name);
+  const canonicalPath = `/learn/dialect/${dialectId}`;
+  const courseSchema = generateCourseSchema(dialect.name, seoData.description, canonicalPath);
 
   const getLevelIcon = (index: number) => {
     switch (index) {
@@ -70,7 +72,8 @@ export default function DialectOverview() {
       <SEOHead
         title={seoData.title}
         description={seoData.description}
-        canonicalPath={`/learn/dialect/${dialectId}`}
+        canonicalPath={canonicalPath}
+        jsonLd={courseSchema}
       />
       <Layout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">

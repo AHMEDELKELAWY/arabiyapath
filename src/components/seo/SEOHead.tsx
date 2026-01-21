@@ -7,6 +7,7 @@ interface SEOProps {
   ogImage?: string;
   ogType?: 'website' | 'article';
   noindex?: boolean;
+  jsonLd?: object | object[];
 }
 
 const SITE_NAME = 'ArabiyaPath';
@@ -22,6 +23,7 @@ export function SEOHead({
   ogImage = DEFAULT_OG_IMAGE,
   ogType = 'website',
   noindex = false,
+  jsonLd,
 }: SEOProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   const metaDescription = description || DEFAULT_DESC;
@@ -52,6 +54,13 @@ export function SEOHead({
 
       {/* Robots */}
       {noindex && <meta name="robots" content="noindex,nofollow" />}
+
+      {/* JSON-LD Structured Data */}
+      {jsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      )}
     </Helmet>
   );
 }
@@ -76,5 +85,45 @@ export const getDialectSEO = (dialectName: string): { title: string; description
   return seoMap[dialectName] || {
     title: `Learn ${dialectName}`,
     description: `Master ${dialectName} with ArabiyaPath. Practical lessons, native audio, and certificates to prove your progress.`,
+  };
+};
+
+// JSON-LD Schema Generators
+export const generateOrganizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "ArabiyaPath",
+  "url": "https://arabiyapath.com",
+  "logo": "https://arabiyapath.com/logo.png",
+  "description": "Learn Arabic dialects online with ArabiyaPath. Master Gulf, Egyptian, or Modern Standard Arabic through immersive lessons, native audio, and earn certificates."
+});
+
+export const generateCourseSchema = (
+  dialectName: string,
+  description: string,
+  canonicalPath: string
+) => {
+  const courseNames: Record<string, string> = {
+    'Gulf Arabic': 'Gulf Arabic Course (Khaleeji)',
+    'Egyptian Arabic': 'Egyptian Arabic Course',
+    'Modern Standard Arabic': 'Modern Standard Arabic Course (Fusha)',
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": courseNames[dialectName] || `${dialectName} Course`,
+    "description": description,
+    "url": `https://arabiyapath.com${canonicalPath}`,
+    "provider": {
+      "@type": "Organization",
+      "name": "ArabiyaPath",
+      "url": "https://arabiyapath.com"
+    },
+    "inLanguage": "en",
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Non-native Arabic speakers, Expats, Language learners"
+    }
   };
 };
