@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import { SEOHead } from "@/components/seo/SEOHead";
+import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, Star, Award } from "lucide-react";
 import {
@@ -115,6 +115,8 @@ export default function Pricing() {
   const { user, isLoading: authLoading } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
+  const faqPageSchema = generateFAQPageSchema("/pricing", faqs);
+
   const { data: dbProducts, isLoading: productsLoading } = useQuery({
     queryKey: ["products-with-details"],
     queryFn: async () => {
@@ -216,6 +218,7 @@ export default function Pricing() {
         title="Pricing - Learn Arabic Online"
         description="Affordable Arabic courses with certificates. Choose individual levels, dialect bundles, or get the All Access Bundle for best value. One-time payment, lifetime access."
         canonicalPath="/pricing"
+        jsonLd={faqPageSchema}
       />
       <Layout>
       {/* Hero */}
