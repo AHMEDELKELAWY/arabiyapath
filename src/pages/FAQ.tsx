@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { SEOHead } from "@/components/seo/SEOHead";
+import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,12 +97,18 @@ const faqCategories = [
 ];
 
 export default function FAQ() {
+  const faqPageSchema = generateFAQPageSchema(
+    "/faq",
+    faqCategories.flatMap((c) => c.questions.map((q) => ({ q: q.q, a: q.a })))
+  );
+
   return (
     <>
       <SEOHead
         title="Frequently Asked Questions"
         description="Find answers to common questions about learning Arabic with ArabiyaPath. Get started, courses, pricing, technical support, and more."
         canonicalPath="/faq"
+        jsonLd={faqPageSchema}
       />
     <Layout>
       {/* Hero */}

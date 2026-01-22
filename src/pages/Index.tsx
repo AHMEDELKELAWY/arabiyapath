@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import { SEOHead, generateOrganizationSchema } from "@/components/seo/SEOHead";
+import { SEOHead, generateOrganizationSchema, generateWebSiteSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Award, Users, Globe, Headphones, CheckCircle2 } from "lucide-react";
 import { trackBookTrial } from "@/lib/analytics";
 
 const organizationSchema = generateOrganizationSchema();
+const websiteSchema = generateWebSiteSchema();
 
 const dialects = [
   {
@@ -65,7 +66,7 @@ export default function Index() {
         canonicalPath="/"
         title=""
         description="Learn Arabic dialects online with ArabiyaPath. Master Gulf, Egyptian, or Modern Standard Arabic through immersive lessons, native audio, and earn certificates."
-        jsonLd={organizationSchema}
+        jsonLd={[organizationSchema, websiteSchema]}
       />
     <Layout>
       {/* Hero Section */}

@@ -56,11 +56,12 @@ export function SEOHead({
       {noindex && <meta name="robots" content="noindex,nofollow" />}
 
       {/* JSON-LD Structured Data */}
-      {jsonLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
-        </script>
-      )}
+      {jsonLd &&
+        (Array.isArray(jsonLd) ? jsonLd : [jsonLd]).map((schema, idx) => (
+          <script key={idx} type="application/ld+json">
+            {JSON.stringify(schema)}
+          </script>
+        ))}
     </Helmet>
   );
 }
@@ -98,6 +99,13 @@ export const generateOrganizationSchema = () => ({
   "description": "Learn Arabic dialects online with ArabiyaPath. Master Gulf, Egyptian, or Modern Standard Arabic through immersive lessons, native audio, and earn certificates."
 });
 
+export const generateWebSiteSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://arabiyapath.com",
+  "name": "ArabiyaPath",
+});
+
 export const generateCourseSchema = (
   dialectName: string,
   description: string,
@@ -127,3 +135,19 @@ export const generateCourseSchema = (
     }
   };
 };
+
+export type FAQItem = { q: string; a: string };
+
+export const generateFAQPageSchema = (canonicalPath: string, faqs: FAQItem[]) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "url": `https://arabiyapath.com${canonicalPath}`,
+  "mainEntity": faqs.map((faq) => ({
+    "@type": "Question",
+    "name": faq.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.a,
+    },
+  })),
+});
