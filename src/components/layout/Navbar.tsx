@@ -8,12 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import logoImage from "@/assets/logo.png";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/dialects", label: "Dialects" },
+  { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
+  { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
+  { href: "/learn/egyptian-arabic", label: "Egyptian Arabic (Coming Soon)" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/contact", label: "Contact" },
+  { href: "/become-affiliate", label: "Become Affiliate" },
+  { href: "/signup", label: "Signup" },
 ];
 
 export function Navbar() {

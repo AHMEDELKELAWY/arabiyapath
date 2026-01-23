@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
+import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +34,11 @@ export default function BecomeAffiliate() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: existingApplication } = useMyAffiliateApplication();
+
+  const breadcrumbSchema = generateBreadcrumbListSchema([
+    { name: "Home", path: "/" },
+    { name: "Become Affiliate", path: "/become-affiliate" },
+  ]);
 
   // If user is logged in and already has an application or is affiliate, redirect
   useEffect(() => {
@@ -126,7 +133,14 @@ export default function BecomeAffiliate() {
   // If user is logged in, show the modal version
   if (!authLoading && user) {
     return (
-      <Layout>
+      <>
+        <SEOHead
+          title="Become an Affiliate"
+          description="Join the ArabiyaPath affiliate program and earn commission on every referral. Apply in minutes and track earnings in real-time."
+          canonicalPath="/become-affiliate"
+          jsonLd={breadcrumbSchema}
+        />
+        <Layout>
         <section className="py-20 min-h-[calc(100vh-4rem)]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-xl mx-auto text-center">
@@ -161,24 +175,40 @@ export default function BecomeAffiliate() {
             </div>
           </div>
         </section>
-      </Layout>
+        </Layout>
+      </>
     );
   }
 
   // Show loading while checking auth
   if (authLoading) {
     return (
-      <Layout>
+      <>
+        <SEOHead
+          title="Become an Affiliate"
+          description="Join the ArabiyaPath affiliate program and earn commission on every referral. Apply in minutes and track earnings in real-time."
+          canonicalPath="/become-affiliate"
+          jsonLd={breadcrumbSchema}
+        />
+        <Layout>
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </Layout>
+        </Layout>
+      </>
     );
   }
 
   // Full signup + affiliate form for non-logged-in users
   return (
-    <Layout>
+    <>
+      <SEOHead
+        title="Become an Affiliate"
+        description="Join the ArabiyaPath affiliate program and earn commission on every referral. Apply in minutes and track earnings in real-time."
+        canonicalPath="/become-affiliate"
+        jsonLd={breadcrumbSchema}
+      />
+      <Layout>
       <section className="py-20 min-h-[calc(100vh-4rem)]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
@@ -337,6 +367,7 @@ export default function BecomeAffiliate() {
           </div>
         </div>
       </section>
-    </Layout>
+      </Layout>
+    </>
   );
 }

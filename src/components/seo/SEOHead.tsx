@@ -7,6 +7,7 @@ interface SEOProps {
   ogImage?: string;
   ogType?: 'website' | 'article';
   noindex?: boolean;
+  robots?: string;
   jsonLd?: object | object[];
 }
 
@@ -23,6 +24,7 @@ export function SEOHead({
   ogImage = DEFAULT_OG_IMAGE,
   ogType = 'website',
   noindex = false,
+  robots,
   jsonLd,
 }: SEOProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
@@ -60,7 +62,11 @@ export function SEOHead({
       <meta name="twitter:image" content={imageUrl} />
 
       {/* Robots */}
-      {noindex && <meta name="robots" content="noindex,nofollow" />}
+      {robots ? (
+        <meta name="robots" content={robots} />
+      ) : (
+        noindex && <meta name="robots" content="noindex,nofollow" />
+      )}
 
       {/* JSON-LD Structured Data */}
       {jsonLd &&
