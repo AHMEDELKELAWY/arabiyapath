@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
+import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, Star, Award } from "lucide-react";
 import {
@@ -116,6 +117,10 @@ export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   const faqPageSchema = generateFAQPageSchema("/pricing", faqs);
+  const breadcrumbSchema = generateBreadcrumbListSchema([
+    { name: "Home", path: "/" },
+    { name: "Pricing", path: "/pricing" },
+  ]);
 
   const { data: dbProducts, isLoading: productsLoading } = useQuery({
     queryKey: ["products-with-details"],
@@ -218,7 +223,7 @@ export default function Pricing() {
         title="Pricing - Learn Arabic Online"
         description="Affordable Arabic courses with certificates. Choose individual levels, dialect bundles, or get the All Access Bundle for best value. One-time payment, lifetime access."
         canonicalPath="/pricing"
-        jsonLd={faqPageSchema}
+        jsonLd={[breadcrumbSchema, faqPageSchema]}
       />
       <Layout>
       {/* Hero */}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { SEOHead } from "@/components/seo/SEOHead";
+import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +27,11 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
+  const breadcrumbSchema = generateBreadcrumbListSchema([
+    { name: "Home", path: "/" },
+    { name: "Signup", path: "/signup" },
+  ]);
 
   useEffect(() => {
     if (user) {
@@ -77,7 +84,14 @@ export default function Signup() {
   };
 
   return (
-    <Layout>
+    <>
+      <SEOHead
+        title="Sign Up"
+        description="Create your ArabiyaPath account to access free trial lessons, track progress, and earn certificates."
+        canonicalPath="/signup"
+        jsonLd={breadcrumbSchema}
+      />
+      <Layout>
       <section className="py-20 min-h-[calc(100vh-4rem)]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
@@ -140,6 +154,7 @@ export default function Signup() {
           </div>
         </div>
       </section>
-    </Layout>
+      </Layout>
+    </>
   );
 }

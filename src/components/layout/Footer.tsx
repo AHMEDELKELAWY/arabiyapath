@@ -2,6 +2,14 @@ import { Link } from "react-router-dom";
 import { trackOutboundClick } from "@/lib/analytics";
 
 const footerLinks = {
+  popular: [
+    { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
+    { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
+    { href: "/learn/egyptian-arabic", label: "Egyptian Arabic (Coming Soon)" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/become-affiliate", label: "Become Affiliate" },
+    { href: "/signup", label: "Signup" },
+  ],
   platform: [
     { href: "/dialects", label: "Dialects" },
     { href: "/pricing", label: "Pricing" },
@@ -56,7 +64,7 @@ export function Footer() {
   return (
     <footer className="bg-cream-dark border-t border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
@@ -70,6 +78,23 @@ export function Footer() {
             <p className="text-sm text-muted-foreground max-w-xs">
               Master Arabic dialects with immersive lessons designed for real-world conversations.
             </p>
+          </div>
+
+          {/* Popular Links */}
+          <div>
+            <h4 className="font-semibold text-foreground mb-4">Popular links</h4>
+            <ul className="space-y-2">
+              {footerLinks.popular.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Platform Links */}

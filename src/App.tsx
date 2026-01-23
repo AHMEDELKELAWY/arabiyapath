@@ -40,6 +40,9 @@ import LevelOverview from "./pages/learn/LevelOverview";
 import UnitOverview from "./pages/learn/UnitOverview";
 import LessonPlayer from "./pages/learn/LessonPlayer";
 import QuizPage from "./pages/learn/QuizPage";
+import GulfArabicLanding from "./pages/learn/GulfArabicLanding";
+import FushaArabicLanding from "./pages/learn/FushaArabicLanding";
+import EgyptianArabicComingSoon from "./pages/learn/EgyptianArabicComingSoon";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import Checkout from "./pages/Checkout";
@@ -79,6 +82,9 @@ const App = () => (
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="/checkout" element={<Checkout />} />
             {/* Learning Routes */}
+            <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />
+            <Route path="/learn/fusha-arabic" element={<FushaArabicLanding />} />
+            <Route path="/learn/egyptian-arabic" element={<EgyptianArabicComingSoon />} />
             <Route path="/learn/dialect/:dialectId" element={<DialectOverview />} />
             <Route path="/learn/level/:levelId" element={<LevelOverview />} />
             <Route path="/learn/unit/:unitId" element={<UnitOverview />} />
