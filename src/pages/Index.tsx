@@ -4,9 +4,12 @@ import { SEOHead, generateOrganizationSchema, generateWebSiteSchema } from "@/co
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Award, Users, Globe, Headphones, CheckCircle2 } from "lucide-react";
 import { trackBookTrial } from "@/lib/analytics";
+import { DirectAnswer } from "@/components/seo/DirectAnswer";
 
 const organizationSchema = generateOrganizationSchema();
 const websiteSchema = generateWebSiteSchema();
+
+const HOME_DIRECT_ANSWER = "ArabiyaPath helps non-native speakers learn Arabic through immersive lessons with native audio, English translation, and transliteration. Choose Gulf Arabic for daily life in the GCC or Fusha (MSA) for reading and formal use. Start with a free lesson, then follow a guided path to build vocabulary and confidence.";
 
 const dialects = [
   {
@@ -82,10 +85,25 @@ export default function Index() {
               Master Arabic
               <span className="text-gradient block mt-2">Speak Like a Native</span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-slide-up" style={{ animationDelay: "0.1s" }}>
               Choose your dialect, learn real conversations, and earn certificates. 
               The most effective way for foreigners to learn Arabic.
             </p>
+            
+            {/* Direct Answer Block */}
+            <div className="max-w-3xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.15s" }}>
+              <DirectAnswer
+                text={HOME_DIRECT_ANSWER}
+                linksTitle="Quick links"
+                links={[
+                  { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
+                  { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
+                  { href: "/pricing", label: "Pricing" },
+                  { href: "/blog", label: "Blog" },
+                ]}
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <Button 
                 size="xl" 

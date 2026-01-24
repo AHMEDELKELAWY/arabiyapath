@@ -4,6 +4,9 @@ import { SEOHead, generateCourseSchema, getDialectSEO } from "@/components/seo/S
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Headphones, Award, BookOpen } from "lucide-react";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
+import { DirectAnswer } from "@/components/seo/DirectAnswer";
+
+const GULF_DIRECT_ANSWER = "This Gulf Arabic course is built for expats and beginners who want real everyday conversations in the UAE, Saudi Arabia, and Qatar. Learn with native audio, English translation, and transliteration so you can pronounce and remember phrases faster. Start with a free lesson, then follow the beginner path step by step.";
 
 export default function GulfArabicLanding() {
   const seo = getDialectSEO("Gulf Arabic");
@@ -29,10 +32,23 @@ export default function GulfArabicLanding() {
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
                 Learn <span className="text-gradient">Gulf Arabic</span> (Khaleeji)
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
                 Speak Arabic like a local in the UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, and Oman.
                 Build real conversation skills with native audio, practical lessons, and certificates.
               </p>
+
+              {/* Direct Answer Block */}
+              <div className="max-w-3xl mx-auto mb-10">
+                <DirectAnswer
+                  text={GULF_DIRECT_ANSWER}
+                  linksTitle="Next steps"
+                  links={[
+                    { href: "/signup", label: "Sign Up Free" },
+                    { href: "/pricing", label: "View Pricing" },
+                    { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
+                  ]}
+                />
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
