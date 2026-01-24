@@ -228,6 +228,46 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Start Here / Popular Links Section */}
+      <section className="py-16 bg-cream">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              Start Here
+            </h2>
+            <p className="text-muted-foreground">
+              Quick links to get you started on your Arabic journey
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4 max-w-2xl mx-auto">
+            <Link
+              to="/learn/gulf-arabic"
+              className="px-6 py-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all text-foreground font-medium"
+            >
+              Gulf Arabic
+            </Link>
+            <Link
+              to="/learn/fusha-arabic"
+              className="px-6 py-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all text-foreground font-medium"
+            >
+              Fusha Arabic
+            </Link>
+            <Link
+              to="/pricing"
+              className="px-6 py-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all text-foreground font-medium"
+            >
+              Pricing
+            </Link>
+            <Link
+              to="/blog"
+              className="px-6 py-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all text-foreground font-medium"
+            >
+              Blog
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
