@@ -2,12 +2,16 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { DirectAnswer } from "@/components/seo/DirectAnswer";
+
+const FAQ_DIRECT_ANSWER = "Find quick answers about learning Arabic with ArabiyaPath, courses, and how to get started. Our lessons are designed for non-native speakers with native audio, English translation, and transliteration to make practice easier. If you're new, start with a free lesson and follow the beginner path.";
 
 const faqCategories = [
   {
@@ -119,9 +123,30 @@ export default function FAQ() {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Frequently Asked <span className="text-gradient">Questions</span>
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-muted-foreground mb-8">
               Find answers to common questions about learning Arabic with ArabiyaPath.
             </p>
+
+            {/* Direct Answer Block */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <DirectAnswer text={FAQ_DIRECT_ANSWER} />
+            </div>
+
+            {/* Ready to Start CTA */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                Sign Up Free <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/pricing"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 transition-colors"
+              >
+                View Pricing
+              </Link>
+            </div>
           </div>
         </div>
       </section>

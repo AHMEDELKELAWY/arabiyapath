@@ -4,6 +4,9 @@ import { SEOHead, generateCourseSchema, getDialectSEO } from "@/components/seo/S
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Globe2, Award } from "lucide-react";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
+import { DirectAnswer } from "@/components/seo/DirectAnswer";
+
+const FUSHA_DIRECT_ANSWER = "This Fusha (Modern Standard Arabic) course is ideal for learners who want Arabic for reading, media, and formal communication. Each lesson includes native audio, English translation, and transliteration to support pronunciation and practice. Start with a free lesson, then continue through the beginner track to build strong foundations.";
 
 export default function FushaArabicLanding() {
   const seo = getDialectSEO("Modern Standard Arabic");
@@ -33,10 +36,23 @@ export default function FushaArabicLanding() {
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
                 Learn <span className="text-gradient">Fusha Arabic</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
                 Master Modern Standard Arabic (MSA) for media, academia, and professional communication.
                 Build a strong foundation with structured lessons, quizzes, and certificates.
               </p>
+
+              {/* Direct Answer Block */}
+              <div className="max-w-3xl mx-auto mb-10">
+                <DirectAnswer
+                  text={FUSHA_DIRECT_ANSWER}
+                  linksTitle="Next steps"
+                  links={[
+                    { href: "/signup", label: "Sign Up Free" },
+                    { href: "/pricing", label: "View Pricing" },
+                    { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
+                  ]}
+                />
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>

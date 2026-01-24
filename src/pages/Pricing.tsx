@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, Star, Award } from "lucide-react";
+import { Loader2, Users, Star, Award, ArrowRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { DirectAnswer } from "@/components/seo/DirectAnswer";
+
+const PRICING_DIRECT_ANSWER = "Choose a plan to access structured Arabic lessons with native audio, translation, and transliteration. If you live in the GCC, start with Gulf Arabic for daily conversations. If you want Arabic for reading and formal contexts, choose Fusha (MSA). Start free, then upgrade when you're ready.";
 
 // Features per level type
 const levelFeatures: Record<string, string[]> = {
@@ -238,9 +241,34 @@ export default function Pricing() {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Invest in Your <span className="text-gradient">Arabic Journey</span>
             </h1>
-            <p className="text-lg text-muted-foreground mb-4">
+            <p className="text-lg text-muted-foreground mb-6">
               Choose a single level, a complete dialect bundle, or unlock everything with All Access.
             </p>
+
+            {/* Direct Answer Block */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <DirectAnswer text={PRICING_DIRECT_ANSWER} />
+            </div>
+
+            {/* Choose Your Path */}
+            <div className="max-w-xl mx-auto mb-6">
+              <p className="text-sm font-medium text-muted-foreground mb-3">Choose your path</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link
+                  to="/learn/gulf-arabic"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary transition-colors"
+                >
+                  Gulf Arabic <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  to="/learn/fusha-arabic"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary transition-colors"
+                >
+                  Fusha Arabic <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Users className="w-4 h-4" />
