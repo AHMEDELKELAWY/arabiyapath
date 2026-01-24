@@ -7,6 +7,7 @@ const footerLinks = {
     { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
     { href: "/learn/egyptian-arabic", label: "Egyptian Arabic (Coming Soon)" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/blog", label: "Blog" },
     { href: "/become-affiliate", label: "Become Affiliate" },
     { href: "/signup", label: "Signup" },
   ],
@@ -82,7 +83,7 @@ export function Footer() {
 
           {/* Popular Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Popular links</h4>
+            <h4 className="font-semibold text-foreground mb-4">Popular Links</h4>
             <ul className="space-y-2">
               {footerLinks.popular.map((link) => (
                 <li key={link.href}>
