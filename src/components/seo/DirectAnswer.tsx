@@ -28,7 +28,8 @@ export function DirectAnswer({ text, links, linksTitle }: DirectAnswerProps) {
               <Link
                 key={link.href}
                 to={link.href}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary transition-colors cursor-pointer"
+                role="link"
               >
                 {link.label}
                 <ArrowRight className="w-3.5 h-3.5" />

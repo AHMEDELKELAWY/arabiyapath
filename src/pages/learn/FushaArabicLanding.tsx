@@ -55,14 +55,16 @@ export default function FushaArabicLanding() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="xl" variant="hero" asChild>
-                  <Link to="/signup?redirect=/learn/fusha-arabic">
+                <Link to="/signup?redirect=/learn/fusha-arabic">
+                  <Button size="xl" variant="hero" className="w-full sm:w-auto">
                     Start Learning Free <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </Button>
-                <Button size="xl" variant="outline" asChild>
-                  <Link to="/pricing?course=fusha">View Pricing</Link>
-                </Button>
+                  </Button>
+                </Link>
+                <Link to="/pricing?course=fusha">
+                  <Button size="xl" variant="outline" className="w-full sm:w-auto">
+                    View Pricing
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
