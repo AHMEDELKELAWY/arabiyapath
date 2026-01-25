@@ -8,18 +8,11 @@ const footerLinks = {
     { href: "/learn/egyptian-arabic", label: "Egyptian Arabic (Coming Soon)" },
     { href: "/pricing", label: "Pricing" },
     { href: "/blog", label: "Blog" },
-    { href: "/become-affiliate", label: "Become Affiliate" },
-    { href: "/signup", label: "Signup" },
-  ],
-  platform: [
-    { href: "/dialects", label: "Dialects" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/about", label: "About Us" },
-    { href: "/become-affiliate", label: "Become a Partner" },
   ],
   support: [
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
+    { href: "/become-affiliate", label: "Become Affiliate" },
   ],
   legal: [
     { href: "/terms", label: "Terms of Service" },
@@ -65,13 +58,11 @@ export function Footer() {
   return (
     <footer className="bg-cream-dark border-t border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-hero-gradient flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">ع</span>
-              </div>
+              <img src="/logo.png" alt="ArabiyaPath Logo" className="h-10 w-auto" />
               <span className="text-xl font-bold text-foreground">
                 Arabiya<span className="text-primary">Path</span>
               </span>
@@ -86,23 +77,6 @@ export function Footer() {
             <h4 className="font-semibold text-foreground mb-4">Popular Links</h4>
             <ul className="space-y-2">
               {footerLinks.popular.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Platform Links */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Platform</h4>
-            <ul className="space-y-2">
-              {footerLinks.platform.map((link) => (
                 <li key={link.href}>
                   <Link
                     to={link.href}

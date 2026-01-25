@@ -47,8 +47,8 @@ export default function FushaArabicLanding() {
                   text={FUSHA_DIRECT_ANSWER}
                   linksTitle="Next steps"
                   links={[
-                    { href: "/signup", label: "Sign Up Free" },
-                    { href: "/pricing", label: "View Pricing" },
+                    { href: "/signup?redirect=/learn/fusha-arabic", label: "Sign Up Free" },
+                    { href: "/pricing?course=fusha", label: "View Pricing" },
                     { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
                   ]}
                 />
@@ -56,12 +56,12 @@ export default function FushaArabicLanding() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to="/free-trial">
+                  <Link to="/signup?redirect=/learn/fusha-arabic">
                     Start Learning Free <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
                 <Button size="xl" variant="outline" asChild>
-                  <Link to="/pricing">View Pricing</Link>
+                  <Link to="/pricing?course=fusha">View Pricing</Link>
                 </Button>
               </div>
             </div>

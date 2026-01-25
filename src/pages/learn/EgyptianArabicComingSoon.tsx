@@ -6,7 +6,6 @@ import { ArrowRight, Mail } from "lucide-react";
 
 export default function EgyptianArabicComingSoon() {
   const seo = getDialectSEO("Egyptian Arabic");
-  const contactHref = "/contact?subject=" + encodeURIComponent("Egyptian Arabic Waitlist");
 
   return (
     <>
@@ -31,7 +30,7 @@ export default function EgyptianArabicComingSoon() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to={contactHref}>
+                  <Link to="/contact?subject=Egyptian%20Arabic%20Waitlist">
                     Join Waitlist <Mail className="w-5 h-5" />
                   </Link>
                 </Button>
