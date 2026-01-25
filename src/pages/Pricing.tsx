@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateFAQPageSchema } from "@/components/seo/SEOHead";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
@@ -118,6 +118,12 @@ const faqs = [
 export default function Pricing() {
   const { user, isLoading: authLoading } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [searchParams] = useSearchParams();
+  const courseParam = searchParams.get("course");
+  
+  // Refs for scrolling to dialect sections
+  const gulfSectionRef = useRef<HTMLDivElement>(null);
+  const fushaSectionRef = useRef<HTMLDivElement>(null);
 
   const faqPageSchema = generateFAQPageSchema("/pricing", faqs);
   const breadcrumbSchema = generateBreadcrumbListSchema([
@@ -208,6 +214,20 @@ export default function Pricing() {
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
   };
+
+  // Auto-scroll to dialect section based on URL param
+  useEffect(() => {
+    if (!productsLoading && courseParam) {
+      const timeout = setTimeout(() => {
+        if (courseParam === "gulf" && gulfSectionRef.current) {
+          gulfSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (courseParam === "fusha" && fushaSectionRef.current) {
+          fushaSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [courseParam, productsLoading]);
 
   // Determine dialect order (Gulf Arabic first, then MSA, then others)
   const dialectOrder = ["Gulf Arabic", "Modern Standard Arabic", "Egyptian Arabic"];
@@ -334,18 +354,34 @@ export default function Pricing() {
               {sortedDialects.map((dialectName) => {
                 const group = dialectGroups[dialectName];
                 const config = dialectConfig[dialectName] || { emoji: "🌍", accentColor: "teal" };
+                
+                // Determine which ref to use
+                const sectionRef = 
+                  dialectName === "Gulf Arabic" ? gulfSectionRef :
+                  dialectName === "Modern Standard Arabic" ? fushaSectionRef :
+                  null;
+                
+                // Check if this section is highlighted
+                const isHighlighted = 
+                  (courseParam === "gulf" && dialectName === "Gulf Arabic") ||
+                  (courseParam === "fusha" && dialectName === "Modern Standard Arabic");
 
                 return (
-                  <DialectPricingSection
-                    key={dialectName}
-                    dialectName={dialectName}
-                    dialectEmoji={config.emoji}
-                    accentColor={config.accentColor}
-                    levels={group.levels}
-                    bundle={group.bundle}
-                    onSelectLevel={(plan) => handleSelectPlan(plan)}
-                    onSelectBundle={(plan) => handleSelectPlan(plan)}
-                  />
+                  <div 
+                    key={dialectName} 
+                    ref={sectionRef}
+                    className={`scroll-mt-24 ${isHighlighted ? "ring-2 ring-primary ring-offset-4 rounded-2xl" : ""}`}
+                  >
+                    <DialectPricingSection
+                      dialectName={dialectName}
+                      dialectEmoji={config.emoji}
+                      accentColor={config.accentColor}
+                      levels={group.levels}
+                      bundle={group.bundle}
+                      onSelectLevel={(plan) => handleSelectPlan(plan)}
+                      onSelectBundle={(plan) => handleSelectPlan(plan)}
+                    />
+                  </div>
                 );
               })}
             </div>

@@ -43,8 +43,8 @@ export default function GulfArabicLanding() {
                   text={GULF_DIRECT_ANSWER}
                   linksTitle="Next steps"
                   links={[
-                    { href: "/signup", label: "Sign Up Free" },
-                    { href: "/pricing", label: "View Pricing" },
+                    { href: "/signup?redirect=/learn/gulf-arabic", label: "Sign Up Free" },
+                    { href: "/pricing?course=gulf", label: "View Pricing" },
                     { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
                   ]}
                 />
@@ -52,12 +52,12 @@ export default function GulfArabicLanding() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to="/free-trial">
+                  <Link to="/signup?redirect=/learn/gulf-arabic">
                     Start Learning Free <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
                 <Button size="xl" variant="outline" asChild>
-                  <Link to="/pricing">View Pricing</Link>
+                  <Link to="/pricing?course=gulf">View Pricing</Link>
                 </Button>
               </div>
             </div>
