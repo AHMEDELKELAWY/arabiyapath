@@ -51,16 +51,16 @@ export default function GulfArabicLanding() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/signup?redirect=/learn/gulf-arabic">
-                  <Button size="xl" variant="hero" className="w-full sm:w-auto">
+                <Button size="xl" variant="hero" className="w-full sm:w-auto" asChild>
+                  <Link to="/signup?redirect=/learn/gulf-arabic">
                     Start Learning Free <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/pricing?course=gulf">
-                  <Button size="xl" variant="outline" className="w-full sm:w-auto">
+                  </Link>
+                </Button>
+                <Button size="xl" variant="outline" className="w-full sm:w-auto" asChild>
+                  <Link to="/pricing?course=gulf">
                     View Pricing
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

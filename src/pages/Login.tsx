@@ -51,9 +51,11 @@ export default function Login() {
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
               <Link to="/" className="inline-flex items-center gap-2 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-hero-gradient flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-2xl">ع</span>
-                </div>
+                <img 
+                  src="/logo.png" 
+                  alt="ArabiyaPath" 
+                  className="h-12 w-auto"
+                />
               </Link>
               <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
               <p className="text-muted-foreground">Log in to continue your Arabic learning journey</p>

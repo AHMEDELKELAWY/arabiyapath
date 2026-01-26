@@ -135,14 +135,14 @@ export default function FAQ() {
             {/* Ready to Start CTA */}
             <div className="flex flex-wrap justify-center gap-3">
               <Link
-                to="/signup"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                to="/signup?redirect=/learn/gulf-arabic"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 Sign Up Free <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/pricing"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-background rounded-lg border border-border text-sm font-medium text-foreground hover:border-primary/30 transition-colors cursor-pointer"
               >
                 View Pricing
               </Link>

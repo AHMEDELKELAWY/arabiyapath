@@ -29,12 +29,12 @@ export default function EgyptianArabicComingSoon() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="xl" variant="hero" asChild>
+                <Button size="xl" variant="hero" className="w-full sm:w-auto" asChild>
                   <Link to="/contact?subject=Egyptian%20Arabic%20Waitlist">
                     Join Waitlist <Mail className="w-5 h-5" />
                   </Link>
                 </Button>
-                <Button size="xl" variant="outline" asChild>
+                <Button size="xl" variant="outline" className="w-full sm:w-auto" asChild>
                   <Link to="/pricing">
                     Explore Pricing <ArrowRight className="w-5 h-5" />
                   </Link>
