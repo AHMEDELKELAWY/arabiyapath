@@ -52,7 +52,7 @@ export default function GulfArabicLanding() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" className="w-full sm:w-auto" asChild>
-                  <Link to="/signup?redirect=/learn/gulf-arabic">
+                  <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
                     Start Learning Free <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
