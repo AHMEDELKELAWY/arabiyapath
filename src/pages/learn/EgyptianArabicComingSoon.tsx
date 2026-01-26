@@ -17,8 +17,8 @@ export default function EgyptianArabicComingSoon() {
       />
       <Layout>
         <section className="relative py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-hero-gradient opacity-[0.03]" />
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="absolute inset-0 bg-hero-gradient opacity-[0.03] pointer-events-none z-0" />
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
                 Egyptian Arabic <span className="text-gradient">— Coming Soon</span>
