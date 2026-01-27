@@ -369,6 +369,28 @@ export default function LessonPlayer() {
                   </Button>
                 </div>
               </div>
+
+              {/* Free Trial CTA */}
+              {isFreeTrialContent && (
+                <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
+                      Enjoying the free lessons?
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Get full access to all lessons, quizzes, and certificates.
+                    </p>
+                    <Button asChild size="lg" className="gap-2">
+                      <Link 
+                        to={`/pricing?course=${dialect?.name?.toLowerCase().includes('gulf') ? 'gulf' : 'fusha'}`}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Unlock the full course
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Lesson List Sidebar (Desktop) */}
