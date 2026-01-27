@@ -53,4 +53,24 @@
   </url>
   
   <!-- NOTE: /learn/egyptian-arabic is EXCLUDED (noindex page) -->
+  
+  <!-- Blog -->
+  <url>
+    <loc>https://arabiyapath.com/blog</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://arabiyapath.com/blog/why-learn-gulf-arabic</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arabiyapath.com/blog/gulf-vs-fusha-arabic</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
