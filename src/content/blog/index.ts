@@ -11,6 +11,7 @@ export interface BlogPost {
 // Import raw markdown files
 import whyLearnGulfArabic from './why-learn-gulf-arabic.md?raw';
 import gulfVsFusha from './gulf-vs-fusha-arabic.md?raw';
+import gulfArabicCourseForExpats from './gulf-arabic-course-for-expats.md?raw';
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -52,6 +53,7 @@ function parseFrontmatter(markdown: string): BlogPost {
 const allPosts: BlogPost[] = [
   parseFrontmatter(whyLearnGulfArabic),
   parseFrontmatter(gulfVsFusha),
+  parseFrontmatter(gulfArabicCourseForExpats),
 ];
 
 // Sort by date (newest first)
