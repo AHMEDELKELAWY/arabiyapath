@@ -44,7 +44,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <img src={logoImage} alt="ArabiyaPath Logo" className="h-10 w-auto" />
+            <img src={logoImage} alt="ArabiyaPath Logo" width={40} height={40} className="h-10 w-auto" />
             <span className="text-xl font-bold text-foreground">
               Arabiya<span className="text-primary">Path</span>
             </span>

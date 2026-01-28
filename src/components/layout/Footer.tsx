@@ -62,7 +62,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="ArabiyaPath Logo" className="h-10 w-auto" />
+              <img src="/logo.png" alt="ArabiyaPath Logo" width={40} height={40} className="h-10 w-auto" />
               <span className="text-xl font-bold text-foreground">
                 Arabiya<span className="text-primary">Path</span>
               </span>
