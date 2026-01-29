@@ -109,10 +109,10 @@ export default function Index() {
                 size="xl" 
                 variant="hero" 
                 asChild
-                onClick={() => trackBookTrial("Start Learning Free", "hero_section")}
+                onClick={() => trackBookTrial("Start Free Gulf Lesson", "hero_section")}
               >
-                <Link to="/free-trial">
-                  Start Learning Free
+                <Link to="/free-gulf-lesson">
+                  Start Free Gulf Lesson
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
@@ -302,10 +302,10 @@ export default function Index() {
                 size="xl" 
                 variant="hero" 
                 asChild
-                onClick={() => trackBookTrial("Get Started Free", "cta_section")}
+                onClick={() => trackBookTrial("Start Free Gulf Lesson", "cta_section")}
               >
-                <Link to="/free-trial">
-                  Get Started Free
+                <Link to="/free-gulf-lesson">
+                  Start Free Gulf Lesson
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
