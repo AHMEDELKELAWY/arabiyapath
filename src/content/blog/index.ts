@@ -13,6 +13,7 @@ import whyLearnGulfArabic from './why-learn-gulf-arabic.md?raw';
 import gulfVsFusha from './gulf-vs-fusha-arabic.md?raw';
 import gulfArabicCourseForExpats from './gulf-arabic-course-for-expats.md?raw';
 import fushaVsGulfArabic from './fusha-vs-gulf-arabic.md?raw';
+import learnArabicBeginnersGuide from './learn-arabic-beginners-guide.md?raw';
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -56,6 +57,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(gulfVsFusha),
   parseFrontmatter(gulfArabicCourseForExpats),
   parseFrontmatter(fushaVsGulfArabic),
+  parseFrontmatter(learnArabicBeginnersGuide),
 ];
 
 // Sort by date (newest first)
