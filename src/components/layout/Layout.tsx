@@ -10,7 +10,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  // Initialize Chatbase widget globally
+  // Initialize Chatbase widget (lazy loaded after 4s or on click)
   useChatbaseInit();
 
   return (
@@ -24,8 +24,9 @@ export function Layout({ children }: LayoutProps) {
         size="lg"
         className="fixed bottom-6 right-6 z-50 shadow-lg hover:shadow-xl gap-2 rounded-full px-5"
         onClick={openChatbase}
+        aria-label="Open AI Advisor chat"
       >
-        <MessageCircle className="w-5 h-5" />
+        <MessageCircle className="w-5 h-5" aria-hidden="true" />
         Ask the AI Advisor
       </Button>
     </div>
