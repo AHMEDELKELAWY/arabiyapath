@@ -151,7 +151,7 @@ export function Navbar() {
                   Log in
                 </Link>
                 <Button asChild>
-                  <Link to="/signup">Get Started</Link>
+                  <Link to="/free-gulf-lesson">Start Free Gulf Lesson</Link>
                 </Button>
               </>
             )}
@@ -197,7 +197,7 @@ export function Navbar() {
                       Log in
                     </Link>
                     <Button asChild className="w-full">
-                      <Link to="/signup" onClick={() => setIsOpen(false)}>Get Started</Link>
+                      <Link to="/free-gulf-lesson" onClick={() => setIsOpen(false)}>Start Free Gulf Lesson</Link>
                     </Button>
                   </>
                 )}

@@ -351,6 +351,39 @@ export type Database = {
           },
         ]
       }
+      funnel_subscribers: {
+        Row: {
+          email: string
+          email_0_sent_at: string | null
+          email_1_sent_at: string | null
+          email_2_sent_at: string | null
+          id: string
+          source: string | null
+          subscribed_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          email_0_sent_at?: string | null
+          email_1_sent_at?: string | null
+          email_2_sent_at?: string | null
+          id?: string
+          source?: string | null
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          email_0_sent_at?: string | null
+          email_1_sent_at?: string | null
+          email_2_sent_at?: string | null
+          id?: string
+          source?: string | null
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           arabic_text: string | null
