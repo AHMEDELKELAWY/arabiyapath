@@ -38,6 +38,14 @@
     <priority>0.6</priority>
   </url>
   
+  <!-- Free Lesson Funnel -->
+  <url>
+    <loc>https://arabiyapath.com/free-gulf-lesson</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Dialect Landing Pages (Indexable) -->
   <url>
     <loc>https://arabiyapath.com/learn/gulf-arabic</loc>
