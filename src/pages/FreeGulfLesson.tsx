@@ -1,98 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, Headphones, BookOpen, MapPin, ExternalLink } from "lucide-react";
+import { useZohoOptin } from "@/hooks/useZohoOptin";
+import { ArrowRight, CheckCircle2, Headphones, BookOpen, MapPin } from "lucide-react";
 
 const ZOHO_FORM_ID = "sf3z4b1816f6eb42103f403359b04252f0327243f826727a9947f460a68187c4c64d";
 const ZOHO_SCRIPT_SRC = "https://zgnp-zngp.maillist-manage.com/js/optin.min.js";
-const ZOHO_FALLBACK_URL = "https://zgnp-zngp.maillist-manage.com/ua/Optin?od=11628c54c70982b91&zx=1365afe0c&tD=11628c54c70982d35&sD=11628c54c70982b9e";
 
 export default function FreeGulfLesson() {
   const formRef = useRef<HTMLDivElement>(null);
-  const [showFallback, setShowFallback] = useState(false);
-  const initAttempted = useRef(false);
-  const initSucceeded = useRef(false);
-
-  useEffect(() => {
-    // Skip on server-side or if already attempted
-    if (typeof window === "undefined" || initAttempted.current) return;
-    
-    initAttempted.current = true;
-
-    const initializeZohoForm = () => {
-      // Check if setupSF exists
-      if (typeof (window as any).setupSF === "function") {
-        try {
-          // Verify the target element exists
-          const targetElement = document.getElementById(ZOHO_FORM_ID);
-          if (targetElement) {
-            (window as any).setupSF(
-              ZOHO_FORM_ID,
-              "ZCFORMVIEW",
-              false,
-              "light",
-              false,
-              "0"
-            );
-            initSucceeded.current = true;
-          }
-        } catch (error) {
-          console.error("Zoho setupSF failed:", error);
-        }
-      }
-    };
-
-    // Define the form submit callback (Zoho expects this)
-    (window as any)[`runOnFormSubmit_${ZOHO_FORM_ID}`] = function () {
-      // Before submit callback - can add tracking here if needed
-    };
-
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      // Check if script already exists in DOM
-      const existingScript = document.querySelector(`script[src="${ZOHO_SCRIPT_SRC}"]`);
-      
-      if (existingScript) {
-        // Script exists - check if already loaded
-        if ((window as any).setupSF) {
-          initializeZohoForm();
-        } else {
-          // Script exists but not loaded yet
-          existingScript.addEventListener("load", initializeZohoForm);
-        }
-      } else {
-        // Create and load script
-        const script = document.createElement("script");
-        script.src = ZOHO_SCRIPT_SRC;
-        script.type = "text/javascript";
-        script.async = true;
-        
-        script.onload = () => {
-          // Small delay to ensure Zoho script has fully initialized
-          setTimeout(initializeZohoForm, 100);
-        };
-        
-        script.onerror = () => {
-          console.error("Failed to load Zoho script");
-          setShowFallback(true);
-        };
-        
-        document.head.appendChild(script);
-      }
-      
-      // Set a timeout to show fallback only if initialization hasn't succeeded
-      setTimeout(() => {
-        if (!initSucceeded.current) {
-          // Check if the form button exists and is functional
-          const submitBtn = document.getElementById("zcWebOptin");
-          if (!submitBtn) {
-            setShowFallback(true);
-          }
-        }
-      }, 5000);
-    });
-  }, []);
+  useZohoOptin({ formId: ZOHO_FORM_ID, scriptSrc: ZOHO_SCRIPT_SRC });
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -440,17 +358,7 @@ export default function FreeGulfLesson() {
                   No spam. Unsubscribe anytime.
                 </p>
                 
-                {showFallback && (
-                  <a
-                    href={ZOHO_FALLBACK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 text-sm text-primary hover:underline mt-4"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Open signup form in new tab
-                  </a>
-                )}
+
               </div>
             </div>
           </div>
