@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type UseZohoOptinOptions = {
   formId: string;
@@ -19,88 +19,86 @@ declare global {
 }
 
 /**
- * Loads Zoho optin script once and initializes the embedded signup form.
- * - No SSR issues (client-only)
- * - Ensures container exists before calling setupSF
- * - Reuses existing script tag (no duplicates)
- * - Initializes once per mounted instance (safe for SPA navigation)
+ * Loads Zoho optin script and initializes the embedded signup form.
+ * Uses polling to wait for Zoho to render #zcWebOptin before calling setupSF.
  */
 export function useZohoOptin({ formId, scriptSrc }: UseZohoOptinOptions) {
   const initRef = useRef(false);
+  const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (initRef.current) return;
     initRef.current = true;
 
-    // Zoho may call this if present; keep it as a no-op (does not block submit).
-    (window as any)[`runOnFormSubmit_${formId}`] = function () {
-      // intentionally empty
-    };
+    // Zoho may call this if present; keep it as a no-op.
+    (window as any)[`runOnFormSubmit_${formId}`] = function () {};
 
-    const attemptSetup = (deadline: number) => {
-      const container = document.getElementById(formId) as HTMLDivElement | null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let setupCalled = false;
+
+    const trySetup = () => {
+      if (setupCalled) return;
+      
+      const container = document.getElementById(formId);
       const submitBtn = document.getElementById("zcWebOptin");
 
-      // Wait until both the root container and submit button exist.
-      if (!container || !submitBtn) {
-        if (performance.now() < deadline) {
-          requestAnimationFrame(() => attemptSetup(deadline));
-          return;
+      // Wait for BOTH setupSF function AND the submit button
+      if (window.setupSF && container && submitBtn) {
+        setupCalled = true;
+        if (pollInterval) clearInterval(pollInterval);
+        if (timeoutId) clearTimeout(timeoutId);
+
+        try {
+          window.setupSF(formId, "ZCFORMVIEW", false, "light", false, "0");
+        } catch (err) {
+          console.error("Zoho setupSF error:", err);
         }
-
-        if (!container) console.error("Zoho: container not found", { formId });
-        if (!submitBtn) console.error("Zoho: submit button not found", { id: "zcWebOptin" });
-        return;
-      }
-
-      // Avoid re-initializing the same DOM instance.
-      if (container.dataset.zohoInitialized === "1") return;
-
-      if (typeof window.setupSF !== "function") {
-        console.error("Zoho: setupSF is not available");
-        return;
-      }
-
-      try {
-        window.setupSF(formId, "ZCFORMVIEW", false, "light", false, "0");
-        container.dataset.zohoInitialized = "1";
-      } catch (err) {
-        console.error("Zoho: setupSF threw", err);
       }
     };
 
-    const runSetup = () => {
-      // Give React/Zoho a moment to settle, then retry for up to ~2 seconds.
-      const deadline = performance.now() + 2000;
-      attemptSetup(deadline);
-    };
-
-    // Ensure React has committed DOM for this route.
-    requestAnimationFrame(() => {
+    const loadScript = () => {
       const existingScript = document.querySelector<HTMLScriptElement>(
         `script[src="${scriptSrc}"]`
       );
 
       if (existingScript) {
-        // Script exists; if already loaded, setupSF should be available.
-        if (typeof window.setupSF === "function") {
-          runSetup();
-        } else {
-          existingScript.addEventListener("load", runSetup, { once: true });
-        }
-        return;
+        // Script already exists, start polling immediately
+        pollInterval = setInterval(trySetup, 100);
+      } else {
+        const script = document.createElement("script");
+        script.src = scriptSrc;
+        script.type = "text/javascript";
+        script.async = true;
+        script.onload = () => {
+          // Start polling after script loads
+          pollInterval = setInterval(trySetup, 100);
+        };
+        script.onerror = () => {
+          console.error("Zoho: failed to load script");
+          setShowFallback(true);
+        };
+        document.head.appendChild(script);
       }
 
-      const script = document.createElement("script");
-      script.src = scriptSrc;
-      script.type = "text/javascript";
-      script.async = true;
-      script.onload = () => runSetup();
-      script.onerror = () => {
-        console.error("Zoho: failed to load script", { scriptSrc });
-      };
-      document.head.appendChild(script);
-    });
+      // Fallback after 5 seconds
+      timeoutId = setTimeout(() => {
+        if (!setupCalled) {
+          if (pollInterval) clearInterval(pollInterval);
+          setShowFallback(true);
+        }
+      }, 5000);
+    };
+
+    // Wait for React to commit DOM
+    requestAnimationFrame(loadScript);
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [formId, scriptSrc]);
+
+  return { showFallback };
 }
