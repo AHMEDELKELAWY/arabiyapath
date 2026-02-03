@@ -3,14 +3,15 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { useZohoOptin } from "@/hooks/useZohoOptin";
-import { ArrowRight, CheckCircle2, Headphones, BookOpen, MapPin } from "lucide-react";
+import { ArrowRight, CheckCircle2, Headphones, BookOpen, MapPin, ExternalLink } from "lucide-react";
 
 const ZOHO_FORM_ID = "sf3z4b1816f6eb42103f403359b04252f0327243f826727a9947f460a68187c4c64d";
 const ZOHO_SCRIPT_SRC = "https://zgnp-zngp.maillist-manage.com/js/optin.min.js";
+const ZOHO_HOSTED_URL = "https://zgnp-zngp.maillist-manage.com/ua/Optin?od=11628c54c70982&zx=1365afe0c&tD=11628c54c70982b91&sD=11628c54c70982d35";
 
 export default function FreeGulfLesson() {
   const formRef = useRef<HTMLDivElement>(null);
-  useZohoOptin({ formId: ZOHO_FORM_ID, scriptSrc: ZOHO_SCRIPT_SRC });
+  const { showFallback } = useZohoOptin({ formId: ZOHO_FORM_ID, scriptSrc: ZOHO_SCRIPT_SRC });
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -137,7 +138,7 @@ export default function FreeGulfLesson() {
                 
                 {/* Zoho Campaigns Embedded Form Container */}
                 <div id="zoho-signup-form" className="w-full">
-                  <div id="sf3z4b1816f6eb42103f403359b04252f0327243f826727a9947f460a68187c4c64d" data-type="signupform" style={{ opacity: 1 }}>
+                  <div id={ZOHO_FORM_ID} data-type="signupform" style={{ opacity: 1 }}>
                     <div id="customForm">
                       <div 
                         style={{
@@ -354,11 +355,21 @@ export default function FreeGulfLesson() {
                   </div>
                 </div>
                 
+                {showFallback && (
+                  <a
+                    href={ZOHO_HOSTED_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-primary hover:underline mt-4"
+                  >
+                    Open signup form in new tab
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                
                 <p className="text-sm text-muted-foreground text-center mt-6">
                   No spam. Unsubscribe anytime.
                 </p>
-                
-
               </div>
             </div>
           </div>
