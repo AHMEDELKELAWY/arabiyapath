@@ -26,6 +26,7 @@ const dialectLinks = [
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
+  { href: "/flash-cards", label: "Flash Cards" },
   { href: "/pricing", label: "Pricing" },
   { href: "/blog", label: "Blog" },
 ];
@@ -97,6 +98,19 @@ export function Navbar() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Flash Cards */}
+            <Link
+              to="/flash-cards"
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                location.pathname === "/flash-cards"
+                  ? "text-primary bg-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              Flash Cards
+            </Link>
 
             {/* Pricing */}
             <Link
@@ -215,6 +229,20 @@ export function Navbar() {
                 )}
               >
                 Home
+              </Link>
+
+              {/* Flash Cards */}
+              <Link
+                to="/flash-cards"
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                  location.pathname === "/flash-cards"
+                    ? "text-primary bg-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                )}
+              >
+                Flash Cards
               </Link>
 
               {/* Dialects Accordion */}

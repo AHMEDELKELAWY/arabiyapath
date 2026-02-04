@@ -1,0 +1,371 @@
+// Advanced Gulf Arabic Flash Cards Data
+// Business, Executive, and High-Society Communication
+
+export interface FlashCard {
+  id: string;
+  level: 1 | 2 | 3;
+  arabicPhrase: string;
+  transliteration: string;
+  englishMeaning: string;
+  usageContext: string;
+  culturalInsight: string;
+  exampleArabic: string;
+  exampleEnglish: string;
+  category: string;
+  formalTone?: string; // Level 3 - formal pronunciation context
+  socialTone?: string; // Level 3 - high-society pronunciation context
+}
+
+export interface FlashCardLevel {
+  level: 1 | 2 | 3;
+  title: string;
+  description: string;
+  icon: string;
+  cardCount: number;
+}
+
+export const flashCardLevels: FlashCardLevel[] = [
+  {
+    level: 1,
+    title: "Professional Foundation",
+    description: "Essential business phrases for daily professional interactions",
+    icon: "briefcase",
+    cardCount: 8,
+  },
+  {
+    level: 2,
+    title: "Executive & Relationship Language",
+    description: "Advanced expressions for building trust and closing deals",
+    icon: "handshake",
+    cardCount: 8,
+  },
+  {
+    level: 3,
+    title: "High-Society & Cultural Mastery",
+    description: "Elite expressions for exclusive social and business circles",
+    icon: "crown",
+    cardCount: 8,
+  },
+];
+
+export const flashCards: FlashCard[] = [
+  // ==================== LEVEL 1: Professional Foundation ====================
+  {
+    id: "l1-01",
+    level: 1,
+    arabicPhrase: "إن شاء الله نتعاون",
+    transliteration: "In sha'Allah nitʿāwan",
+    englishMeaning: "God willing, we will cooperate",
+    usageContext: "Used when concluding initial business meetings to express intent to work together",
+    culturalInsight: "Including 'In sha'Allah' shows respect for cultural norms and avoids appearing presumptuous about future outcomes",
+    exampleArabic: "الاجتماع كان ممتاز، إن شاء الله نتعاون في المستقبل",
+    exampleEnglish: "The meeting was excellent, God willing we will cooperate in the future",
+    category: "Business Meetings",
+  },
+  {
+    id: "l1-02",
+    level: 1,
+    arabicPhrase: "تفضل، البيت بيتك",
+    transliteration: "Tafaḍḍal, al-bayt baytak",
+    englishMeaning: "Please, make yourself at home / The house is your house",
+    usageContext: "Welcoming guests to your office or business premises",
+    culturalInsight: "Gulf hospitality is paramount in business. This phrase establishes warmth and puts visitors at ease before negotiations",
+    exampleArabic: "أهلاً وسهلاً، تفضل، البيت بيتك",
+    exampleEnglish: "Welcome, please, make yourself at home",
+    category: "Hospitality",
+  },
+  {
+    id: "l1-03",
+    level: 1,
+    arabicPhrase: "الله يعطيك العافية",
+    transliteration: "Allah yaʿṭīk al-ʿāfiya",
+    englishMeaning: "May God give you strength/wellness",
+    usageContext: "Thanking someone for their work or effort, acknowledging their contribution",
+    culturalInsight: "This blessing-style thank you is more meaningful than a simple 'shukran' and shows appreciation for someone's effort",
+    exampleArabic: "التقرير ممتاز، الله يعطيك العافية",
+    exampleEnglish: "The report is excellent, may God give you strength",
+    category: "Appreciation",
+  },
+  {
+    id: "l1-04",
+    level: 1,
+    arabicPhrase: "على راسي",
+    transliteration: "ʿAla rāsi",
+    englishMeaning: "On my head / With pleasure / At your service",
+    usageContext: "Accepting a request or task with honor and commitment",
+    culturalInsight: "Literally meaning 'on my head,' this conveys that you will carry the responsibility with honor. It's stronger than a simple 'yes'",
+    exampleArabic: "تبي التقرير بكرة؟ على راسي",
+    exampleEnglish: "You want the report tomorrow? At your service / Consider it done",
+    category: "Commitment",
+  },
+  {
+    id: "l1-05",
+    level: 1,
+    arabicPhrase: "ما قصّرت",
+    transliteration: "Mā gaṣṣart",
+    englishMeaning: "You didn't fall short / You've done well",
+    usageContext: "Expressing gratitude when someone has gone above and beyond",
+    culturalInsight: "A humble way to acknowledge someone's effort. Using this shows you recognize their contribution without excessive flattery",
+    exampleArabic: "شكراً على المساعدة، والله ما قصّرت",
+    exampleEnglish: "Thank you for the help, truly you've done well",
+    category: "Appreciation",
+  },
+  {
+    id: "l1-06",
+    level: 1,
+    arabicPhrase: "نشوف الموضوع",
+    transliteration: "Nshūf al-mawḍūʿ",
+    englishMeaning: "We'll look into the matter",
+    usageContext: "Politely deferring a decision without committing immediately",
+    culturalInsight: "Direct rejection is uncommon in Gulf business culture. This phrase buys time while maintaining respect",
+    exampleArabic: "الاقتراح مثير للاهتمام، نشوف الموضوع ونرد عليك",
+    exampleEnglish: "The proposal is interesting, we'll look into it and get back to you",
+    category: "Negotiation",
+  },
+  {
+    id: "l1-07",
+    level: 1,
+    arabicPhrase: "الحمد لله على السلامة",
+    transliteration: "Al-ḥamdu lillāh ʿala as-salāma",
+    englishMeaning: "Praise God for your safety / Welcome back safely",
+    usageContext: "Greeting someone who has returned from travel",
+    culturalInsight: "Essential for welcoming colleagues or partners returning from trips. Shows care and builds personal connection",
+    exampleArabic: "أهلاً، الحمد لله على السلامة! كيف كانت الرحلة؟",
+    exampleEnglish: "Welcome, praise God for your safe return! How was the trip?",
+    category: "Greetings",
+  },
+  {
+    id: "l1-08",
+    level: 1,
+    arabicPhrase: "يا هلا والله",
+    transliteration: "Ya hala wallāh",
+    englishMeaning: "By God, welcome! / Such a warm welcome",
+    usageContext: "Enthusiastic greeting for important guests or long-awaited visitors",
+    culturalInsight: "The addition of 'wallāh' (by God) intensifies the welcome. Use for VIP clients or respected partners",
+    exampleArabic: "يا هلا والله! من زمان ما شفناك",
+    exampleEnglish: "Such a welcome! It's been a long time since we've seen you",
+    category: "Greetings",
+  },
+
+  // ==================== LEVEL 2: Executive & Relationship Language ====================
+  {
+    id: "l2-01",
+    level: 2,
+    arabicPhrase: "الثقة أساس كل شيء",
+    transliteration: "Ath-thiqa asās kull shay'",
+    englishMeaning: "Trust is the foundation of everything",
+    usageContext: "Establishing relationship-based business philosophy in high-level meetings",
+    culturalInsight: "Gulf business operates on trust networks. Using this phrase signals you understand and value long-term relationships over quick transactions",
+    exampleArabic: "نحن نؤمن أن الثقة أساس كل شيء، ونبي نبني علاقة طويلة معاكم",
+    exampleEnglish: "We believe trust is the foundation of everything, and we want to build a long relationship with you",
+    category: "Relationship Building",
+  },
+  {
+    id: "l2-02",
+    level: 2,
+    arabicPhrase: "كلامك على راسي من فوق",
+    transliteration: "Kalāmak ʿala rāsi min fōg",
+    englishMeaning: "Your words are on top of my head / I hold your words in highest regard",
+    usageContext: "Showing deep respect for someone's opinion or instruction, especially to seniors",
+    culturalInsight: "Elevates the standard 'ʿala rāsi' to show exceptional deference. Use with board members, senior partners, or royalty",
+    exampleArabic: "كلامك على راسي من فوق، ونفّذ توجيهاتك فوراً",
+    exampleEnglish: "Your words are held in highest regard, and we will implement your directions immediately",
+    category: "Deference",
+  },
+  {
+    id: "l2-03",
+    level: 2,
+    arabicPhrase: "نحترم رأيك لكن...",
+    transliteration: "Naḥtarim ra'yak lākin...",
+    englishMeaning: "We respect your opinion, however...",
+    usageContext: "Professionally disagreeing while maintaining respect in negotiations",
+    culturalInsight: "Softening disagreement is crucial. This phrase acknowledges the other party before presenting your counter-position",
+    exampleArabic: "نحترم رأيك لكن نشوف أن السعر يحتاج مراجعة",
+    exampleEnglish: "We respect your opinion, however we believe the price needs review",
+    category: "Negotiation",
+  },
+  {
+    id: "l2-04",
+    level: 2,
+    arabicPhrase: "وجهك خير",
+    transliteration: "Wajhak khayr",
+    englishMeaning: "Your face brings good fortune / You're a good omen",
+    usageContext: "Welcoming someone whose presence is associated with positive outcomes",
+    culturalInsight: "A powerful compliment in Gulf culture. Suggests the person brings blessings and success. Use selectively for maximum impact",
+    exampleArabic: "من يوم ما جيت، المشاريع كلها نجحت، وجهك خير",
+    exampleEnglish: "Since you came, all projects have succeeded, you bring good fortune",
+    category: "Compliments",
+  },
+  {
+    id: "l2-05",
+    level: 2,
+    arabicPhrase: "خلّنا نتفاهم",
+    transliteration: "Khallina nitfāham",
+    englishMeaning: "Let's come to an understanding",
+    usageContext: "Initiating problem-solving or finding common ground in disputes",
+    culturalInsight: "Signals a collaborative approach rather than confrontation. Essential for de-escalating tense negotiations",
+    exampleArabic: "في اختلاف بسيط، خلّنا نتفاهم ونوصل لحل يرضي الجميع",
+    exampleEnglish: "There's a small disagreement, let's come to an understanding that satisfies everyone",
+    category: "Conflict Resolution",
+  },
+  {
+    id: "l2-06",
+    level: 2,
+    arabicPhrase: "أنت عزيز علينا",
+    transliteration: "Inta ʿazīz ʿalayna",
+    englishMeaning: "You are dear/precious to us",
+    usageContext: "Expressing that a business relationship transcends mere transactions",
+    culturalInsight: "Moves the relationship from professional to personal sphere. Use after successful collaborations to cement loyalty",
+    exampleArabic: "بعد كل اللي سويناه سوا، أنت عزيز علينا وعلى العائلة",
+    exampleEnglish: "After all we've done together, you are dear to us and to the family",
+    category: "Relationship Building",
+  },
+  {
+    id: "l2-07",
+    level: 2,
+    arabicPhrase: "الباب مفتوح دائماً",
+    transliteration: "Al-bāb maftūḥ dā'iman",
+    englishMeaning: "The door is always open",
+    usageContext: "Assuring continued access and availability for future dealings",
+    culturalInsight: "Signals openness to future collaboration and that the relationship isn't limited to current business",
+    exampleArabic: "حتى لو ما صار شيء هالمرة، الباب مفتوح دائماً",
+    exampleEnglish: "Even if nothing happens this time, the door is always open",
+    category: "Relationship Building",
+  },
+  {
+    id: "l2-08",
+    level: 2,
+    arabicPhrase: "نعتمد عليك",
+    transliteration: "Naʿtamid ʿalayk",
+    englishMeaning: "We depend on you / We're counting on you",
+    usageContext: "Expressing confidence and trust in someone's ability to deliver",
+    culturalInsight: "A statement of faith that creates obligation. Use strategically to motivate key players in important deals",
+    exampleArabic: "هالمشروع مهم جداً، ونعتمد عليك للنجاح",
+    exampleEnglish: "This project is very important, and we're counting on you for success",
+    category: "Trust",
+  },
+
+  // ==================== LEVEL 3: High-Society & Cultural Mastery ====================
+  {
+    id: "l3-01",
+    level: 3,
+    arabicPhrase: "حيّاك الله وبيّاك",
+    transliteration: "Ḥayyāk Allāh wa bayyāk",
+    englishMeaning: "May God greet you and make you feel at home",
+    usageContext: "The most prestigious welcome, reserved for honored guests and royal audiences",
+    culturalInsight: "An ancient, poetic greeting that conveys the highest hospitality. Using it correctly marks you as culturally sophisticated",
+    exampleArabic: "حيّاك الله وبيّاك، تشرفنا بزيارتك",
+    exampleEnglish: "May God greet you and welcome you, you honor us with your visit",
+    category: "Royal Protocol",
+    formalTone: "Slow, measured delivery with clear pronunciation of each syllable",
+    socialTone: "Warm but dignified, with a slight bow of the head",
+  },
+  {
+    id: "l3-02",
+    level: 3,
+    arabicPhrase: "أمرك، طال عمرك",
+    transliteration: "Amrak, ṭāl ʿumrak",
+    englishMeaning: "Your command, may your life be long",
+    usageContext: "Responding to requests from dignitaries, royalty, or highly respected elders",
+    culturalInsight: "The 'ṭāl ʿumrak' blessing elevates this beyond simple compliance to an honor-bound commitment",
+    exampleArabic: "أمرك طال عمرك، كل شيء جاهز حسب توجيهاتكم",
+    exampleEnglish: "Your command, may your life be long, everything is ready according to your directions",
+    category: "Royal Protocol",
+    formalTone: "Respectful, unhurried, eyes slightly lowered",
+    socialTone: "Can be used warmly with trusted elders in social settings",
+  },
+  {
+    id: "l3-03",
+    level: 3,
+    arabicPhrase: "ما ننسى فضلك علينا",
+    transliteration: "Mā nansa faḍlak ʿalayna",
+    englishMeaning: "We will never forget your favor upon us",
+    usageContext: "Acknowledging significant help or patronage from powerful individuals",
+    culturalInsight: "Creates a debt of honor. In Gulf culture, favors are remembered and reciprocated across generations",
+    exampleArabic: "دعمكم كان السبب في نجاحنا، ما ننسى فضلك علينا أبداً",
+    exampleEnglish: "Your support was the reason for our success, we will never forget your favor upon us",
+    category: "Gratitude",
+    formalTone: "Sincere and solemn, spoken with hand on heart",
+    socialTone: "Heartfelt but can be used with warmth among close associates",
+  },
+  {
+    id: "l3-04",
+    level: 3,
+    arabicPhrase: "شرفتونا، والله العظيم شرفتونا",
+    transliteration: "Sharraftūna, wallāhi al-ʿaẓīm sharraftūna",
+    englishMeaning: "You have honored us, by Almighty God you have honored us",
+    usageContext: "Receiving VIP guests at exclusive events or welcoming dignitaries",
+    culturalInsight: "The oath 'wallāhi al-ʿaẓīm' adds sacred weight. Reserved for genuinely significant honors",
+    exampleArabic: "حضوركم في الحفل شرفتونا، والله العظيم شرفتونا",
+    exampleEnglish: "Your presence at the event has honored us, by Almighty God you have honored us",
+    category: "Elite Hospitality",
+    formalTone: "Grand, ceremonial, used in public acknowledgment",
+    socialTone: "Intimate version used in private gatherings with influential figures",
+  },
+  {
+    id: "l3-05",
+    level: 3,
+    arabicPhrase: "نحن في خدمتكم",
+    transliteration: "Naḥnu fī khidmatkum",
+    englishMeaning: "We are at your service",
+    usageContext: "Offering complete support to royal families, government officials, or major investors",
+    culturalInsight: "The formal 'nahnu' and 'khidmatkum' (plural you) shows maximum respect. Used in high-stakes situations",
+    exampleArabic: "مهما كانت متطلباتكم، نحن في خدمتكم",
+    exampleEnglish: "Whatever your requirements, we are at your service",
+    category: "Service Excellence",
+    formalTone: "Professional and assured, communicating capability",
+    socialTone: "Gracious and personal when used with family patriarchs",
+  },
+  {
+    id: "l3-06",
+    level: 3,
+    arabicPhrase: "كرمكم سابق معروف",
+    transliteration: "Karamkum sābiq maʿrūf",
+    englishMeaning: "Your generosity is already well known",
+    usageContext: "Acknowledging someone's established reputation for generosity before making a request",
+    culturalInsight: "Strategic phrase that honors the person's reputation while creating expectation for continued generosity",
+    exampleArabic: "كرمكم سابق معروف، ونثق أنكم بتدعمون هالمبادرة",
+    exampleEnglish: "Your generosity is already well known, and we trust you will support this initiative",
+    category: "Strategic Communication",
+    formalTone: "Flattering but not sycophantic, delivered with confidence",
+    socialTone: "Can be used playfully among wealthy peers",
+  },
+  {
+    id: "l3-07",
+    level: 3,
+    arabicPhrase: "هذا شيء بسيط لا يذكر",
+    transliteration: "Hādhā shay' basīṭ lā yudhkar",
+    englishMeaning: "This is a small thing, not worth mentioning",
+    usageContext: "Downplaying a significant gift or favor to maintain humility",
+    culturalInsight: "Elite humility - the greater the gift, the more it should be minimized. Shows true sophistication",
+    exampleArabic: "هذا شيء بسيط لا يذكر، حقكم علينا أكثر بكثير",
+    exampleEnglish: "This is a small thing, not worth mentioning, what you deserve from us is much more",
+    category: "Elite Humility",
+    formalTone: "Gracious and modest, deflecting praise",
+    socialTone: "Warm and genuine among peers",
+  },
+  {
+    id: "l3-08",
+    level: 3,
+    arabicPhrase: "بيض الله وجهك",
+    transliteration: "Bayyaḍ Allāh wajhak",
+    englishMeaning: "May God brighten your face / May God honor you",
+    usageContext: "Blessing someone who has brought honor or achieved something praiseworthy",
+    culturalInsight: "A powerful blessing associating someone with honor and good reputation. The 'white face' symbolizes honor in Arab culture",
+    exampleArabic: "أداءك في المفاوضات كان ممتاز، بيض الله وجهك",
+    exampleEnglish: "Your performance in the negotiations was excellent, may God honor you",
+    category: "Blessings",
+    formalTone: "Pronounced clearly as a sincere blessing",
+    socialTone: "Can be enthusiastic among friends celebrating success",
+  },
+];
+
+// Helper function to get cards by level
+export const getCardsByLevel = (level: 1 | 2 | 3): FlashCard[] => {
+  return flashCards.filter((card) => card.level === level);
+};
+
+// Helper function to get level info
+export const getLevelInfo = (level: 1 | 2 | 3): FlashCardLevel | undefined => {
+  return flashCardLevels.find((l) => l.level === level);
+};
