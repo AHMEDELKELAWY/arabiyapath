@@ -3,15 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Award, CheckCircle, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { SEOHead } from "@/components/seo/SEOHead";
+import { useRef, useCallback, useState } from "react";
 
 export default function CertificateView() {
   const { certCode } = useParams<{ certCode: string }>();
+  const certRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const { data: cert, isLoading, error } = useQuery({
+  const { data: cert, isLoading } = useQuery({
     queryKey: ["certificate", certCode],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,6 +31,50 @@ export default function CertificateView() {
 
   const dialectName = (cert?.dialects as any)?.name ?? "Unknown";
   const levelName = (cert?.levels as any)?.name ?? "Unknown";
+
+  const handleDownload = useCallback(async () => {
+    if (!certRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgRatio = canvas.width / canvas.height;
+      const pdfRatio = pdfWidth / pdfHeight;
+
+      let drawWidth = pdfWidth;
+      let drawHeight = pdfWidth / imgRatio;
+      if (imgRatio < pdfRatio) {
+        drawHeight = pdfHeight;
+        drawWidth = pdfHeight * imgRatio;
+      }
+
+      const x = (pdfWidth - drawWidth) / 2;
+      const y = (pdfHeight - drawHeight) / 2;
+
+      pdf.addImage(imgData, "PNG", x, y, drawWidth, drawHeight);
+      pdf.save(`ArabiyaPath-Certificate-${certCode}.pdf`);
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+    } finally {
+      setDownloading(false);
+    }
+  }, [certCode]);
 
   return (
     <Layout>
@@ -54,31 +102,43 @@ export default function CertificateView() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="overflow-hidden">
-            <div className="bg-gradient-to-br from-secondary/20 to-primary/20 p-8 sm:p-12 text-center space-y-6">
-              <Award className="w-16 h-16 text-secondary mx-auto" />
-              <h1 className="text-2xl sm:text-3xl font-bold">Certificate of Completion</h1>
-              <p className="text-muted-foreground">This certifies completion of</p>
+          <div className="space-y-4">
+            <Card className="overflow-hidden">
+              <div
+                ref={certRef}
+                className="bg-gradient-to-br from-secondary/20 to-primary/20 p-8 sm:p-12 text-center space-y-6"
+              >
+                <Award className="w-16 h-16 text-secondary mx-auto" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Certificate of Completion</h1>
+                <p className="text-muted-foreground">This certifies completion of</p>
 
-              <div className="space-y-1">
-                <p className="text-xl sm:text-2xl font-semibold text-foreground">{dialectName}</p>
-                <p className="text-lg text-muted-foreground">{levelName} Level</p>
+                <div className="space-y-1">
+                  <p className="text-xl sm:text-2xl font-semibold text-foreground">{dialectName}</p>
+                  <p className="text-lg text-muted-foreground">{levelName} Level</p>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  Issued on {format(new Date(cert.issued_at!), "MMMM d, yyyy")}
+                </p>
+
+                <p className="text-xs font-mono text-muted-foreground">
+                  Certificate Code: {cert.cert_code}
+                </p>
+
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-green-600 bg-green-50 rounded-full px-4 py-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Verified Certificate
+                </div>
               </div>
+            </Card>
 
-              <p className="text-sm text-muted-foreground">
-                Issued on {format(new Date(cert.issued_at!), "MMMM d, yyyy")}
-              </p>
-
-              <p className="text-xs font-mono text-muted-foreground">
-                Certificate Code: {cert.cert_code}
-              </p>
-
-              <div className="inline-flex items-center gap-2 text-sm font-medium text-green-600 bg-green-50 rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4" />
-                Verified Certificate
-              </div>
+            <div className="flex justify-center">
+              <Button onClick={handleDownload} disabled={downloading} className="gap-2">
+                <Download className="w-4 h-4" />
+                {downloading ? "Generating PDF…" : "Download PDF"}
+              </Button>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </Layout>
