@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ export default function VerifyEmail() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/dashboard";
   
   const [code, setCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -21,9 +23,9 @@ export default function VerifyEmail() {
   // Redirect if already verified
   useEffect(() => {
     if (profile?.email_verified) {
-      navigate("/dashboard");
+      navigate(redirectUrl);
     }
-  }, [profile, navigate]);
+  }, [profile, navigate, redirectUrl]);
 
   // Countdown timer for resend
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function VerifyEmail() {
         
         // Force profile refresh and redirect
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = redirectUrl;
         }, 1500);
       } else {
         throw new Error(data.error || 'Verification failed');

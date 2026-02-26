@@ -36,6 +36,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const ChoosePlan = lazy(() => import("./pages/ChoosePlan"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
@@ -112,6 +113,7 @@ const App = () => (
               {/* Payment Routes */}
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
+              <Route path="/choose-plan/:dialectId" element={<ChoosePlan />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/certificate/:certCode" element={<CertificateView />} />
               {/* Learning Routes */}
