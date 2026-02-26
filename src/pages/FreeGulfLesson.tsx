@@ -5,7 +5,16 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useZohoOptin } from "@/hooks/useZohoOptin";
-import { ArrowRight, CheckCircle2, Headphones, BookOpen, MapPin, Mail } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  X,
+  Mail,
+  Headphones,
+  MessageCircle,
+  Coffee,
+  Repeat,
+} from "lucide-react";
 
 const ZOHO_FORM_ID = "sf3z4b1816f6eb42103f403359b04252f0327243f826727a9947f460a68187c4c64d";
 const ZOHO_SCRIPT_SRC = "https://zgnp-zngp.maillist-manage.com/js/optin.min.js";
@@ -18,6 +27,7 @@ export default function FreeGulfLesson() {
 
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,19 +41,17 @@ export default function FreeGulfLesson() {
 
     setIsSubmitting(true);
 
-    // Set hidden Zoho input value
     const zohoInput = document.getElementById("EMBED_FORM_EMAIL_LABEL") as HTMLInputElement;
-    if (zohoInput) {
-      zohoInput.value = email;
-    }
+    if (zohoInput) zohoInput.value = email;
 
-    // Click hidden Zoho submit button
     const zohoBtn = document.getElementById("zcWebOptin") as HTMLInputElement;
-    if (zohoBtn) {
-      zohoBtn.click();
-    }
+    if (zohoBtn) zohoBtn.click();
 
-    // Redirect after a short delay (Zoho submits via iframe, so we can't detect completion reliably)
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }, 1200);
+
     setTimeout(() => {
       navigate(REDIRECT_URL);
     }, 2500);
@@ -58,71 +66,91 @@ export default function FreeGulfLesson() {
       <SEOHead
         canonicalPath="/free-gulf-lesson"
         title="Free Gulf Arabic Lesson for Expats | ArabiyaPath"
-        description="Start speaking Gulf Arabic today with a free lesson. Learn the Arabic people actually speak in the Gulf — no grammar, no pressure, just real conversation."
+        description="Speak Gulf Arabic in 10 minutes. Learn real phrases used in the UAE & GCC — not textbook Arabic. Free lesson, instant access."
       />
       <Layout>
-        {/* Hero Section */}
-        <section className="relative overflow-hidden py-16 md:py-24">
+        {/* ─── SECTION 1 — HERO ─── */}
+        <section className="relative overflow-hidden py-20 md:py-28">
           <div className="absolute inset-0 bg-hero-gradient opacity-[0.03] pointer-events-none z-0" />
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 animate-slide-up">
-                Start Speaking Gulf Arabic Today
-                <span className="text-gradient block mt-2">Free Lesson for Expats</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+                Speak Gulf Arabic in 10 Minutes
+                <span className="text-gradient block mt-2">
+                  Even If You're a Complete Beginner
+                </span>
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-                Learn the Arabic people actually speak in the Gulf. No grammar. No pressure. Just real conversation.
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+                Learn real phrases people actually use in the UAE &amp; GCC — not textbook Arabic.
               </p>
-              <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-                <Button size="xl" variant="hero" onClick={scrollToForm}>
-                  Start Free Lesson
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </div>
+
+              <ul className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 text-foreground font-medium">
+                {[
+                  "Say your first real sentence today",
+                  "Hear native pronunciation",
+                  "Understand how locals actually speak",
+                ].map((b) => (
+                  <li key={b} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button size="xl" variant="hero" onClick={scrollToForm}>
+                Get My Free Lesson
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+              <p className="text-sm text-muted-foreground mt-4">
+                Free. Instant access. No spam.
+              </p>
             </div>
           </div>
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
         </section>
 
-        {/* Why This Lesson Works */}
+        {/* ─── SECTION 2 — THE PROBLEM ─── */}
         <section className="py-16 bg-cream">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
-                Why This Lesson Works
+                Why Most Arabic Courses Don't Work for Expats
               </h2>
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {[
-                  "Textbook Arabic doesn't help in daily life",
-                  "Grammar-heavy courses slow you down",
-                  "This lesson focuses on speaking from day one",
-                ].map((point, index) => (
-                  <div key={index} className="flex items-start gap-4 bg-card rounded-xl p-5 border border-border">
-                    <CheckCircle2 className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-foreground text-lg">{point}</p>
+                  "They teach formal Arabic you'll never use",
+                  "Too much grammar, not enough speaking",
+                  "You finish lessons but still can't talk",
+                ].map((p) => (
+                  <div key={p} className="flex items-start gap-4 bg-card rounded-xl p-5 border border-border">
+                    <X className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-foreground text-lg">{p}</p>
                   </div>
                 ))}
               </div>
+              <p className="text-center text-xl font-bold text-primary mt-10">
+                This lesson fixes that.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* What You'll Learn */}
+        {/* ─── SECTION 3 — WHAT YOU'LL EXPERIENCE ─── */}
         <section className="py-16">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
-                What You'll Learn
+                Inside This Free Lesson
               </h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 {[
-                  { icon: Headphones, text: "How Gulf Arabic actually sounds" },
-                  { icon: BookOpen, text: "Basic greetings you can use today" },
-                  { icon: Headphones, text: "Pronunciation with native audio" },
-                  { icon: MapPin, text: "How the full learning path works" },
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center gap-4 bg-card rounded-xl p-5 border border-border">
+                  { icon: MessageCircle, text: "Real-life greetings used daily" },
+                  { icon: Coffee, text: "Practical phrases for everyday situations" },
+                  { icon: Headphones, text: "Native audio so you pronounce correctly" },
+                  { icon: Repeat, text: "A simple speaking framework you can reuse" },
+                ].map((item) => (
+                  <div key={item.text} className="flex items-center gap-4 bg-card rounded-xl p-5 border border-border">
                     <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
                       <item.icon className="w-6 h-6 text-primary" />
                     </div>
@@ -134,22 +162,42 @@ export default function FreeGulfLesson() {
           </div>
         </section>
 
-        {/* Who This Is For */}
+        {/* ─── SECTION 4 — FUTURE VISION ─── */}
         <section className="py-16 bg-cream">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
+                Imagine This...
+              </h2>
+              <div className="text-lg text-muted-foreground space-y-4 leading-relaxed">
+                <p>You greet your neighbor in Arabic.</p>
+                <p>You order confidently.</p>
+                <p>You understand simple conversations.</p>
+                <p>And people smile because you tried.</p>
+              </div>
+              <p className="text-xl font-bold text-primary mt-8">
+                This is your first step.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── SECTION 5 — WHO IT'S FOR ─── */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
                 Who This Is For
               </h2>
               <div className="space-y-4">
                 {[
-                  "Expats living in the Gulf (UAE, Saudi, Qatar, etc.)",
+                  "Expats living in the Gulf",
                   "Complete beginners",
-                  "Learners who want to speak, not study grammar",
-                ].map((qualifier, index) => (
-                  <div key={index} className="flex items-center gap-4 bg-card rounded-xl p-5 border border-border">
+                  "Anyone who wants to speak, not study grammar",
+                ].map((q) => (
+                  <div key={q} className="flex items-center gap-4 bg-card rounded-xl p-5 border border-border">
                     <CheckCircle2 className="w-6 h-6 text-primary flex-shrink-0" />
-                    <p className="text-foreground text-lg">{qualifier}</p>
+                    <p className="text-foreground text-lg">{q}</p>
                   </div>
                 ))}
               </div>
@@ -157,48 +205,54 @@ export default function FreeGulfLesson() {
           </div>
         </section>
 
-        {/* Zoho Campaigns Email Form Section */}
-        <section className="py-20" id="signup-form">
+        {/* ─── SECTION 6 — FINAL CTA ─── */}
+        <section className="py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-xl mx-auto">
-               <div 
-                ref={formRef} 
+              <div
+                ref={formRef}
                 className="bg-card rounded-3xl p-8 md:p-10 border border-border shadow-xl"
               >
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4">
-                  Get Your Free Lesson
+                  Ready to Say Your First Sentence in Arabic?
                 </h2>
-                <p className="text-muted-foreground text-center mb-8">
-                  Enter your email to start learning Gulf Arabic today.
-                </p>
 
-                {/* Custom visible form */}
-                <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email Address"
-                        value={email}
-                        onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                        className="pl-10 h-12"
-                        required
-                      />
-                    </div>
-                    {error && (
-                      <p className="text-xs text-destructive">{error}</p>
-                    )}
+                {submitted ? (
+                  <div className="text-center py-8">
+                    <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
+                    <p className="text-xl font-bold text-foreground">You're in!</p>
+                    <p className="text-muted-foreground mt-2">Loading your lesson…</p>
                   </div>
-                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Get My Free Lesson"}
-                    {!isSubmitting && <ArrowRight className="w-4 h-4" />}
-                  </Button>
-                </form>
-
-                <p className="text-sm text-muted-foreground text-center mt-6">
-                  No spam. Unsubscribe anytime.
-                </p>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground text-center mb-8">
+                      Enter your email and start speaking Gulf Arabic today.
+                    </p>
+                    <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="Email Address"
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                            className="pl-10 h-12"
+                            required
+                          />
+                        </div>
+                        {error && <p className="text-xs text-destructive">{error}</p>}
+                      </div>
+                      <Button type="submit" size="lg" variant="hero" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? "Submitting..." : "Unlock My Free Lesson"}
+                        {!isSubmitting && <ArrowRight className="w-4 h-4" />}
+                      </Button>
+                    </form>
+                    <p className="text-sm text-muted-foreground text-center mt-6">
+                      Free. Instant access. No spam.
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Hidden Zoho form — kept in DOM for script compatibility */}
