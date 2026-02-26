@@ -37,7 +37,7 @@ export default function QuizPage() {
 
   if (isLoading) {
     return (
-      <FocusLayout>
+      <FocusLayout backTo={`/learn/unit/${undefined}`}>
         <div className="container max-w-3xl py-8 space-y-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-full" />
@@ -115,7 +115,7 @@ export default function QuizPage() {
     const { score, passed, correctCount, results, certificateAwarded } = quizResult;
     
     return (
-      <FocusLayout>
+      <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center py-12">
           <Card className="w-full max-w-lg mx-4">
             <CardContent className="p-8 text-center space-y-6">
@@ -224,7 +224,7 @@ export default function QuizPage() {
 
   // Quiz Screen
   return (
-    <FocusLayout>
+    <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">

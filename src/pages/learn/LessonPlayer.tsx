@@ -177,7 +177,7 @@ export default function LessonPlayer() {
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <FocusLayout>
+    <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header with breadcrumb and progress */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
@@ -409,7 +409,7 @@ export default function LessonPlayer() {
                     variant="hero"
                     className="gap-2"
                   >
-                    <Link to={`/pricing?course=${dialect?.name?.toLowerCase().includes('gulf') ? 'gulf' : 'fusha'}`}>
+                    <Link to={`/checkout?dialectId=${dialect?.id}`}>
                       Continue My Arabic Journey
                       <ArrowRight className="h-5 w-5" />
                     </Link>

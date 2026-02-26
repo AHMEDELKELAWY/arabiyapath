@@ -190,15 +190,6 @@ export default function Checkout() {
     <FocusLayout>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 sm:py-8 md:py-12">
         <div className="container max-w-4xl px-4 sm:px-6">
-          {/* Back Button */}
-          <Button 
-            variant="ghost" 
-            className="mb-4 sm:mb-6 gap-2"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
 
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Product Info */}
