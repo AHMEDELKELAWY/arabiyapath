@@ -264,9 +264,16 @@ export default function AdminProducts() {
                   id="name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g., Gulf Arabic - Beginner"
+                  placeholder={
+                    form.scope === "level" ? "e.g., Gulf Arabic — Beginner Level" :
+                    form.scope === "dialect" ? "e.g., Gulf Arabic — Full Bundle" :
+                    "e.g., All Access Bundle"
+                  }
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  {"Use format: [Dialect] — [Level] Level or [Dialect] — Full Bundle"}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
