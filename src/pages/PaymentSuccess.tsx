@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -105,7 +105,7 @@ export default function PaymentSuccess() {
   };
 
   return (
-    <Layout>
+    <FocusLayout>
       <div className="container max-w-lg py-12 px-4 sm:py-20">
         <Card>
           <CardContent className="p-6 sm:p-8 text-center">
@@ -162,6 +162,6 @@ export default function PaymentSuccess() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </FocusLayout>
   );
 }

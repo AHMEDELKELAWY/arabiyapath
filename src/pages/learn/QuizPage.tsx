@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuiz, useSubmitQuiz, QuizSubmitResult } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -37,26 +37,26 @@ export default function QuizPage() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="container max-w-3xl py-8 space-y-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   if (!data || !user) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold text-foreground">Quiz not available</h1>
           <Button asChild className="mt-6">
             <Link to="/dialects">Browse Dialects</Link>
           </Button>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
@@ -115,7 +115,7 @@ export default function QuizPage() {
     const { score, passed, correctCount, results, certificateAwarded } = quizResult;
     
     return (
-      <Layout>
+      <FocusLayout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center py-12">
           <Card className="w-full max-w-lg mx-4">
             <CardContent className="p-8 text-center space-y-6">
@@ -218,13 +218,13 @@ export default function QuizPage() {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   // Quiz Screen
   return (
-    <Layout>
+    <FocusLayout>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
@@ -353,6 +353,6 @@ export default function QuizPage() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </FocusLayout>
   );
 }

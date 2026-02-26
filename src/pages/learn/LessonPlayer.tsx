@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useLesson, useMarkLessonComplete } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,20 +109,20 @@ export default function LessonPlayer() {
 
   if (isLoading || purchasesLoading) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="container max-w-4xl py-8 space-y-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-[400px] w-full rounded-xl" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   if (!data) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold text-foreground">Lesson not found</h1>
           <p className="text-muted-foreground mt-2">This lesson doesn't exist or has been removed.</p>
@@ -130,14 +130,14 @@ export default function LessonPlayer() {
             <Link to="/dialects">Browse Dialects</Link>
           </Button>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   // Redirect if user doesn't have access
   if (!canAccess) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="container py-16 text-center max-w-lg mx-auto">
           <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
@@ -169,7 +169,7 @@ export default function LessonPlayer() {
             </>
           )}
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
@@ -177,7 +177,7 @@ export default function LessonPlayer() {
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <Layout>
+    <FocusLayout>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header with breadcrumb and progress */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
@@ -507,6 +507,6 @@ export default function LessonPlayer() {
           </div>
         )}
       </div>
-    </Layout>
+    </FocusLayout>
   );
 }
