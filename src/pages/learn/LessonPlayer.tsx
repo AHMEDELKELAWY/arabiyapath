@@ -189,7 +189,7 @@ export default function LessonPlayer() {
                 size="sm"
                 className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shrink-0 text-xs sm:text-sm font-semibold"
               >
-                <Link to={`/checkout?dialectId=${dialect?.id}`}>
+                <Link to={`/choose-plan/${dialect?.id}`}>
                   Unlock Full Course
                 </Link>
               </Button>
@@ -432,7 +432,7 @@ export default function LessonPlayer() {
                     variant="hero"
                     className="gap-2"
                   >
-                    <Link to={`/checkout?dialectId=${dialect?.id}`}>
+                    <Link to={`/choose-plan/${dialect?.id}`}>
                       Continue My Arabic Journey
                       <ArrowRight className="h-5 w-5" />
                     </Link>

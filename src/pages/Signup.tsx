@@ -73,11 +73,11 @@ export default function Signup() {
       } else {
         toast({ title: "Account Created!", description: "Please check your email to verify your account." });
       }
-      navigate("/verify-email");
+      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
     } catch (err) {
       console.error('Failed to send verification email:', err);
       toast({ title: "Account Created!", description: "Please verify your email to continue." });
-      navigate("/verify-email");
+      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
     }
     
     setIsLoading(false);
