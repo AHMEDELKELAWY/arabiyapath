@@ -928,26 +928,12 @@ export type Database = {
         Row: {
           cert_code: string | null
           dialect_id: string | null
+          first_name: string | null
           id: string | null
           issued_at: string | null
+          last_name: string | null
           level_id: string | null
           public_url: string | null
-        }
-        Insert: {
-          cert_code?: string | null
-          dialect_id?: string | null
-          id?: string | null
-          issued_at?: string | null
-          level_id?: string | null
-          public_url?: string | null
-        }
-        Update: {
-          cert_code?: string | null
-          dialect_id?: string | null
-          id?: string | null
-          issued_at?: string | null
-          level_id?: string | null
-          public_url?: string | null
         }
         Relationships: [
           {
