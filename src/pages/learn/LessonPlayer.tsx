@@ -17,10 +17,13 @@ import {
   Volume2, 
   Check, 
   CheckCircle,
+  CheckCircle2,
   List,
   X,
   Lock,
-  ShoppingCart
+  ShoppingCart,
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -370,26 +373,52 @@ export default function LessonPlayer() {
                 </div>
               </div>
 
-              {/* Free Trial CTA */}
+              {/* Free Trial Upgrade CTA */}
               {isFreeTrialContent && (
-                <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
-                  <CardContent className="p-4 sm:p-6 text-center">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
-                      Enjoying the free lessons?
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Get full access to all lessons, quizzes, and certificates.
-                    </p>
-                    <Button asChild size="lg" className="gap-2">
-                      <Link 
-                        to={`/pricing?course=${dialect?.name?.toLowerCase().includes('gulf') ? 'gulf' : 'fusha'}`}
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                        Unlock the full course
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border border-primary/30 rounded-2xl p-8 sm:p-10 text-center shadow-lg">
+                  <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4" />
+                  
+                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                    You Just Spoke Your First Gulf Arabic Sentence 🎉
+                  </h2>
+                  <p className="text-muted-foreground text-base sm:text-lg mb-6">
+                    Now imagine doing this confidently in real conversations.
+                  </p>
+
+                  <div className="flex flex-col items-start gap-3 max-w-sm mx-auto mb-6 text-left">
+                    {[
+                      "150+ step-by-step lessons",
+                      "Real-life dialogues used in the UAE & GCC",
+                      "Structured path from zero to confident speaker",
+                    ].map((item) => (
+                      <div key={item} className="flex items-center gap-2.5">
+                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                        <span className="text-sm sm:text-base text-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-muted-foreground text-sm sm:text-base mb-8">
+                    Don't stop after lesson one.{" "}
+                    <span className="font-semibold text-foreground">Build real speaking confidence.</span>
+                  </p>
+
+                  <Button
+                    asChild
+                    size="xl"
+                    variant="hero"
+                    className="gap-2"
+                  >
+                    <Link to={`/pricing?course=${dialect?.name?.toLowerCase().includes('gulf') ? 'gulf' : 'fusha'}`}>
+                      Continue My Arabic Journey
+                      <ArrowRight className="h-5 w-5" />
+                    </Link>
+                  </Button>
+
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Instant lifetime access.
+                  </p>
+                </div>
               )}
             </div>
 
