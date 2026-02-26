@@ -39,6 +39,7 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const CertificateView = lazy(() => import("./pages/CertificateView"));
 
 // Learning pages
 const GulfArabicLanding = lazy(() => import("./pages/learn/GulfArabicLanding"));
@@ -112,6 +113,7 @@ const App = () => (
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/certificate/:certCode" element={<CertificateView />} />
               {/* Learning Routes */}
               <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />
               <Route path="/learn/fusha-arabic" element={<FushaArabicLanding />} />
