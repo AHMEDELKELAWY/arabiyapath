@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { FreeLessonCelebrationModal } from "@/components/learn/FreeLessonCelebrationModal";
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
@@ -40,6 +41,7 @@ export default function LessonPlayer() {
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [showLessonList, setShowLessonList] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { playSound } = useSoundEffects();
 
@@ -72,19 +74,8 @@ export default function LessonPlayer() {
   const handleMarkComplete = async () => {
     if (!user) {
       if (isFreeTrialContent) {
-        // For free trial, show encouraging message and navigate to next lesson
-        toast.info("Create a free account to save your progress!", {
-          description: "Sign up to track your learning journey",
-          action: {
-            label: "Sign Up",
-            onClick: () => navigate("/signup"),
-          },
-        });
-        // Still allow navigation to next lesson in free trial
-        if (data?.nextLesson) {
-          playSound('lessonTransition');
-          navigate(`/learn/lesson/${data.nextLesson.id}`);
-        }
+        playSound('lessonComplete');
+        setShowCelebration(true);
         return;
       }
       toast.error("Please log in to track progress");
@@ -539,6 +530,19 @@ export default function LessonPlayer() {
           </div>
         )}
       </div>
+
+      <FreeLessonCelebrationModal
+        open={showCelebration}
+        onOpenChange={setShowCelebration}
+        nextLessonId={data?.nextLesson?.id}
+        dialectId={dialect?.id}
+        onContinueToNext={() => {
+          if (data?.nextLesson) {
+            playSound('lessonTransition');
+            navigate(`/learn/lesson/${data.nextLesson.id}`);
+          }
+        }}
+      />
     </FocusLayout>
   );
 }
