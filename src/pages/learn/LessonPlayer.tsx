@@ -136,13 +136,10 @@ export default function LessonPlayer() {
           <h1 className="text-2xl font-bold text-foreground">Access Required</h1>
           {!user ? (
             <>
-              <p className="text-muted-foreground mt-2">Please log in or sign up to access this lesson.</p>
+              <p className="text-muted-foreground mt-2">Please create an account to access this lesson.</p>
               <div className="flex gap-4 justify-center mt-6">
                 <Button asChild>
-                  <Link to="/login">Log In</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/signup">Sign Up Free</Link>
+                  <Link to={`/signup?redirect=${encodeURIComponent(`/checkout?levelId=${data?.level?.id}&dialectId=${data?.dialect?.id}`)}`}>Sign Up Free</Link>
                 </Button>
               </div>
             </>
@@ -152,9 +149,9 @@ export default function LessonPlayer() {
                 This lesson is part of {data?.level?.name}. Purchase to unlock access.
               </p>
               <Button asChild className="mt-6 gap-2">
-                <Link to={`/checkout?levelId=${data?.level?.id}&dialectId=${data?.dialect?.id}`}>
+                <Link to={`/choose-plan/${data?.dialect?.id}`}>
                   <ShoppingCart className="h-4 w-4" />
-                  Purchase Now
+                  View Plans
                 </Link>
               </Button>
             </>
@@ -189,7 +186,7 @@ export default function LessonPlayer() {
                 size="sm"
                 className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shrink-0 text-xs sm:text-sm font-semibold"
               >
-                <Link to={`/choose-plan/${dialect?.id}`}>
+                <Link to={user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>
                   Unlock Full Course
                 </Link>
               </Button>
@@ -432,7 +429,7 @@ export default function LessonPlayer() {
                     variant="hero"
                     className="gap-2"
                   >
-                    <Link to={`/choose-plan/${dialect?.id}`}>
+                    <Link to={user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>
                       Continue My Arabic Journey
                       <ArrowRight className="h-5 w-5" />
                     </Link>

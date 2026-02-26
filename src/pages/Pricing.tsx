@@ -443,11 +443,11 @@ export default function Pricing() {
                 {!authLoading && !user && (
                   <div className="bg-muted/50 rounded-xl p-5 text-center">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Please sign in to continue with your purchase
+                      Create an account to complete your purchase
                     </p>
                     <Button asChild className="w-full">
-                      <Link to={`/login?redirect=${encodeURIComponent(`/checkout?productId=${selectedPlan.id}`)}`}>
-                        Sign In to Continue
+                      <Link to={`/signup?redirect=${encodeURIComponent(`/checkout?productId=${selectedPlan.id}`)}`}>
+                        Sign Up to Continue
                       </Link>
                     </Button>
                   </div>

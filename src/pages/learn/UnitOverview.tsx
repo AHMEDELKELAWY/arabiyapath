@@ -170,25 +170,20 @@ export default function UnitOverview() {
                       </div>
                     </div>
                     <Button asChild className="mt-4 gap-2 w-full sm:w-auto">
-                      <Link to={`/checkout?levelId=${level?.id}&dialectId=${dialect?.id}`}>
+                      <Link to={`/choose-plan/${dialect?.id}`}>
                         <ShoppingCart className="h-4 w-4" />
-                        Purchase Now
+                        View Plans
                       </Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="p-4 bg-muted/50 border rounded-lg">
                     <p className="text-muted-foreground mb-4">
-                      Sign in to track your progress and unlock more content
+                      Create an account to track your progress and unlock more content
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button asChild size="lg" className="w-full sm:w-auto">
-                        <Link to="/login">Log in</Link>
-                      </Button>
-                      <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                        <Link to="/signup">Sign Up Free</Link>
-                      </Button>
-                    </div>
+                    <Button asChild size="lg" className="w-full sm:w-auto">
+                      <Link to={`/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>Sign Up Free</Link>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -210,7 +205,7 @@ export default function UnitOverview() {
                 {lessons.map((lesson, index) => (
                   <Link
                     key={lesson.id}
-                    to={canAccess ? `/learn/lesson/${lesson.id}` : "/login"}
+                    to={canAccess ? `/learn/lesson/${lesson.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}
                     className={cn(
                       "flex items-center gap-3 sm:gap-4 p-3 sm:p-4 transition-colors hover:bg-muted/50",
                       lesson.completed && "bg-green-50 dark:bg-green-950/20"
