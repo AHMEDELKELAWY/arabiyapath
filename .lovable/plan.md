@@ -1,54 +1,79 @@
 
 
-## Plan: Implement Default Layout and Focus Layout
+## Plan: Upgrade FocusLayout to a Closed Funnel Structure
 
 ### Overview
-Create a new `FocusLayout` component (minimal nav, no footer, no chatbot button) and apply it to all high-conversion flow pages. The existing `Layout` remains unchanged for regular pages.
+Transform the existing `FocusLayout` into a strict closed-funnel layout that eliminates all exit paths. The logo becomes non-navigational (or context-aware back link), all external links are removed, and the layout creates a sealed conversion environment.
 
-### New File: `src/components/layout/FocusLayout.tsx`
+### Changes
 
-A minimal layout component that:
-- Renders a simplified top bar with only the logo (links to `/`) and a single "Dashboard" or "Log in" link on the right
-- No full Navbar, no Footer, no floating AI Advisor button
-- No dropdown menus, no blog/pricing/flash cards links
-- Clean `min-h-screen flex flex-col` structure with `pt-16` main area
-- The top bar uses the same `glass` fixed header styling as the Navbar for consistency
+#### 1. Rewrite `src/components/layout/FocusLayout.tsx`
+
+Update the component to accept an optional `backTo` prop for contextual back-navigation on the logo:
+
+- **Logo**: Renders as a static element by default (no link). When `backTo` is provided, the logo links to that specific funnel step only.
+- **Remove** the Dashboard link, Log in link, and Log out button entirely.
+- **Remove** the `useAuth` import — no auth UI in the funnel.
+- **Header**: Keep the minimal `glass` fixed bar with logo only, right side empty.
+- **No footer, no chatbot.**
+
+```text
+interface FocusLayoutProps {
+  children: ReactNode;
+  backTo?: string;  // optional: where the logo links (previous funnel step)
+}
+```
 
 ```text
 ┌─────────────────────────────────────────┐
-│  [Logo ArabiyaPath]          [Log in]   │  ← minimal top bar
+│  [Logo ArabiyaPath]                     │  ← logo only, no links on right
 ├─────────────────────────────────────────┤
-│                                         │
-│           Page Content                  │  ← children
-│                                         │
+│           Page Content                  │
 └─────────────────────────────────────────┘
-                                             ← no footer
 ```
 
-### Files Modified
+#### 2. Update `src/pages/learn/LessonPlayer.tsx`
 
-**`src/pages/learn/LessonPlayer.tsx`** — Change `import { Layout }` to `import { FocusLayout }` and replace `<Layout>` / `</Layout>` with `<FocusLayout>` / `</FocusLayout>`
+- Pass `backTo={/learn/unit/${data?.unit?.id}}` to `FocusLayout` so the logo navigates back to the current unit (previous funnel step), not home.
+- In the upgrade CTA section (lines 406-416): change the Link destination from `/pricing?course=...` to `/checkout?dialectId=...` to skip the open pricing page and go straight to checkout (keeping the funnel closed). This requires the dialect ID from the existing `data.dialect` object.
 
-**`src/pages/learn/QuizPage.tsx`** — Same swap: `Layout` → `FocusLayout`
+#### 3. Update `src/pages/learn/QuizPage.tsx`
 
-**`src/pages/Checkout.tsx`** — Same swap: `Layout` → `FocusLayout`
+- Pass `backTo={/learn/unit/${unit?.id}}` to all `FocusLayout` instances.
 
-**`src/pages/FreeGulfLesson.tsx`** — Same swap: `Layout` → `FocusLayout`
+#### 4. Update `src/pages/Checkout.tsx`
 
-**`src/pages/PaymentSuccess.tsx`** — Same swap (post-payment confirmation should stay focused)
+- Pass `backTo` pointing back to pricing or the previous lesson context. Since checkout can come from multiple entry points, use a simple back: `backTo={searchParams.get("from") || undefined}` — or omit it so the logo is static (no escape from checkout).
+- Remove the "Back" button (lines 194-201) that currently uses `navigate(-1)` — this is an exit path.
+- The page already has no competing CTAs beyond the PayPal checkout, which is correct.
 
-**`src/pages/PaymentCancel.tsx`** — Same swap
+#### 5. Update `src/pages/PaymentSuccess.tsx`
+
+- Use `FocusLayout` with no `backTo` (logo is static).
+- The existing CTA buttons ("Start Learning", "Go to Dashboard") are appropriate post-purchase — keep them as the single path forward.
+
+#### 6. Update `src/pages/PaymentCancel.tsx`
+
+- Use `FocusLayout` with no `backTo`.
+- Replace current buttons: remove "Go Home" link. Keep only a single "Try Again" button that navigates back to checkout (use `navigate(-1)` or a stored checkout URL).
+
+#### 7. Update `src/pages/FreeGulfLesson.tsx`
+
+- Use `FocusLayout` with no `backTo` (logo is static — this is a landing page, no escape).
 
 ### Technical Details
 
-- `FocusLayout` does NOT call `useChatbaseInit()` or render the floating chatbot button — zero distractions
-- The minimal top bar shows:
-  - Left: Logo + "ArabiyaPath" (links to `/`)
-  - Right: If authenticated → "Dashboard" link + small "Log out" button; if not → "Log in" text link
-  - Uses `useAuth()` for auth state
-- Mobile: same minimal bar, no hamburger menu needed (only logo + auth link)
-- No new dependencies required
+- The `backTo` prop controls whether the logo is a `Link` or a plain `div`. When undefined, logo is static (maximum funnel lock).
+- No new dependencies needed.
+- No database changes.
+- All pages already use `FocusLayout` — this is purely a prop/behavior update to the shared component and minor per-page adjustments.
 
-### Pages NOT changed (stay on default Layout)
-- Index, Pricing, Blog, Dialects, FAQ, Contact, About, Dashboard, Flash Cards, etc. — all keep the full `Layout` with footer
+### Files changed
+- `src/components/layout/FocusLayout.tsx` — rewrite header to logo-only, add `backTo` prop
+- `src/pages/learn/LessonPlayer.tsx` — pass `backTo` prop, update upgrade CTA link
+- `src/pages/learn/QuizPage.tsx` — pass `backTo` prop
+- `src/pages/Checkout.tsx` — remove back button, static logo
+- `src/pages/PaymentSuccess.tsx` — no `backTo` (static logo)
+- `src/pages/PaymentCancel.tsx` — remove "Go Home", single retry CTA
+- `src/pages/FreeGulfLesson.tsx` — no `backTo` (static logo)
 
