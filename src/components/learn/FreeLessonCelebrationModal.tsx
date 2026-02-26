@@ -68,7 +68,7 @@ export function FreeLessonCelebrationModal({
             <div className="space-y-3 pt-2">
               <Button asChild size="lg" className="w-full gap-2">
                 <Link
-                  to={`/choose-plan/${dialectId}`}
+                  to={`/signup?redirect=${encodeURIComponent(`/choose-plan/${dialectId}`)}`}
                 >
                   Continue My Arabic Journey
                   <ArrowRight className="h-4 w-4" />

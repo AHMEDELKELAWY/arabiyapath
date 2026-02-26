@@ -80,43 +80,11 @@ export default function Checkout() {
     enabled: !!levelId,
   });
 
-  // Not logged in - show login prompt
+  // Not logged in - redirect to signup with return URL
   if (!user) {
-    return (
-      <FocusLayout>
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12">
-          <div className="container max-w-lg">
-            <Card className="border-2">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Sign in to Continue</CardTitle>
-                <CardDescription>
-                  Create an account or sign in to purchase and access your courses
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button asChild className="w-full" size="lg">
-                  <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
-                    Sign In
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full" size="lg">
-                  <Link to={`/signup?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
-                    Create Account
-                  </Link>
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => navigate(-1)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Go Back
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </FocusLayout>
-    );
+    const currentUrl = window.location.pathname + window.location.search;
+    navigate(`/signup?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    return null;
   }
 
   if (isLoading) {

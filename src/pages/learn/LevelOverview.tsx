@@ -275,9 +275,9 @@ export default function LevelOverview() {
                   Purchase this level to access all units and earn your certificate
                 </p>
                 <Button asChild className="gap-2 w-full sm:w-auto">
-                  <Link to={`/checkout?levelId=${level.id}&dialectId=${dialect?.id}`}>
+                  <Link to={`/choose-plan/${dialect?.id}`}>
                     <ShoppingCart className="h-4 w-4" />
-                    Purchase Now
+                    View Plans
                   </Link>
                 </Button>
               </CardContent>
@@ -293,7 +293,7 @@ export default function LevelOverview() {
                   Create a free account to save your progress and earn certificates
                 </p>
                 <Button asChild className="w-full sm:w-auto">
-                  <Link to="/signup">Get Started Free</Link>
+                  <Link to={`/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>Get Started Free</Link>
                 </Button>
               </CardContent>
             </Card>
