@@ -110,7 +110,8 @@ export function useAffiliateCommissions() {
           purchases (
             product_name,
             amount,
-            created_at
+            created_at,
+            products (name)
           )
         `)
         .eq("affiliate_id", affiliate.id)
@@ -147,7 +148,8 @@ export function useAffiliateReferrals() {
           product_name,
           amount,
           created_at,
-          user_id
+          user_id,
+          products (name)
         `)
         .eq("affiliate_id", affiliate.id)
         .order("created_at", { ascending: false });
@@ -240,7 +242,8 @@ export function useAdminAffiliateCommissions(affiliateId?: string) {
           purchases (
             product_name,
             amount,
-            user_id
+            user_id,
+            products (name)
           )
         `)
         .order("created_at", { ascending: false });

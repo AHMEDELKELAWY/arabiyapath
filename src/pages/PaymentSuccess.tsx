@@ -59,17 +59,18 @@ export default function PaymentSuccess() {
         if (session.session?.user?.id) {
           const { data: purchase } = await supabase
             .from("purchases")
-            .select("level_id, dialect_id, product_name")
+            .select("level_id, dialect_id, product_name, products (name)")
             .eq("user_id", session.session.user.id)
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
 
           if (purchase) {
+            const canonicalName = (purchase.products as any)?.name ?? purchase.product_name;
             setPurchaseInfo({
               level_id: purchase.level_id,
               dialect_id: purchase.dialect_id,
-              product_name: purchase.product_name
+              product_name: canonicalName
             });
           }
         }
