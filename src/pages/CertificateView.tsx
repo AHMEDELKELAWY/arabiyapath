@@ -110,7 +110,15 @@ export default function CertificateView() {
               >
                 <Award className="w-16 h-16 text-secondary mx-auto" />
                 <h1 className="text-2xl sm:text-3xl font-bold">Certificate of Completion</h1>
-                <p className="text-muted-foreground">This certifies completion of</p>
+                <p className="text-muted-foreground">This certifies that</p>
+
+                {(cert.first_name || cert.last_name) && (
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {[cert.first_name, cert.last_name].filter(Boolean).join(" ")}
+                  </p>
+                )}
+
+                <p className="text-muted-foreground">has completed</p>
 
                 <div className="space-y-1">
                   <p className="text-xl sm:text-2xl font-semibold text-foreground">{dialectName}</p>
