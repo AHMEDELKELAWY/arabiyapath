@@ -2,7 +2,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +83,7 @@ export default function Checkout() {
   // Not logged in - show login prompt
   if (!user) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12">
           <div className="container max-w-lg">
             <Card className="border-2">
@@ -115,13 +115,13 @@ export default function Checkout() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12">
           <div className="container max-w-4xl">
             <div className="grid md:grid-cols-2 gap-8">
@@ -135,13 +135,13 @@ export default function Checkout() {
             </div>
           </div>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
   if (!product) {
     return (
-      <Layout>
+      <FocusLayout>
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12">
           <div className="container max-w-lg text-center">
             <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
@@ -153,7 +153,7 @@ export default function Checkout() {
             </Button>
           </div>
         </div>
-      </Layout>
+      </FocusLayout>
     );
   }
 
@@ -187,7 +187,7 @@ export default function Checkout() {
       ];
 
   return (
-    <Layout>
+    <FocusLayout>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 sm:py-8 md:py-12">
         <div className="container max-w-4xl px-4 sm:px-6">
           {/* Back Button */}
@@ -285,6 +285,6 @@ export default function Checkout() {
           </div>
         </div>
       </div>
-    </Layout>
+    </FocusLayout>
   );
 }

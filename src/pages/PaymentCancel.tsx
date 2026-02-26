@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { XCircle } from "lucide-react";
 
 export default function PaymentCancel() {
   return (
-    <Layout>
+    <FocusLayout>
       <div className="container max-w-lg py-20">
         <Card>
           <CardContent className="p-8 text-center space-y-6">
@@ -28,6 +28,6 @@ export default function PaymentCancel() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </FocusLayout>
   );
 }

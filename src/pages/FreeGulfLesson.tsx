@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout } from "@/components/layout/Layout";
+import { FocusLayout } from "@/components/layout/FocusLayout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ export default function FreeGulfLesson() {
         title="Free Gulf Arabic Lesson for Expats | ArabiyaPath"
         description="Speak Gulf Arabic in 10 minutes. Learn real phrases used in the UAE & GCC — not textbook Arabic. Free lesson, instant access."
       />
-      <Layout>
+      <FocusLayout>
         {/* ─── SECTION 1 — HERO ─── */}
         <section className="relative overflow-hidden py-20 md:py-28">
           <div className="absolute inset-0 bg-hero-gradient opacity-[0.03] pointer-events-none z-0" />
@@ -309,7 +309,7 @@ export default function FreeGulfLesson() {
             </div>
           </div>
         </section>
-      </Layout>
+      </FocusLayout>
     </>
   );
 }
