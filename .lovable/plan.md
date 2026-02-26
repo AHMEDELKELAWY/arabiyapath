@@ -1,51 +1,54 @@
 
 
-## Plan: Rewrite Free Lesson Upgrade CTA Section
+## Plan: Implement Default Layout and Focus Layout
 
-### What changes
-**File: `src/pages/learn/LessonPlayer.tsx`** (lines 373-393)
+### Overview
+Create a new `FocusLayout` component (minimal nav, no footer, no chatbot button) and apply it to all high-conversion flow pages. The existing `Layout` remains unchanged for regular pages.
 
-Replace the current weak CTA card with a high-conversion bridge section:
+### New File: `src/components/layout/FocusLayout.tsx`
 
-### New section structure
+A minimal layout component that:
+- Renders a simplified top bar with only the logo (links to `/`) and a single "Dashboard" or "Log in" link on the right
+- No full Navbar, no Footer, no floating AI Advisor button
+- No dropdown menus, no blog/pricing/flash cards links
+- Clean `min-h-screen flex flex-col` structure with `pt-16` main area
+- The top bar uses the same `glass` fixed header styling as the Navbar for consistency
 
 ```text
-┌──────────────────────────────────────────────┐
-│  bg-gradient (primary/10 → secondary/10)     │
-│  border-primary/30, rounded-2xl, shadow       │
-│                                               │
-│  🎉 (party popper emoji or sparkle icon)     │
-│                                               │
-│  You Just Spoke Your First Gulf Arabic        │
-│  Sentence 🎉                                 │
-│                                               │
-│  Now imagine doing this confidently in real   │
-│  conversations.                               │
-│                                               │
-│  ✓ 150+ step-by-step lessons                 │
-│  ✓ Real-life dialogues used in UAE & GCC     │
-│  ✓ Structured path from zero to confident    │
-│                                               │
-│  Don't stop after lesson one.                │
-│  Build real speaking confidence.              │
-│                                               │
-│  [ Continue My Arabic Journey → ]  (xl btn)  │
-│                                               │
-│  Instant lifetime access.                     │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  [Logo ArabiyaPath]          [Log in]   │  ← minimal top bar
+├─────────────────────────────────────────┤
+│                                         │
+│           Page Content                  │  ← children
+│                                         │
+└─────────────────────────────────────────┘
+                                             ← no footer
 ```
 
-### Technical details
+### Files Modified
 
-- Replace lines 373-393 in `LessonPlayer.tsx`
-- Keep the `isFreeTrialContent` guard
-- Keep the dynamic pricing link logic (`/pricing?course=gulf` or `fusha`)
-- Use `variant="hero"` and `size="xl"` on the button for visual weight
-- Use `CheckCircle2` icons for benefit bullets, `ArrowRight` for button
-- Add `Sparkles` icon from lucide-react near the headline
-- Background: `bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10` with `border-primary/30`
-- Larger padding (`p-8 sm:p-10`) for premium feel
-- Import additions: `CheckCircle2`, `ArrowRight`, `Sparkles` from lucide-react (check which are already imported)
+**`src/pages/learn/LessonPlayer.tsx`** — Change `import { Layout }` to `import { FocusLayout }` and replace `<Layout>` / `</Layout>` with `<FocusLayout>` / `</FocusLayout>`
 
-### No other files changed
+**`src/pages/learn/QuizPage.tsx`** — Same swap: `Layout` → `FocusLayout`
+
+**`src/pages/Checkout.tsx`** — Same swap: `Layout` → `FocusLayout`
+
+**`src/pages/FreeGulfLesson.tsx`** — Same swap: `Layout` → `FocusLayout`
+
+**`src/pages/PaymentSuccess.tsx`** — Same swap (post-payment confirmation should stay focused)
+
+**`src/pages/PaymentCancel.tsx`** — Same swap
+
+### Technical Details
+
+- `FocusLayout` does NOT call `useChatbaseInit()` or render the floating chatbot button — zero distractions
+- The minimal top bar shows:
+  - Left: Logo + "ArabiyaPath" (links to `/`)
+  - Right: If authenticated → "Dashboard" link + small "Log out" button; if not → "Log in" text link
+  - Uses `useAuth()` for auth state
+- Mobile: same minimal bar, no hamburger menu needed (only logo + auth link)
+- No new dependencies required
+
+### Pages NOT changed (stay on default Layout)
+- Index, Pricing, Blog, Dialects, FAQ, Contact, About, Dashboard, Flash Cards, etc. — all keep the full `Layout` with footer
 
