@@ -176,8 +176,40 @@ export default function LessonPlayer() {
   const { lesson, unit, level, dialect, unitLessons, prevLesson, nextLesson, isCompleted, completedCount, totalCount } = data;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
+  const showUpgradeBar = isFreeTrialContent && !hasPurchaseAccess;
+
   return (
     <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
+      {/* Sticky Upgrade Bar for Free Trial Users */}
+      {showUpgradeBar && (
+        <div className="sticky top-0 z-20 bg-primary/95 backdrop-blur-sm text-primary-foreground border-b border-primary-foreground/10">
+          <div className="container max-w-6xl px-4 py-2 sm:py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <span className="text-xs font-semibold bg-primary-foreground/20 rounded-full px-2.5 py-0.5 whitespace-nowrap">
+                  Free Lesson
+                </span>
+                <span className="text-xs sm:text-sm text-primary-foreground/80 whitespace-nowrap">
+                  {data.currentIndex + 1}/{data.totalCount}
+                </span>
+              </div>
+              <Button
+                asChild
+                size="sm"
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shrink-0 text-xs sm:text-sm font-semibold"
+              >
+                <Link to={`/checkout?dialectId=${dialect?.id}`}>
+                  Unlock Full Course
+                </Link>
+              </Button>
+            </div>
+            <p className="text-[10px] sm:text-xs text-primary-foreground/60 mt-1 text-center">
+              Lifetime access • Quizzes • Certificates • 1 Private Evaluation Session (Bundle)
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header with breadcrumb and progress */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
