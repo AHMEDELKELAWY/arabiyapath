@@ -17,14 +17,9 @@ export default function PaymentCancel() {
             <p className="text-muted-foreground">
               Your payment was cancelled. No charges were made to your account.
             </p>
-            <div className="flex gap-4 justify-center">
-              <Button asChild>
-                <Link to="/pricing">Back to Pricing</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/">Go Home</Link>
-              </Button>
-            </div>
+            <Button asChild className="w-full max-w-xs mx-auto">
+              <Link to="/pricing">Try Again</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
