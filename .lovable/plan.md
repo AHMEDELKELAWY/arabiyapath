@@ -1,61 +1,51 @@
 
 
-## Plan: Rewrite /free-gulf-lesson as a Conversion-Focused Landing Page
+## Plan: Rewrite Free Lesson Upgrade CTA Section
 
-### Overview
-Complete rewrite of `src/pages/FreeGulfLesson.tsx` with 6 conversion-optimized sections, preserving the existing Zoho Campaigns integration (hidden form + `useZohoOptin` hook) and redirect logic.
+### What changes
+**File: `src/pages/learn/LessonPlayer.tsx`** (lines 373-393)
 
-### File Changed
-- `src/pages/FreeGulfLesson.tsx` (full rewrite)
+Replace the current weak CTA card with a high-conversion bridge section:
 
-### Section Breakdown
+### New section structure
 
-**Section 1 — Hero**
-- Headline: "Speak Gulf Arabic in 10 Minutes — Even If You're a Complete Beginner"
-- Subheadline: "Learn real phrases people actually use in the UAE & GCC — not textbook Arabic."
-- 3 benefit bullets with check icons
-- CTA button: "Get My Free Lesson" (scrolls to final form)
-- Trust line: "Free. Instant access. No spam."
-- Background decorative blurs (existing pattern)
+```text
+┌──────────────────────────────────────────────┐
+│  bg-gradient (primary/10 → secondary/10)     │
+│  border-primary/30, rounded-2xl, shadow       │
+│                                               │
+│  🎉 (party popper emoji or sparkle icon)     │
+│                                               │
+│  You Just Spoke Your First Gulf Arabic        │
+│  Sentence 🎉                                 │
+│                                               │
+│  Now imagine doing this confidently in real   │
+│  conversations.                               │
+│                                               │
+│  ✓ 150+ step-by-step lessons                 │
+│  ✓ Real-life dialogues used in UAE & GCC     │
+│  ✓ Structured path from zero to confident    │
+│                                               │
+│  Don't stop after lesson one.                │
+│  Build real speaking confidence.              │
+│                                               │
+│  [ Continue My Arabic Journey → ]  (xl btn)  │
+│                                               │
+│  Instant lifetime access.                     │
+└──────────────────────────────────────────────┘
+```
 
-**Section 2 — The Problem**
-- Headline: "Why Most Arabic Courses Don't Work for Expats"
-- 3 punchy problem bullets with X icons
-- Closing line: "This lesson fixes that." (bold/highlighted)
+### Technical details
 
-**Section 3 — What You'll Experience**
-- Headline: "Inside This Free Lesson"
-- 4 benefit bullets with relevant icons (MessageCircle, Coffee, Headphones, Repeat)
+- Replace lines 373-393 in `LessonPlayer.tsx`
+- Keep the `isFreeTrialContent` guard
+- Keep the dynamic pricing link logic (`/pricing?course=gulf` or `fusha`)
+- Use `variant="hero"` and `size="xl"` on the button for visual weight
+- Use `CheckCircle2` icons for benefit bullets, `ArrowRight` for button
+- Add `Sparkles` icon from lucide-react near the headline
+- Background: `bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10` with `border-primary/30`
+- Larger padding (`p-8 sm:p-10`) for premium feel
+- Import additions: `CheckCircle2`, `ArrowRight`, `Sparkles` from lucide-react (check which are already imported)
 
-**Section 4 — Future Vision**
-- Headline: "Imagine This..."
-- Short evocative paragraph as provided
-- Closing: "This is your first step." (bold)
-
-**Section 5 — Who It's For**
-- 3 qualifier bullets with check icons
-- Alternating background (`bg-cream`)
-
-**Section 6 — Final CTA**
-- Headline: "Ready to Say Your First Sentence in Arabic?"
-- Email form (same Zoho proxy pattern)
-- Button: "Unlock My Free Lesson"
-- Success state: brief "You're in!" message before redirect
-- Trust note: "Free. Instant access. No spam."
-
-### Technical Details
-
-- Reuse existing constants: `ZOHO_FORM_ID`, `ZOHO_SCRIPT_SRC`, `REDIRECT_URL`
-- Keep `useZohoOptin` hook call unchanged
-- Keep hidden Zoho form HTML block unchanged (lines 205-254)
-- Keep `handleSubmit` logic unchanged (set hidden input, click hidden button, redirect after 2.5s)
-- Add `submitted` state to show brief success message before redirect
-- Hero CTA scrolls to `formRef` (Section 6)
-- Use existing UI components: `Button`, `Input`, `Layout`, `SEOHead`
-- Icons from lucide-react: `CheckCircle2`, `X`, `Mail`, `ArrowRight`, `Headphones`, `MessageCircle`, `Coffee`, `Repeat`
-
-### No Other Files Changed
-- `useZohoOptin.ts` — no changes
-- No database changes
-- No new dependencies
+### No other files changed
 
