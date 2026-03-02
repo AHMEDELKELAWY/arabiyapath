@@ -1,22 +1,16 @@
 
 
-## Plan: Remove Flash Cards Page
+## Plan: Add Meta Pixel Base Code to `index.html`
 
-Remove the Flash Cards page and all references to it from navigation and routing.
+Install the Facebook/Meta Pixel (ID: `841178368300586`) in `index.html` so it loads on every page. This will make the existing `fbq('track', 'Lead')` calls on the thank-you page actually fire.
 
 ### Changes
 
-1. **`src/App.tsx`** — Remove the `FlashCards` lazy import and the `/flash-cards` route
+**`index.html`** — Add the Meta Pixel script block in the `<head>`, below the existing Google Analytics scripts and above the closing `</head>` tag. Includes:
+- The standard `fbevents.js` loader
+- `fbq('init', '841178368300586')`
+- `fbq('track', 'PageView')` for automatic pageview tracking
+- The `<noscript>` fallback image pixel
 
-2. **`src/components/layout/Navbar.tsx`** — Remove "Flash Cards" from `mainNavLinks` array and remove both the desktop and mobile Flash Cards nav links
-
-3. **Files to leave in place** (no harm, reduces risk):
-   - `src/pages/FlashCards.tsx`
-   - `src/components/flashcards/*`
-   - `src/data/flashCardsData.ts`
-   
-   These become dead code but won't be bundled since nothing imports them after the route is removed.
-
-### Result
-The Flash Cards page will no longer be accessible from any navigation or URL. The route will hit the `NotFound` catch-all.
+No other files need to change — the `fbq('track', 'Lead')` calls in `ThankYouFreeGulf.tsx` will now work automatically since `fbq` will be globally available.
 
