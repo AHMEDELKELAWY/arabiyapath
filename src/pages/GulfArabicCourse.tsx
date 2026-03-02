@@ -80,12 +80,12 @@ const bundleFeatures = [
   "1 Private Evaluation Session",
 ];
 
-const screenshotCaptions = [
-  "Learn phrases in real contexts",
-  "Hear native audio",
-  "Practice with quizzes",
-  "Track progress by unit",
-  "Finish with an exam",
+const screenshots = [
+  { src: "/images/course-lesson.png", caption: "Learn phrases with native audio" },
+  { src: "/images/course-units.png", caption: "Structured lessons by topic" },
+  { src: "/images/course-levels.png", caption: "Track progress by unit" },
+  { src: "/images/course-dashboard.png", caption: "See your overall progress" },
+  { src: "/images/course-certificate.png", caption: "Earn a completion certificate" },
 ];
 
 const steps = [
