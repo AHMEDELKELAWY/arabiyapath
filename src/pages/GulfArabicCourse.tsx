@@ -276,7 +276,7 @@ export default function GulfArabicCourse() {
         </section>
 
         {/* ===== PRICING ===== */}
-        <section id="pricing" className="py-16 md:py-20 scroll-mt-16">
+        <section id="choose-plan" className="py-16 md:py-20 scroll-mt-16">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
               Choose Your Plan
