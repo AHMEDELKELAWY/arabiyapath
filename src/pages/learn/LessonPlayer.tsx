@@ -29,7 +29,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
-import { FreeLessonCelebrationModal } from "@/components/learn/FreeLessonCelebrationModal";
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
@@ -41,8 +40,9 @@ export default function LessonPlayer() {
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [showLessonList, setShowLessonList] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [lessonMarkedComplete, setLessonMarkedComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const upgradeSectionRef = useRef<HTMLDivElement>(null);
   const { playSound } = useSoundEffects();
 
   const handlePlayPause = () => {
@@ -71,11 +71,19 @@ export default function LessonPlayer() {
   
   const canAccess = isFreeTrialContent || hasPurchaseAccess;
 
+  const showUpgradeSection = isFreeTrialContent && !hasPurchaseAccess;
+
+  const scrollToUpgrade = () => {
+    upgradeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const handleMarkComplete = async () => {
     if (!user) {
       if (isFreeTrialContent) {
         playSound('lessonComplete');
-        setShowCelebration(true);
+        setLessonMarkedComplete(true);
+        // Scroll to upgrade section instead of showing modal
+        setTimeout(() => scrollToUpgrade(), 300);
         return;
       }
       toast.error("Please log in to track progress");
@@ -88,7 +96,13 @@ export default function LessonPlayer() {
       playSound('lessonComplete');
       toast.success("Lesson marked as complete!");
       
-      // Navigate to next lesson if available
+      if (showUpgradeSection) {
+        setLessonMarkedComplete(true);
+        setTimeout(() => scrollToUpgrade(), 300);
+        return;
+      }
+      
+      // Navigate to next lesson if available (paid users)
       if (data?.nextLesson) {
         playSound('lessonTransition');
         navigate(`/learn/lesson/${data.nextLesson.id}`);
@@ -96,6 +110,11 @@ export default function LessonPlayer() {
     } catch (error) {
       toast.error("Failed to mark lesson as complete");
     }
+  };
+
+  const handleLockedLessonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    scrollToUpgrade();
   };
 
   if (isLoading || purchasesLoading) {
@@ -165,6 +184,10 @@ export default function LessonPlayer() {
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const showUpgradeBar = isFreeTrialContent && !hasPurchaseAccess;
+  const upgradeLink = user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`;
+
+  // For free trial: only lesson at index 0 is accessible, rest are locked
+  const isLessonLocked = (index: number) => showUpgradeSection && index > 0;
 
   return (
     <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
@@ -186,7 +209,7 @@ export default function LessonPlayer() {
                 size="sm"
                 className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shrink-0 text-xs sm:text-sm font-semibold"
               >
-                <Link to={user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>
+                <Link to={upgradeLink}>
                   Unlock Full Course
                 </Link>
               </Button>
@@ -335,7 +358,7 @@ export default function LessonPlayer() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                 {/* Main Action Button - Top on mobile */}
                 <div className="order-first sm:order-none w-full sm:w-auto">
-                  {!isCompleted ? (
+                  {!isCompleted && !lessonMarkedComplete ? (
                     <Button
                       size="lg"
                       onClick={handleMarkComplete}
@@ -345,7 +368,7 @@ export default function LessonPlayer() {
                       <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                       {markComplete.isPending ? "Saving..." : "Mark as Complete"}
                     </Button>
-                  ) : nextLesson ? (
+                  ) : nextLesson && !showUpgradeSection ? (
                     <Button
                       size="lg"
                       onClick={() => navigate(`/learn/lesson/${nextLesson.id}`)}
@@ -354,7 +377,7 @@ export default function LessonPlayer() {
                       Next Lesson
                       <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
-                  ) : (
+                  ) : !showUpgradeSection ? (
                     <Button
                       size="lg"
                       onClick={() => navigate(`/learn/unit/${unit?.id}`)}
@@ -362,6 +385,15 @@ export default function LessonPlayer() {
                     >
                       Take Quiz
                       <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={scrollToUpgrade}
+                      className="gap-2 w-full sm:w-auto px-6 sm:px-8 bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                      Lesson Complete — See What's Next
                     </Button>
                   )}
                 </div>
@@ -383,8 +415,14 @@ export default function LessonPlayer() {
                   <Button
                     variant="outline"
                     size="default"
-                    onClick={() => nextLesson && navigate(`/learn/lesson/${nextLesson.id}`)}
-                    disabled={!nextLesson}
+                    onClick={() => {
+                      if (showUpgradeSection) {
+                        scrollToUpgrade();
+                      } else if (nextLesson) {
+                        navigate(`/learn/lesson/${nextLesson.id}`);
+                      }
+                    }}
+                    disabled={!nextLesson && !showUpgradeSection}
                     className="flex-1 sm:flex-none gap-1 sm:gap-2 sm:order-last"
                   >
                     <span>Next</span>
@@ -393,51 +431,67 @@ export default function LessonPlayer() {
                 </div>
               </div>
 
-              {/* Free Trial Upgrade CTA */}
-              {isFreeTrialContent && (
-                <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border border-primary/30 rounded-2xl p-8 sm:p-10 text-center shadow-lg">
-                  <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4" />
-                  
-                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                    You Just Spoke Your First Gulf Arabic Sentence 🎉
-                  </h2>
-                  <p className="text-muted-foreground text-base sm:text-lg mb-6">
-                    Now imagine doing this confidently in real conversations.
+              {/* Full-Width Upgrade Section (replaces popup) */}
+              {showUpgradeSection && (
+                <div ref={upgradeSectionRef} className="scroll-mt-24">
+                  {/* Progress indicator */}
+                  <p className="text-sm text-muted-foreground text-center mb-3">
+                    ✅ Lesson 1 of 150+ completed
                   </p>
 
-                  <div className="flex flex-col items-start gap-3 max-w-sm mx-auto mb-6 text-left">
-                    {[
-                      "150+ step-by-step lessons",
-                      "Real-life dialogues used in the UAE & GCC",
-                      "Structured path from zero to confident speaker",
-                    ].map((item) => (
-                      <div key={item} className="flex items-center gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-sm sm:text-base text-foreground">{item}</span>
-                      </div>
-                    ))}
+                  <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl p-6 sm:p-10 text-center shadow-lg">
+                    <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4" />
+                    
+                    <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                      You Just Spoke Your First Gulf Arabic Sentence 🎉
+                    </h2>
+                    <p className="text-muted-foreground text-base sm:text-lg mb-6 max-w-lg mx-auto">
+                      Imagine speaking like this confidently in real conversations.
+                    </p>
+
+                    <div className="flex flex-col items-start gap-3 max-w-sm mx-auto mb-6 text-left">
+                      {[
+                        "150+ structured step-by-step lessons",
+                        "Real-life dialogues used in the UAE & GCC",
+                        "Interactive quizzes & certificates",
+                        "Lifetime access",
+                      ].map((item) => (
+                        <div key={item} className="flex items-center gap-2.5">
+                          <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                          <span className="text-sm sm:text-base text-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-muted-foreground text-sm sm:text-base mb-6 font-medium">
+                      Don't stop at lesson one.{" "}
+                      <span className="font-semibold text-foreground">Build real speaking confidence.</span>
+                    </p>
+
+                    <Button
+                      asChild
+                      size="xl"
+                      variant="hero"
+                      className="gap-2 w-full sm:w-auto"
+                    >
+                      <Link to={upgradeLink}>
+                        Unlock Full Course – $14.99 One-Time
+                        <ArrowRight className="h-5 w-5" />
+                      </Link>
+                    </Button>
+
+                    <div className="mt-4 space-y-2">
+                      <Link
+                        to="/pricing"
+                        className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+                      >
+                        View All Plans
+                      </Link>
+                      <p className="text-xs text-muted-foreground">
+                        Instant access. Secure checkout via PayPal.
+                      </p>
+                    </div>
                   </div>
-
-                  <p className="text-muted-foreground text-sm sm:text-base mb-8">
-                    Don't stop after lesson one.{" "}
-                    <span className="font-semibold text-foreground">Build real speaking confidence.</span>
-                  </p>
-
-                  <Button
-                    asChild
-                    size="xl"
-                    variant="hero"
-                    className="gap-2"
-                  >
-                    <Link to={user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>
-                      Continue My Arabic Journey
-                      <ArrowRight className="h-5 w-5" />
-                    </Link>
-                  </Button>
-
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Instant lifetime access.
-                  </p>
                 </div>
               )}
             </div>
@@ -452,30 +506,44 @@ export default function LessonPlayer() {
                   <h3 className="font-semibold mb-3">Unit Lessons</h3>
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-1">
-                      {unitLessons.map((l, index) => (
-                        <Link
-                          key={l.id}
-                          to={`/learn/lesson/${l.id}`}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg transition-colors",
-                            l.id === lessonId
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-muted"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
-                            l.completed
-                              ? "bg-green-600 text-white"
-                              : l.id === lessonId
-                              ? "bg-primary-foreground text-primary"
-                              : "bg-muted text-muted-foreground"
-                          )}>
-                            {l.completed ? <Check className="h-3 w-3" /> : index + 1}
-                          </div>
-                          <span className="text-sm truncate">{l.title}</span>
-                        </Link>
-                      ))}
+                      {unitLessons.map((l, index) => {
+                        const locked = isLessonLocked(index);
+                        return locked ? (
+                          <button
+                            key={l.id}
+                            onClick={handleLockedLessonClick}
+                            className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted w-full text-left opacity-60 cursor-pointer"
+                          >
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground">
+                              <Lock className="h-3 w-3" />
+                            </div>
+                            <span className="text-sm truncate text-muted-foreground">{l.title}</span>
+                          </button>
+                        ) : (
+                          <Link
+                            key={l.id}
+                            to={`/learn/lesson/${l.id}`}
+                            className={cn(
+                              "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                              l.id === lessonId
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
+                              l.completed
+                                ? "bg-green-600 text-white"
+                                : l.id === lessonId
+                                ? "bg-primary-foreground text-primary"
+                                : "bg-muted text-muted-foreground"
+                            )}>
+                              {l.completed ? <Check className="h-3 w-3" /> : index + 1}
+                            </div>
+                            <span className="text-sm truncate">{l.title}</span>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 </CardContent>
@@ -496,50 +564,54 @@ export default function LessonPlayer() {
               </div>
               <ScrollArea className="h-[calc(100vh-100px)]">
                 <div className="space-y-2">
-                  {unitLessons.map((l, index) => (
-                    <Link
-                      key={l.id}
-                      to={`/learn/lesson/${l.id}`}
-                      onClick={() => setShowLessonList(false)}
-                      className={cn(
-                        "flex items-center gap-3 p-4 rounded-lg transition-colors",
-                        l.id === lessonId
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card hover:bg-muted"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                        l.completed
-                          ? "bg-green-600 text-white"
-                          : l.id === lessonId
-                          ? "bg-primary-foreground text-primary"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        {l.completed ? <Check className="h-4 w-4" /> : index + 1}
-                      </div>
-                      <span className="truncate">{l.title}</span>
-                    </Link>
-                  ))}
+                  {unitLessons.map((l, index) => {
+                    const locked = isLessonLocked(index);
+                    return locked ? (
+                      <button
+                        key={l.id}
+                        onClick={(e) => {
+                          handleLockedLessonClick(e);
+                          setShowLessonList(false);
+                        }}
+                        className="flex items-center gap-3 p-4 rounded-lg transition-colors bg-card hover:bg-muted w-full text-left opacity-60 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0 bg-muted text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </div>
+                        <span className="truncate text-muted-foreground">{l.title}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        key={l.id}
+                        to={`/learn/lesson/${l.id}`}
+                        onClick={() => setShowLessonList(false)}
+                        className={cn(
+                          "flex items-center gap-3 p-4 rounded-lg transition-colors",
+                          l.id === lessonId
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card hover:bg-muted"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                          l.completed
+                            ? "bg-green-600 text-white"
+                            : l.id === lessonId
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-muted text-muted-foreground"
+                        )}>
+                          {l.completed ? <Check className="h-4 w-4" /> : index + 1}
+                        </div>
+                        <span className="truncate">{l.title}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
           </div>
         )}
       </div>
-
-      <FreeLessonCelebrationModal
-        open={showCelebration}
-        onOpenChange={setShowCelebration}
-        nextLessonId={data?.nextLesson?.id}
-        dialectId={dialect?.id}
-        onContinueToNext={() => {
-          if (data?.nextLesson) {
-            playSound('lessonTransition');
-            navigate(`/learn/lesson/${data.nextLesson.id}`);
-          }
-        }}
-      />
     </FocusLayout>
   );
 }
