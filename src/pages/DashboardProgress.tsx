@@ -29,7 +29,7 @@ interface UnitProgress {
 
 export default function DashboardProgress() {
   const { user } = useAuth();
-  const { checkLevelAccess } = usePurchases();
+  const { purchases, isLoading: purchasesLoading, checkLevelAccess } = usePurchases();
 
   // Fetch full progress data — auto-filtered to purchased content
   const { data: progressData, isLoading } = useQuery({
@@ -153,10 +153,51 @@ export default function DashboardProgress() {
     }
   };
 
+  const hasAnyPurchase = purchases && purchases.length > 0;
+
+  // Free user — no purchases
+  if (!purchasesLoading && !hasAnyPurchase) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+              Detailed Progress
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Purchase a course to start tracking your progress
+            </p>
+          </div>
+          <Card>
+            <CardContent className="py-12 text-center">
+              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No active courses
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Get started with a free lesson or explore our courses.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link to="/free-gulf-lesson">
+                  <Button className="gap-2">
+                    <ArrowRight className="w-4 h-4" />
+                    Start Free Lesson
+                  </Button>
+                </Link>
+                <Link to="/gulf-arabic-course#choose-plan">
+                  <Button variant="outline">View Gulf Course</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6 sm:space-y-8">
-        {/* Header — no dropdown */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
             Detailed Progress

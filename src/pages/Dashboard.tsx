@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
@@ -71,6 +70,66 @@ export default function Dashboard() {
     }
   });
 
+  const hasAnyPurchase = ownedDialects.length > 0;
+
+  // ===== FREE USER DASHBOARD (no purchases) =====
+  if (!hasAnyPurchase) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-10">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-1">
+              Welcome, {firstName} 👋
+            </h1>
+            <p className="text-muted-foreground">
+              You don't have any active courses yet.
+            </p>
+          </div>
+
+          <Card className="border-2 border-dashed">
+            <CardContent className="py-12 text-center space-y-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  Start Your Arabic Journey
+                </h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Try a free lesson to experience our interactive learning method, or explore our full Gulf Arabic course.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link to="/free-gulf-lesson">
+                  <Button size="lg" className="gap-2">
+                    <ArrowRight className="w-4 h-4" />
+                    Start Free Lesson
+                  </Button>
+                </Link>
+                <Link to="/gulf-arabic-course#choose-plan">
+                  <Button size="lg" variant="outline" className="gap-2">
+                    View Gulf Course
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Already purchased?{" "}
+            <button
+              onClick={() => window.location.reload()}
+              className="underline hover:text-foreground transition-colors"
+            >
+              Refresh access
+            </button>
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ===== PAID USER DASHBOARD =====
   return (
     <DashboardLayout>
       <div className="space-y-10">
@@ -91,75 +150,67 @@ export default function Dashboard() {
         />
 
         {/* ===== YOUR COURSE SECTION ===== */}
-        {ownedDialects.length > 0 && (
-          <section className="space-y-6">
-            {ownedDialects.map((dialectGroup) => {
-              const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+        {ownedDialects.map((dialectGroup) => {
+          const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+          const unlockedLevels = dialectGroup.levels.filter((l) =>
+            hasLevelAccess(l.levelId, l.dialectId)
+          );
+          const lockedLevels = dialectGroup.levels.filter(
+            (l) => !hasLevelAccess(l.levelId, l.dialectId)
+          );
 
-              // Split into unlocked vs locked levels
-              const unlockedLevels = dialectGroup.levels.filter((l) =>
-                hasLevelAccess(l.levelId, l.dialectId)
-              );
-              const lockedLevels = dialectGroup.levels.filter(
-                (l) => !hasLevelAccess(l.levelId, l.dialectId)
-              );
-
-              return (
-                <div key={dialectGroup.dialectId} className="space-y-6">
-                  {/* Your Course */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">{emoji}</span>
-                      <h2 className="text-xl font-semibold text-foreground">
-                        Your Course
-                      </h2>
-                    </div>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {unlockedLevels.map((level) => (
-                        <LevelProgressCard
-                          key={level.levelId}
-                          levelId={level.levelId}
-                          levelName={level.levelName}
-                          dialectId={level.dialectId}
-                          completedLessons={level.completedLessons}
-                          totalLessons={level.totalLessons}
-                          completedUnits={level.completedUnits}
-                          totalUnits={level.totalUnits}
-                          progressPercent={level.progressPercent}
-                          hasAccess={true}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Unlock More Levels */}
-                  {lockedLevels.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="w-5 h-5 text-amber-500" />
-                        <h2 className="text-xl font-semibold text-foreground">
-                          Unlock More Levels
-                        </h2>
-                      </div>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {lockedLevels.map((level) => (
-                          <LockedLevelCard
-                            key={level.levelId}
-                            levelName={level.levelName}
-                            dialectId={level.dialectId}
-                            dialectName={dialectGroup.dialectName}
-                            totalLessons={level.totalLessons}
-                            totalUnits={level.totalUnits}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+          return (
+            <div key={dialectGroup.dialectId} className="space-y-6">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">{emoji}</span>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Your Course
+                  </h2>
                 </div>
-              );
-            })}
-          </section>
-        )}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {unlockedLevels.map((level) => (
+                    <LevelProgressCard
+                      key={level.levelId}
+                      levelId={level.levelId}
+                      levelName={level.levelName}
+                      dialectId={level.dialectId}
+                      completedLessons={level.completedLessons}
+                      totalLessons={level.totalLessons}
+                      completedUnits={level.completedUnits}
+                      totalUnits={level.totalUnits}
+                      progressPercent={level.progressPercent}
+                      hasAccess={true}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {lockedLevels.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Unlock More Levels
+                    </h2>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {lockedLevels.map((level) => (
+                      <LockedLevelCard
+                        key={level.levelId}
+                        levelName={level.levelName}
+                        dialectId={level.dialectId}
+                        dialectName={dialectGroup.dialectName}
+                        totalLessons={level.totalLessons}
+                        totalUnits={level.totalUnits}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Activity & Quiz Results */}
         <div className="grid lg:grid-cols-2 gap-6">
@@ -232,7 +283,6 @@ function LockedLevelCard({
   totalLessons: number;
   totalUnits: number;
 }) {
-  // Build upgrade link — default to gulf arabic course page
   const upgradeLink =
     dialectSalesPages[dialectName]
       ? `${dialectSalesPages[dialectName]}#choose-plan`
