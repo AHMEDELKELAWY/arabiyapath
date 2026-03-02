@@ -5,7 +5,6 @@ import {
   TrendingUp, 
   User, 
   LogOut,
-  BookOpen,
   Menu,
   X,
   Shield,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAffiliateProfile } from "@/hooks/useAffiliateData";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/logo.png";
 
@@ -203,12 +201,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Quick Actions */}
           <div className="px-4 py-4 border-t border-border space-y-2">
-            <Link to="/dialects">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <BookOpen className="w-4 h-4" />
-                Browse Dialects
-              </Button>
-            </Link>
             <button
               onClick={handleSignOut}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"

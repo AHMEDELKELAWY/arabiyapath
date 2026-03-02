@@ -12,7 +12,7 @@ interface ContinueLearningCardProps {
 
 export function ContinueLearningCard({ lastActivity, hasAnyProgress }: ContinueLearningCardProps) {
   if (!hasAnyProgress) {
-    // Onboarding card for new users
+    // Onboarding card for paid users with no progress yet
     return (
       <Card className="bg-hero-gradient text-primary-foreground overflow-hidden">
         <CardContent className="p-6 lg:p-8">
@@ -28,7 +28,7 @@ export function ContinueLearningCard({ lastActivity, hasAnyProgress }: ContinueL
               <div className="flex items-center gap-4 text-sm text-primary-foreground/70">
                 <span className="flex items-center gap-1">
                   <BookOpen className="w-4 h-4" />
-                  Choose a dialect
+                  Jump into your first lesson
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -36,10 +36,10 @@ export function ContinueLearningCard({ lastActivity, hasAnyProgress }: ContinueL
                 </span>
               </div>
             </div>
-            <Link to="/dialects">
+            <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
               <Button size="lg" variant="secondary" className="whitespace-nowrap">
                 <Play className="w-5 h-5 mr-2" />
-                Start with a Dialect
+                Start Learning
               </Button>
             </Link>
           </div>
