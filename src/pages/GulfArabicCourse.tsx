@@ -180,7 +180,7 @@ export default function GulfArabicCourse() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <Button size="xl" variant="hero" asChild>
-                  <a href="#pricing">Get Full Access</a>
+                  <Link to="/signup?redirect=/pricing?course=gulf">Get Full Access</Link>
                 </Button>
                 <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
                   Try the Free Lesson
@@ -434,9 +434,9 @@ export default function GulfArabicCourse() {
               </h2>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <a href="#pricing">
+                  <Link to="/signup?redirect=/pricing?course=gulf">
                     Get Full Access <ArrowRight className="w-5 h-5" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
                   Try the Free Lesson
