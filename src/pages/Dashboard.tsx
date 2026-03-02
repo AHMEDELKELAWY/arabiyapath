@@ -100,7 +100,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link to="/free-gulf-lesson">
+                <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
                   <Button size="lg" className="gap-2">
                     <ArrowRight className="w-4 h-4" />
                     Start Free Lesson

@@ -10,15 +10,12 @@ import {
   X,
   Shield,
   Users,
-  Clock
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAffiliateProfile } from "@/hooks/useAffiliateData";
-import { useMyAffiliateApplication } from "@/hooks/useAffiliateApplications";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/logo.png";
-import { BecomeAffiliateModal } from "./BecomeAffiliateModal";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -33,12 +30,10 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut, isAdmin } = useAuth();
   const { data: affiliateProfile } = useAffiliateProfile();
-  const { data: myApplication } = useMyAffiliateApplication();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const isAffiliate = !!affiliateProfile;
-  const hasPendingApplication = myApplication?.status === "pending";
 
   const handleSignOut = async () => {
     await signOut();
@@ -85,7 +80,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 );
               })}
-              {isAffiliate ? (
+              {isAffiliate && (
                 <Link
                   to="/affiliate"
                   onClick={() => setMobileMenuOpen(false)}
@@ -99,15 +94,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Users className="w-5 h-5" />
                   <span className="font-medium">Affiliate Panel</span>
                 </Link>
-              ) : hasPendingApplication ? (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-yellow-500/10 text-yellow-600">
-                  <Clock className="w-5 h-5" />
-                  <span className="font-medium">Application Pending</span>
-                </div>
-              ) : (
-                <div onClick={() => setMobileMenuOpen(false)}>
-                  <BecomeAffiliateModal />
-                </div>
               )}
               {isAdmin && (
                 <Link
@@ -185,7 +171,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
-            {isAffiliate ? (
+            {isAffiliate && (
               <Link
                 to="/affiliate"
                 className={cn(
@@ -198,13 +184,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Users className="w-5 h-5" />
                 <span className="font-medium">Affiliate Panel</span>
               </Link>
-            ) : hasPendingApplication ? (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-yellow-500/10 text-yellow-600">
-                <Clock className="w-5 h-5" />
-                <span className="font-medium">Application Pending</span>
-              </div>
-            ) : (
-              <BecomeAffiliateModal />
             )}
             {isAdmin && (
               <Link
