@@ -176,17 +176,16 @@ export default function GulfArabicCourse() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {screenshotCaptions.map((caption, i) => (
+              {screenshots.map((s, i) => (
                 <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
-                  {/* Placeholder for screenshot upload */}
-                  <div className="aspect-video bg-muted/50 flex flex-col items-center justify-center gap-2 p-4">
-                    <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
-                    <span className="text-xs text-muted-foreground text-center">
-                      Upload screenshot {i + 1} here
-                    </span>
-                  </div>
+                  <img
+                    src={s.src}
+                    alt={s.caption}
+                    className="w-full aspect-video object-cover object-top"
+                    loading="lazy"
+                  />
                   <div className="p-4">
-                    <p className="text-sm font-medium text-foreground text-center">{caption}</p>
+                    <p className="text-sm font-medium text-foreground text-center">{s.caption}</p>
                   </div>
                 </div>
               ))}
