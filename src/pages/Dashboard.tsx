@@ -285,7 +285,7 @@ function LockedLevelCard({
 }) {
   const upgradeLink =
     dialectSalesPages[dialectName]
-      ? `${dialectSalesPages[dialectName]}#choose-plan`
+      ? `${dialectSalesPages[dialectName]}#choose-your-plan`
       : `/dialects`;
 
   const isComingSoon = totalLessons === 0;

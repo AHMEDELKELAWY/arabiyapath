@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useUnitLessons } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
+import { isGulfArabic, GULF_SALES_URL } from "@/lib/gulfAccess";
 
 export default function UnitOverview() {
   const { unitId } = useParams();
@@ -28,6 +30,29 @@ export default function UnitOverview() {
   const { user } = useAuth();
   const { data, isLoading } = useUnitLessons(unitId);
   const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
+
+  // Compute access info before early returns for hook ordering
+  const unit = data?.unit;
+  const level = (unit as any)?.levels as any;
+  const dialect = level?.dialects as any;
+  const levelOrderIndex = level?.order_index || 0;
+  const unitOrderIndex = unit?.order_index || 0;
+  const isFreeTrialUnit = isFreeTrial(levelOrderIndex, unitOrderIndex);
+  const hasPurchaseAccess = user && level ? checkLevelAccess(
+    level?.id || '',
+    dialect?.id || '',
+    levelOrderIndex,
+    unitOrderIndex
+  ) : false;
+  const canAccess = isFreeTrialUnit || hasPurchaseAccess;
+
+  // Hard redirect: Gulf Arabic unit without access (and not free trial) → sales page
+  useEffect(() => {
+    if (isLoading || purchasesLoading || !data) return;
+    if (isGulfArabic(dialect?.id) && !canAccess) {
+      navigate(GULF_SALES_URL, { replace: true });
+    }
+  }, [isLoading, purchasesLoading, data, dialect?.id, canAccess, navigate]);
 
   if (isLoading || purchasesLoading) {
     return (
@@ -58,9 +83,7 @@ export default function UnitOverview() {
     );
   }
 
-  const { unit, lessons, quiz, quizAttempts, completedCount, totalCount } = data;
-  const level = unit.levels as any;
-  const dialect = level?.dialects as any;
+  const { lessons, quiz, quizAttempts, completedCount, totalCount } = data;
   
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const allLessonsComplete = completedCount === totalCount;
@@ -72,21 +95,6 @@ export default function UnitOverview() {
   // Find first incomplete lesson
   const firstIncompleteLesson = lessons.find(l => !l.completed);
   const continueLesson = firstIncompleteLesson || lessons[0];
-  
-  // Check if this unit is free trial (first unit of Beginner level)
-  const levelOrderIndex = level?.order_index || 0;
-  const unitOrderIndex = unit.order_index || 0;
-  const isFreeTrialUnit = isFreeTrial(levelOrderIndex, unitOrderIndex);
-  
-  // Check access: free trial OR logged in with purchase
-  const hasPurchaseAccess = user ? checkLevelAccess(
-    level?.id || '',
-    dialect?.id || '',
-    levelOrderIndex,
-    unitOrderIndex
-  ) : false;
-  
-  const canAccess = isFreeTrialUnit || hasPurchaseAccess;
 
   return (
     <Layout>
