@@ -36,9 +36,6 @@
       fbq('init', '841178368300586');
       fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://www.facebook.com/tr?id=841178368300586&ev=PageView&noscript=1"
-    /></noscript>
     <!-- End Meta Pixel Code -->
 
     <!-- Default meta tags (overridden by react-helmet-async per page) -->
@@ -46,6 +43,8 @@
     <meta name="description" content="Learn Arabic dialects online with ArabiyaPath. Master Gulf, Egyptian, or Modern Standard Arabic through immersive lessons, native audio, and earn certificates.">
   </head>
   <body>
+    <!-- Meta Pixel noscript fallback -->
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=841178368300586&ev=PageView&noscript=1" /></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
