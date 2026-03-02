@@ -12,7 +12,6 @@ import {
   ArrowRight,
   Sparkles,
   Package,
-  Package,
   Zap,
   MessageSquare,
   RefreshCw,
