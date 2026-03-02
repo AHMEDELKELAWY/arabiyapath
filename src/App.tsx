@@ -32,6 +32,7 @@ const FreeGulfLesson = lazy(() => import("./pages/FreeGulfLesson"));
 const FreeGulfLessonThankYou = lazy(() => import("./pages/FreeGulfLessonThankYou"));
 const BecomeAffiliate = lazy(() => import("./pages/BecomeAffiliate"));
 
+const GulfArabicCourse = lazy(() => import("./pages/GulfArabicCourse"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/free-gulf-lesson" element={<FreeGulfLesson />} />
               <Route path="/free-gulf-lesson/thank-you" element={<FreeGulfLessonThankYou />} />
               
+              <Route path="/gulf-arabic-course" element={<GulfArabicCourse />} />
               <Route path="/dialects" element={<Dialects />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<About />} />
