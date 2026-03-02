@@ -1,5 +1,9 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { useDialectLevels } from "@/hooks/useLearning";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePurchases } from "@/hooks/usePurchases";
+import { isGulfArabic, GULF_SALES_URL } from "@/lib/gulfAccess";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, getDialectSEO, generateCourseSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -15,7 +19,26 @@ import {
 
 export default function DialectOverview() {
   const { dialectId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data, isLoading } = useDialectLevels(dialectId);
+  const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
+
+  // Hard redirect: Gulf Arabic without any purchase → sales page
+  useEffect(() => {
+    if (isLoading || purchasesLoading) return;
+    if (!isGulfArabic(dialectId)) return;
+    
+    // Check if user has access to at least one Gulf Arabic level
+    const hasAnyGulfAccess = data?.levels?.some((level: any) =>
+      user ? checkLevelAccess(level.id, dialectId!, level.order_index, 1) : false
+    );
+    
+    if (!hasAnyGulfAccess) {
+      navigate(GULF_SALES_URL, { replace: true });
+    }
+  }, [isLoading, purchasesLoading, dialectId, data, user, checkLevelAccess, navigate]);
+
 
   if (isLoading) {
     return (

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useLesson, useMarkLessonComplete } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
+import { isGulfArabic, isGulfFreeLesson, GULF_SALES_URL } from "@/lib/gulfAccess";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 export default function LessonPlayer() {
@@ -71,6 +72,14 @@ export default function LessonPlayer() {
   
   const canAccess = isFreeTrialContent || hasPurchaseAccess;
 
+  // Hard redirect: Gulf Arabic lesson without access (and not the free lesson) → sales page
+  useEffect(() => {
+    if (isLoading || purchasesLoading) return;
+    if (!data) return;
+    if (isGulfArabic(data?.dialect?.id) && !isGulfFreeLesson(lessonId) && !canAccess) {
+      navigate(GULF_SALES_URL, { replace: true });
+    }
+  }, [isLoading, purchasesLoading, data, lessonId, canAccess, navigate]);
   const showUpgradeSection = isFreeTrialContent && !hasPurchaseAccess;
 
   const scrollToUpgrade = () => {

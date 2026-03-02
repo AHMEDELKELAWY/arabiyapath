@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLevelUnits } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
+import { isGulfArabic, GULF_SALES_URL } from "@/lib/gulfAccess";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,6 +84,24 @@ export default function LevelOverview() {
     enabled: !!user && !!data?.units,
   });
 
+  // Compute access info before any early returns (hooks can't be after returns)
+  const level = data?.level;
+  const dialect = (level as any)?.dialects as any;
+  const hasPurchaseAccess = user && level ? checkLevelAccess(
+    level.id,
+    dialect?.id || '',
+    level.order_index,
+    1
+  ) : false;
+
+  // Hard redirect: Gulf Arabic without purchase → sales page
+  useEffect(() => {
+    if (isLoading || purchasesLoading || !data) return;
+    if (isGulfArabic(dialect?.id) && !hasPurchaseAccess) {
+      navigate(GULF_SALES_URL, { replace: true });
+    }
+  }, [isLoading, purchasesLoading, data, dialect?.id, hasPurchaseAccess, navigate]);
+
   if (isLoading || purchasesLoading) {
     return (
       <Layout>
@@ -111,16 +131,7 @@ export default function LevelOverview() {
     );
   }
 
-  const { level, units } = data;
-  const dialect = level.dialects as any;
-
-  // Check if user has purchased access to this level
-  const hasPurchaseAccess = user ? checkLevelAccess(
-    level.id,
-    dialect?.id || '',
-    level.order_index,
-    1 // Unit order index doesn't matter for level access check
-  ) : false;
+  const { units } = data;
 
   // Calculate overall progress
   const totalUnits = units.length;
