@@ -30,6 +30,7 @@ const DashboardAccount = lazy(() => import("./pages/DashboardAccount"));
 const FreeTrial = lazy(() => import("./pages/FreeTrial"));
 const FreeGulfLesson = lazy(() => import("./pages/FreeGulfLesson"));
 const FreeGulfLessonThankYou = lazy(() => import("./pages/FreeGulfLessonThankYou"));
+const ThankYouFreeGulf = lazy(() => import("./pages/ThankYouFreeGulf"));
 const BecomeAffiliate = lazy(() => import("./pages/BecomeAffiliate"));
 
 const GulfArabicCourse = lazy(() => import("./pages/GulfArabicCourse"));
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/free-trial" element={<FreeTrial />} />
               <Route path="/free-gulf-lesson" element={<FreeGulfLesson />} />
               <Route path="/free-gulf-lesson/thank-you" element={<FreeGulfLessonThankYou />} />
+              <Route path="/thank-you-free-gulf" element={<ThankYouFreeGulf />} />
               
               <Route path="/gulf-arabic-course" element={<GulfArabicCourse />} />
               <Route path="/dialects" element={<Dialects />} />

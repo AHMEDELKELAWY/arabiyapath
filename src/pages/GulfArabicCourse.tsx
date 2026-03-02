@@ -141,7 +141,7 @@ export default function GulfArabicCourse() {
       // non-blocking
     }
     setShowFreeModal(false);
-    navigate("/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001");
+    navigate("/thank-you-free-gulf");
   };
   const breadcrumbSchema = generateBreadcrumbListSchema([
     { name: "Home", path: "/" },

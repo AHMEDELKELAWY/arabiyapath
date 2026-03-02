@@ -18,7 +18,7 @@ import {
 
 const ZOHO_FORM_ID = "sf3z4b1816f6eb42103f403359b04252f0327243f826727a9947f460a68187c4c64d";
 const ZOHO_SCRIPT_SRC = "https://zgnp-zngp.maillist-manage.com/js/optin.min.js";
-const REDIRECT_URL = "/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001";
+const REDIRECT_URL = "/thank-you-free-gulf";
 
 export default function FreeGulfLesson() {
   const formRef = useRef<HTMLDivElement>(null);
