@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -7,6 +8,10 @@ import { RecentActivityList } from "@/components/dashboard/RecentActivityList";
 import { QuizResultsList } from "@/components/dashboard/QuizResultsList";
 import { CertificatesList } from "@/components/dashboard/CertificatesList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
@@ -14,15 +19,21 @@ const dialectEmojis: Record<string, string> = {
   "Modern Standard Arabic (Fusha)": "📚",
 };
 
+const dialectSalesPages: Record<string, string> = {
+  "Gulf Arabic": "/gulf-arabic-course",
+  "Egyptian Arabic": "/dialects",
+  "Modern Standard Arabic (Fusha)": "/learn/fusha-arabic",
+};
+
 export default function Dashboard() {
   const { profile } = useAuth();
-  const { 
+  const {
     levelsByDialect,
-    recentActivity, 
-    quizResults, 
-    certificates, 
+    recentActivity,
+    quizResults,
+    certificates,
     hasLevelAccess,
-    isLoading 
+    isLoading,
   } = useDashboardData();
 
   const firstName = profile?.first_name || "Learner";
@@ -45,9 +56,24 @@ export default function Dashboard() {
     );
   }
 
+  // Separate dialects into: owned (has at least one unlocked level) vs other
+  const ownedDialects: typeof levelsByDialect = [];
+  const otherDialects: typeof levelsByDialect = [];
+
+  levelsByDialect.forEach((dialectGroup) => {
+    const hasAnyAccess = dialectGroup.levels.some((level) =>
+      hasLevelAccess(level.levelId, level.dialectId)
+    );
+    if (hasAnyAccess) {
+      ownedDialects.push(dialectGroup);
+    } else {
+      otherDialects.push(dialectGroup);
+    }
+  });
+
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-10">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-1">
@@ -59,48 +85,81 @@ export default function Dashboard() {
         </div>
 
         {/* Continue Learning CTA */}
-        <ContinueLearningCard 
-          lastActivity={lastActivity} 
-          hasAnyProgress={hasAnyProgress} 
+        <ContinueLearningCard
+          lastActivity={lastActivity}
+          hasAnyProgress={hasAnyProgress}
         />
 
-        {/* Progress by Dialect & Level */}
-        <section>
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Your Progress
-          </h2>
-          <div className="space-y-6">
-            {levelsByDialect.map((dialectGroup) => {
+        {/* ===== YOUR COURSE SECTION ===== */}
+        {ownedDialects.length > 0 && (
+          <section className="space-y-6">
+            {ownedDialects.map((dialectGroup) => {
               const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+
+              // Split into unlocked vs locked levels
+              const unlockedLevels = dialectGroup.levels.filter((l) =>
+                hasLevelAccess(l.levelId, l.dialectId)
+              );
+              const lockedLevels = dialectGroup.levels.filter(
+                (l) => !hasLevelAccess(l.levelId, l.dialectId)
+              );
+
               return (
-                <div key={dialectGroup.dialectId} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{emoji}</span>
-                    <h3 className="text-lg font-medium text-foreground">
-                      {dialectGroup.dialectName}
-                    </h3>
+                <div key={dialectGroup.dialectId} className="space-y-6">
+                  {/* Your Course */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-2xl">{emoji}</span>
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Your Course
+                      </h2>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {unlockedLevels.map((level) => (
+                        <LevelProgressCard
+                          key={level.levelId}
+                          levelId={level.levelId}
+                          levelName={level.levelName}
+                          dialectId={level.dialectId}
+                          completedLessons={level.completedLessons}
+                          totalLessons={level.totalLessons}
+                          completedUnits={level.completedUnits}
+                          totalUnits={level.totalUnits}
+                          progressPercent={level.progressPercent}
+                          hasAccess={true}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {dialectGroup.levels.map((level) => (
-                      <LevelProgressCard
-                        key={level.levelId}
-                        levelId={level.levelId}
-                        levelName={level.levelName}
-                        dialectId={level.dialectId}
-                        completedLessons={level.completedLessons}
-                        totalLessons={level.totalLessons}
-                        completedUnits={level.completedUnits}
-                        totalUnits={level.totalUnits}
-                        progressPercent={level.progressPercent}
-                        hasAccess={hasLevelAccess(level.levelId, level.dialectId)}
-                      />
-                    ))}
-                  </div>
+
+                  {/* Unlock More Levels */}
+                  {lockedLevels.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Sparkles className="w-5 h-5 text-amber-500" />
+                        <h2 className="text-xl font-semibold text-foreground">
+                          Unlock More Levels
+                        </h2>
+                      </div>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {lockedLevels.map((level) => (
+                          <LockedLevelCard
+                            key={level.levelId}
+                            levelName={level.levelName}
+                            dialectId={level.dialectId}
+                            dialectName={dialectGroup.dialectName}
+                            totalLessons={level.totalLessons}
+                            totalUnits={level.totalUnits}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Activity & Quiz Results */}
         <div className="grid lg:grid-cols-2 gap-6">
@@ -110,7 +169,104 @@ export default function Dashboard() {
 
         {/* Certificates */}
         <CertificatesList certificates={certificates} />
+
+        {/* ===== EXPLORE OTHER DIALECTS ===== */}
+        {otherDialects.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Explore Other Dialects
+              </h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherDialects.map((dialectGroup) => {
+                const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+                const salesPage =
+                  dialectSalesPages[dialectGroup.dialectName] || "/dialects";
+                return (
+                  <Card
+                    key={dialectGroup.dialectId}
+                    className="border-dashed opacity-80 hover:opacity-100 transition-opacity"
+                  >
+                    <CardContent className="p-5 flex items-center gap-4">
+                      <span className="text-3xl">{emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {dialectGroup.dialectName}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {dialectGroup.levels.length} level
+                          {dialectGroup.levels.length !== 1 ? "s" : ""} available
+                        </p>
+                      </div>
+                      <Link to={salesPage}>
+                        <Button variant="outline" size="sm">
+                          View Course
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </DashboardLayout>
+  );
+}
+
+/* ──────────── Locked Level Card ──────────── */
+
+function LockedLevelCard({
+  levelName,
+  dialectId,
+  dialectName,
+  totalLessons,
+  totalUnits,
+}: {
+  levelName: string;
+  dialectId: string;
+  dialectName: string;
+  totalLessons: number;
+  totalUnits: number;
+}) {
+  // Build upgrade link — default to gulf arabic course page
+  const upgradeLink =
+    dialectSalesPages[dialectName]
+      ? `${dialectSalesPages[dialectName]}#choose-plan`
+      : `/dialects`;
+
+  const isComingSoon = totalLessons === 0;
+
+  return (
+    <Card className="relative overflow-hidden opacity-60 hover:opacity-80 transition-opacity">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <Lock className="w-5 h-5 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-foreground">{levelName}</h4>
+            {isComingSoon ? (
+              <p className="text-xs text-muted-foreground mt-1">🔜 Coming Soon</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">
+                {totalUnits} units · {totalLessons} lessons
+              </p>
+            )}
+            {!isComingSoon && (
+              <Link to={upgradeLink} className="mt-3 block">
+                <Button size="sm" variant="outline" className="w-full gap-1 text-xs">
+                  Upgrade to Unlock
+                  <ArrowRight className="w-3 h-3" />
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
