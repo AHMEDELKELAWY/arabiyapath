@@ -12,7 +12,7 @@ import {
   ArrowRight,
   Sparkles,
   Package,
-  ImageIcon,
+  Package,
   Zap,
   MessageSquare,
   RefreshCw,
