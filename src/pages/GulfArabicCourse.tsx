@@ -293,9 +293,10 @@ export default function GulfArabicCourse() {
                   <p className="text-sm text-muted-foreground mt-1">Master Gulf Arabic completely</p>
                 </div>
                 <div className="text-center mb-6">
-                  <span className="text-lg text-muted-foreground line-through mr-2">$44.97</span>
+                  <span className="text-lg text-muted-foreground line-through mr-2">$79.99</span>
                   <span className="text-4xl font-bold text-foreground">$49.99</span>
                   <span className="text-muted-foreground text-sm"> /one-time</span>
+                  <p className="text-sm text-secondary font-semibold mt-1">Save $30 today</p>
                 </div>
                 <ul className="space-y-3 mb-4 flex-1">
                   {bundleFeatures.map((f) => (
