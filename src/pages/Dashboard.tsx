@@ -106,7 +106,7 @@ export default function Dashboard() {
                     Start Free Lesson
                   </Button>
                 </Link>
-                <Link to="/gulf-arabic-course#choose-plan">
+                <Link to="/gulf-arabic-course#choose-your-plan">
                   <Button size="lg" variant="outline" className="gap-2">
                     View Gulf Course
                   </Button>
