@@ -1,8 +1,17 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateCourseSchema } from "@/components/seo/SEOHead";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Headphones,
   Award,
@@ -15,6 +24,7 @@ import {
   Zap,
   MessageSquare,
   RefreshCw,
+  Mail,
 } from "lucide-react";
 import {
   Accordion,
@@ -23,6 +33,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // --------------- DATA ---------------
 
@@ -107,7 +118,31 @@ const faqs = [
 
 export default function GulfArabicCourse() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [showFreeModal, setShowFreeModal] = useState(false);
+  const [freeEmail, setFreeEmail] = useState("");
+  const [freeSubmitting, setFreeSubmitting] = useState(false);
+  const [freeError, setFreeError] = useState("");
 
+  const handleFreeLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFreeError("");
+    if (!freeEmail || !freeEmail.includes("@")) {
+      setFreeError("Please enter a valid email address");
+      return;
+    }
+    setFreeSubmitting(true);
+    try {
+      await supabase.from("funnel_subscribers").upsert(
+        { email: freeEmail, source: "gulf-arabic-course" },
+        { onConflict: "email" }
+      );
+    } catch {
+      // non-blocking
+    }
+    setShowFreeModal(false);
+    navigate("/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001");
+  };
   const breadcrumbSchema = generateBreadcrumbListSchema([
     { name: "Home", path: "/" },
     { name: "Gulf Arabic Course", path: "/gulf-arabic-course" },
@@ -147,8 +182,8 @@ export default function GulfArabicCourse() {
                 <Button size="xl" variant="hero" asChild>
                   <a href="#pricing">Get Full Access</a>
                 </Button>
-                <Button size="xl" variant="outline" asChild>
-                  <Link to="/free-gulf-lesson">Try the Free Lesson</Link>
+                <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
+                  Try the Free Lesson
                 </Button>
               </div>
 
@@ -403,13 +438,48 @@ export default function GulfArabicCourse() {
                     Get Full Access <ArrowRight className="w-5 h-5" />
                   </a>
                 </Button>
-                <Button size="xl" variant="outline" asChild>
-                  <Link to="/free-gulf-lesson">Try the Free Lesson</Link>
+                <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
+                  Try the Free Lesson
                 </Button>
               </div>
             </div>
           </div>
         </section>
+        {/* Free Lesson Modal */}
+        <Dialog open={showFreeModal} onOpenChange={setShowFreeModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-center">
+                Start Your Free Gulf Arabic Lesson
+              </DialogTitle>
+              <DialogDescription className="text-center text-muted-foreground">
+                Enter your email and jump straight into your first real lesson.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleFreeLesson} className="space-y-4 mt-2">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={freeEmail}
+                  onChange={(e) => setFreeEmail(e.target.value)}
+                  className="pl-10 h-12"
+                  autoFocus
+                />
+              </div>
+              {freeError && (
+                <p className="text-xs text-destructive">{freeError}</p>
+              )}
+              <Button type="submit" size="lg" className="w-full" disabled={freeSubmitting}>
+                {freeSubmitting ? "Starting..." : "Start Free Lesson"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                No payment required. We respect your privacy.
+              </p>
+            </form>
+          </DialogContent>
+        </Dialog>
       </Layout>
     </>
   );
