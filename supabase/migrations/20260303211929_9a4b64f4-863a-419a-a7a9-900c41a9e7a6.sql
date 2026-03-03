@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_purchases_paypal_order_id ON public.purchases (paypal_order_id) WHERE paypal_order_id IS NOT NULL;

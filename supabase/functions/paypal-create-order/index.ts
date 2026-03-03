@@ -110,7 +110,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Creating order for ${product.name}, price: $${finalPrice}, discount: ${discountPercent}%`);
+    console.log(`Creating order for ${product.name}, price: $${finalPrice}, discount: ${discountPercent}%, user: ${userId}`);
 
     // If 100% discount, skip PayPal and create purchase directly
     if (finalPrice === 0) {
@@ -149,11 +149,7 @@ serve(async (req) => {
         throw new Error("Failed to create purchase record");
       }
 
-      // Note: For free orders (100% discount), no commission is generated
-      // since the affiliate earns a percentage of the sale amount (which is $0)
       console.log(`Free access granted via coupon. Affiliate ${affiliateId || 'none'} tracked but no commission on $0 sale.`);
-
-      console.log("Free access granted for user:", userId);
 
       return new Response(
         JSON.stringify({ 
@@ -165,32 +161,60 @@ serve(async (req) => {
       );
     }
 
-    // Create pending order to store all data (PayPal custom_id has 127 char limit)
-    const { data: pendingOrder, error: pendingError } = await supabase
+    // === DEDUP: Reuse existing non-expired pending_order for same user+product ===
+    const { data: existingPending } = await supabase
       .from("pending_orders")
-      .insert({
-        user_id: userId,
-        product_id: product.id,
-        product_type: product.scope,
-        product_name: product.name,
-        amount: finalPrice,
-        coupon_id: couponId,
-        affiliate_id: affiliateId,
-        dialect_id: product.dialect_id,
-        level_id: product.level_id,
-      })
       .select("id")
-      .single();
+      .eq("user_id", userId)
+      .eq("product_id", product.id)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (pendingError || !pendingOrder) {
-      console.error("Pending order error:", pendingError);
-      throw new Error("Failed to create pending order");
+    let pendingOrderId: string;
+
+    if (existingPending) {
+      // Reuse existing pending order — update amount/coupon if changed
+      pendingOrderId = existingPending.id;
+      await supabase
+        .from("pending_orders")
+        .update({
+          amount: finalPrice,
+          coupon_id: couponId,
+          affiliate_id: affiliateId,
+        })
+        .eq("id", pendingOrderId);
+      console.log(`Reusing existing pending order: ${pendingOrderId}`);
+    } else {
+      // Create new pending order
+      const { data: pendingOrder, error: pendingError } = await supabase
+        .from("pending_orders")
+        .insert({
+          user_id: userId,
+          product_id: product.id,
+          product_type: product.scope,
+          product_name: product.name,
+          amount: finalPrice,
+          coupon_id: couponId,
+          affiliate_id: affiliateId,
+          dialect_id: product.dialect_id,
+          level_id: product.level_id,
+        })
+        .select("id")
+        .single();
+
+      if (pendingError || !pendingOrder) {
+        console.error("Pending order error:", pendingError);
+        throw new Error("Failed to create pending order");
+      }
+      pendingOrderId = pendingOrder.id;
+      console.log(`New pending order created: ${pendingOrderId}`);
     }
 
-    console.log(`Pending order created: ${pendingOrder.id}`);
-
-    // Create PayPal order with only pending_order.id in custom_id (36 chars)
+    // Create PayPal order with pending_order_id in custom_id
     const accessToken = await getPayPalAccessToken();
+    const origin = req.headers.get("origin") || "https://arabiyapath.com";
 
     const orderResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
       method: "POST",
@@ -207,15 +231,16 @@ serve(async (req) => {
               value: finalPrice.toFixed(2),
             },
             description: product.name,
-            custom_id: pendingOrder.id, // Just the UUID (36 chars) instead of full JSON
+            custom_id: pendingOrderId,
           },
         ],
         application_context: {
-          brand_name: "Arabic Learning Platform",
+          brand_name: "ArabiyaPath",
           landing_page: "NO_PREFERENCE",
           user_action: "PAY_NOW",
-          return_url: `${req.headers.get("origin")}/payment/success`,
-          cancel_url: `${req.headers.get("origin")}/payment/cancel`,
+          // Include pending_order_id in return URL so PaymentSuccess page can find it
+          return_url: `${origin}/payment/success?pending_order_id=${pendingOrderId}`,
+          cancel_url: `${origin}/payment/cancel`,
         },
       }),
     });
@@ -223,17 +248,16 @@ serve(async (req) => {
     if (!orderResponse.ok) {
       const error = await orderResponse.text();
       console.error("PayPal order error:", error);
-      // Clean up pending order on failure
-      await supabase.from("pending_orders").delete().eq("id", pendingOrder.id);
       throw new Error("Failed to create PayPal order");
     }
 
     const order = await orderResponse.json();
-    console.log("PayPal order created:", order.id);
+    console.log(`PayPal order created: ${order.id}, pending_order: ${pendingOrderId}, user: ${userId}, product: ${product.id}`);
 
     return new Response(
       JSON.stringify({ 
         orderId: order.id,
+        pendingOrderId: pendingOrderId,
         approvalUrl: order.links.find((l: any) => l.rel === "approve")?.href,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
