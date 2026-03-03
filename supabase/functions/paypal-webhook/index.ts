@@ -6,8 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Get PayPal API base URL (sandbox vs live)
-const PAYPAL_API_BASE = Deno.env.get("PAYPAL_API_BASE") || "https://api-m.sandbox.paypal.com";
+const PAYPAL_API_BASE = Deno.env.get("PAYPAL_API_BASE") || "https://api-m.paypal.com";
 
 async function getPayPalAccessToken(): Promise<string> {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
@@ -44,14 +43,12 @@ async function verifyWebhookSignature(
     return false;
   }
   
-  // Extract PayPal signature headers
   const transmissionId = req.headers.get("PAYPAL-TRANSMISSION-ID");
   const transmissionTime = req.headers.get("PAYPAL-TRANSMISSION-TIME");
   const certUrl = req.headers.get("PAYPAL-CERT-URL");
   const authAlgo = req.headers.get("PAYPAL-AUTH-ALGO");
   const transmissionSig = req.headers.get("PAYPAL-TRANSMISSION-SIG");
   
-  // Check if all required headers are present
   if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
     console.error("Missing PayPal signature headers");
     return false;
@@ -95,19 +92,127 @@ async function verifyWebhookSignature(
   }
 }
 
+/**
+ * Backup path: create a purchase from pending_order if the client-side capture flow failed.
+ */
+async function ensurePurchaseExists(
+  supabase: any,
+  paypalOrderId: string,
+  captureId: string,
+  captureAmount: number,
+  captureCurrency: string,
+  pendingOrderId: string
+) {
+  // Check if purchase already exists
+  const { data: existing } = await supabase
+    .from("purchases")
+    .select("id")
+    .eq("paypal_order_id", paypalOrderId)
+    .maybeSingle();
+
+  if (existing) {
+    // Just ensure status is correct
+    await supabase
+      .from("purchases")
+      .update({ status: "active", paypal_capture_id: captureId })
+      .eq("id", existing.id);
+    console.log(`Webhook: purchase already exists (${existing.id}), updated status.`);
+    return;
+  }
+
+  // Look up pending order
+  const { data: pendingOrder, error: pendingError } = await supabase
+    .from("pending_orders")
+    .select("*")
+    .eq("id", pendingOrderId)
+    .single();
+
+  if (pendingError || !pendingOrder) {
+    console.error(`Webhook: pending order not found: ${pendingOrderId}`, pendingError);
+    return;
+  }
+
+  // Create the purchase (backup path)
+  const { data: purchase, error: purchaseError } = await supabase
+    .from("purchases")
+    .insert({
+      user_id: pendingOrder.user_id,
+      product_id: pendingOrder.product_id,
+      product_type: pendingOrder.product_type,
+      product_name: pendingOrder.product_name,
+      amount: captureAmount,
+      currency: captureCurrency,
+      status: "active",
+      payment_method: "paypal",
+      paypal_order_id: paypalOrderId,
+      paypal_capture_id: captureId,
+      coupon_id: pendingOrder.coupon_id,
+      affiliate_id: pendingOrder.affiliate_id,
+      dialect_id: pendingOrder.dialect_id,
+      level_id: pendingOrder.level_id,
+    })
+    .select("id")
+    .single();
+
+  if (purchaseError) {
+    if (purchaseError.code === "23505") {
+      console.log(`Webhook: purchase created by concurrent process (unique constraint), orderId=${paypalOrderId}`);
+      return;
+    }
+    console.error("Webhook: purchase creation error:", purchaseError);
+    return;
+  }
+
+  console.log(`Webhook: BACKUP purchase created: ${purchase.id}, user: ${pendingOrder.user_id}, product: ${pendingOrder.product_id}`);
+
+  // Update coupon usage
+  if (pendingOrder.coupon_id) {
+    await supabase.rpc("increment_coupon_usage", { coupon_id: pendingOrder.coupon_id });
+  }
+
+  // Handle affiliate commission
+  if (pendingOrder.affiliate_id) {
+    const { data: affiliate } = await supabase
+      .from("affiliates")
+      .select("id, commission_rate, total_earnings")
+      .eq("id", pendingOrder.affiliate_id)
+      .single();
+
+    if (affiliate) {
+      const commissionRate = affiliate.commission_rate || 10;
+      const commissionAmount = pendingOrder.amount * (commissionRate / 100);
+
+      await supabase.from("affiliate_commissions").insert({
+        affiliate_id: affiliate.id,
+        purchase_id: purchase.id,
+        commission_amount: commissionAmount,
+        status: "pending",
+      });
+
+      await supabase
+        .from("affiliates")
+        .update({ total_earnings: (affiliate.total_earnings || 0) + commissionAmount })
+        .eq("id", affiliate.id);
+
+      console.log(`Webhook: affiliate commission created: ${commissionAmount}`);
+    }
+  }
+
+  // Clean up pending order
+  await supabase.from("pending_orders").delete().eq("id", pendingOrderId);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Read raw body for signature verification
     const rawBody = await req.text();
     const body = JSON.parse(rawBody);
     
     console.log("PayPal webhook received:", body.event_type);
     
-    // Verify webhook signature
     const isValid = await verifyWebhookSignature(req, body, rawBody);
     
     if (!isValid) {
@@ -128,48 +233,56 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Handle different event types
     switch (body.event_type) {
       case "PAYMENT.CAPTURE.COMPLETED": {
         const captureId = body.resource.id;
         const orderId = body.resource.supplementary_data?.related_ids?.order_id;
+        const customId = body.resource.custom_id;
+        const captureAmount = parseFloat(body.resource.amount?.value || "0");
+        const captureCurrency = body.resource.amount?.currency_code || "USD";
 
-        console.log("Payment captured:", captureId, "Order:", orderId);
+        console.log(`Webhook CAPTURE.COMPLETED: captureId=${captureId}, orderId=${orderId}, customId=${customId}`);
 
-        // Verify the payment exists in our records
-        const { data: purchase, error } = await supabase
-          .from("purchases")
-          .select("*")
-          .eq("paypal_capture_id", captureId)
-          .single();
-
-        if (error || !purchase) {
-          console.log("Purchase not found for capture:", captureId);
-          // The payment was already processed via the capture endpoint
-          break;
-        }
-
-        // Update status if needed
-        if (purchase.status !== "completed") {
-          await supabase
+        if (orderId && customId) {
+          // customId is the pending_order_id
+          await ensurePurchaseExists(supabase, orderId, captureId, captureAmount, captureCurrency, customId);
+        } else {
+          // Try to find by capture ID directly and update status
+          const { data: purchase } = await supabase
             .from("purchases")
-            .update({ status: "completed" })
-            .eq("id", purchase.id);
+            .select("id, status")
+            .eq("paypal_capture_id", captureId)
+            .maybeSingle();
+
+          if (purchase && purchase.status !== "active") {
+            await supabase
+              .from("purchases")
+              .update({ status: "active" })
+              .eq("id", purchase.id);
+            console.log(`Webhook: updated purchase ${purchase.id} to active`);
+          }
         }
+        break;
+      }
+
+      case "CHECKOUT.ORDER.APPROVED": {
+        // Order approved but not yet captured — the client-side flow will capture
+        // If client doesn't capture within ~3 hours, PayPal auto-voids
+        console.log("Webhook: order approved, awaiting capture via client flow");
         break;
       }
 
       case "PAYMENT.CAPTURE.DENIED":
       case "PAYMENT.CAPTURE.REFUNDED": {
         const captureId = body.resource.id;
+        const newStatus = body.event_type === "PAYMENT.CAPTURE.REFUNDED" ? "refunded" : "failed";
         
-        // Update purchase status
         await supabase
           .from("purchases")
-          .update({ 
-            status: body.event_type === "PAYMENT.CAPTURE.REFUNDED" ? "refunded" : "failed" 
-          })
+          .update({ status: newStatus })
           .eq("paypal_capture_id", captureId);
+        
+        console.log(`Webhook: updated purchase status to ${newStatus} for capture ${captureId}`);
         break;
       }
     }
