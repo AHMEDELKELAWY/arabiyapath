@@ -21,7 +21,7 @@ Whether you're an expat in Dubai, a student, or a professional working with Arab
 
 Modern **online arabic classes** offer real advantages over classroom learning:
 
-- **Flexible schedule** — study mornings, lunch breaks, or late nights
+- **Flexible schedule** — study mornings, lunch breaks, or late nights with [**Gulf Arabic online classes**](/learn/gulf-arabic)
 - **Lower cost** — often 70–90% cheaper than in-person tutors
 - **Native-speaker audio** in every lesson, on demand
 - **Repeat lessons** as many times as you need
@@ -29,7 +29,7 @@ Modern **online arabic classes** offer real advantages over classroom learning:
 - **Mobile-friendly** — practice on your phone
 - **Faster progress** when paired with daily habit
 
-The result? Most learners using a structured **arabic online course** reach basic conversation in 2–4 months instead of the 1–2 years a classroom usually takes.
+The result? Most learners using a structured **arabic online course** reach basic conversation in 2–4 months instead of the 1–2 years a classroom usually takes. Compare full course options on our [**pricing page**](/pricing).
 
 ---
 
@@ -76,7 +76,7 @@ Here's how to get the most from your **online arabic classes**:
 
 ### 1. Pick One Dialect and Commit
 
-Trying to learn Gulf, Egyptian, and Fusha at the same time is a recipe for confusion. Pick **one** and stick with it for at least 90 days. For expats and Gulf professionals, **Gulf Arabic** is the smart starting point.
+Trying to learn Gulf, Egyptian, and Fusha at the same time is a recipe for confusion. Pick **one** and stick with it for at least 90 days. For expats and Gulf professionals, [**Gulf Arabic**](/learn/gulf-arabic) is the smart starting point. If you prefer formal Arabic, start with [**Modern Standard Arabic (Fusha)**](/learn/fusha-arabic). You can [**browse all dialects here**](/dialects).
 
 ### 2. Choose a Speaking-First Course
 
@@ -132,11 +132,11 @@ Use this decision table to match a course to your goal:
 
 | Your Goal | Best Course Type | Time Commitment |
 |-----------|------------------|-----------------|
-| Talk to people in UAE, Saudi, Qatar | Gulf Arabic dialect course | 15–30 min/day |
-| Travel and watch Arabic films | Egyptian Arabic course | 15–30 min/day |
-| Read news, books, religious texts | Modern Standard Arabic (Fusha) | 30–60 min/day |
-| Business across the Middle East | Gulf Arabic + Fusha bundle | 30–45 min/day |
-| Quick travel basics | Phrasebook app + free lessons | 10 min/day |
+| Talk to people in UAE, Saudi, Qatar | [Gulf Arabic dialect course](/learn/gulf-arabic) | 15–30 min/day |
+| Travel and watch Arabic films | [Egyptian Arabic course](/learn/egyptian-arabic) | 15–30 min/day |
+| Read news, books, religious texts | [Modern Standard Arabic (Fusha)](/learn/fusha-arabic) | 30–60 min/day |
+| Business across the Middle East | [Gulf Arabic + Fusha bundle](/pricing) | 30–45 min/day |
+| Quick travel basics | [Free Gulf Arabic lesson](/learn/gulf-arabic) | 10 min/day |
 
 Pick the row that matches your **why**, then look for **arabic lessons online** that specialize in that path.
 
@@ -199,7 +199,7 @@ It depends on your goal:
 - **Egyptian Arabic** — Egypt, films and pop culture
 - **Modern Standard Arabic (Fusha)** — news, books, formal writing
 
-For most expats and professionals, **Gulf Arabic** is the best starting point.
+For most expats and professionals, [**Gulf Arabic**](/learn/gulf-arabic) is the best starting point. Prefer formal Arabic? Try our [**Fusha course**](/learn/fusha-arabic). See full details on the [**pricing page**](/pricing).
 
 ### 5. How long do online arabic classes take to complete?
 
