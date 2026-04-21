@@ -21,6 +21,7 @@ import arabicForExpatsInSaudiArabia from './arabic-for-expats-in-saudi-arabia.md
 import learnArabicOnline from './learn-arabic-online.md?raw';
 import onlineArabicClasses from './online-arabic-classes.md?raw';
 import arabicLessonsOnline from './arabic-lessons-online.md?raw';
+import arabicOnlineCourse from './arabic-online-course.md?raw';
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -72,6 +73,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(learnArabicOnline),
   parseFrontmatter(onlineArabicClasses),
   parseFrontmatter(arabicLessonsOnline),
+  parseFrontmatter(arabicOnlineCourse),
 ];
 
 // Sort by date (newest first)
