@@ -1,64 +1,67 @@
 
 
-## Create SEO Blog Post: Learn Arabic Online Guide
+## Create SEO Blog Post: Best Online Arabic Classes Guide
 
-**Objective:** Create and publish a new 2000-word SEO-optimized blog post targeting Arabic learning keywords.
+**Note:** A blog post already exists at slug `/online-arabic-classes`. This plan **overwrites** it with the new title, structure, and content per your spec.
 
 ### Content to Create
 
-**File:** `src/content/blog/learn-arabic-online.md`
+**File:** `src/content/blog/online-arabic-classes.md` (overwrite)
 
 **Frontmatter:**
-- Title: "Learn Arabic Online: 9 Proven Steps to Speak Fluently Faster (2026 Guide)"
-- Description: Discover how to learn Arabic online effectively with 9 proven strategies. Start speaking Arabic fluently faster with expert tips and structured lessons.
+- Title: "Best Online Arabic Classes: 10 Smart Ways to Learn Faster in 2026"
+- Description: Compare the best online arabic classes in 2026. Discover 10 smart ways to learn faster, plus a free vs paid course comparison table.
 - Date: 2026-04-21
-- Slug: learn-arabic-online
-- Excerpt: Master Arabic from anywhere with this complete guide to learning online. Follow 9 proven steps to speak fluently faster in 2026.
+- Slug: online-arabic-classes
+- Excerpt: Compare the best online arabic classes in 2026 and discover 10 smart strategies to learn Arabic faster, with a free vs paid breakdown.
 
-**Content Structure:**
-- H1: Learn Arabic Online: 9 Proven Steps to Speak Fluently Faster (2026 Guide)
-- Introduction (150 words) — hook with "learn arabic online" keyword
-- 9 Detailed Steps (H2 sections):
-  1. Why Learn Arabic Online in 2026? (benefits, flexibility)
-  2. Choose the Right Arabic Type (dialect vs Fusha comparison table)
-  3. Master the Alphabet First (tips for beginners)
-  4. Start with 100 Core Words (high-frequency vocabulary)
-  5. Use Native Audio Daily (listening comprehension)
-  6. Practice Speaking Out Loud (shadowing technique)
-  7. Build a Daily Habit (15-minute rule)
-  8. Immerse Without Traveling (online immersion tips)
-  9. Track Your Progress (metrics, certificates)
-- How Long Does It Take? (table with practice time estimates)
-- Common Mistakes to Avoid (bullet list)
-- Free vs Paid Courses (comparison)
-- Why ArabiyaPath Works (CTA section)
-- 6 FAQs with detailed answers
-- Conclusion with strong CTA
+**Content Structure (~2000 words):**
+- H1: Best Online Arabic Classes: 10 Smart Ways to Learn Faster in 2026
+- Introduction (~150 words) — hook on choosing the right course
+- H2: Why Online Arabic Classes Beat Traditional Schools (bullets)
+- H2: What to Look For in the Best Arabic Online Course (bullet checklist)
+- H2: Free vs Paid Online Arabic Classes — Comparison Table
+  - Columns: Feature | Free Apps | Paid Courses
+  - Rows: vocabulary, native audio, structured curriculum, speaking practice, certificates, support, mobile, cost
+- H2: 10 Smart Ways to Learn Faster with Arabic Lessons Online
+  1. Pick one dialect and commit
+  2. Choose a speaking-first course
+  3. Prioritize native audio quality
+  4. Study 15–30 minutes daily
+  5. Shadow native speakers out loud
+  6. Use spaced repetition for vocabulary
+  7. Set weekly speaking goals
+  8. Immerse with Arabic media
+  9. Track progress with quizzes & certificates
+  10. Join a learning community
+- H2: How to Compare Online Arabic Classes (decision framework table)
+  - Columns: Goal | Best Course Type | Time Commitment
+- H2: Common Mistakes to Avoid (bullets)
+- H2: Why ArabiyaPath Is the Smart Choice (CTA section, internal links to `/learn/gulf-arabic` and `/pricing`)
+- H2: Frequently Asked Questions (6 FAQs)
+- H2: Conclusion (strong CTA → free Gulf lesson)
 
 **Target Keywords (1–1.5% density):**
-- learn arabic online (primary, ~20 appearances)
-- learn arabic language online (~8 appearances)
-- study arabic online (~6 appearances)
+- online arabic classes (~20 mentions)
+- arabic lessons online (~8 mentions)
+- arabic online course (~6 mentions)
 
-**Writing Style:**
-- Grade 7 reading level
+**Style:**
+- Grade 7 English
 - Short paragraphs (2–3 sentences)
 - Bold key phrases
-- Bullet points and tables
-- Actionable, practical advice
+- Bullet points and 2 tables
+- Internal links: `/learn/gulf-arabic`, `/pricing`
 
 ### Files to Update
 
-1. **`src/content/blog/learn-arabic-online.md`** — Create/overwrite with new content
-2. **`src/content/blog/index.ts`** — Re-import and parse the updated markdown
-3. **`public/sitemap.xml`** — Update `<lastmod>` date for the existing `/blog/learn-arabic-online` entry
+1. `src/content/blog/online-arabic-classes.md` — overwrite with new content
+2. `src/content/blog/index.ts` — no structural change needed (already imports this file); will verify
+3. `public/sitemap.xml` — confirm `<lastmod>` is `2026-04-21` (already current)
 
-### SEO Specifications
+### Tags
+- language courses
+- Arabic classes
 
-- URL: `/blog/learn-arabic-online`
-- Meta description: 155–160 characters
-- Table of content with jump links
-- Internal links to `/learn/gulf-arabic` and `/pricing`
-- Tags: Arabic learning, online learning
-- Priority 0.8 in sitemap
+(Note: the current blog system stores tags only implicitly via category context; tags will be embedded in frontmatter for future use but won't render as visible chips unless the blog template is extended — which is out of scope for this request.)
 
