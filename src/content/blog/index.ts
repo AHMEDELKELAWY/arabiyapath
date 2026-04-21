@@ -20,6 +20,7 @@ import dailyGulfArabicPhrases from './10-daily-gulf-arabic-phrases-for-expats.md
 import arabicForExpatsInSaudiArabia from './arabic-for-expats-in-saudi-arabia.md?raw';
 import learnArabicOnline from './learn-arabic-online.md?raw';
 import onlineArabicClasses from './online-arabic-classes.md?raw';
+import arabicLessonsOnline from './arabic-lessons-online.md?raw';
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -70,6 +71,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(arabicForExpatsInSaudiArabia),
   parseFrontmatter(learnArabicOnline),
   parseFrontmatter(onlineArabicClasses),
+  parseFrontmatter(arabicLessonsOnline),
 ];
 
 // Sort by date (newest first)
