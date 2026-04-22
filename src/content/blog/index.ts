@@ -81,6 +81,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(learnArabicLanguageOnline),
   parseFrontmatter(studyArabicOnline),
   parseFrontmatter(arabicLanguageOnline),
+  parseFrontmatter(learnArabicOnlineCourse),
 ];
 
 // Sort by date (newest first)
