@@ -29,6 +29,7 @@ import learnArabicOnlineCourse from './learn-arabic-online-course.md?raw';
 import learnarabiconline from './learnarabiconline.md?raw';
 import learnArabicForBeginners from './learn-arabic-for-beginners.md?raw';
 import learnArabicFast from './learn-arabic-fast.md?raw';
+import arabicConversationCourse from './arabic-conversation-course.md?raw';
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
