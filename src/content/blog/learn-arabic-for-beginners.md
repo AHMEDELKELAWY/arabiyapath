@@ -362,3 +362,14 @@ You don't need to be perfect. You just need to begin.
 When you are ready, you can [start your first free Gulf Arabic lesson here](/learn/gulf-arabic) — at your own pace, with no pressure.
 
 Welcome to your Arabic journey. You've got this.
+
+---
+
+## You May Also Like
+
+Ready for the next step? Explore these related guides:
+
+- 📘 **Pillar:** [Learn Arabic online: the complete 2026 guide](/blog/learn-arabic-online) — your full roadmap to fluency.
+- 📚 [Arabic lessons online: complete beginner guide](/blog/arabic-lessons-online) — daily routines and real examples.
+- ⚡ [Learn Arabic fast: 10 proven methods](/blog/learn-arabic-fast) — accelerate progress once you've got the basics.
+- 🏫 [Compare the best online Arabic classes](/blog/online-arabic-classes) — find a class style that fits you.
