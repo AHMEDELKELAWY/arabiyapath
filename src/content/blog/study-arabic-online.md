@@ -251,9 +251,9 @@ If you want to **study arabic online** with a system that already works, **Arabi
 
 Want to dig deeper into related strategies?
 
-- 👉 [The complete guide to learning Arabic online](/learn-arabic-online)
-- 👉 [Learn Arabic fast: 10 proven methods](/learn-arabic-fast)
-- 👉 [Arabic lessons online: complete guide](/arabic-lessons-online)
+- 👉 [The complete guide to learning Arabic online](/blog/learn-arabic-online)
+- 👉 [Learn Arabic fast: 10 proven methods](/blog/learn-arabic-fast)
+- 👉 [Arabic lessons online: complete guide](/blog/arabic-lessons-online)
 
 ---
 
@@ -309,3 +309,14 @@ The only thing left is to start. Right now. Today.
 Future you — chatting confidently in Arabic, understanding what's around you, surprising native speakers — is built one 15-minute session at a time.
 
 Build the system. The fluency follows.
+
+---
+
+## You May Also Like
+
+Build on this system with these related guides:
+
+- 📘 **Pillar:** [The complete guide to learning Arabic online](/blog/learn-arabic-online) — the master roadmap behind every tip in this article.
+- ⚡ [Learn Arabic fast: 10 proven methods](/blog/learn-arabic-fast) — speed up results once your routine is solid.
+- 🎓 [How to choose the right Arabic online course](/blog/arabic-online-course) — pick the right tool for your system.
+- 📚 [Arabic lessons online: complete beginner guide](/blog/arabic-lessons-online) — practical examples you can apply today.

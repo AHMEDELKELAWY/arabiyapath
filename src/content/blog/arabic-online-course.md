@@ -222,9 +222,9 @@ What makes it different:
 
 Want to dig deeper into related topics first?
 
-- 👉 [Compare the best online Arabic classes](/online-arabic-classes)
-- 👉 [The complete guide to learning Arabic online](/learn-arabic-online)
-- 👉 [Arabic lessons online: complete guide](/arabic-lessons-online)
+- 👉 [Compare the best online Arabic classes](/blog/online-arabic-classes)
+- 👉 [The complete guide to learning Arabic online](/blog/learn-arabic-online)
+- 👉 [Arabic lessons online: complete guide](/blog/arabic-lessons-online)
 
 ---
 
@@ -276,3 +276,14 @@ You don't need to gamble. You can test a fully built, speaking-first Arabic cour
 The next 90 days are going to pass either way. The only question is: do you want to be conversational in Arabic by then, or still searching for the "right" course?
 
 Make the choice today.
+
+---
+
+## You May Also Like
+
+Keep building your Arabic learning strategy:
+
+- 📘 **Pillar:** [Learn Arabic online: the complete 2026 guide](/blog/learn-arabic-online) — the master resource for every Arabic learner.
+- 📅 [8 powerful tips to study Arabic online](/blog/study-arabic-online) — turn your new course into a daily habit.
+- 🌱 [Learn Arabic for beginners: step-by-step guide](/blog/learn-arabic-for-beginners) — perfect if you're brand new.
+- ⚡ [Speak Arabic fluently in 30 days](/blog/learn-arabic-fast) — accelerate results once your course is chosen.

@@ -226,3 +226,14 @@ Pick a course that:
 Stop comparing forever. The hardest part is starting — and you can begin **today, for free**.
 
 **[👉 Start your free Gulf Arabic lesson now →](/learn/gulf-arabic)**
+
+---
+
+## You May Also Like
+
+Continue building your Arabic foundation with these related guides:
+
+- 📘 **Pillar:** [The complete guide to learning Arabic online](/blog/learn-arabic-online) — your full roadmap from absolute beginner to fluent speaker.
+- ⚡ [Speak Arabic fluently in 30 days](/blog/learn-arabic-fast) — proven methods to accelerate your progress.
+- 🎓 [How to choose the right Arabic online course](/blog/arabic-online-course) — a smart buyer's guide before you pay.
+- 📅 [8 powerful tips to study Arabic online](/blog/study-arabic-online) — productivity strategies that actually work.
