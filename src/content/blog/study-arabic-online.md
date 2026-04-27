@@ -251,9 +251,9 @@ If you want to **study arabic online** with a system that already works, **Arabi
 
 Want to dig deeper into related strategies?
 
-- 👉 [The complete guide to learning Arabic online](/learn-arabic-online)
-- 👉 [Learn Arabic fast: 10 proven methods](/learn-arabic-fast)
-- 👉 [Arabic lessons online: complete guide](/arabic-lessons-online)
+- 👉 [The complete guide to learning Arabic online](/blog/learn-arabic-online)
+- 👉 [Learn Arabic fast: 10 proven methods](/blog/learn-arabic-fast)
+- 👉 [Arabic lessons online: complete guide](/blog/arabic-lessons-online)
 
 ---
 

@@ -222,9 +222,9 @@ What makes it different:
 
 Want to dig deeper into related topics first?
 
-- 👉 [Compare the best online Arabic classes](/online-arabic-classes)
-- 👉 [The complete guide to learning Arabic online](/learn-arabic-online)
-- 👉 [Arabic lessons online: complete guide](/arabic-lessons-online)
+- 👉 [Compare the best online Arabic classes](/blog/online-arabic-classes)
+- 👉 [The complete guide to learning Arabic online](/blog/learn-arabic-online)
+- 👉 [Arabic lessons online: complete guide](/blog/arabic-lessons-online)
 
 ---
 

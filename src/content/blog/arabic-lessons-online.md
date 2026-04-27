@@ -251,9 +251,9 @@ If you want **arabic lessons online** that are designed for *real* speaking — 
 - ✅ **Free trial lesson** — no payment, no commitment
 
 Want a deeper guide on each topic? Check out:
-- 👉 [The complete guide to learning Arabic online](/learn-arabic-online)
-- 👉 [How to choose the best online Arabic classes](/online-arabic-classes)
-- 👉 [Step-by-step guide for absolute beginners](/learn-arabic-for-beginners)
+- 👉 [The complete guide to learning Arabic online](/blog/learn-arabic-online)
+- 👉 [How to choose the best online Arabic classes](/blog/online-arabic-classes)
+- 👉 [Step-by-step guide for absolute beginners](/blog/learn-arabic-for-beginners)
 
 ---
 
