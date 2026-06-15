@@ -5,6 +5,7 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Play } from "lucide-react";
 import { trackGenerateLead } from "@/lib/analytics";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 export default function ThankYouFreeGulf() {
   useEffect(() => {
