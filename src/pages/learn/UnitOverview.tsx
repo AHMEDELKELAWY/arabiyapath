@@ -190,7 +190,15 @@ export default function UnitOverview() {
                       Create an account to track your progress and unlock more content
                     </p>
                     <Button asChild size="lg" className="w-full sm:w-auto">
-                      <Link to={`/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>Sign Up Free</Link>
+                      <Link
+                        to={`/signup?redirect=${encodeURIComponent(
+                          isFreeTrialUnit && (continueLesson?.id || lessons[0]?.id)
+                            ? `/learn/lesson/${continueLesson?.id || lessons[0]?.id}`
+                            : `/choose-plan/${dialect?.id}`
+                        )}`}
+                      >
+                        Sign Up Free
+                      </Link>
                     </Button>
                   </div>
                 )}
