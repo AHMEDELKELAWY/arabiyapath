@@ -70,12 +70,9 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
 
     setIsApplyingCoupon(true);
     try {
-      const { data: coupon, error } = await supabase
-        .from("coupons")
-        .select("*")
-        .eq("code", couponCode.toUpperCase())
-        .eq("active", true)
-        .single();
+      const { data: coupons, error } = await supabase
+        .rpc("lookup_coupon", { _code: couponCode.toUpperCase() });
+      const coupon = Array.isArray(coupons) ? coupons[0] : coupons;
 
       if (error || !coupon) {
         toast.error("Invalid or expired coupon code");
