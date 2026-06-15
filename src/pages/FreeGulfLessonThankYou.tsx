@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, BookOpen, Play } from "lucide-react";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 export default function FreeGulfLessonThankYou() {
   return (
