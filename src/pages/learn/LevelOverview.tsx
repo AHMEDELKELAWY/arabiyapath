@@ -304,7 +304,15 @@ export default function LevelOverview() {
                   Create a free account to save your progress and earn certificates
                 </p>
                 <Button asChild className="w-full sm:w-auto">
-                  <Link to={`/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`}>Get Started Free</Link>
+                  <Link
+                    to={`/signup?redirect=${encodeURIComponent(
+                      data?.units?.[0]?.id
+                        ? `/learn/unit/${data.units[0].id}`
+                        : `/choose-plan/${dialect?.id}`
+                    )}`}
+                  >
+                    Get Started Free
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
