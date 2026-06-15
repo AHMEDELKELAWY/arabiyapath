@@ -1,67 +1,61 @@
+## Goal
 
+Switch to a single email-confirmation-link flow (Supabase native). Remove the custom 6-digit OTP entirely.
 
-## Create SEO Blog Post: Best Online Arabic Classes Guide
+## Current state
 
-**Note:** A blog post already exists at slug `/online-arabic-classes`. This plan **overwrites** it with the new title, structure, and content per your spec.
+- Supabase already sends its native confirmation link (auth logs show `user_confirmation_requested` + `/verify` 303). 
+- On top of that, `Signup` and `BecomeAffiliate` invoke `send-verification-email`, which stores a 6-digit code in `profiles.verification_code` and emails it via Zoho SMTP.
+- `ProtectedRoute` redirects any user with `profile.email_verified === false` to `/verify-email`, where `VerifyEmail.tsx` collects the OTP and calls `verify-email-code` to flip `email_verified = true`.
+- Net effect: users get both a link and a code, and even after clicking the link they're forced into the OTP screen because our profile flag stays false.
 
-### Content to Create
+## Target flow
 
-**File:** `src/content/blog/online-arabic-classes.md` (overwrite)
+Signup → Supabase confirmation email (link only) → user clicks link → Supabase confirms account + creates session → app redirects to intended course/redirect target.
 
-**Frontmatter:**
-- Title: "Best Online Arabic Classes: 10 Smart Ways to Learn Faster in 2026"
-- Description: Compare the best online arabic classes in 2026. Discover 10 smart ways to learn faster, plus a free vs paid course comparison table.
-- Date: 2026-04-21
-- Slug: online-arabic-classes
-- Excerpt: Compare the best online arabic classes in 2026 and discover 10 smart strategies to learn Arabic faster, with a free vs paid breakdown.
+## Changes
 
-**Content Structure (~2000 words):**
-- H1: Best Online Arabic Classes: 10 Smart Ways to Learn Faster in 2026
-- Introduction (~150 words) — hook on choosing the right course
-- H2: Why Online Arabic Classes Beat Traditional Schools (bullets)
-- H2: What to Look For in the Best Arabic Online Course (bullet checklist)
-- H2: Free vs Paid Online Arabic Classes — Comparison Table
-  - Columns: Feature | Free Apps | Paid Courses
-  - Rows: vocabulary, native audio, structured curriculum, speaking practice, certificates, support, mobile, cost
-- H2: 10 Smart Ways to Learn Faster with Arabic Lessons Online
-  1. Pick one dialect and commit
-  2. Choose a speaking-first course
-  3. Prioritize native audio quality
-  4. Study 15–30 minutes daily
-  5. Shadow native speakers out loud
-  6. Use spaced repetition for vocabulary
-  7. Set weekly speaking goals
-  8. Immerse with Arabic media
-  9. Track progress with quizzes & certificates
-  10. Join a learning community
-- H2: How to Compare Online Arabic Classes (decision framework table)
-  - Columns: Goal | Best Course Type | Time Commitment
-- H2: Common Mistakes to Avoid (bullets)
-- H2: Why ArabiyaPath Is the Smart Choice (CTA section, internal links to `/learn/gulf-arabic` and `/pricing`)
-- H2: Frequently Asked Questions (6 FAQs)
-- H2: Conclusion (strong CTA → free Gulf lesson)
+### 1. Use Supabase's link as the single source of truth
+`src/contexts/AuthContext.tsx` — `signUp`: accept an optional `redirectPath`, pass `emailRedirectTo: ${window.location.origin}/auth/callback?redirect=<path>` so the confirm link lands users in the right place with a session.
 
-**Target Keywords (1–1.5% density):**
-- online arabic classes (~20 mentions)
-- arabic lessons online (~8 mentions)
-- arabic online course (~6 mentions)
+Add a lightweight `src/pages/AuthCallback.tsx` that:
+- Lets Supabase parse the URL tokens (already automatic via `detectSessionInUrl`).
+- Reads `redirect` query param and `navigate(redirect ?? "/dashboard")` once `user` is present.
+- Shows a brief "Verifying…" state, plus an error state if the link is invalid/expired with a "Resend email" button calling `supabase.auth.resend({ type: 'signup', email })`.
 
-**Style:**
-- Grade 7 English
-- Short paragraphs (2–3 sentences)
-- Bold key phrases
-- Bullet points and 2 tables
-- Internal links: `/learn/gulf-arabic`, `/pricing`
+Register the route in `src/App.tsx`: `/auth/callback`.
 
-### Files to Update
+### 2. Stop relying on the custom `email_verified` flag
+`src/components/auth/ProtectedRoute.tsx` — remove the `/verify-email` redirect. Trust Supabase: if `user` exists, they're confirmed (unconfirmed users can't get a session in the first place because auto-confirm stays off).
 
-1. `src/content/blog/online-arabic-classes.md` — overwrite with new content
-2. `src/content/blog/index.ts` — no structural change needed (already imports this file); will verify
-3. `public/sitemap.xml` — confirm `<lastmod>` is `2026-04-21` (already current)
+`src/contexts/AuthContext.tsx` — drop `email_verified` from the `Profile` interface usage in gating (keep the column for now, just don't read it for access).
 
-### Tags
-- language courses
-- Arabic classes
+### 3. Remove OTP UI and signup wiring
+- Delete `src/pages/VerifyEmail.tsx`.
+- Remove the `/verify-email` route and the `VerifyEmail` lazy import from `src/App.tsx`.
+- `src/pages/Signup.tsx`: remove the `send-verification-email` invocation; after `signUp` succeeds show an inline "Check your inbox to confirm your email" success card (with email shown + a "Resend confirmation" button that calls `supabase.auth.resend`). Do not navigate to `/verify-email`.
+- `src/pages/BecomeAffiliate.tsx`: same treatment — remove the `send-verification-email` call and the `/verify-email` navigation; show the same "check your inbox" confirmation.
+- Pass the chosen `redirect` target into `signUp` so it ends up in `emailRedirectTo`.
 
-(Note: the current blog system stores tags only implicitly via category context; tags will be embedded in frontmatter for future use but won't render as visible chips unless the blog template is extended — which is out of scope for this request.)
+### 4. Remove backend OTP pieces
+- Delete edge functions `supabase/functions/send-verification-email/` and `supabase/functions/verify-email-code/`.
+- Remove their entries from `supabase/config.toml`.
+- Migration: drop `profiles.verification_code` and `profiles.verification_code_expires_at` columns (no longer used). Leave `email_verified` column in place for historical data but stop reading it in gating logic.
 
+### 5. Login UX polish
+`src/pages/Login.tsx` (light touch): if `signInWithPassword` returns `email_not_confirmed`, show "Please confirm your email — check your inbox" with a "Resend confirmation email" button (`supabase.auth.resend`). No OTP fallback.
+
+### 6. Supabase auth configuration
+Confirm `auto_confirm_email = false` (default) so the native confirmation link remains required. No other auth setting changes.
+
+## Out of scope
+
+- Customizing the Supabase confirmation email template (current default link works). Branded auth-email templates can be added later via the managed auth-email-hook if desired — not needed to fix the duplicate-verification bug.
+- Removing the `email_verified` column itself (kept as a nullable historical field).
+
+## Files touched
+
+- Edit: `src/contexts/AuthContext.tsx`, `src/components/auth/ProtectedRoute.tsx`, `src/App.tsx`, `src/pages/Signup.tsx`, `src/pages/BecomeAffiliate.tsx`, `src/pages/Login.tsx`, `supabase/config.toml`
+- Create: `src/pages/AuthCallback.tsx`
+- Delete: `src/pages/VerifyEmail.tsx`, `supabase/functions/send-verification-email/`, `supabase/functions/verify-email-code/`
+- Migration: drop two OTP columns on `profiles`

@@ -613,8 +613,6 @@ export type Database = {
           preferred_dialect_id: string | null
           updated_at: string
           user_id: string
-          verification_code: string | null
-          verification_code_expires_at: string | null
         }
         Insert: {
           created_at?: string
@@ -627,8 +625,6 @@ export type Database = {
           preferred_dialect_id?: string | null
           updated_at?: string
           user_id: string
-          verification_code?: string | null
-          verification_code_expires_at?: string | null
         }
         Update: {
           created_at?: string
@@ -641,8 +637,6 @@ export type Database = {
           preferred_dialect_id?: string | null
           updated_at?: string
           user_id?: string
-          verification_code?: string | null
-          verification_code_expires_at?: string | null
         }
         Relationships: []
       }

@@ -22,6 +22,8 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -46,13 +48,13 @@ export default function Signup() {
       return;
     }
     setIsLoading(true);
-    const { error } = await signUp(email, password, firstName, lastName);
+    const { error } = await signUp(email, password, firstName, lastName, redirectUrl);
     if (error) {
       toast({ title: "Signup Failed", description: error.message || "Could not create account.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
-    
+
     // Update marketing consent
     if (marketingConsent) {
       await supabase
@@ -60,28 +62,56 @@ export default function Signup() {
         .update({ marketing_consent: true })
         .eq('email', email);
     }
-    
-    // Send verification email
-    try {
-      const { data, error } = await supabase.functions.invoke('send-verification-email', {
-        body: { email, firstName },
-      });
-      
-      if (error || data?.error) {
-        console.error('Verification email error:', error || data?.error);
-        toast({ title: "Account Created!", description: "Please check your email or request a new code on the next page." });
-      } else {
-        toast({ title: "Account Created!", description: "Please check your email to verify your account." });
-      }
-      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
-    } catch (err) {
-      console.error('Failed to send verification email:', err);
-      toast({ title: "Account Created!", description: "Please verify your email to continue." });
-      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
-    }
-    
+
+    toast({ title: "Account Created!", description: "Check your inbox to confirm your email." });
+    setSubmitted(true);
     setIsLoading(false);
   };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    const emailRedirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl)}`;
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo },
+    });
+    setIsResending(false);
+    if (error) {
+      toast({ title: "Could not resend", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email sent", description: "We sent a fresh confirmation link." });
+    }
+  };
+
+  if (submitted) {
+    return (
+      <>
+        <SEOHead title="Confirm Your Email" description="Confirm your ArabiyaPath email to start learning." canonicalPath="/signup" jsonLd={breadcrumbSchema} />
+        <Layout>
+          <section className="py-20 min-h-[calc(100vh-4rem)] flex items-center">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-8 text-center">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-7 h-7 text-primary" />
+                </div>
+                <h1 className="text-2xl font-bold mb-2">Confirm your email</h1>
+                <p className="text-muted-foreground mb-2">We sent a confirmation link to</p>
+                <p className="font-medium mb-6">{email}</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Click the link in the email to verify your account. You'll be signed in and taken straight to your course.
+                </p>
+                <Button onClick={handleResend} disabled={isResending} variant="outline" className="w-full">
+                  {isResending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Resend confirmation email"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-6">Check your spam folder if you don't see it.</p>
+              </div>
+            </div>
+          </section>
+        </Layout>
+      </>
+    );
+  }
 
   return (
     <>
