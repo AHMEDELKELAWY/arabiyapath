@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
