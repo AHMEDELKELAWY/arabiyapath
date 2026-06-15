@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 // --------------- DATA ---------------
 
@@ -194,8 +195,8 @@ export default function GulfArabicCourse() {
                 <Button size="xl" variant="hero" asChild>
                   <a href="#choose-plan" onClick={scrollToPlans}>Get Full Access</a>
                 </Button>
-                <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
-                  Try the Free Lesson
+                <Button size="xl" variant="outline" asChild>
+                  <Link to={getCtaLink(FREE_LESSON_URL)}>Try the Free Lesson</Link>
                 </Button>
               </div>
 
@@ -450,8 +451,8 @@ export default function GulfArabicCourse() {
                     Get Full Access <ArrowRight className="w-5 h-5" />
                   </a>
                 </Button>
-                <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
-                  Try the Free Lesson
+                <Button size="xl" variant="outline" asChild>
+                  <Link to={getCtaLink(FREE_LESSON_URL)}>Try the Free Lesson</Link>
                 </Button>
               </div>
             </div>
