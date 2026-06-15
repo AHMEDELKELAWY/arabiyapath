@@ -5,6 +5,7 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Play } from "lucide-react";
 import { trackGenerateLead } from "@/lib/analytics";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 export default function ThankYouFreeGulf() {
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function ThankYouFreeGulf() {
                 Click below to start speaking your first real sentence in Arabic.
               </p>
               <Button size="xl" variant="hero" asChild>
-                <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
+                <Link to={FREE_LESSON_URL}>
                   <Play className="w-5 h-5" />
                   Start My Free Lesson
                   <ArrowRight className="w-5 h-5" />

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
@@ -100,7 +101,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
+                <Link to={FREE_LESSON_URL}>
                   <Button size="lg" className="gap-2">
                     <ArrowRight className="w-4 h-4" />
                     Start Free Lesson

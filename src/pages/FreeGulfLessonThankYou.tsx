@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, BookOpen, Play } from "lucide-react";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 export default function FreeGulfLessonThankYou() {
   return (
@@ -28,7 +29,7 @@ export default function FreeGulfLessonThankYou() {
                 Check your inbox for a welcome email. In the meantime, start your first Gulf Arabic lesson now.
               </p>
               <Button size="xl" variant="hero" asChild>
-                <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
+                <Link to={FREE_LESSON_URL}>
                   <Play className="w-5 h-5" />
                   Watch Lesson Now
                 </Link>

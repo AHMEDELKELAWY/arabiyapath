@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Circle, ArrowRight, BookOpen, Lock, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 interface UnitProgress {
   unitId: string;
@@ -178,7 +179,7 @@ export default function DashboardProgress() {
                 Get started with a free lesson or explore our courses.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link to="/free-gulf-lesson">
+                <Link to={FREE_LESSON_URL}>
                   <Button className="gap-2">
                     <ArrowRight className="w-4 h-4" />
                     Start Free Lesson
