@@ -156,6 +156,18 @@ export default function GulfArabicCourse() {
   const getCtaLink = (path: string) =>
     user ? path : `/signup?redirect=${encodeURIComponent(path)}`;
 
+  const GULF_BEGINNER_PRODUCT_ID = "0c6f8eaa-b577-4482-9f2b-cdbd2886ed06";
+  const GULF_BUNDLE_PRODUCT_ID = "a445608e-65ad-4545-bf61-5327dee350b0";
+  const beginnerCheckout = `/checkout?productId=${GULF_BEGINNER_PRODUCT_ID}`;
+  const bundleCheckout = `/checkout?productId=${GULF_BUNDLE_PRODUCT_ID}`;
+
+  const scrollToPlans = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById("choose-plan");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.location.hash = "#choose-plan";
+  };
+
   return (
     <>
       <SEOHead
