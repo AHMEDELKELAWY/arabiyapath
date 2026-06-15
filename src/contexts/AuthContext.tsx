@@ -20,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   loading: boolean; // Alias for isLoading
   isAdmin: boolean | null; // null = still determining, true/false = determined
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string, redirectPath?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -92,21 +92,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
+  const signUp = async (email: string, password: string, firstName?: string, lastName?: string, redirectPath?: string) => {
+    const target = redirectPath && redirectPath.startsWith("/") ? redirectPath : "/dashboard";
+    const emailRedirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(target)}`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo,
         data: {
           first_name: firstName,
           last_name: lastName,
         },
       },
     });
-    
+
     return { error: error as Error | null };
   };
 

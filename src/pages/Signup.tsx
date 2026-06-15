@@ -22,6 +22,8 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -46,13 +48,13 @@ export default function Signup() {
       return;
     }
     setIsLoading(true);
-    const { error } = await signUp(email, password, firstName, lastName);
+    const { error } = await signUp(email, password, firstName, lastName, redirectUrl);
     if (error) {
       toast({ title: "Signup Failed", description: error.message || "Could not create account.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
-    
+
     // Update marketing consent
     if (marketingConsent) {
       await supabase
@@ -60,27 +62,26 @@ export default function Signup() {
         .update({ marketing_consent: true })
         .eq('email', email);
     }
-    
-    // Send verification email
-    try {
-      const { data, error } = await supabase.functions.invoke('send-verification-email', {
-        body: { email, firstName },
-      });
-      
-      if (error || data?.error) {
-        console.error('Verification email error:', error || data?.error);
-        toast({ title: "Account Created!", description: "Please check your email or request a new code on the next page." });
-      } else {
-        toast({ title: "Account Created!", description: "Please check your email to verify your account." });
-      }
-      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
-    } catch (err) {
-      console.error('Failed to send verification email:', err);
-      toast({ title: "Account Created!", description: "Please verify your email to continue." });
-      navigate(`/verify-email${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
-    }
-    
+
+    toast({ title: "Account Created!", description: "Check your inbox to confirm your email." });
+    setSubmitted(true);
     setIsLoading(false);
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    const emailRedirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl)}`;
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo },
+    });
+    setIsResending(false);
+    if (error) {
+      toast({ title: "Could not resend", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email sent", description: "We sent a fresh confirmation link." });
+    }
   };
 
   return (
