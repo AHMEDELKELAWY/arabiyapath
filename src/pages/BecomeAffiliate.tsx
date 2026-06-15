@@ -65,12 +65,13 @@ export default function BecomeAffiliate() {
     setIsLoading(true);
 
     try {
-      // 1. Create user account
+      // 1. Create user account with confirmation link redirect
+      const emailRedirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/affiliate")}`;
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -104,23 +105,13 @@ export default function BecomeAffiliate() {
 
       if (appError) {
         console.error("Affiliate application error:", appError);
-        // Don't fail the signup, just log it
       }
 
-      // 3. Send verification email
-      try {
-        await supabase.functions.invoke("send-verification-email", {
-          body: { email, firstName },
-        });
-      } catch (err) {
-        console.error("Failed to send verification email:", err);
-      }
-
-      toast({ 
-        title: "Account Created!", 
-        description: "Your partner application has been submitted. Please verify your email." 
+      toast({
+        title: "Account Created!",
+        description: "Check your inbox to confirm your email and finish your partner application.",
       });
-      navigate("/verify-email");
+      navigate("/login");
 
     } catch (err) {
       console.error("Signup error:", err);
