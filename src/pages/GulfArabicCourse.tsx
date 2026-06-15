@@ -320,7 +320,7 @@ export default function GulfArabicCourse() {
                   ))}
                 </ul>
                 <Button variant="outline" className="w-full" size="lg" asChild>
-                  <Link to={getCtaLink("/pricing?course=gulf")}>Get Started</Link>
+                  <Link to={getCtaLink(beginnerCheckout)}>Get Started</Link>
                 </Button>
               </div>
 
