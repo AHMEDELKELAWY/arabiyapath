@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 // --------------- DATA ---------------
 
