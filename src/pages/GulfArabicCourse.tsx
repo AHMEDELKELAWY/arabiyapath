@@ -195,8 +195,8 @@ export default function GulfArabicCourse() {
                 <Button size="xl" variant="hero" asChild>
                   <a href="#choose-plan" onClick={scrollToPlans}>Get Full Access</a>
                 </Button>
-                <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
-                  Try the Free Lesson
+                <Button size="xl" variant="outline" asChild>
+                  <Link to={getCtaLink(FREE_LESSON_URL)}>Try the Free Lesson</Link>
                 </Button>
               </div>
 
