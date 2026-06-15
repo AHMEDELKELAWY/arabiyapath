@@ -37,7 +37,7 @@ export function ContinueLearningCard({ lastActivity, hasAnyProgress }: ContinueL
                 </span>
               </div>
             </div>
-            <Link to="/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001">
+            <Link to={FREE_LESSON_URL}>
               <Button size="lg" variant="secondary" className="whitespace-nowrap">
                 <Play className="w-5 h-5 mr-2" />
                 Start Learning
