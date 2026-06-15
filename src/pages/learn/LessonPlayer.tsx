@@ -80,41 +80,52 @@ export default function LessonPlayer() {
       navigate(GULF_SALES_URL, { replace: true });
     }
   }, [isLoading, purchasesLoading, data, lessonId, canAccess, navigate]);
-  const showUpgradeSection = isFreeTrialContent && !hasPurchaseAccess;
+
+  // Upgrade panel only appears on the LAST lesson of the free unit (free users only).
+  // All earlier lessons in Unit 1 navigate normally to the next free lesson.
+  const isLastFreeLesson = !data?.nextLesson;
+  const showUpgradeSection =
+    isFreeTrialContent && !hasPurchaseAccess && isLastFreeLesson;
 
   const scrollToUpgrade = () => {
     upgradeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const handleMarkComplete = async () => {
+    // Guest user in free unit — no DB write, just navigate or show upgrade on last lesson
     if (!user) {
       if (isFreeTrialContent) {
         playSound('lessonComplete');
         setLessonMarkedComplete(true);
-        // Scroll to upgrade section instead of showing modal
-        setTimeout(() => scrollToUpgrade(), 300);
+        if (data?.nextLesson) {
+          playSound('lessonTransition');
+          navigate(`/learn/lesson/${data.nextLesson.id}`);
+        } else {
+          setTimeout(() => scrollToUpgrade(), 300);
+        }
         return;
       }
       toast.error("Please log in to track progress");
       navigate("/login");
       return;
     }
-    
+
     try {
       await markComplete.mutateAsync(lessonId!);
       playSound('lessonComplete');
       toast.success("Lesson marked as complete!");
-      
-      if (showUpgradeSection) {
-        setLessonMarkedComplete(true);
-        setTimeout(() => scrollToUpgrade(), 300);
-        return;
-      }
-      
-      // Navigate to next lesson if available (paid users)
+
+      // Always advance to the next lesson if one exists within the unit
       if (data?.nextLesson) {
         playSound('lessonTransition');
         navigate(`/learn/lesson/${data.nextLesson.id}`);
+        return;
+      }
+
+      // Last lesson reached
+      if (showUpgradeSection) {
+        setLessonMarkedComplete(true);
+        setTimeout(() => scrollToUpgrade(), 300);
       }
     } catch (error) {
       toast.error("Failed to mark lesson as complete");
