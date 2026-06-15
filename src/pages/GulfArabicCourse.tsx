@@ -446,9 +446,9 @@ export default function GulfArabicCourse() {
               </h2>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to="/signup?redirect=/pricing?course=gulf">
+                  <a href="#choose-plan" onClick={scrollToPlans}>
                     Get Full Access <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  </a>
                 </Button>
                 <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
                   Try the Free Lesson
