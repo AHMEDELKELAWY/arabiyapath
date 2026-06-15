@@ -959,6 +959,16 @@ export type Database = {
         Args: { coupon_id: string }
         Returns: undefined
       }
+      lookup_coupon: {
+        Args: { _code: string }
+        Returns: {
+          active: boolean
+          code: string
+          discount_percent: number
+          expires_at: string
+          percent_off: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
