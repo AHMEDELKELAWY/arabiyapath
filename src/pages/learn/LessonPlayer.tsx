@@ -451,29 +451,29 @@ export default function LessonPlayer() {
                 </div>
               </div>
 
-              {/* Full-Width Upgrade Section (replaces popup) */}
+              {/* Full-Width Upgrade Section — appears after the LAST free lesson */}
               {showUpgradeSection && (
                 <div ref={upgradeSectionRef} className="scroll-mt-24">
-                  {/* Progress indicator */}
                   <p className="text-sm text-muted-foreground text-center mb-3">
-                    ✅ Lesson 1 of 150+ completed
+                    ✅ Lesson {data.currentIndex + 1} of {data.totalCount} completed — 100% of Free Unit Complete
                   </p>
 
                   <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl p-6 sm:p-10 text-center shadow-lg">
                     <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4" />
-                    
+
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                      You Just Spoke Your First Gulf Arabic Sentence 🎉
+                      Congratulations! You've completed the entire free Gulf Arabic unit.
                     </h2>
-                    <p className="text-muted-foreground text-base sm:text-lg mb-6 max-w-lg mx-auto">
-                      Imagine speaking like this confidently in real conversations.
+                    <p className="text-muted-foreground text-base sm:text-lg mb-6 max-w-xl mx-auto">
+                      You now understand how the course works and have learned essential Gulf Arabic foundations.
                     </p>
 
                     <div className="flex flex-col items-start gap-3 max-w-sm mx-auto mb-6 text-left">
                       {[
-                        "150+ structured step-by-step lessons",
-                        "Real-life dialogues used in the UAE & GCC",
-                        "Interactive quizzes & certificates",
+                        "150+ structured lessons",
+                        "Real-world Gulf conversations",
+                        "Interactive quizzes",
+                        "Certificates",
                         "Lifetime access",
                       ].map((item) => (
                         <div key={item} className="flex items-center gap-2.5">
@@ -483,11 +483,6 @@ export default function LessonPlayer() {
                       ))}
                     </div>
 
-                    <p className="text-muted-foreground text-sm sm:text-base mb-6 font-medium">
-                      Don't stop at lesson one.{" "}
-                      <span className="font-semibold text-foreground">Build real speaking confidence.</span>
-                    </p>
-
                     <Button
                       asChild
                       size="xl"
@@ -495,7 +490,7 @@ export default function LessonPlayer() {
                       className="gap-2 w-full sm:w-auto"
                     >
                       <Link to={upgradeLink}>
-                        Unlock Full Course – $14.99 One-Time
+                        Unlock Full Course
                         <ArrowRight className="h-5 w-5" />
                       </Link>
                     </Button>
