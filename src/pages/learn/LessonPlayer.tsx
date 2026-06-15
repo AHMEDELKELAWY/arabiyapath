@@ -206,8 +206,8 @@ export default function LessonPlayer() {
   const showUpgradeBar = isFreeTrialContent && !hasPurchaseAccess;
   const upgradeLink = user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`;
 
-  // For free trial: only lesson at index 0 is accessible, rest are locked
-  const isLessonLocked = (index: number) => showUpgradeSection && index > 0;
+  // Unit 1 is fully unlocked — no lesson inside it is ever locked.
+  const isLessonLocked = (_index: number) => false;
 
   return (
     <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
