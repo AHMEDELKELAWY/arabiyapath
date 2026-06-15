@@ -84,10 +84,6 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
         return;
       }
 
-      if (coupon.max_redemptions && coupon.current_uses >= coupon.max_redemptions) {
-        toast.error("This coupon has reached its usage limit");
-        return;
-      }
 
       setAppliedCoupon({ code: coupon.code, discount: coupon.percent_off || coupon.discount_percent || 0 });
       toast.success(`Coupon applied! ${coupon.percent_off || coupon.discount_percent}% off`);
