@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Circle, ArrowRight, BookOpen, Lock, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 interface UnitProgress {
   unitId: string;
