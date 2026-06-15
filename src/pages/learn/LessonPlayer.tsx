@@ -80,41 +80,52 @@ export default function LessonPlayer() {
       navigate(GULF_SALES_URL, { replace: true });
     }
   }, [isLoading, purchasesLoading, data, lessonId, canAccess, navigate]);
-  const showUpgradeSection = isFreeTrialContent && !hasPurchaseAccess;
+
+  // Upgrade panel only appears on the LAST lesson of the free unit (free users only).
+  // All earlier lessons in Unit 1 navigate normally to the next free lesson.
+  const isLastFreeLesson = !data?.nextLesson;
+  const showUpgradeSection =
+    isFreeTrialContent && !hasPurchaseAccess && isLastFreeLesson;
 
   const scrollToUpgrade = () => {
     upgradeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const handleMarkComplete = async () => {
+    // Guest user in free unit — no DB write, just navigate or show upgrade on last lesson
     if (!user) {
       if (isFreeTrialContent) {
         playSound('lessonComplete');
         setLessonMarkedComplete(true);
-        // Scroll to upgrade section instead of showing modal
-        setTimeout(() => scrollToUpgrade(), 300);
+        if (data?.nextLesson) {
+          playSound('lessonTransition');
+          navigate(`/learn/lesson/${data.nextLesson.id}`);
+        } else {
+          setTimeout(() => scrollToUpgrade(), 300);
+        }
         return;
       }
       toast.error("Please log in to track progress");
       navigate("/login");
       return;
     }
-    
+
     try {
       await markComplete.mutateAsync(lessonId!);
       playSound('lessonComplete');
       toast.success("Lesson marked as complete!");
-      
-      if (showUpgradeSection) {
-        setLessonMarkedComplete(true);
-        setTimeout(() => scrollToUpgrade(), 300);
-        return;
-      }
-      
-      // Navigate to next lesson if available (paid users)
+
+      // Always advance to the next lesson if one exists within the unit
       if (data?.nextLesson) {
         playSound('lessonTransition');
         navigate(`/learn/lesson/${data.nextLesson.id}`);
+        return;
+      }
+
+      // Last lesson reached
+      if (showUpgradeSection) {
+        setLessonMarkedComplete(true);
+        setTimeout(() => scrollToUpgrade(), 300);
       }
     } catch (error) {
       toast.error("Failed to mark lesson as complete");
@@ -195,8 +206,8 @@ export default function LessonPlayer() {
   const showUpgradeBar = isFreeTrialContent && !hasPurchaseAccess;
   const upgradeLink = user ? `/choose-plan/${dialect?.id}` : `/signup?redirect=${encodeURIComponent(`/choose-plan/${dialect?.id}`)}`;
 
-  // For free trial: only lesson at index 0 is accessible, rest are locked
-  const isLessonLocked = (index: number) => showUpgradeSection && index > 0;
+  // Unit 1 is fully unlocked — no lesson inside it is ever locked.
+  const isLessonLocked = (_index: number) => false;
 
   return (
     <FocusLayout backTo={`/learn/unit/${unit?.id}`}>
@@ -440,29 +451,29 @@ export default function LessonPlayer() {
                 </div>
               </div>
 
-              {/* Full-Width Upgrade Section (replaces popup) */}
+              {/* Full-Width Upgrade Section — appears after the LAST free lesson */}
               {showUpgradeSection && (
                 <div ref={upgradeSectionRef} className="scroll-mt-24">
-                  {/* Progress indicator */}
                   <p className="text-sm text-muted-foreground text-center mb-3">
-                    ✅ Lesson 1 of 150+ completed
+                    ✅ Lesson {data.currentIndex + 1} of {data.totalCount} completed — 100% of Free Unit Complete
                   </p>
 
                   <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl p-6 sm:p-10 text-center shadow-lg">
                     <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4" />
-                    
+
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                      You Just Spoke Your First Gulf Arabic Sentence 🎉
+                      Congratulations! You've completed the entire free Gulf Arabic unit.
                     </h2>
-                    <p className="text-muted-foreground text-base sm:text-lg mb-6 max-w-lg mx-auto">
-                      Imagine speaking like this confidently in real conversations.
+                    <p className="text-muted-foreground text-base sm:text-lg mb-6 max-w-xl mx-auto">
+                      You now understand how the course works and have learned essential Gulf Arabic foundations.
                     </p>
 
                     <div className="flex flex-col items-start gap-3 max-w-sm mx-auto mb-6 text-left">
                       {[
-                        "150+ structured step-by-step lessons",
-                        "Real-life dialogues used in the UAE & GCC",
-                        "Interactive quizzes & certificates",
+                        "150+ structured lessons",
+                        "Real-world Gulf conversations",
+                        "Interactive quizzes",
+                        "Certificates",
                         "Lifetime access",
                       ].map((item) => (
                         <div key={item} className="flex items-center gap-2.5">
@@ -472,11 +483,6 @@ export default function LessonPlayer() {
                       ))}
                     </div>
 
-                    <p className="text-muted-foreground text-sm sm:text-base mb-6 font-medium">
-                      Don't stop at lesson one.{" "}
-                      <span className="font-semibold text-foreground">Build real speaking confidence.</span>
-                    </p>
-
                     <Button
                       asChild
                       size="xl"
@@ -484,7 +490,7 @@ export default function LessonPlayer() {
                       className="gap-2 w-full sm:w-auto"
                     >
                       <Link to={upgradeLink}>
-                        Unlock Full Course – $14.99 One-Time
+                        Unlock Full Course
                         <ArrowRight className="h-5 w-5" />
                       </Link>
                     </Button>
