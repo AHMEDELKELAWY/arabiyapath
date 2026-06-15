@@ -357,7 +357,7 @@ export default function GulfArabicCourse() {
                   Private Evaluation Session included — <span className="font-semibold text-secondary">$30 Value</span>
                 </p>
                 <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="lg" asChild>
-                  <Link to={getCtaLink("/pricing?course=gulf")}>Get Full Access</Link>
+                  <Link to={getCtaLink(bundleCheckout)}>Get Full Access</Link>
                 </Button>
               </div>
             </div>
