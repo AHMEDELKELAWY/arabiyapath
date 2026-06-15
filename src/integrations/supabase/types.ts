@@ -946,30 +946,6 @@ export type Database = {
           },
         ]
       }
-      public_coupons: {
-        Row: {
-          active: boolean | null
-          code: string | null
-          discount_percent: number | null
-          expires_at: string | null
-          percent_off: number | null
-        }
-        Insert: {
-          active?: boolean | null
-          code?: string | null
-          discount_percent?: number | null
-          expires_at?: string | null
-          percent_off?: number | null
-        }
-        Update: {
-          active?: boolean | null
-          code?: string | null
-          discount_percent?: number | null
-          expires_at?: string | null
-          percent_off?: number | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       has_role: {
@@ -982,6 +958,16 @@ export type Database = {
       increment_coupon_usage: {
         Args: { coupon_id: string }
         Returns: undefined
+      }
+      lookup_coupon: {
+        Args: { _code: string }
+        Returns: {
+          active: boolean
+          code: string
+          discount_percent: number
+          expires_at: string
+          percent_off: number
+        }[]
       }
     }
     Enums: {
