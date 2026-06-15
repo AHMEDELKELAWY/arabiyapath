@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Headphones, Award, BookOpen } from "lucide-react";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { DirectAnswer } from "@/components/seo/DirectAnswer";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 const GULF_DIRECT_ANSWER = "This Gulf Arabic course is built for expats and beginners who want real everyday conversations in the UAE, Saudi Arabia, and Qatar. Learn with native audio, English translation, and transliteration so you can pronounce and remember phrases faster. Start with a free lesson, then follow the beginner path step by step.";
 
