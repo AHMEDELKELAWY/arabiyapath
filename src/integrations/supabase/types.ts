@@ -946,6 +946,30 @@ export type Database = {
           },
         ]
       }
+      public_coupons: {
+        Row: {
+          active: boolean | null
+          code: string | null
+          discount_percent: number | null
+          expires_at: string | null
+          percent_off: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          code?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          percent_off?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          percent_off?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
