@@ -52,8 +52,7 @@ export default function AdminEmailCampaigns() {
       const { count, error } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('marketing_consent', true)
-        .eq('email_verified', true);
+        .eq('marketing_consent', true);
       
       if (error) throw error;
       return count || 0;

@@ -78,12 +78,11 @@ serve(async (req) => {
       );
     }
 
-    // Get users with marketing consent and verified email
+    // Get users who opted in to marketing
     const { data: subscribers, error: subscribersError } = await supabase
       .from('profiles')
       .select('user_id, email, first_name')
       .eq('marketing_consent', true)
-      .eq('email_verified', true)
       .not('email', 'is', null);
 
     if (subscribersError) {
