@@ -156,6 +156,18 @@ export default function GulfArabicCourse() {
   const getCtaLink = (path: string) =>
     user ? path : `/signup?redirect=${encodeURIComponent(path)}`;
 
+  const GULF_BEGINNER_PRODUCT_ID = "0c6f8eaa-b577-4482-9f2b-cdbd2886ed06";
+  const GULF_BUNDLE_PRODUCT_ID = "a445608e-65ad-4545-bf61-5327dee350b0";
+  const beginnerCheckout = `/checkout?productId=${GULF_BEGINNER_PRODUCT_ID}`;
+  const bundleCheckout = `/checkout?productId=${GULF_BUNDLE_PRODUCT_ID}`;
+
+  const scrollToPlans = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById("choose-plan");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.location.hash = "#choose-plan";
+  };
+
   return (
     <>
       <SEOHead
@@ -180,7 +192,7 @@ export default function GulfArabicCourse() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to="/signup?redirect=/pricing?course=gulf">Get Full Access</Link>
+                  <a href="#choose-plan" onClick={scrollToPlans}>Get Full Access</a>
                 </Button>
                 <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
                   Try the Free Lesson
@@ -308,7 +320,7 @@ export default function GulfArabicCourse() {
                   ))}
                 </ul>
                 <Button variant="outline" className="w-full" size="lg" asChild>
-                  <Link to={getCtaLink("/pricing?course=gulf")}>Get Started</Link>
+                  <Link to={getCtaLink(beginnerCheckout)}>Get Started</Link>
                 </Button>
               </div>
 
@@ -345,7 +357,7 @@ export default function GulfArabicCourse() {
                   Private Evaluation Session included — <span className="font-semibold text-secondary">$30 Value</span>
                 </p>
                 <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="lg" asChild>
-                  <Link to={getCtaLink("/pricing?course=gulf")}>Get Full Access</Link>
+                  <Link to={getCtaLink(bundleCheckout)}>Get Full Access</Link>
                 </Button>
               </div>
             </div>
@@ -434,9 +446,9 @@ export default function GulfArabicCourse() {
               </h2>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="hero" asChild>
-                  <Link to="/signup?redirect=/pricing?course=gulf">
+                  <a href="#choose-plan" onClick={scrollToPlans}>
                     Get Full Access <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  </a>
                 </Button>
                 <Button size="xl" variant="outline" onClick={() => setShowFreeModal(true)}>
                   Try the Free Lesson
