@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RecentActivity } from "@/hooks/useDashboardData";
 import { formatDistanceToNow } from "date-fns";
+import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 
 interface ContinueLearningCardProps {
   lastActivity: RecentActivity | null;
