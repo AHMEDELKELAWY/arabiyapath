@@ -164,11 +164,7 @@ export default function FlashCardStudy() {
                     <p className="text-3xl md:text-4xl font-bold leading-loose" dir="rtl" lang="ar">
                       {current.arabic_text}
                     </p>
-                    {current.transliteration && (
-                      <p className="text-sm text-muted-foreground italic mt-1">
-                        {current.transliteration}
-                      </p>
-                    )}
+                    {/* Transliteration intentionally hidden from learners (stored for internal use only) */}
                     <p className="text-lg mt-2">{current.english_translation}</p>
                   </div>
 
