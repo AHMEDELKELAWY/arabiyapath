@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2, Upload, Images } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 
 type ImportRow = {
@@ -64,6 +65,7 @@ export default function AdminFlashcardCards() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
@@ -222,9 +224,29 @@ export default function AdminFlashcardCards() {
               <span className="cursor-pointer"><Upload className="w-4 h-4 mr-2" /> Import CSV/JSON</span>
             </Button>
           </label>
+          <Button variant="outline" onClick={() => setBulkOpen(true)} disabled={!unitId}>
+            <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
+          </Button>
           <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
         </div>
       </div>
+
+      {unitId && (
+        <BulkImageUploadDialog
+          open={bulkOpen}
+          onOpenChange={setBulkOpen}
+          unitId={unitId}
+          cards={(cards ?? []).map((c: any) => ({
+            id: c.id,
+            order_index: c.order_index,
+            arabic_text: c.arabic_text,
+            english_translation: c.english_translation,
+            image_url: c.image_url,
+            image_key: c.image_key,
+          }))}
+          onComplete={() => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] })}
+        />
+      )}
 
       {!unitId ? <p className="text-muted-foreground">Pick a unit to manage its cards.</p> : (
         <div className="grid gap-3">
