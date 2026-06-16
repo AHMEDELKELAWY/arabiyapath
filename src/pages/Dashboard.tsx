@@ -119,6 +119,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          <FlashcardsDashboardSection />
+
           <p className="text-xs text-center text-muted-foreground">
             Already purchased?{" "}
             <button
