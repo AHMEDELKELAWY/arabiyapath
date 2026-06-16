@@ -27,10 +27,10 @@ export default function Login() {
     explicitRedirect ?? (isAdmin ? "/admin" : "/dashboard");
 
   useEffect(() => {
-    if (user) {
-      navigate(redirectUrl);
+    if (user && (explicitRedirect || isAdmin !== null)) {
+      navigate(redirectUrl, { replace: true });
     }
-  }, [user, navigate, redirectUrl]);
+  }, [user, isAdmin, explicitRedirect, navigate, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
