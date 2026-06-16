@@ -12,6 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
+import { FlashcardsDashboardSection } from "@/components/dashboard/FlashcardsDashboardSection";
+import { SEOHead } from "@/components/seo/SEOHead";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
@@ -77,6 +79,7 @@ export default function Dashboard() {
   if (!hasAnyPurchase) {
     return (
       <DashboardLayout>
+        <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
         <div className="space-y-10">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-1">
@@ -116,6 +119,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          <FlashcardsDashboardSection />
+
           <p className="text-xs text-center text-muted-foreground">
             Already purchased?{" "}
             <button
@@ -133,6 +138,7 @@ export default function Dashboard() {
   // ===== PAID USER DASHBOARD =====
   return (
     <DashboardLayout>
+      <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
       <div className="space-y-10">
         {/* Header */}
         <div>
@@ -218,6 +224,9 @@ export default function Dashboard() {
           <RecentActivityList activities={recentActivity} />
           <QuizResultsList results={quizResults} />
         </div>
+
+        {/* Flash Cards */}
+        <FlashcardsDashboardSection />
 
         {/* Certificates */}
         <CertificatesList certificates={certificates} />

@@ -11,6 +11,7 @@ import { FlashCardAudio } from "@/components/flashcards/msa/FlashCardAudio";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
@@ -72,6 +73,13 @@ export default function FlashCardStudy() {
     setRevealed(false);
   }, [idx, current?.id]);
 
+  // Fire flashcard_study_start once per unit session
+  useEffect(() => {
+    if (unit?.id && total > 0 && idx === 0) {
+      trackEvent("flashcard_study_start", { unit_id: unit.id, unit_slug: unit.slug, total_cards: total });
+    }
+  }, [unit?.id, total]);
+
   const rate = async (rating: Rating) => {
     if (!current) return;
     if (!user) {
@@ -87,8 +95,12 @@ export default function FlashCardStudy() {
       return;
     }
     qc.invalidateQueries({ queryKey: ["fc-dashboard"] });
-    if (idx + 1 < total) setIdx(idx + 1);
-    else toast({ title: "Session complete!", description: "Great work." });
+    if (idx + 1 < total) {
+      setIdx(idx + 1);
+    } else {
+      trackEvent("flashcard_unit_complete", { unit_id: unit?.id, unit_slug: unit?.slug, total_cards: total });
+      toast({ title: "Session complete!", description: "Great work." });
+    }
   };
 
   if (!unit) return <Layout><div className="container py-16">Loading…</div></Layout>;

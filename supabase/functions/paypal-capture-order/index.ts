@@ -90,6 +90,38 @@ async function createPurchaseFromPendingOrder(
 
   console.log(`Purchase created: ${purchase.id}, user: ${pendingOrder.user_id}, product: ${pendingOrder.product_id}, paypal_order: ${paypalOrderId}, capture: ${captureId}`);
 
+  // Mirror into flashcard_purchases when this is a flash card pack
+  try {
+    if (pendingOrder.product_type === "flashcard_pack") {
+      const { data: pack } = await supabase
+        .from("flashcard_packs")
+        .select("id")
+        .eq("product_id", pendingOrder.product_id)
+        .maybeSingle();
+      if (pack?.id) {
+        const { error: fcErr } = await supabase.from("flashcard_purchases").insert({
+          user_id: pendingOrder.user_id,
+          pack_id: pack.id,
+          provider_code: "paypal",
+          provider_order_id: paypalOrderId,
+          provider_capture_id: captureId,
+          amount_cents: Math.round(captureAmount * 100),
+          currency: captureCurrency,
+          coupon_id: pendingOrder.coupon_id,
+          status: "active",
+          purchased_at: new Date().toISOString(),
+        });
+        if (fcErr && fcErr.code !== "23505") {
+          console.error("flashcard_purchases mirror error:", fcErr);
+        } else {
+          console.log(`Capture: flashcard_purchases row created for pack ${pack.id}`);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Capture: flashcard mirror failed", e);
+  }
+
   // Handle affiliate commission
   if (pendingOrder.affiliate_id) {
     await processAffiliateCommission(supabase, pendingOrder, purchase.id);
