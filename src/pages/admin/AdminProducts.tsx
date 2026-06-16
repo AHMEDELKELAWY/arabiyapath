@@ -321,7 +321,9 @@ export default function AdminProducts() {
                     <SelectItem value="level">Single Level</SelectItem>
                     <SelectItem value="dialect">Full Dialect (All Levels)</SelectItem>
                     <SelectItem value="all">All Access Bundle</SelectItem>
+                    <SelectItem value="flashcard_pack">Flash Card Pack</SelectItem>
                   </SelectContent>
+
                 </Select>
               </div>
               {(form.scope === "dialect" || form.scope === "level") && (
