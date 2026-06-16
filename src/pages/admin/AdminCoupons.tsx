@@ -299,7 +299,7 @@ export default function AdminCoupons() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         No coupons found
                       </TableCell>
                     </TableRow>
