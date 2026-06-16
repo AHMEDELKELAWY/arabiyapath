@@ -140,6 +140,7 @@ export default function AdminCoupons() {
       max_per_user: 1,
       expires_at: "",
       active: true,
+      applies_to: "all",
     });
   };
 
