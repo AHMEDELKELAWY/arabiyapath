@@ -198,6 +198,34 @@ async function ensurePurchaseExists(
     }
   }
 
+  // Mirror into flashcard_purchases when the product is a flash card pack
+  try {
+    if (pendingOrder.product_type === "flashcard_pack") {
+      const { data: pack } = await supabase
+        .from("flashcard_packs")
+        .select("id, price_cents, currency")
+        .eq("product_id", pendingOrder.product_id)
+        .maybeSingle();
+      if (pack) {
+        await supabase.from("flashcard_purchases").insert({
+          user_id: pendingOrder.user_id,
+          pack_id: pack.id,
+          provider_code: "paypal",
+          provider_order_id: paypalOrderId,
+          provider_capture_id: captureId,
+          amount_cents: Math.round(captureAmount * 100),
+          currency: captureCurrency,
+          coupon_id: pendingOrder.coupon_id,
+          status: "active",
+          purchased_at: new Date().toISOString(),
+        });
+        console.log(`Webhook: flashcard_purchases row created for pack ${pack.id}`);
+      }
+    }
+  } catch (e) {
+    console.error("Webhook: flashcard mirror failed", e);
+  }
+
   // Clean up pending order
   await supabase.from("pending_orders").delete().eq("id", pendingOrderId);
 }

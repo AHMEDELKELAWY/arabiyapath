@@ -68,6 +68,16 @@ const AdminAffiliates = lazy(() => import("./pages/admin/AdminAffiliates"));
 const AdminAffiliatePayouts = lazy(() => import("./pages/admin/AdminAffiliatePayouts"));
 const AdminAffiliateApplications = lazy(() => import("./pages/admin/AdminAffiliateApplications"));
 const AdminEmailCampaigns = lazy(() => import("./pages/admin/AdminEmailCampaigns"));
+const AdminFlashcardUnits = lazy(() => import("./pages/admin/AdminFlashcardUnits"));
+const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards"));
+const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
+const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
+
+// Flash Cards (MSA) pages
+const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
+const FlashCardUnit = lazy(() => import("./pages/flashcards/FlashCardUnit"));
+const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
+const FlashCardStudy = lazy(() => import("./pages/flashcards/FlashCardStudy"));
 
 // Affiliate pages
 const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboard"));
@@ -144,6 +154,15 @@ const App = () => (
               <Route path="/admin/affiliate-payouts" element={<AdminRoute><AdminAffiliatePayouts /></AdminRoute>} />
               <Route path="/admin/affiliate-applications" element={<AdminRoute><AdminAffiliateApplications /></AdminRoute>} />
               <Route path="/admin/email-campaigns" element={<AdminRoute><AdminEmailCampaigns /></AdminRoute>} />
+              <Route path="/admin/flashcards/units" element={<AdminRoute><AdminFlashcardUnits /></AdminRoute>} />
+              <Route path="/admin/flashcards/cards" element={<AdminRoute><AdminFlashcardCards /></AdminRoute>} />
+              <Route path="/admin/flashcards/packs" element={<AdminRoute><AdminFlashcardPacks /></AdminRoute>} />
+              <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
+              {/* Flash Cards (MSA) public routes */}
+              <Route path="/flashcards" element={<FlashCardsHome />} />
+              <Route path="/flashcards/unit/:slug" element={<FlashCardUnit />} />
+              <Route path="/flashcards/pack/:slug" element={<FlashCardPack />} />
+              <Route path="/flashcards/study/:unitSlug" element={<ProtectedRoute><FlashCardStudy /></ProtectedRoute>} />
               {/* Affiliate Routes */}
               <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />
               <Route path="/affiliate/commissions" element={<AffiliateRoute><AffiliateCommissions /></AffiliateRoute>} />
