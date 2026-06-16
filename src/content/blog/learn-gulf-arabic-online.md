@@ -314,3 +314,18 @@ The key is to start with the dialect people actually speak. Focus on real phrase
 You do not need years of study. You need the right course, the right method, and the commitment to practice.
 
 **[Start your free Gulf Arabic lesson today and learn gulf arabic online with ArabiyaPath →](/learn/gulf-arabic)**
+
+<!-- enrich:related -->
+## Related reading
+
+- [Gulf Arabic Course for Expats: The Fastest Way to Start Speaking](/blog/gulf-arabic-course-for-expats)
+- [Gulf Arabic Course for Expats in Dubai: Speak with Confidence Fast](/blog/gulf-arabic-course-for-expats-in-dubai)
+- [10 Daily Gulf Arabic Phrases Every Expat Needs](/blog/10-daily-gulf-arabic-phrases-for-expats)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+

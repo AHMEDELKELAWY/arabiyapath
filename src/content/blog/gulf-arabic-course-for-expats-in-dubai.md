@@ -101,3 +101,18 @@ Unlock all lessons, quizzes, and certificates.
 
 ## Final Thought
 If you live in Dubai and want to feel confident using Arabic, start with Gulf Arabic. It's practical, fast, and designed for real life—not classrooms.
+
+<!-- enrich:related -->
+## Related reading
+
+- [Gulf Arabic Course for Expats: The Fastest Way to Start Speaking](/blog/gulf-arabic-course-for-expats)
+- [Learn Gulf Arabic Online: Complete Guide for Beginners (2026)](/blog/learn-gulf-arabic-online)
+- [10 Daily Gulf Arabic Phrases Every Expat Needs](/blog/10-daily-gulf-arabic-phrases-for-expats)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+
