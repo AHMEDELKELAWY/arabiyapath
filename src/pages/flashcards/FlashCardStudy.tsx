@@ -80,7 +80,8 @@ export default function FlashCardStudy() {
     }
   }, [unit?.id, total]);
 
-  const rate = async (rating: Rating) => {
+  const rate = async (knewIt: boolean) => {
+    const rating: Rating = knewIt ? "good" : "again";
     if (!current) return;
     if (!user) {
       toast({ title: "Please sign in to track progress." });
