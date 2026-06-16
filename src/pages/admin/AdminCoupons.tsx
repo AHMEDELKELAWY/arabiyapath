@@ -167,9 +167,11 @@ export default function AdminCoupons() {
     }
   };
 
-  const filteredCoupons = coupons?.filter((c) =>
-    c.code.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCoupons = coupons?.filter((c: any) => {
+    const matchesSearch = c.code.toLowerCase().includes(search.toLowerCase());
+    const matchesScope = scopeFilter === "any" || (c.applies_to || "all") === scopeFilter;
+    return matchesSearch && matchesScope;
+  });
 
   return (
     <AdminLayout>
