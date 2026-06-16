@@ -1,61 +1,67 @@
-## Goal
+# Blog SEO Improvement Plan
 
-Switch to a single email-confirmation-link flow (Supabase native). Remove the custom 6-digit OTP entirely.
+23 blog posts exist. Several are clearly programmatic SEO variants of the same intent (e.g. `learn-arabic-online`, `learnarabiconline`, `arabic-language-online`, `study-arabic-online`, `learn-arabic-language-online`, `learn-arabic-online-course`, `online-arabic-classes`, `arabic-lessons-online`, `arabic-online-course`). Multiple Gulf-expat posts also overlap. The plan tackles audit + fixes in one pass, then a written report.
 
-## Current state
+## 1. Audit & Report (no content deleted yet)
 
-- Supabase already sends its native confirmation link (auth logs show `user_confirmation_requested` + `/verify` 303). 
-- On top of that, `Signup` and `BecomeAffiliate` invoke `send-verification-email`, which stores a 6-digit code in `profiles.verification_code` and emails it via Zoho SMTP.
-- `ProtectedRoute` redirects any user with `profile.email_verified === false` to `/verify-email`, where `VerifyEmail.tsx` collects the OTP and calls `verify-email-code` to flip `email_verified = true`.
-- Net effect: users get both a link and a code, and even after clicking the link they're forced into the OTP screen because our profile flag stays false.
+Build `scripts/seo-blog-audit.mjs` that computes per-post:
+- word count, H2 count, unique 4-gram overlap vs. every other post (cannibalization / duplicate signal)
+- target keyword (from title/slug) and keyword overlap groups
+- visible raw HTML anchor tags (`<a …>`) inside markdown body
+- presence of images, internal links, FAQ block, CTA
 
-## Target flow
+Output `/mnt/documents/blog-seo-audit.md` with three labeled sections:
+- **Low-value posts** (thin: < 600 words, or > 60% n-gram overlap with another post)
+- **Posts needing expansion** (600–900 words, weak link graph, no images)
+- **Merge candidates** (clusters of near-duplicate intent → recommended canonical target)
 
-Signup → Supabase confirmation email (link only) → user clicks link → Supabase confirms account + creates session → app redirects to intended course/redirect target.
+This is the deliverable report the user asked for. **No posts are deleted or merged in code** — the report just recommends.
 
-## Changes
+## 2. Fix article rendering
 
-### 1. Use Supabase's link as the single source of truth
-`src/contexts/AuthContext.tsx` — `signUp`: accept an optional `redirectPath`, pass `emailRedirectTo: ${window.location.origin}/auth/callback?redirect=<path>` so the confirm link lands users in the right place with a session.
+Problem: raw `<a name="…">` / `<a id="…">` anchors render as visible text in some posts.
 
-Add a lightweight `src/pages/AuthCallback.tsx` that:
-- Lets Supabase parse the URL tokens (already automatic via `detectSessionInUrl`).
-- Reads `redirect` query param and `navigate(redirect ?? "/dashboard")` once `user` is present.
-- Shows a brief "Verifying…" state, plus an error state if the link is invalid/expired with a "Resend email" button calling `supabase.auth.resend({ type: 'signup', email })`.
+In `src/pages/BlogPost.tsx`, extend the `ReactMarkdown` `components` map:
+- `a`: if `href` is missing/empty and children is empty (TOC anchor target), render an invisible `<span id={name}>` so in-page TOC jump links keep working but nothing visible appears.
+- Allow raw HTML via `rehype-raw` only for whitelisted tags (already needed for anchors). Strip stray `<a name>` tags by transforming them to ids on the next heading via a small rehype plugin — simpler: just hide empty anchors with CSS-equivalent: render `null` children.
 
-Register the route in `src/App.tsx`: `/auth/callback`.
+Also sweep `src/content/blog/*.md` and convert legacy `<a name="x"></a>` to `{#x}` heading-id syntax on the following heading (remark-gfm + `rehype-slug` reads heading ids). Add `rehype-slug` + `rehype-autolink-headings` so every H2/H3 gets a stable, clickable id — TOC works site-wide without manual anchors.
 
-### 2. Stop relying on the custom `email_verified` flag
-`src/components/auth/ProtectedRoute.tsx` — remove the `/verify-email` redirect. Trust Supabase: if `user` exists, they're confirmed (unconfirmed users can't get a session in the first place because auto-confirm stays off).
+## 3. Enrich every post
 
-`src/contexts/AuthContext.tsx` — drop `email_verified` from the `Profile` interface usage in gating (keep the column for now, just don't read it for access).
+For each `.md` file, ensure (idempotent edits):
+- **Hero image**: add `![alt](path)` near the top using existing brand imagery in `src/assets/` (no new image generation — reuse).
+- **Internal links block** ("Related reading"): 3 links to genuinely related posts (chosen from audit clusters, not the same anchor text every time → anchor-text diversity).
+- **Course / Free Lesson / Flash Cards CTA block** at the end:
+  - Free lesson → `FREE_LESSON_URL` constant
+  - Gulf course → `/gulf-arabic-course`
+  - Flash cards → `/flashcards` (verify route exists; if not, link to `/dialects`)
+- Implemented as a shared markdown snippet appended only when missing (script idempotency check).
 
-### 3. Remove OTP UI and signup wiring
-- Delete `src/pages/VerifyEmail.tsx`.
-- Remove the `/verify-email` route and the `VerifyEmail` lazy import from `src/App.tsx`.
-- `src/pages/Signup.tsx`: remove the `send-verification-email` invocation; after `signUp` succeeds show an inline "Check your inbox to confirm your email" success card (with email shown + a "Resend confirmation" button that calls `supabase.auth.resend`). Do not navigate to `/verify-email`.
-- `src/pages/BecomeAffiliate.tsx`: same treatment — remove the `send-verification-email` call and the `/verify-email` navigation; show the same "check your inbox" confirmation.
-- Pass the chosen `redirect` target into `signUp` so it ends up in `emailRedirectTo`.
+## 4. Structured data
 
-### 4. Remove backend OTP pieces
-- Delete edge functions `supabase/functions/send-verification-email/` and `supabase/functions/verify-email-code/`.
-- Remove their entries from `supabase/config.toml`.
-- Migration: drop `profiles.verification_code` and `profiles.verification_code_expires_at` columns (no longer used). Leave `email_verified` column in place for historical data but stop reading it in gating logic.
+In `src/pages/BlogPost.tsx`, the `BlogPosting` JSON-LD already exists. Add alongside it:
+- **BreadcrumbList**: Home → Blog → Post (use `generateBreadcrumbListSchema` from `src/lib/seo/breadcrumbs.ts`)
+- **FAQPage**: only when the post has an `## FAQ` (or `## Frequently Asked Questions`) section — parse Q/A pairs from the markdown and emit via `generateFAQPageSchema`. Skip otherwise (don't fabricate FAQs).
 
-### 5. Login UX polish
-`src/pages/Login.tsx` (light touch): if `signInWithPassword` returns `email_not_confirmed`, show "Please confirm your email — check your inbox" with a "Resend confirmation email" button (`supabase.auth.resend`). No OTP fallback.
+Pass all three schemas as a `jsonLd` array to `SEOHead`.
 
-### 6. Supabase auth configuration
-Confirm `auto_confirm_email = false` (default) so the native confirmation link remains required. No other auth setting changes.
+## 5. Out of scope (per user)
 
-## Out of scope
+- No new posts.
+- No deletions/merges in this pass — report only; user decides.
+- No image generation; reuse existing assets.
 
-- Customizing the Supabase confirmation email template (current default link works). Branded auth-email templates can be added later via the managed auth-email-hook if desired — not needed to fix the duplicate-verification bug.
-- Removing the `email_verified` column itself (kept as a nullable historical field).
+## Technical notes
 
-## Files touched
+- Packages: `rehype-raw`, `rehype-slug`, `rehype-autolink-headings` (add to `package.json`).
+- Audit script: pure Node, reads `src/content/blog/*.md`, writes to `/mnt/documents/`.
+- Enrichment script: edits markdown in place; safe to re-run.
+- Flash Cards route: verify in `src/App.tsx` before linking.
 
-- Edit: `src/contexts/AuthContext.tsx`, `src/components/auth/ProtectedRoute.tsx`, `src/App.tsx`, `src/pages/Signup.tsx`, `src/pages/BecomeAffiliate.tsx`, `src/pages/Login.tsx`, `supabase/config.toml`
-- Create: `src/pages/AuthCallback.tsx`
-- Delete: `src/pages/VerifyEmail.tsx`, `supabase/functions/send-verification-email/`, `supabase/functions/verify-email-code/`
-- Migration: drop two OTP columns on `profiles`
+## Deliverables
+
+1. `scripts/seo-blog-audit.mjs` + report at `/mnt/documents/blog-seo-audit.md`
+2. Updated `src/pages/BlogPost.tsx` (rendering fix + schemas)
+3. `scripts/enrich-blog-posts.mjs` (one-shot run) + updated markdown files
+4. New deps in `package.json`
