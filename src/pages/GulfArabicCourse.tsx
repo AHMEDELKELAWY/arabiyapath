@@ -134,10 +134,9 @@ export default function GulfArabicCourse() {
     }
     setFreeSubmitting(true);
     try {
-      await supabase.from("funnel_subscribers").upsert(
-        { email: freeEmail, source: "gulf-arabic-course" },
-        { onConflict: "email" }
-      );
+      await supabase.functions.invoke("funnel-subscribe", {
+        body: { email: freeEmail, source: "gulf-arabic-course" },
+      });
     } catch {
       // non-blocking
     }
