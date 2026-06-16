@@ -153,6 +153,7 @@ export default function AdminCoupons() {
       max_per_user: coupon.max_per_user || 1,
       expires_at: coupon.expires_at ? format(new Date(coupon.expires_at), "yyyy-MM-dd") : "",
       active: coupon.active,
+      applies_to: (coupon.applies_to as CouponForm["applies_to"]) || "all",
     });
     setIsDialogOpen(true);
   };
