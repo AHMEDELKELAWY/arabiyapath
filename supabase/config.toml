@@ -39,7 +39,3 @@ verify_jwt = false
 
 [functions.send-funnel-emails]
 verify_jwt = false
-
-[functions.funnel-subscribe]
-verify_jwt = false
-
