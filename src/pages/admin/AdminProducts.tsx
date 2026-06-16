@@ -76,13 +76,15 @@ export default function AdminProducts() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductForm) => {
+      const isFlashcard = data.scope === "flashcard_pack";
       const { error } = await supabase.from("products").insert({
         ...data,
-        dialect_id: data.scope === "all" ? null : data.dialect_id,
+        dialect_id: data.scope === "all" || isFlashcard ? null : data.dialect_id,
         level_id: data.scope === "level" ? data.level_id : null,
       });
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success("Product created successfully");
