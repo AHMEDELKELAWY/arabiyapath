@@ -237,3 +237,18 @@ Remember the formula:
 The hardest part is starting. The good news? You can start **today** — for free.
 
 **[Start your free Arabic lesson now →](/learn/gulf-arabic)**
+
+<!-- enrich:related -->
+## Related reading
+
+- [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
+- [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
+- [Arabic Online Course: How to Choose the Best Program for Fast Results (2026)](/blog/arabic-online-course)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+

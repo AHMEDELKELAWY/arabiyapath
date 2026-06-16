@@ -331,3 +331,18 @@ In 30 days, you'll order coffee in Arabic. You'll greet your neighbors. You'll s
 Ahmed did it. Sara did it. You can too.
 
 **[Start your first Arabic lesson free today →](/learn/gulf-arabic)**
+
+<!-- enrich:related -->
+## Related reading
+
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
+- [Arabic Online Course: How to Choose the Best Program for Fast Results (2026)](/blog/arabic-online-course)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+

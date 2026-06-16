@@ -311,3 +311,18 @@ When you find the right tool, commit to it. Practice daily. Speak out loud. Trac
 In 30 days, you will surprise yourself.
 
 **[Start your free Gulf Arabic lesson with ArabiyaPath today →](/learn/gulf-arabic)**
+
+<!-- enrich:related -->
+## Related reading
+
+- [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+

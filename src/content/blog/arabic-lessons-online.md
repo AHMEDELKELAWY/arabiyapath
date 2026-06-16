@@ -312,3 +312,18 @@ Keep exploring your path to Arabic fluency:
 - 🌱 [Learn Arabic for beginners: step-by-step guide](/blog/learn-arabic-for-beginners) — the perfect starting point if you're at zero.
 - 🏫 [Best online Arabic classes compared](/blog/online-arabic-classes) — find the right class style for your goals.
 - 🎓 [Choosing the best Arabic online course](/blog/arabic-online-course) — a decision framework before you commit.
+
+<!-- enrich:related -->
+## Related reading
+
+- [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Online Course: How to Choose the Best Program for Fast Results (2026)](/blog/arabic-online-course)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+

@@ -288,3 +288,18 @@ A **learn arabic online course** only works if you actually start. The plan abov
 Do this and in 90 days, you'll order coffee, take a taxi, and small-talk in Arabic — all from your phone or laptop.
 
 **[👉 Start your free Arabic lesson now →](/learn/gulf-arabic)**
+
+<!-- enrich:related -->
+## Related reading
+
+- [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
+
+<!-- enrich:cta -->
+## Start learning today
+
+- 🎁 [Try a free Gulf Arabic lesson](/learn/lesson/d4e5f6a7-0101-0101-0101-000000000001) — no payment required.
+- 📚 [Explore the full Gulf Arabic course](/gulf-arabic-course) — beginner to advanced, native audio, certificates.
+- 🌍 [Browse all Arabic dialects](/dialects) and pick the one that matches your goals.
+
