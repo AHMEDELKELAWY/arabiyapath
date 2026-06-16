@@ -138,6 +138,7 @@ export default function Dashboard() {
   // ===== PAID USER DASHBOARD =====
   return (
     <DashboardLayout>
+      <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
       <div className="space-y-10">
         {/* Header */}
         <div>
