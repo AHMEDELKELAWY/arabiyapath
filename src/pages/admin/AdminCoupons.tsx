@@ -377,6 +377,19 @@ export default function AdminCoupons() {
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="applies_to">Applies to</Label>
+                <select
+                  id="applies_to"
+                  className="w-full border rounded-md px-3 py-2 bg-background text-sm"
+                  value={form.applies_to}
+                  onChange={(e) => setForm({ ...form, applies_to: e.target.value as CouponForm["applies_to"] })}
+                >
+                  <option value="all">All purchases</option>
+                  <option value="courses">Courses only</option>
+                  <option value="flashcards">Flash Cards only</option>
+                </select>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch
                   id="active"
