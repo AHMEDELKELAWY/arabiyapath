@@ -56,7 +56,8 @@ export default function Login() {
       }
     } else {
       toast({ title: "Welcome back!", description: "You have logged in successfully." });
-      navigate(redirectUrl);
+      // Navigation is handled by the useEffect once auth + isAdmin resolve,
+      // so admins are routed to /admin instead of /dashboard.
     }
     setIsLoading(false);
   };
