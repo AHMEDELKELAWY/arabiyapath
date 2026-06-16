@@ -207,6 +207,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "coupon_redemptions_purchase_id_fkey"
             columns: ["purchase_id"]
             isOneToOne: false
@@ -219,6 +226,7 @@ export type Database = {
         Row: {
           active: boolean
           affiliate_id: string | null
+          applies_to: string
           code: string
           created_at: string
           current_uses: number | null
@@ -233,6 +241,7 @@ export type Database = {
         Insert: {
           active?: boolean
           affiliate_id?: string | null
+          applies_to?: string
           code: string
           created_at?: string
           current_uses?: number | null
@@ -247,6 +256,7 @@ export type Database = {
         Update: {
           active?: boolean
           affiliate_id?: string | null
+          applies_to?: string
           code?: string
           created_at?: string
           current_uses?: number | null
@@ -973,6 +983,13 @@ export type Database = {
             referencedRelation: "coupons"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pending_orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
@@ -1130,6 +1147,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
             referencedColumns: ["id"]
           },
           {
@@ -1368,6 +1392,42 @@ export type Database = {
           },
         ]
       }
+      public_coupons: {
+        Row: {
+          active: boolean | null
+          applies_to: string | null
+          code: string | null
+          current_uses: number | null
+          discount_percent: number | null
+          expires_at: string | null
+          id: string | null
+          max_redemptions: number | null
+          percent_off: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          applies_to?: string | null
+          code?: string | null
+          current_uses?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string | null
+          max_redemptions?: number | null
+          percent_off?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          applies_to?: string | null
+          code?: string | null
+          current_uses?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string | null
+          max_redemptions?: number | null
+          percent_off?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       fc_apply_review: {
@@ -1422,6 +1482,7 @@ export type Database = {
         Args: { _code: string }
         Returns: {
           active: boolean
+          applies_to: string
           code: string
           discount_percent: number
           expires_at: string
