@@ -1,52 +1,49 @@
-# Study Mode UX Redesign — Image-First Flow
+# Study Mode — True Flip Card Redesign
 
-Scope: UI/UX only. Single file edit: `src/pages/flashcards/FlashCardStudy.tsx`. No DB, RPC, SRS, payments, or access-control changes.
+Single-file UI change to `src/pages/flashcards/FlashCardStudy.tsx`. No DB, SRS, access-control, payments, or admin changes.
 
-## New Card Flow
+## Card behavior
 
-**Stage 1 — Discover (before reveal)**
-- Progress indicator: `Card 3 of 50`
-- Large card image (`FlashCardImage`)
-- `Play Audio` button (uses existing `FlashCardAudio` with `autoPlay` so it plays once on open, and the same button serves as replay)
-- `Reveal Meaning` button (primary, full width)
-- Hidden: Arabic text, transliteration, English, examples, rating buttons
+**Front (prompt):**
+- Only the card image (via existing `FlashCardImage`, watermark preserved).
+- Entire image is clickable — flips the card.
+- No Arabic, English, transliteration, examples, audio button, or any other control on the front.
+- Subtle "Tap to reveal" hint below the card (outside the flipping surface) for discoverability — can be omitted if you prefer zero text.
 
-**Stage 2 — Reveal (after clicking Reveal Meaning)**
-Card expands in place, in this exact order:
-1. Image (stays)
-2. Play Audio (stays)
-3. Arabic text (RTL, large)
-4. Transliteration (italic muted)
-5. English translation
-6. Example block (Arabic + English + example audio replay if present)
-7. Two assessment buttons:
-   - `✅ I Knew It` (primary/success styling)
-   - `❌ I Didn't Know It` (destructive/outline styling)
+**Click interaction:**
+- Smooth 3D flip animation (~500ms, ease-out) using CSS `transform: rotateY(180deg)` with `transform-style: preserve-3d` and `backface-visibility: hidden`. Same technique used in `src/components/flashcards/FlashCard.tsx`.
 
-## SRS Mapping (internal, hidden from learner)
+**Back (answer), in order:**
+1. Arabic text — large, RTL, `lang="ar"`.
+2. English translation.
+3. Arabic audio auto-plays once on flip (existing `FlashCardAudio` with `autoPlay`).
+4. Replay audio button (already provided by `FlashCardAudio`).
+- Transliteration, example sentences, and example audio are NOT shown (per spec: back lists only Arabic, English, audio, replay).
 
-In the existing `rate()` function call to `fc_apply_review`:
-- `I Knew It` → `_rating: "good"`
-- `I Didn't Know It` → `_rating: "again"`
+## Assessment (below the card, always visible after flip)
 
-No changes to `fc_apply_review`, `sm2.ts`, scheduling, or queue logic. `hard` and `easy` simply aren't exposed in the UI.
+- Two buttons only:
+  - `❌ I Didn't Know It` → calls existing `rate(false)` → `_rating: "again"`
+  - `✅ I Knew It` → calls existing `rate(true)` → `_rating: "good"`
+- Disabled until the card has been flipped (prevents rating without seeing the answer).
+- No Again / Hard / Good / Easy. No "Reveal Meaning" button.
 
-## Behavior
+## State & flow
 
-- On submitting an assessment: same logic as today — advance to next card, invalidate dashboard, show "Session complete!" toast on last card, fire `flashcard_unit_complete` analytics event.
-- `flashcard_study_start` event unchanged.
-- Auto-reset on card change: `revealed=false`, audio re-autoplays for the new card (existing `FlashCardAudio` already re-arms on `src` change).
-- Sign-in gate, loading states, empty state, exit link — unchanged.
-- Replace current "Show answer" + 4-button grid (`Again/Hard/Good/Easy`) with the new two-stage layout.
+- `flipped` boolean per card; resets to `false` on `idx` change (same pattern as current `revealed`).
+- Advancing to next card, "Session complete!" toast, dashboard query invalidation, and `flashcard_study_start` / `flashcard_unit_complete` analytics — unchanged.
+- Sign-in gate, loading state, empty state, header (`Card X of N`, Exit link), and SEO `noindex` — unchanged.
 
-## Files Changed
+## Explicitly untouched
 
-- `src/pages/flashcards/FlashCardStudy.tsx` — only file edited.
+- `flashcards`, `flashcard_units`, `flashcard_progress`, `flashcard_review_log`, `flashcard_streaks`, and all RPCs (`fc_apply_review`, etc.).
+- `src/lib/srs/sm2.ts`, `accessControl.ts`, `flashcardAccess.ts`, payments, PayPal.
+- `FlashCardImage`, `FlashCardAudio`, `Watermark` components.
+- All admin pages, `FlashCardPack`, `FlashCardUnit`, `FlashCardsHome`.
 
-## Explicitly Untouched
+## Technical notes
 
-- `flashcards`, `flashcard_units`, `flashcard_progress`, `flashcard_review_log`, `flashcard_streaks` tables
-- `fc_apply_review`, `fc_user_can_study_unit`, `fc_user_has_pack_access`, `fc_dashboard_summary` RPCs
-- `src/lib/srs/sm2.ts`, payment provider code, PayPal functions, `accessControl.ts`, `flashcardAccess.ts`
-- `FlashCardImage`, `FlashCardAudio`, `Watermark` components
-- All admin pages and other flashcard public pages (`FlashCardsHome`, `FlashCardUnit`, `FlashCardPack`)
+- Flip container: fixed aspect ratio matching `FlashCardImage` (`aspect-[4/3]`) so front/back stack cleanly via `absolute inset-0`.
+- Front face: `<button>` wrapping `FlashCardImage` for keyboard accessibility (Enter/Space to flip), `aria-label="Reveal answer"`.
+- Back face: `rotate-y-180` initial; flip toggles container `rotate-y-180`.
+- Audio autoplay key: pass a `key={current.id + (flipped ? "-b" : "-f")}` to `FlashCardAudio` on the back so it remounts and auto-plays each time the card is flipped open.

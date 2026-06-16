@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { FlashCardAudio } from "@/components/flashcards/msa/FlashCardAudio";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
@@ -34,7 +34,7 @@ export default function FlashCardStudy() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [idx, setIdx] = useState(0);
-  const [revealed, setRevealed] = useState(false);
+  const [flipped, setFlipped] = useState(false);
 
   const { data: unit } = useQuery({
     queryKey: ["fc-unit-by-slug", unitSlug],
@@ -70,10 +70,9 @@ export default function FlashCardStudy() {
   const total = cards?.length ?? 0;
 
   useEffect(() => {
-    setRevealed(false);
+    setFlipped(false);
   }, [idx, current?.id]);
 
-  // Fire flashcard_study_start once per unit session
   useEffect(() => {
     if (unit?.id && total > 0 && idx === 0) {
       trackEvent("flashcard_study_start", { unit_id: unit.id, unit_slug: unit.slug, total_cards: total });
@@ -148,59 +147,89 @@ export default function FlashCardStudy() {
         </div>
 
         {current && (
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <FlashCardImage src={current.image_url} alt={current.image_alt || current.english_translation} />
+          <>
+            {/* Flip card */}
+            <div
+              className="relative w-full aspect-[4/3]"
+              style={{ perspective: "1200px" }}
+            >
+              <button
+                type="button"
+                onClick={() => setFlipped((f) => !f)}
+                aria-label={flipped ? "Show image" : "Reveal answer"}
+                className={cn(
+                  "relative w-full h-full transition-transform duration-500 ease-out rounded-2xl",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                )}
+                style={{
+                  transformStyle: "preserve-3d",
+                  transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                }}
+              >
+                {/* Front — image only */}
+                <div
+                  className="absolute inset-0"
+                  style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+                >
+                  <FlashCardImage
+                    src={current.image_url}
+                    alt={current.image_alt || "Flash card"}
+                    className="h-full w-full aspect-auto"
+                  />
+                </div>
 
-              {/* Audio auto-plays once on card open */}
-              <FlashCardAudio src={current.audio_url} autoPlay label="Play Audio" />
-
-              {!revealed ? (
-                <Button className="w-full" size="lg" onClick={() => setRevealed(true)}>
-                  Reveal Meaning
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-3xl md:text-4xl font-bold leading-loose" dir="rtl" lang="ar">
-                      {current.arabic_text}
-                    </p>
-                    {current.transliteration && (
-                      <p className="text-sm text-muted-foreground italic mt-1">
-                        {current.transliteration}
-                      </p>
-                    )}
-                    <p className="text-lg mt-2">{current.english_translation}</p>
-                  </div>
-
-                  {current.example_arabic && (
-                    <div className="rounded-lg bg-muted/40 p-4">
-                      <p className="text-lg" dir="rtl" lang="ar">{current.example_arabic}</p>
-                      <p className="text-sm text-muted-foreground italic mt-1">
-                        {current.example_english}
-                      </p>
-                      {current.audio_example_url && (
-                        <FlashCardAudio
-                          src={current.audio_example_url}
-                          label="Replay example"
-                          className="mt-2"
-                        />
-                      )}
+                {/* Back — Arabic, English, audio */}
+                <div
+                  className="absolute inset-0 rounded-2xl border bg-card shadow-xl flex flex-col items-center justify-center p-6 text-center gap-4"
+                  style={{
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                    transform: "rotateY(180deg)",
+                  }}
+                >
+                  <p className="text-4xl md:text-5xl font-bold leading-loose" dir="rtl" lang="ar">
+                    {current.arabic_text}
+                  </p>
+                  <p className="text-xl text-muted-foreground">
+                    {current.english_translation}
+                  </p>
+                  {flipped && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <FlashCardAudio
+                        key={`${current.id}-audio`}
+                        src={current.audio_url}
+                        autoPlay
+                        label="Replay audio"
+                      />
                     </div>
                   )}
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Button size="lg" onClick={() => rate(true)}>
-                      ✅ I Knew It
-                    </Button>
-                    <Button size="lg" variant="destructive" onClick={() => rate(false)}>
-                      ❌ I Didn't Know It
-                    </Button>
-                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              {flipped ? "Tap card to flip back" : "Tap image to reveal"}
+            </p>
+
+            {/* Assessment */}
+            <div className="grid grid-cols-2 gap-3 mt-6">
+              <Button
+                size="lg"
+                variant="destructive"
+                disabled={!flipped}
+                onClick={() => rate(false)}
+              >
+                ❌ I Didn't Know It
+              </Button>
+              <Button
+                size="lg"
+                disabled={!flipped}
+                onClick={() => rate(true)}
+              >
+                ✅ I Knew It
+              </Button>
+            </div>
+          </>
         )}
       </section>
     </Layout>
