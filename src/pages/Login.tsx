@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -14,17 +15,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signIn } = useAuth();
+  const { user, signIn, isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const fromState = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const explicitRedirect = searchParams.get("redirect") || fromState || null;
+  // Admin users default to /admin when no explicit destination was requested.
+  const redirectUrl =
+    explicitRedirect ?? (isAdmin ? "/admin" : "/dashboard");
 
   useEffect(() => {
-    if (user) {
-      navigate(redirectUrl);
+    if (user && (explicitRedirect || isAdmin !== null)) {
+      navigate(redirectUrl, { replace: true });
     }
-  }, [user, navigate, redirectUrl]);
+  }, [user, isAdmin, explicitRedirect, navigate, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +56,8 @@ export default function Login() {
       }
     } else {
       toast({ title: "Welcome back!", description: "You have logged in successfully." });
-      navigate(redirectUrl);
+      // Navigation is handled by the useEffect once auth + isAdmin resolve,
+      // so admins are routed to /admin instead of /dashboard.
     }
     setIsLoading(false);
   };
