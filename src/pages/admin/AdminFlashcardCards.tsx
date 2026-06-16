@@ -8,9 +8,55 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
+
+type ImportRow = {
+  arabic_text: string;
+  english_translation: string;
+  transliteration?: string;
+  example_arabic?: string;
+  example_english?: string;
+  image_url?: string;
+  image_alt?: string;
+  audio_url?: string;
+  audio_example_url?: string;
+  notes?: string;
+  order_index?: number;
+  published?: boolean | string;
+};
+
+// Minimal CSV parser supporting quoted fields and commas inside quotes
+function parseCSV(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else field += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ",") { cur.push(field); field = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        cur.push(field); field = "";
+        if (cur.length > 1 || cur[0] !== "") rows.push(cur);
+        cur = [];
+      } else field += ch;
+    }
+  }
+  if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+  if (!rows.length) return [];
+  const headers = rows.shift()!.map((h) => h.trim());
+  return rows
+    .filter((r) => r.some((c) => c.trim() !== ""))
+    .map((r) => Object.fromEntries(headers.map((h, idx) => [h, (r[idx] ?? "").trim()])));
+}
 
 export default function AdminFlashcardCards() {
   const [params] = useSearchParams();
