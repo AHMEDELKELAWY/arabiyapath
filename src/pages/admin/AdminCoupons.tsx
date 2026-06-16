@@ -242,6 +242,15 @@ export default function AdminCoupons() {
                           <Badge variant="secondary">{coupon.percent_off}% off</Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="outline">
+                            {(coupon as any).applies_to === "flashcards"
+                              ? "Flash Cards"
+                              : (coupon as any).applies_to === "courses"
+                              ? "Courses"
+                              : "All"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           {coupon.max_redemptions ? (
                             `${coupon.max_redemptions} total`
                           ) : (
