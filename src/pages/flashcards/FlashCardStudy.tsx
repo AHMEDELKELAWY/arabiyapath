@@ -80,7 +80,8 @@ export default function FlashCardStudy() {
     }
   }, [unit?.id, total]);
 
-  const rate = async (rating: Rating) => {
+  const rate = async (knewIt: boolean) => {
+    const rating: Rating = knewIt ? "good" : "again";
     if (!current) return;
     if (!user) {
       toast({ title: "Please sign in to track progress." });
@@ -152,11 +153,11 @@ export default function FlashCardStudy() {
               <FlashCardImage src={current.image_url} alt={current.image_alt || current.english_translation} />
 
               {/* Audio auto-plays once on card open */}
-              <FlashCardAudio src={current.audio_url} autoPlay label="Replay audio" />
+              <FlashCardAudio src={current.audio_url} autoPlay label="Play Audio" />
 
               {!revealed ? (
                 <Button className="w-full" size="lg" onClick={() => setRevealed(true)}>
-                  Show answer
+                  Reveal Meaning
                 </Button>
               ) : (
                 <div className="space-y-4">
@@ -188,11 +189,13 @@ export default function FlashCardStudy() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-4 gap-2">
-                    <Button variant="destructive" onClick={() => rate("again")}>Again</Button>
-                    <Button variant="outline" onClick={() => rate("hard")}>Hard</Button>
-                    <Button onClick={() => rate("good")}>Good</Button>
-                    <Button variant="secondary" onClick={() => rate("easy")}>Easy</Button>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Button size="lg" onClick={() => rate(true)}>
+                      ✅ I Knew It
+                    </Button>
+                    <Button size="lg" variant="destructive" onClick={() => rate(false)}>
+                      ❌ I Didn't Know It
+                    </Button>
                   </div>
                 </div>
               )}

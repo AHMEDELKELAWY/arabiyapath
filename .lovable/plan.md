@@ -1,46 +1,52 @@
-# Fix: Admin role lookup blocked by missing GRANTs
+# Study Mode UX Redesign — Image-First Flow
 
-## Root cause
+Scope: UI/UX only. Single file edit: `src/pages/flashcards/FlashCardStudy.tsx`. No DB, RPC, SRS, payments, or access-control changes.
 
-`public.user_roles` has **no privileges granted** to the `authenticated` Postgres role. PostgREST (the Supabase Data API) refuses the request before RLS runs, so `AuthContext.fetchProfile()` always receives `null` and sets `isAdmin = false`. Every admin — including `elkelawy3@gmail.com`, who is verified as `admin` in the table — is treated as a learner and bounced from `/admin` to `/dashboard`.
+## New Card Flow
 
-The earlier `AdminRoute.tsx` and `Login.tsx` redirect fixes are correct and stay in place — they were never the cause.
+**Stage 1 — Discover (before reveal)**
+- Progress indicator: `Card 3 of 50`
+- Large card image (`FlashCardImage`)
+- `Play Audio` button (uses existing `FlashCardAudio` with `autoPlay` so it plays once on open, and the same button serves as replay)
+- `Reveal Meaning` button (primary, full width)
+- Hidden: Arabic text, transliteration, English, examples, rating buttons
 
-## Fix
+**Stage 2 — Reveal (after clicking Reveal Meaning)**
+Card expands in place, in this exact order:
+1. Image (stays)
+2. Play Audio (stays)
+3. Arabic text (RTL, large)
+4. Transliteration (italic muted)
+5. English translation
+6. Example block (Arabic + English + example audio replay if present)
+7. Two assessment buttons:
+   - `✅ I Knew It` (primary/success styling)
+   - `❌ I Didn't Know It` (destructive/outline styling)
 
-One small migration that **only adds GRANT statements**. No data, roles, policies, products, lessons, or purchases are modified.
+## SRS Mapping (internal, hidden from learner)
 
-```sql
-GRANT SELECT ON public.user_roles TO authenticated;
-GRANT ALL    ON public.user_roles TO service_role;
-```
+In the existing `rate()` function call to `fc_apply_review`:
+- `I Knew It` → `_rating: "good"`
+- `I Didn't Know It` → `_rating: "again"`
 
-Rationale:
-- `authenticated` needs `SELECT` so the existing RLS policy `Users can view their own roles` (and `Admins can view all user_roles`) can be evaluated. No `INSERT/UPDATE/DELETE` granted — admins manage roles via service role / edge functions.
-- `service_role` gets full access (standard pattern for tables touched by edge functions / admin code).
-- `anon` is intentionally NOT granted — roles are auth-only.
+No changes to `fc_apply_review`, `sm2.ts`, scheduling, or queue logic. `hard` and `easy` simply aren't exposed in the UI.
 
-## End-to-end verification (after migration)
+## Behavior
 
-I will:
+- On submitting an assessment: same logic as today — advance to next card, invalidate dashboard, show "Session complete!" toast on last card, fire `flashcard_unit_complete` analytics event.
+- `flashcard_study_start` event unchanged.
+- Auto-reset on card change: `revealed=false`, audio re-autoplays for the new card (existing `FlashCardAudio` already re-arms on `src` change).
+- Sign-in gate, loading states, empty state, exit link — unchanged.
+- Replace current "Show answer" + 4-button grid (`Again/Hard/Good/Easy`) with the new two-stage layout.
 
-1. Reload `/admin` in the preview as the logged-in admin account.
-2. Confirm the AdminLayout sidebar appears (not the Learner sidebar).
-3. Visit each of: `/admin`, `/admin/content`, `/admin/products`, `/admin/users`, `/admin/affiliates`, `/admin/affiliate-applications`, `/admin/coupons`, `/admin/purchases`, `/admin/certificates`.
-4. For each route, screenshot and confirm: no redirect loop, AdminLayout renders, data loads, no console errors.
-5. Verify deep-link case: open `/admin/products` while logged out → redirected to `/login?redirect=%2Fadmin%2Fproducts` → after login, lands back on `/admin/products`.
-6. Verify learner case: a learner account still lands on `/dashboard` after login.
-7. Confirm via DB snapshot that no rows in `user_roles`, `profiles`, `products`, `purchases`, `lessons`, `units`, or `enrollments` changed.
+## Files Changed
 
-## Deliverables
+- `src/pages/flashcards/FlashCardStudy.tsx` — only file edited.
 
-- Migration file (GRANTs only).
-- Screenshots of all 9 admin routes.
-- Files-changed list (just the migration; `AdminRoute.tsx` and `Login.tsx` were fixed previously).
-- Confirmation that admin experience matches the pre-Flashcards behavior.
+## Explicitly Untouched
 
-## What is NOT changed
-
-- No code changes to `AdminRoute.tsx`, `Login.tsx`, `AuthContext.tsx`, or any page.
-- No changes to roles, RLS policies, or any other table.
-- No data writes of any kind.
+- `flashcards`, `flashcard_units`, `flashcard_progress`, `flashcard_review_log`, `flashcard_streaks` tables
+- `fc_apply_review`, `fc_user_can_study_unit`, `fc_user_has_pack_access`, `fc_dashboard_summary` RPCs
+- `src/lib/srs/sm2.ts`, payment provider code, PayPal functions, `accessControl.ts`, `flashcardAccess.ts`
+- `FlashCardImage`, `FlashCardAudio`, `Watermark` components
+- All admin pages and other flashcard public pages (`FlashCardsHome`, `FlashCardUnit`, `FlashCardPack`)
