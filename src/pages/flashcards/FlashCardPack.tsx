@@ -10,6 +10,7 @@ import { useState } from "react";
 import { getPaymentProvider } from "@/lib/payments/registry";
 import { toast } from "@/hooks/use-toast";
 import { Check, Loader2 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function FlashCardPack() {
   const { slug } = useParams<{ slug: string }>();
