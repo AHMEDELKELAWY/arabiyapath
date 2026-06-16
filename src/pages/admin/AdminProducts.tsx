@@ -76,13 +76,15 @@ export default function AdminProducts() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductForm) => {
+      const isFlashcard = data.scope === "flashcard_pack";
       const { error } = await supabase.from("products").insert({
         ...data,
-        dialect_id: data.scope === "all" ? null : data.dialect_id,
+        dialect_id: data.scope === "all" || isFlashcard ? null : data.dialect_id,
         level_id: data.scope === "level" ? data.level_id : null,
       });
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success("Product created successfully");
@@ -93,16 +95,18 @@ export default function AdminProducts() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProductForm }) => {
+      const isFlashcard = data.scope === "flashcard_pack";
       const { error } = await supabase
         .from("products")
         .update({
           ...data,
-          dialect_id: data.scope === "all" ? null : data.dialect_id,
+          dialect_id: data.scope === "all" || isFlashcard ? null : data.dialect_id,
           level_id: data.scope === "level" ? data.level_id : null,
         })
         .eq("id", id);
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success("Product updated successfully");
@@ -208,13 +212,16 @@ export default function AdminProducts() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={
-                            product.scope === "all" ? "default" : 
+                            product.scope === "all" ? "default" :
+                            product.scope === "flashcard_pack" ? "destructive" :
                             product.scope === "level" ? "outline" : "secondary"
                           }>
-                            {product.scope === "all" ? "All Access" : 
+                            {product.scope === "all" ? "All Access" :
+                             product.scope === "flashcard_pack" ? "Flash Card Pack" :
                              product.scope === "level" ? "Single Level" : "Full Dialect"}
                           </Badge>
                         </TableCell>
+
                         <TableCell className="font-semibold">
                           ${product.price.toFixed(2)}
                         </TableCell>
@@ -267,13 +274,17 @@ export default function AdminProducts() {
                   placeholder={
                     form.scope === "level" ? "e.g., Gulf Arabic — Beginner Level" :
                     form.scope === "dialect" ? "e.g., Gulf Arabic — Full Bundle" :
+                    form.scope === "flashcard_pack" ? "e.g., Modern Standard Arabic Flash Cards Pack" :
                     "e.g., All Access Bundle"
                   }
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  {"Use format: [Dialect] — [Level] Level or [Dialect] — Full Bundle"}
+                  {form.scope === "flashcard_pack"
+                    ? "Flash Card Pack products are sold only via the Flash Cards section."
+                    : "Use format: [Dialect] — [Level] Level or [Dialect] — Full Bundle"}
                 </p>
+
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -310,7 +321,9 @@ export default function AdminProducts() {
                     <SelectItem value="level">Single Level</SelectItem>
                     <SelectItem value="dialect">Full Dialect (All Levels)</SelectItem>
                     <SelectItem value="all">All Access Bundle</SelectItem>
+                    <SelectItem value="flashcard_pack">Flash Card Pack</SelectItem>
                   </SelectContent>
+
                 </Select>
               </div>
               {(form.scope === "dialect" || form.scope === "level") && (
