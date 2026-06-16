@@ -212,13 +212,16 @@ export default function AdminProducts() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={
-                            product.scope === "all" ? "default" : 
+                            product.scope === "all" ? "default" :
+                            product.scope === "flashcard_pack" ? "destructive" :
                             product.scope === "level" ? "outline" : "secondary"
                           }>
-                            {product.scope === "all" ? "All Access" : 
+                            {product.scope === "all" ? "All Access" :
+                             product.scope === "flashcard_pack" ? "Flash Card Pack" :
                              product.scope === "level" ? "Single Level" : "Full Dialect"}
                           </Badge>
                         </TableCell>
+
                         <TableCell className="font-semibold">
                           ${product.price.toFixed(2)}
                         </TableCell>
