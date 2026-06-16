@@ -149,9 +149,51 @@ export default function AdminFlashcardCards() {
     } finally { setBusyId(null); }
   };
 
+  const handleImport = async (file: File) => {
+    if (!unitId) return toast({ title: "Pick a unit first" });
+    try {
+      const text = await file.text();
+      let rows: ImportRow[];
+      if (file.name.toLowerCase().endsWith(".json")) {
+        const parsed = JSON.parse(text);
+        rows = Array.isArray(parsed) ? parsed : parsed?.cards ?? [];
+      } else {
+        rows = parseCSV(text) as ImportRow[];
+      }
+      if (!rows.length) return toast({ title: "Nothing to import" });
+
+      const startOrder = (cards?.length ?? 0) + 1;
+      const payload = rows
+        .filter((r) => r.arabic_text && r.english_translation)
+        .map((r, i) => ({
+          unit_id: unitId,
+          arabic_text: String(r.arabic_text),
+          english_translation: String(r.english_translation),
+          transliteration: r.transliteration ?? null,
+          example_arabic: r.example_arabic ?? null,
+          example_english: r.example_english ?? null,
+          image_url: r.image_url ?? null,
+          image_alt: r.image_alt ?? null,
+          audio_url: r.audio_url ?? null,
+          audio_example_url: r.audio_example_url ?? null,
+          notes: r.notes ?? null,
+          order_index: Number(r.order_index ?? startOrder + i),
+          published: r.published === true || r.published === "true" || r.published === "1",
+        }));
+      if (!payload.length) return toast({ title: "No valid rows (need arabic_text + english_translation)" });
+
+      const { error } = await (supabase as any).from("flashcards").insert(payload);
+      if (error) throw error;
+      toast({ title: `Imported ${payload.length} cards` });
+      qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    }
+  };
+
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6 gap-2">
+      <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Flash Cards</h1>
           <select
@@ -163,7 +205,25 @@ export default function AdminFlashcardCards() {
             {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
           </select>
         </div>
-        <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
+        <div className="flex items-center gap-2">
+          <label>
+            <input
+              type="file"
+              accept=".csv,.json,text/csv,application/json"
+              className="hidden"
+              disabled={!unitId}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImport(f);
+                e.currentTarget.value = "";
+              }}
+            />
+            <Button asChild variant="outline" disabled={!unitId}>
+              <span className="cursor-pointer"><Upload className="w-4 h-4 mr-2" /> Import CSV/JSON</span>
+            </Button>
+          </label>
+          <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
+        </div>
       </div>
 
       {!unitId ? <p className="text-muted-foreground">Pick a unit to manage its cards.</p> : (
