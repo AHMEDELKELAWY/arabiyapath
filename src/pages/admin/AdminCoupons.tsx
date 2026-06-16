@@ -190,8 +190,8 @@ export default function AdminCoupons() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <div className="relative max-w-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="relative max-w-sm flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by code..."
@@ -200,6 +200,16 @@ export default function AdminCoupons() {
                   className="pl-10"
                 />
               </div>
+              <select
+                className="border rounded-md px-3 py-2 bg-background text-sm"
+                value={scopeFilter}
+                onChange={(e) => setScopeFilter(e.target.value as any)}
+              >
+                <option value="any">All scopes</option>
+                <option value="all">All purchases</option>
+                <option value="courses">Courses only</option>
+                <option value="flashcards">Flash Cards only</option>
+              </select>
             </div>
 
             {isLoading ? (
