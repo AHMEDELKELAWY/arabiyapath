@@ -225,6 +225,9 @@ export default function Dashboard() {
           <QuizResultsList results={quizResults} />
         </div>
 
+        {/* Flash Cards */}
+        <FlashcardsDashboardSection />
+
         {/* Certificates */}
         <CertificatesList certificates={certificates} />
 
