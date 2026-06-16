@@ -65,6 +65,7 @@ export default function AdminFlashcardCards() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
