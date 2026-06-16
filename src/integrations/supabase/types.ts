@@ -207,6 +207,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "coupon_redemptions_purchase_id_fkey"
             columns: ["purchase_id"]
             isOneToOne: false
@@ -219,6 +226,7 @@ export type Database = {
         Row: {
           active: boolean
           affiliate_id: string | null
+          applies_to: string
           code: string
           created_at: string
           current_uses: number | null
@@ -233,6 +241,7 @@ export type Database = {
         Insert: {
           active?: boolean
           affiliate_id?: string | null
+          applies_to?: string
           code: string
           created_at?: string
           current_uses?: number | null
@@ -247,6 +256,7 @@ export type Database = {
         Update: {
           active?: boolean
           affiliate_id?: string | null
+          applies_to?: string
           code?: string
           created_at?: string
           current_uses?: number | null
@@ -347,6 +357,401 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_pack_units: {
+        Row: {
+          order_index: number
+          pack_id: string
+          unit_id: string
+        }
+        Insert: {
+          order_index?: number
+          pack_id: string
+          unit_id: string
+        }
+        Update: {
+          order_index?: number
+          pack_id?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_pack_units_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_pack_units_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_packs: {
+        Row: {
+          access_type: string
+          cover_image_url: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          price_cents: number
+          product_id: string | null
+          published: boolean
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          access_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          price_cents?: number
+          product_id?: string | null
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          access_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          price_cents?: number
+          product_id?: string | null
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_packs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_progress: {
+        Row: {
+          correct_count: number
+          created_at: string
+          due_at: string
+          ease_factor: number
+          flashcard_id: string
+          id: string
+          incorrect_count: number
+          interval_days: number
+          lapses: number
+          last_reviewed_at: string | null
+          repetitions: number
+          status: Database["public"]["Enums"]["flashcard_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string
+          due_at?: string
+          ease_factor?: number
+          flashcard_id: string
+          id?: string
+          incorrect_count?: number
+          interval_days?: number
+          lapses?: number
+          last_reviewed_at?: string | null
+          repetitions?: number
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          due_at?: string
+          ease_factor?: number
+          flashcard_id?: string
+          id?: string
+          incorrect_count?: number
+          interval_days?: number
+          lapses?: number
+          last_reviewed_at?: string | null
+          repetitions?: number
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_progress_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_purchases: {
+        Row: {
+          amount_cents: number
+          coupon_id: string | null
+          created_at: string
+          currency: string
+          discount_cents: number
+          id: string
+          pack_id: string
+          provider_capture_id: string | null
+          provider_code: string
+          provider_order_id: string | null
+          purchased_at: string | null
+          status: Database["public"]["Enums"]["flashcard_purchase_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          coupon_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_cents?: number
+          id?: string
+          pack_id: string
+          provider_capture_id?: string | null
+          provider_code: string
+          provider_order_id?: string | null
+          purchased_at?: string | null
+          status?: Database["public"]["Enums"]["flashcard_purchase_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          coupon_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_cents?: number
+          id?: string
+          pack_id?: string
+          provider_capture_id?: string | null
+          provider_code?: string
+          provider_order_id?: string | null
+          purchased_at?: string | null
+          status?: Database["public"]["Enums"]["flashcard_purchase_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_purchases_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_purchases_provider_code_fkey"
+            columns: ["provider_code"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      flashcard_review_log: {
+        Row: {
+          flashcard_id: string
+          id: string
+          new_interval: number | null
+          prev_interval: number | null
+          rating: Database["public"]["Enums"]["flashcard_rating"]
+          reviewed_at: string
+          user_id: string
+        }
+        Insert: {
+          flashcard_id: string
+          id?: string
+          new_interval?: number | null
+          prev_interval?: number | null
+          rating: Database["public"]["Enums"]["flashcard_rating"]
+          reviewed_at?: string
+          user_id: string
+        }
+        Update: {
+          flashcard_id?: string
+          id?: string
+          new_interval?: number | null
+          prev_interval?: number | null
+          rating?: Database["public"]["Enums"]["flashcard_rating"]
+          reviewed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_review_log_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          last_active_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          last_active_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          last_active_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flashcard_units: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_free: boolean
+          order_index: number
+          published: boolean
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          title_ar: string | null
+          title_en: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean
+          order_index?: number
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          title_ar?: string | null
+          title_en: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean
+          order_index?: number
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          title_ar?: string | null
+          title_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      flashcards: {
+        Row: {
+          arabic_text: string
+          audio_example_url: string | null
+          audio_url: string | null
+          created_at: string
+          english_translation: string
+          example_arabic: string | null
+          example_english: string | null
+          id: string
+          image_alt: string | null
+          image_url: string | null
+          notes: string | null
+          order_index: number
+          published: boolean
+          transliteration: string | null
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          arabic_text: string
+          audio_example_url?: string | null
+          audio_url?: string | null
+          created_at?: string
+          english_translation: string
+          example_arabic?: string | null
+          example_english?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url?: string | null
+          notes?: string | null
+          order_index?: number
+          published?: boolean
+          transliteration?: string | null
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          arabic_text?: string
+          audio_example_url?: string | null
+          audio_url?: string | null
+          created_at?: string
+          english_translation?: string
+          example_arabic?: string | null
+          example_english?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url?: string | null
+          notes?: string | null
+          order_index?: number
+          published?: boolean
+          transliteration?: string | null
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcards_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
             referencedColumns: ["id"]
           },
         ]
@@ -460,6 +865,33 @@ export type Database = {
           },
         ]
       }
+      payment_providers: {
+        Row: {
+          code: string
+          config: Json
+          created_at: string
+          display_name: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          config?: Json
+          created_at?: string
+          display_name: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          config?: Json
+          created_at?: string
+          display_name?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -549,6 +981,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
             referencedColumns: ["id"]
           },
         ]
@@ -708,6 +1147,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
             referencedColumns: ["id"]
           },
           {
@@ -946,8 +1392,81 @@ export type Database = {
           },
         ]
       }
+      public_coupons: {
+        Row: {
+          active: boolean | null
+          applies_to: string | null
+          code: string | null
+          current_uses: number | null
+          discount_percent: number | null
+          expires_at: string | null
+          id: string | null
+          max_redemptions: number | null
+          percent_off: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          applies_to?: string | null
+          code?: string | null
+          current_uses?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string | null
+          max_redemptions?: number | null
+          percent_off?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          applies_to?: string | null
+          code?: string | null
+          current_uses?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string | null
+          max_redemptions?: number | null
+          percent_off?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      fc_apply_review: {
+        Args: {
+          _card_id: string
+          _rating: Database["public"]["Enums"]["flashcard_rating"]
+        }
+        Returns: {
+          correct_count: number
+          created_at: string
+          due_at: string
+          ease_factor: number
+          flashcard_id: string
+          id: string
+          incorrect_count: number
+          interval_days: number
+          lapses: number
+          last_reviewed_at: string | null
+          repetitions: number
+          status: Database["public"]["Enums"]["flashcard_status"]
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "flashcard_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      fc_dashboard_summary: { Args: never; Returns: Json }
+      fc_user_can_study_unit: {
+        Args: { _unit_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fc_user_has_pack_access: {
+        Args: { _pack_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -963,6 +1482,7 @@ export type Database = {
         Args: { _code: string }
         Returns: {
           active: boolean
+          applies_to: string
           code: string
           discount_percent: number
           expires_at: string
@@ -972,6 +1492,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
+      flashcard_purchase_status: "pending" | "active" | "refunded" | "failed"
+      flashcard_rating: "again" | "hard" | "good" | "easy"
+      flashcard_status: "new" | "learning" | "review" | "mastered"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1100,6 +1623,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "affiliate"],
+      flashcard_purchase_status: ["pending", "active", "refunded", "failed"],
+      flashcard_rating: ["again", "hard", "good", "easy"],
+      flashcard_status: ["new", "learning", "review", "mastered"],
     },
   },
 } as const
