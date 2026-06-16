@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Volume2, Loader2, Upload, Images } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 
 type ImportRow = {
