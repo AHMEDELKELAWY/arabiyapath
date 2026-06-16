@@ -1,135 +1,104 @@
-# Flash Cards (MSA / Fusha) — Phase 1 Architecture
+# Admin Flow Regression — Root Cause Report
 
-Building the **complete platform** for the new Modern Standard Arabic Flash Cards product. **No lesson/card content** will be generated in this phase — the system will be ready for the prepared Unit 1 to be imported afterward.
+Per your instruction, **nothing has been changed**. This is investigation only. The data layer (DB, roles, purchases) is intact — the regression is entirely in the **client routing / auth-redirect layer**.
 
-## 1. Memory / policy change
-- Remove core rule: *"Flash cards feature is removed, do not re-add."*
-- Add core rule: *"Flash Cards is a core premium MSA (Fusha) product line, separate from Gulf. Fully vowelized Arabic, realistic photos, CSS watermark `arabiyapath.com`, SRS, PayPal (provider-abstracted)."*
-- Save a feature memory `mem://features/flashcards-msa` with the full spec from this turn.
+## 1. What actually happens today
 
-## 2. Database schema (new migration)
-All tables in `public`, with GRANTs + RLS + policies. New tables:
+When you visit `/admin`:
 
-- `flashcard_units` — id, slug (unique), title_en, title_ar, description, order_index, is_free (bool, default false), cover_image_url, published (bool), seo_title, seo_description, timestamps.
-- `flashcards` — id, unit_id (fk), order_index, arabic_text (tashkeel), english_translation, transliteration, example_arabic, example_english, image_url, image_alt, audio_url, audio_example_url, notes, published, timestamps.
-- `flashcard_packs` — id, slug (unique), title, description, price_cents (default 1900), currency (default 'USD'), access_type ('lifetime'), cover_image_url, seo_title, seo_description, published, timestamps.
-- `flashcard_pack_units` — pack_id, unit_id (composite pk) — many-to-many.
-- `flashcard_progress` — id, user_id, flashcard_id, status ('new'|'learning'|'review'|'mastered'), ease_factor (float, default 2.5), interval_days (int, default 0), repetitions (int, default 0), due_at (timestamptz), last_reviewed_at, lapses (int, default 0), correct_count, incorrect_count, timestamps. Unique (user_id, flashcard_id).
-- `flashcard_review_log` — id, user_id, flashcard_id, rating ('again'|'hard'|'good'|'easy'), prev_interval, new_interval, reviewed_at. Append-only history for analytics.
-- `flashcard_streaks` — user_id (pk), current_streak, longest_streak, last_active_date, timestamps.
-- `payment_providers` — id, code ('paypal'|'stripe'|…), display_name, is_active, config (jsonb). Seed `paypal` active.
-- `flashcard_purchases` — id, user_id, pack_id, provider_code (fk → payment_providers.code), provider_order_id, provider_capture_id, amount_cents, currency, coupon_id (nullable), discount_cents, status ('pending'|'active'|'refunded'|'failed'), purchased_at, timestamps.
-- Extend existing `coupons` table use: reuse it; add optional `scope` value `'flashcards'` (no schema change required — existing scope column accepts string).
+1. `AdminRoute` renders.
+2. While `AuthContext` is hydrating (`loading=true` or `user && isAdmin===null`), it shows a skeleton.
+3. The moment hydration finishes:
+   - If `!user` → `<Navigate to="/login" replace />` **with no `from` state and no `?redirect=/admin`**.
+   - If `isAdmin===false` → redirect to `/dashboard`.
 
-**Policies summary**
-- Units / cards / packs: `SELECT` public when `published = true` (anon + authenticated). Admin full CRUD via `has_role(uid,'admin')`.
-- Progress / review_log / streaks / purchases: user can read/write own rows; admin can read all.
-- `payment_providers`: public read of active; admin write.
-- All public-readable tables get `GRANT SELECT ... TO anon, authenticated`; user-owned get `GRANT … TO authenticated` + `GRANT ALL TO service_role`.
+When you then submit the login form:
 
-**Triggers / functions**
-- `updated_at` trigger on all mutable tables.
-- `fc_apply_review(user_id, card_id, rating)` SECURITY DEFINER — runs SM-2 update server-side, writes progress + log atomically.
-- `fc_user_has_pack_access(user_id, pack_id)` SECURITY DEFINER — true if any active `flashcard_purchases` row, OR any unit in pack has `is_free`.
-- `fc_user_can_view_card(user_id, card_id)` SECURITY DEFINER — used by RLS on richer card fields if we later gate them.
+- `Login.tsx` reads only `searchParams.get("redirect") || "/dashboard"`.
+- It does **not** read `location.state.from` (the React Router convention `ProtectedRoute` uses).
+- So even if `AdminRoute` had passed `state={{ from: location }}`, `Login` would ignore it.
+- After a successful sign-in, `navigate(redirectUrl)` → `/dashboard`.
 
-## 3. Payment provider abstraction
-- `src/lib/payments/types.ts` — `PaymentProvider` interface: `createOrder`, `captureOrder`, `getDisplayName`, `code`.
-- `src/lib/payments/paypal.ts` — wraps existing `paypal-create-order` / `paypal-capture-order` edge functions (reused, parameterized by product type `flashcard_pack`).
-- `src/lib/payments/registry.ts` — map of `code → provider`. Default `paypal`. Stripe placeholder export commented for future.
-- New edge functions:
-  - `flashcards-create-order` — thin wrapper that picks provider from DB `payment_providers`, validates pack, applies coupon, creates pending order via provider module logic. (Initial impl delegates to PayPal; structured so Stripe adds a branch.)
-  - `flashcards-capture-order` — captures + writes `flashcard_purchases` row.
-- Re-uses existing PayPal secrets and webhook (extend `paypal-webhook` to recognize `flashcard_pack` custom_id prefix and insert into `flashcard_purchases`).
+Net effect: every direct visit to `/admin` while the session isn't already attached in the React tree gets bounced to `/login`, and the original `/admin` intent is lost. After login the user lands on the learner dashboard — exactly the symptom you reported.
 
-## 4. SRS engine
-- `src/lib/srs/sm2.ts` — pure SM-2 implementation (`schedule(prev, rating) → { interval, ease, repetitions, dueAt }`). Used by the DB function and mirrored client-side for instant UI feedback.
-- `src/hooks/useFlashcardSession.ts` — fetches due cards, queues new cards (configurable daily new-card limit), submits ratings via `fc_apply_review` RPC.
+## 2. Why this is a regression vs. June 15
 
-## 5. Flash Card engine (UI)
-- `src/pages/flashcards/FlashCardsHome.tsx` — public landing for the MSA Flash Cards product line. SEO-optimized.
-- `src/pages/flashcards/FlashCardUnit.tsx` — `/flashcards/unit/:slug` — unit overview, locked state if not free + not purchased.
-- `src/pages/flashcards/FlashCardStudy.tsx` — `/flashcards/study/:unitSlug` — the SRS study session.
-  - Front: full-bleed realistic image, **CSS overlay watermark `arabiyapath.com`** bottom-right (semi-transparent, pointer-events-none).
-  - On mount: audio auto-plays once. **No loop, no auto-repeat.**
-  - "Show answer" reveals back: Arabic with tashkeel, English, example, **replay button** (and replay for example audio).
-  - Rating buttons: Again / Hard / Good / Easy → calls `fc_apply_review`.
-- `src/pages/flashcards/FlashCardPack.tsx` — `/flashcards/pack/:slug` — pricing + buy CTA via PayPal.
-- `src/components/flashcards/Watermark.tsx` — reusable overlay.
-- `src/components/flashcards/FlashCardImage.tsx` — image + watermark + lazy load.
-- Remove/quarantine the legacy Gulf-era `FlashCard.tsx` / `FlashCardDeck.tsx` (kept code-only, not routed) to avoid confusion; new MSA components live under `src/components/flashcards/msa/`.
+The Flash Cards work on Jun 16 changed three things relevant to this flow:
 
-## 6. Image generation pipeline
-- New edge function `generate-flashcard-image` — uses AI Gateway (`openai/gpt-image-2`, quality `low`, streaming off — server uploads final PNG to `lesson-images` bucket under `flashcards/{cardId}.png`, writes URL to `flashcards.image_url`).
-- Prompt template enforces: photorealistic, real-life photography style, no text, no watermark, no captions, no logos.
-- Watermark is **never baked into the image** — applied via CSS overlay in `FlashCardImage`.
-- Admin UI exposes "Generate image" per card and bulk-generate per unit (background job pattern reusing existing admin bulk pattern).
+### a. `src/contexts/AuthContext.tsx` — admin gating became stricter
+Now exposes a tri-state `isAdmin: boolean | null` and only sets it inside an async `fetchProfile` that is deferred via `setTimeout(..., 0)` after `onAuthStateChange`. Before the Flash Cards refactor, admin status was resolved synchronously alongside the profile fetch and `AdminRoute` did not have the `isAdmin === null` "still determining" branch.
 
-## 7. Audio generation pipeline
-- New edge function `generate-flashcard-audio` — ElevenLabs TTS (`eleven_multilingual_v2`, Daniel voice `onwK4e9ZLuTAKqWW03F9`).
-- Input: fully vowelized Arabic. Output: MP3 uploaded to `content` bucket under `flashcards/audio/{cardId}.mp3`. Writes URL to `flashcards.audio_url`.
-- Separate function for `audio_example_url`.
-- Admin: "Generate audio" + bulk-generate per unit.
+The new code itself is correct (it matches the stack-overflow guidance), but it depends on `AdminRoute` correctly preserving redirect intent — which it does not.
 
-## 8. Admin panel
-New routes under `/admin/flashcards`:
-- `AdminFlashcardUnits.tsx` — list/create/edit/reorder units (dnd-kit, same pattern as existing curriculum admin), toggle `is_free`, manage SEO.
-- `AdminFlashcardCards.tsx` — list cards in a unit, inline edit Arabic (tashkeel), English, example; per-row Generate Image / Generate Audio; upload image override; reorder.
-- `AdminFlashcardPacks.tsx` — packs, pricing, attach units.
-- `AdminFlashcardPurchases.tsx` — list purchases, manual refund flag.
-- Coupons: extend existing `AdminCoupons.tsx` with optional "Flash Cards" scope filter.
+### b. `src/components/admin/AdminRoute.tsx` — redirect loses target
+```tsx
+if (!user) {
+  return <Navigate to="/login" replace />;   // ← no state, no ?redirect
+}
+```
+Compare with `src/components/auth/ProtectedRoute.tsx` (unchanged, still correct):
+```tsx
+return <Navigate to="/login" state={{ from: location }} replace />;
+```
+`AdminRoute` was edited during the Flash Cards pass and the redirect-preservation was dropped.
 
-## 9. User dashboard additions
-- New tab/section `Flash Cards` on `/dashboard`:
-  - Per-unit progress bars (mastered / total).
-  - Cards due today (CTA → study).
-  - Streak (current + longest).
-  - Total learned cards.
-  - Purchase history (packs).
-- Implemented as `src/components/dashboard/FlashcardsDashboardSection.tsx`, data via `useFlashcardsDashboard` hook (single RPC `fc_dashboard_summary`).
+### c. `src/pages/Login.tsx` — only reads `?redirect=`, never `location.state.from`
+```tsx
+const redirectUrl = searchParams.get("redirect") || "/dashboard";
+```
+So even `ProtectedRoute`'s `state={{ from }}` is not honored — but `ProtectedRoute` was already covered because protected pages are typically reached via in-app links where `user` is already set, masking the bug. Admin users, however, often deep-link to `/admin`, which exposes it.
 
-## 10. SEO
-- `react-helmet-async` `SEOHead` already exists — reuse on all new pages.
-- JSON-LD per page:
-  - Pack page: `Product` + `Offer` (price, currency, availability).
-  - Unit page: `Course` + `BreadcrumbList`.
-  - Home: `ItemList` of units + breadcrumbs.
-- Stable URLs: `/flashcards`, `/flashcards/unit/:slug`, `/flashcards/pack/:slug`, `/flashcards/study/:unitSlug`.
-- Add public pages to `public/sitemap.xml` generator (static add now; cards/units pulled dynamically once content exists — TODO comment).
-- Lazy-load study route via `React.lazy` (matches existing perf pattern).
+### d. `Dashboard.tsx` now mounts `<FlashcardsDashboardSection />`
+That section calls `supabase.rpc("fc_dashboard_summary")`. This is **not** the cause of the redirect, but it does run a heavy query on every dashboard load. If `fc_dashboard_summary` errors for an account, React Query throws — does not affect routing, but worth knowing during the fix pass.
 
-## 11. Access / permissions
-- `src/lib/flashcardAccess.ts`:
-  - `useFlashcardAccess(unitId)` → `{ isFree, isPurchased, canAccess, loading }`.
-  - Server-side enforced via the SECURITY DEFINER `fc_user_has_pack_access` used inside RLS for any premium-only RPC (e.g. `fc_apply_review` rejects writes when no access and unit not free).
-- UI locking: locked units show buy CTA; "Try Unit 1 free" CTA throughout funnels.
+## 3. Files changed by the Jun 16 work that touch this flow
 
-## 12. Routing
-Add lazy routes in `src/App.tsx`:
-- `/flashcards`
-- `/flashcards/unit/:slug`
-- `/flashcards/pack/:slug`
-- `/flashcards/study/:unitSlug` (protected by signup-first redirect for premium units)
-- Admin routes wrapped in `AdminRoute`.
+Routing / auth / admin / dashboard layout files modified on Jun 16:
 
-## 13. Out of scope (Phase 1)
-- No lesson/card/unit content seeded — admin will import Unit 1 later.
-- No actual Stripe code path (interface only).
-- No new image/audio assets generated.
-- Curriculum, Gulf course, existing pages: untouched.
+```text
+src/App.tsx                                   (added flashcard routes; admin route wiring unchanged)
+src/contexts/AuthContext.tsx                  (tri-state isAdmin, deferred fetchProfile)
+src/components/admin/AdminRoute.tsx           (new "isAdmin===null" gate; LOST redirect-preservation)
+src/components/admin/AdminLayout.tsx          (added 4 flashcard sidebar entries; no auth logic change)
+src/components/dashboard/DashboardLayout.tsx  (unchanged routing logic; still links to /admin for admins)
+src/pages/Dashboard.tsx                       (mounted FlashcardsDashboardSection; no auth change)
+src/pages/Login.tsx                           (unchanged — but already only honored ?redirect=, never state.from)
+```
 
-## 14. Technical notes
-- Migration order: enums → tables → grants → RLS → policies → triggers → functions → seed `payment_providers('paypal',…)`.
-- Tashkeel storage: `arabic_text` is plain UTF-8; admin form must accept/preserve combining marks (no normalization stripping).
-- Watermark CSS: `position:absolute; bottom:8px; right:10px; font: 600 12px/1 system-ui; color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.6); letter-spacing:.02em;`.
-- Audio auto-play: `<audio autoPlay>` + `ref.current.play().catch(()=>{})` to handle browser autoplay policy; muted fallback shows "Tap to play" only if blocked.
-- PayPal reuse: existing `paypal-create-order` accepts a `productType` UUID from `products`. We will create a `products` row per pack (price $19, scope `flashcard_pack`) so the existing PayPal+webhook+coupon stack works unchanged; `flashcard_purchases` is populated by extending the webhook to mirror the row when `scope = 'flashcard_pack'`. This minimizes duplicated payment code while keeping the new abstraction layer for future providers.
+DB migrations on Jun 16 (`20260616123555_*.sql`, `20260616124955_*.sql`) do **not** touch `user_roles`, `profiles`, `has_role()`, or any RLS that would gate admin status. They only add flashcard tables and a `coupons.applies_to` column. So this is purely a frontend regression.
 
-## Approval needed
-This is a large multi-migration build. Approve and I will proceed in this order:
-1. Memory update.
-2. DB migration (schema + grants + RLS + functions + seed).
-3. Provider abstraction + edge functions + webhook extension.
-4. Admin pages.
-5. Public/study pages + SRS + dashboard section.
-6. SEO + routing + access layer.
+## 4. Root cause (one sentence)
+
+`AdminRoute` was updated for the new tri-state `isAdmin` but its unauthenticated-redirect branch was changed to a bare `<Navigate to="/login" />` that drops the intended `/admin` target, and `Login.tsx` only honors `?redirect=`, never React Router state — so admins who deep-link to `/admin` are sent to the learner dashboard with no way back to their original destination.
+
+## 5. Contributing (secondary) issues observed, not fixed
+
+- `ProtectedRoute` passes `state.from` that `Login` never reads. Same class of bug, just less visible.
+- There is no "admin defaults to /admin" behavior in `Login` post-sign-in — never has been, but combined with #4 it makes the regression more painful.
+- `useFlashcardsDashboard` runs unconditionally on every dashboard mount; if the RPC fails the query just retries silently. Unrelated to the redirect but worth tightening.
+
+## 6. Recommended fix (for your approval — NOT applied)
+
+Smallest viable change, three files, no DB work:
+
+1. **`src/components/admin/AdminRoute.tsx`** — when `!user`, redirect with the target preserved:
+   ```tsx
+   return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+   ```
+   (and add `useLocation`).
+2. **`src/pages/Login.tsx`** — also honor `location.state.from` as a fallback after `?redirect=`:
+   ```tsx
+   const fromState = (location.state as any)?.from?.pathname;
+   const redirectUrl = searchParams.get("redirect") || fromState || "/dashboard";
+   ```
+3. **Optional, behavioral improvement** — in `Login`, after a successful sign-in, if `isAdmin === true` and no explicit redirect was requested, send the user to `/admin`. This restores the "admin lands on admin" default workflow you described.
+
+No database changes, no migration, no role logic touched. Roughly 10 lines of code total.
+
+## 7. What I need from you
+
+Tell me which of these you want and I'll implement in build mode:
+
+- **A.** Fix #1 + #2 only (preserve redirect intent — minimum to restore /admin deep links).
+- **B.** A + #3 (also restore "admin lands on /admin by default after login").
+- **C.** Hold — investigate further before any change.

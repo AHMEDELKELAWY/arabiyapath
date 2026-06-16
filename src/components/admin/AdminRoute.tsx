@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -9,6 +9,7 @@ interface AdminRouteProps {
 
 export function AdminRoute({ children }: AdminRouteProps) {
   const { user, profile, loading, isAdmin } = useAuth();
+  const location = useLocation();
 
   // Show loading while auth is initializing OR while determining admin status
   if (loading || (user && isAdmin === null)) {
@@ -23,7 +24,8 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const target = location.pathname + location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(target)}`} replace />;
   }
 
   if (isAdmin === false) {
