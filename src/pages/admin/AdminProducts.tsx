@@ -95,16 +95,18 @@ export default function AdminProducts() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProductForm }) => {
+      const isFlashcard = data.scope === "flashcard_pack";
       const { error } = await supabase
         .from("products")
         .update({
           ...data,
-          dialect_id: data.scope === "all" ? null : data.dialect_id,
+          dialect_id: data.scope === "all" || isFlashcard ? null : data.dialect_id,
           level_id: data.scope === "level" ? data.level_id : null,
         })
         .eq("id", id);
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success("Product updated successfully");
