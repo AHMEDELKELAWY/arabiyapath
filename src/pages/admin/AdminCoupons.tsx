@@ -224,6 +224,7 @@ export default function AdminCoupons() {
                   <TableRow>
                     <TableHead>Code</TableHead>
                     <TableHead>Discount</TableHead>
+                    <TableHead>Scope</TableHead>
                     <TableHead>Max Uses</TableHead>
                     <TableHead>Expires</TableHead>
                     <TableHead>Active</TableHead>
