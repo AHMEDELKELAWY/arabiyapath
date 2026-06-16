@@ -158,7 +158,7 @@ export default function AdminFlashcardCards() {
         const parsed = JSON.parse(text);
         rows = Array.isArray(parsed) ? parsed : parsed?.cards ?? [];
       } else {
-        rows = parseCSV(text) as ImportRow[];
+        rows = parseCSV(text) as unknown as ImportRow[];
       }
       if (!rows.length) return toast({ title: "Nothing to import" });
 
