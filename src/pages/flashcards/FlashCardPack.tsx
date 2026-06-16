@@ -43,6 +43,13 @@ export default function FlashCardPack() {
       return;
     }
     setLoading(true);
+    trackEvent("begin_checkout", {
+      item_id: pack.id,
+      item_name: pack.title,
+      value: pack.price_cents / 100,
+      currency: pack.currency,
+      product_type: "flashcard_pack",
+    });
     try {
       const provider = getPaymentProvider("paypal");
       const res = await provider.createOrder({ productId: pack.product_id });
