@@ -11,6 +11,7 @@ import { FlashCardAudio } from "@/components/flashcards/msa/FlashCardAudio";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
