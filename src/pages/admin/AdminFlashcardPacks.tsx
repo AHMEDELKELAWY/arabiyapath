@@ -31,10 +31,14 @@ export default function AdminFlashcardPacks() {
   const { data: products } = useQuery({
     queryKey: ["admin-products-for-packs"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("products").select("id,name,price,scope");
+      const { data } = await (supabase as any)
+        .from("products")
+        .select("id,name,price,scope")
+        .eq("scope", "flashcard_pack");
       return data ?? [];
     },
   });
+
 
   const { data: units } = useQuery({
     queryKey: ["admin-fc-units-for-packs"],
