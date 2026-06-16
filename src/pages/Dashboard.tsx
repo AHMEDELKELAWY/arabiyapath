@@ -79,6 +79,7 @@ export default function Dashboard() {
   if (!hasAnyPurchase) {
     return (
       <DashboardLayout>
+        <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
         <div className="space-y-10">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-1">
