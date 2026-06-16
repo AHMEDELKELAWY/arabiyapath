@@ -60,17 +60,6 @@
     <priority>0.9</priority>
   </url>
   
-  
-  <!-- Flash Cards (MSA / Fusha) -->
-  <url>
-    <loc>https://arabiyapath.com/flashcards</loc>
-    <lastmod>2026-06-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  
-  <!-- NOTE: /dashboard and /flashcards/study/* are EXCLUDED (noindex pages) -->
-  
   <!-- NOTE: /learn/egyptian-arabic is EXCLUDED (noindex page) -->
   
   <!-- Blog -->

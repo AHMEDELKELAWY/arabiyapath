@@ -46,14 +46,12 @@ interface CouponForm {
   max_per_user: number;
   expires_at: string;
   active: boolean;
-  applies_to: "all" | "courses" | "flashcards";
 }
 
 export default function AdminCoupons() {
   const { data: coupons, isLoading } = useAdminCoupons();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [scopeFilter, setScopeFilter] = useState<"all" | "courses" | "flashcards" | "any">("any");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteCoupon, setDeleteCoupon] = useState<string | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<any>(null);
@@ -65,7 +63,6 @@ export default function AdminCoupons() {
     max_per_user: 1,
     expires_at: "",
     active: true,
-    applies_to: "all",
   });
 
   const { data: analyticsData } = useCouponAnalytics(analyticsCoupon || "");
@@ -140,7 +137,6 @@ export default function AdminCoupons() {
       max_per_user: 1,
       expires_at: "",
       active: true,
-      applies_to: "all",
     });
   };
 
@@ -153,7 +149,6 @@ export default function AdminCoupons() {
       max_per_user: coupon.max_per_user || 1,
       expires_at: coupon.expires_at ? format(new Date(coupon.expires_at), "yyyy-MM-dd") : "",
       active: coupon.active,
-      applies_to: (coupon.applies_to as CouponForm["applies_to"]) || "all",
     });
     setIsDialogOpen(true);
   };
@@ -167,11 +162,9 @@ export default function AdminCoupons() {
     }
   };
 
-  const filteredCoupons = coupons?.filter((c: any) => {
-    const matchesSearch = c.code.toLowerCase().includes(search.toLowerCase());
-    const matchesScope = scopeFilter === "any" || (c.applies_to || "all") === scopeFilter;
-    return matchesSearch && matchesScope;
-  });
+  const filteredCoupons = coupons?.filter((c) =>
+    c.code.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <AdminLayout>
@@ -190,8 +183,8 @@ export default function AdminCoupons() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <div className="relative max-w-sm flex-1 min-w-[200px]">
+            <div className="mb-4">
+              <div className="relative max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by code..."
@@ -200,16 +193,6 @@ export default function AdminCoupons() {
                   className="pl-10"
                 />
               </div>
-              <select
-                className="border rounded-md px-3 py-2 bg-background text-sm"
-                value={scopeFilter}
-                onChange={(e) => setScopeFilter(e.target.value as any)}
-              >
-                <option value="any">All scopes</option>
-                <option value="all">All purchases</option>
-                <option value="courses">Courses only</option>
-                <option value="flashcards">Flash Cards only</option>
-              </select>
             </div>
 
             {isLoading ? (
@@ -224,7 +207,6 @@ export default function AdminCoupons() {
                   <TableRow>
                     <TableHead>Code</TableHead>
                     <TableHead>Discount</TableHead>
-                    <TableHead>Scope</TableHead>
                     <TableHead>Max Uses</TableHead>
                     <TableHead>Expires</TableHead>
                     <TableHead>Active</TableHead>
@@ -240,15 +222,6 @@ export default function AdminCoupons() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{coupon.percent_off}% off</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {(coupon as any).applies_to === "flashcards"
-                              ? "Flash Cards"
-                              : (coupon as any).applies_to === "courses"
-                              ? "Courses"
-                              : "All"}
-                          </Badge>
                         </TableCell>
                         <TableCell>
                           {coupon.max_redemptions ? (
@@ -299,7 +272,7 @@ export default function AdminCoupons() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         No coupons found
                       </TableCell>
                     </TableRow>
@@ -376,19 +349,6 @@ export default function AdminCoupons() {
                     onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="applies_to">Applies to</Label>
-                <select
-                  id="applies_to"
-                  className="w-full border rounded-md px-3 py-2 bg-background text-sm"
-                  value={form.applies_to}
-                  onChange={(e) => setForm({ ...form, applies_to: e.target.value as CouponForm["applies_to"] })}
-                >
-                  <option value="all">All purchases</option>
-                  <option value="courses">Courses only</option>
-                  <option value="flashcards">Flash Cards only</option>
-                </select>
               </div>
               <div className="flex items-center gap-2">
                 <Switch

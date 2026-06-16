@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   LogOut,
   DollarSign,
-  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,10 +34,6 @@ const sidebarLinks = [
   { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
-  { href: "/admin/flashcards/units", label: "Flashcard Units", icon: Layers },
-  { href: "/admin/flashcards/cards", label: "Flashcards", icon: Layers },
-  { href: "/admin/flashcards/packs", label: "Flashcard Packs", icon: Layers },
-  { href: "/admin/flashcards/purchases", label: "Flashcard Sales", icon: ShoppingCart },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
