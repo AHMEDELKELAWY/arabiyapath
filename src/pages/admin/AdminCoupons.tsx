@@ -46,12 +46,14 @@ interface CouponForm {
   max_per_user: number;
   expires_at: string;
   active: boolean;
+  applies_to: "all" | "courses" | "flashcards";
 }
 
 export default function AdminCoupons() {
   const { data: coupons, isLoading } = useAdminCoupons();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "courses" | "flashcards" | "any">("any");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteCoupon, setDeleteCoupon] = useState<string | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<any>(null);
@@ -63,6 +65,7 @@ export default function AdminCoupons() {
     max_per_user: 1,
     expires_at: "",
     active: true,
+    applies_to: "all",
   });
 
   const { data: analyticsData } = useCouponAnalytics(analyticsCoupon || "");
