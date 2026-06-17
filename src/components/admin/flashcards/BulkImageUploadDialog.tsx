@@ -150,9 +150,10 @@ export function BulkImageUploadDialog({
             .update({ image_url: publicUrl })
             .eq("id", m.card.id);
           if (updErr) throw updErr;
-          out.push({ cardId: m.card.id, filename: m.file.name, status: "ok" });
+          out.push({ cardId: m.card.id, filename: m.file.name, status: "ok", overwrote: m.overwrites });
         } catch (e: any) {
-          out.push({ cardId: m.card.id, filename: m.file.name, status: "failed", error: e.message });
+          out.push({ cardId: m.card.id, filename: m.file.name, status: "failed", overwrote: m.overwrites, error: e.message });
+
         } finally {
           setProgress((p) => ({ ...p, done: p.done + 1 }));
         }
