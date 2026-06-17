@@ -183,7 +183,7 @@ export default function FlashCardStudy() {
             Card {idx + 1} of {total}
           </p>
           <Button variant="ghost" size="sm" asChild>
-            <Link to={`/flashcards/unit/${unit.slug}`}>Exit</Link>
+            <Link to="/flashcards">Exit</Link>
           </Button>
         </div>
 
