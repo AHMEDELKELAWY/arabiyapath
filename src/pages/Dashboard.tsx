@@ -232,6 +232,10 @@ export default function Dashboard() {
                 totalCards > 0
                   ? Math.round((mastered / totalCards) * 100)
                   : 0;
+              const completedUnits = fcSummary.units.filter(
+                (u) => u.total > 0 && u.mastered >= u.total
+              ).length;
+              const totalUnits = fcSummary.units.length;
               const streakCount = fcSummary.streak?.current_streak ?? 0;
               const lastDate = fcSummary.streak?.last_active_date;
               const lastLabel =
@@ -240,8 +244,6 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              // Continue jumps to the Progress page where all flashcard units
-              // are listed with their progress bars.
               const continueHref = "/dashboard/progress";
               return (
                 <ProductCard
@@ -249,12 +251,13 @@ export default function Dashboard() {
                   name="Flash Cards"
                   emoji="🃏"
                   progressPercent={progressPercent}
-                  unitsLabel={`${fcSummary.units.length} unit${fcSummary.units.length === 1 ? "" : "s"}`}
+                  unitsLabel={`${completedUnits}/${totalUnits} units completed`}
                   lastActivityLabel={lastLabel}
                   continueHref={continueHref}
                 />
               );
             })()}
+
           </div>
         </section>
 

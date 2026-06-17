@@ -135,7 +135,7 @@ export default function Index() {
                 Choose Your Path
               </h2>
             </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {/* Gulf Arabic Card */}
               <div className="bg-card rounded-2xl border border-border p-8 flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <div className="text-4xl mb-4">🏜️</div>
@@ -176,7 +176,26 @@ export default function Index() {
                   </Button>
                 </div>
               </div>
+
+              {/* Flash Cards Card */}
+              <div className="bg-card rounded-2xl border border-border p-8 flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 md:col-span-2 lg:col-span-1">
+                <div className="text-4xl mb-4">🃏</div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Flash Cards</h3>
+                <p className="text-muted-foreground text-sm mb-8">Memorize Arabic vocabulary with spaced repetition</p>
+                <div className="flex flex-col gap-3 w-full">
+                  <Button size="lg" asChild>
+                    <Link to="/flashcards">Beginner Pack</Link>
+                  </Button>
+                  <Button size="lg" variant="secondary" className="flex-col h-auto py-3" asChild>
+                    <Link to="/flashcards">
+                      <span>Full Pack</span>
+                      <span className="text-xs font-normal opacity-80">Lifetime access to all units</span>
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </div>
+
           </div>
         </section>
 
