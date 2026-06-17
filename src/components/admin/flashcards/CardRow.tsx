@@ -73,6 +73,9 @@ export function CardRow({
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
+    if (!unitFolder) {
+      return toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
+    }
     if (!/\.(jpe?g|png|webp)$/i.test(f.name)) {
       return toast({ title: "Unsupported file", description: "Use JPG, PNG, or WEBP.", variant: "destructive" });
     }
