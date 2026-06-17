@@ -241,13 +241,19 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              // Resume-first behavior: last studied unit → first free unit → flashcards home
-              const firstFreeOrAnyUnit =
-                fcSummary.units[0]?.slug ?? null;
-              const continueHref = fcResumeSlug
-                ? `/flashcards/study/${fcResumeSlug}?from=dashboard`
-                : firstFreeOrAnyUnit
-                ? `/flashcards/study/${firstFreeOrAnyUnit}?from=dashboard`
+              // Resume strategy:
+              //  1. Most recent / next-due reviewed unit, IF accessible and not fully mastered
+              //  2. Else first accessible incomplete unit
+              //  3. Else /flashcards
+              const accessibleIncomplete = fcSummary.units.filter(
+                (u) => (u.has_access ?? true) && u.mastered < u.total
+              );
+              const resumeUnit = fcResumeSlug
+                ? accessibleIncomplete.find((u) => u.slug === fcResumeSlug)
+                : null;
+              const targetUnit = resumeUnit ?? accessibleIncomplete[0] ?? null;
+              const continueHref = targetUnit
+                ? `/flashcards/study/${targetUnit.slug}?from=dashboard`
                 : "/flashcards";
               return (
                 <ProductCard

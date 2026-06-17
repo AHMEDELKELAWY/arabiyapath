@@ -6,7 +6,7 @@ export interface FlashcardsDashboardSummary {
   streak: { current_streak: number; longest_streak: number; last_active_date: string | null } | null;
   due_today: number;
   total_mastered: number;
-  units: Array<{ unit_id: string; slug: string; title: string; total: number; mastered: number }>;
+  units: Array<{ unit_id: string; slug: string; title: string; total: number; mastered: number; has_access?: boolean }>;
   purchases: Array<{
     id: string;
     pack_id: string;
@@ -42,7 +42,21 @@ export function useFlashcardsResumeSlug() {
     queryKey: ["fc-resume-slug", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // 1) Prefer the unit containing the next due (or overdue) card the user has access to
+      const { data: dueData } = await (supabase as any)
+        .from("flashcard_progress")
+        .select("due_at, last_reviewed_at, flashcards!inner(unit_id, flashcard_units!inner(slug, published))")
+        .eq("user_id", user!.id)
+        .eq("flashcards.flashcard_units.published", true)
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(1);
+      const dueSlug = Array.isArray(dueData)
+        ? dueData[0]?.flashcards?.flashcard_units?.slug ?? null
+        : null;
+      if (dueSlug) return dueSlug;
+
+      // 2) Fallback: most recently reviewed unit
+      const { data: recentData, error } = await (supabase as any)
         .from("flashcard_progress")
         .select("last_reviewed_at, flashcards!inner(unit_id, flashcard_units!inner(slug, published))")
         .eq("user_id", user!.id)
@@ -53,9 +67,8 @@ export function useFlashcardsResumeSlug() {
         console.error("[useFlashcardsResumeSlug]", error);
         return null;
       }
-      const row = Array.isArray(data) ? data[0] : null;
-      const slug = row?.flashcards?.flashcard_units?.slug ?? null;
-      return slug ?? null;
+      const row = Array.isArray(recentData) ? recentData[0] : null;
+      return row?.flashcards?.flashcard_units?.slug ?? null;
     },
   });
 }
