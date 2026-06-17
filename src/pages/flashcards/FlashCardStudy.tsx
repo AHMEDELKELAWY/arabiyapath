@@ -40,6 +40,7 @@ export default function FlashCardStudy() {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const { playSound } = useSoundEffects();
 
   const exitHref = searchParams.get("from") === "dashboard" ? "/dashboard" : "/flashcards";
 
