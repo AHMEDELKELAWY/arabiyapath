@@ -240,9 +240,9 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              // Continue always lands on the Flash Cards overview so the user
-              // can see all units and pick where to study.
-              const continueHref = "/flashcards";
+              // Continue jumps to the Progress page where all flashcard units
+              // are listed with their progress bars.
+              const continueHref = "/dashboard/progress";
               return (
                 <ProductCard
                   key="flashcards"
