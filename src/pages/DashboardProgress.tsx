@@ -1,13 +1,22 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
+import {
+  useFlashcardsDashboard,
+  useFlashcardsResumeSlug,
+} from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BarChart3, BookOpen } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ArrowRight, BookOpen, Flame, Sparkles, Layers } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 import { SEOHead } from "@/components/seo/SEOHead";
 
@@ -17,98 +26,19 @@ const dialectEmojis: Record<string, string> = {
   "Modern Standard Arabic (Fusha)": "📚",
 };
 
-function relativeDate(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  const diffMs = Date.now() - d.getTime();
-  const day = 24 * 60 * 60 * 1000;
-  const days = Math.floor(diffMs / day);
-  if (days <= 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 30) return `${days}d ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
-
-interface ProductProgressCardProps {
-  name: string;
-  emoji: string;
-  progressPercent: number;
-  totalUnits: number;
-  completedUnits: number;
-  lastActivityLabel: string;
-  continueHref: string;
-  viewProgressHref: string;
-}
-
-function ProductProgressCard({
-  name,
-  emoji,
-  progressPercent,
-  totalUnits,
-  completedUnits,
-  lastActivityLabel,
-  continueHref,
-  viewProgressHref,
-}: ProductProgressCardProps) {
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <span className="text-3xl" aria-hidden="true">{emoji}</span>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">{name}</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {completedUnits} / {totalUnits} unit{totalUnits === 1 ? "" : "s"} completed
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Progress</span>
-            <span>{progressPercent}%</span>
-          </div>
-          <Progress value={progressPercent} />
-        </div>
-
-        <p className="text-xs text-muted-foreground truncate">{lastActivityLabel}</p>
-
-        <div className="flex flex-col sm:flex-row gap-2 pt-1">
-          <Button asChild className="flex-1 gap-2">
-            <Link to={continueHref}>
-              Continue
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="flex-1 gap-2">
-            <Link to={viewProgressHref}>
-              <BarChart3 className="w-4 h-4" />
-              View Progress
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function DashboardProgress() {
   const { user } = useAuth();
-  const { levelsByDialect, recentActivity, hasLevelAccess, isLoading } =
-    useDashboardData();
+  const { levelsByDialect, hasLevelAccess, isLoading } = useDashboardData();
   const { data: fcSummary, isLoading: fcLoading } = useFlashcardsDashboard();
+  const { data: fcResumeSlug } = useFlashcardsResumeSlug();
 
   if (isLoading || fcLoading) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-48" />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Skeleton className="h-56" />
-            <Skeleton className="h-56" />
-            <Skeleton className="h-56" />
-          </div>
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
         </div>
       </DashboardLayout>
     );
@@ -167,6 +97,19 @@ export default function DashboardProgress() {
     );
   }
 
+  const firstFreeOrAnyUnit = fcSummary?.units[0]?.slug ?? null;
+  const fcContinueHref = fcResumeSlug
+    ? `/flashcards/study/${fcResumeSlug}`
+    : firstFreeOrAnyUnit
+    ? `/flashcards/study/${firstFreeOrAnyUnit}`
+    : "/flashcards";
+
+  // Default open: every product
+  const defaultOpen = [
+    ...ownedDialects.map((dg) => `dialect-${dg.dialectId}`),
+    ...(hasFlashcards ? ["flashcards"] : []),
+  ];
+
   return (
     <DashboardLayout>
       <SEOHead title="Progress" canonicalPath="/dashboard/progress" noindex />
@@ -176,43 +119,86 @@ export default function DashboardProgress() {
             Progress
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            An overview of your learning products. Pick one to dive into details.
+            Your progress, grouped by product.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
           {ownedDialects.map((dg) => {
             const totalLessons = dg.levels.reduce((s, l) => s + l.totalLessons, 0);
             const completedLessons = dg.levels.reduce(
               (s, l) => s + l.completedLessons,
               0
             );
-            const totalUnits = dg.levels.reduce((s, l) => s + l.totalUnits, 0);
-            const completedUnits = dg.levels.reduce(
-              (s, l) => s + l.completedUnits,
-              0
-            );
             const progressPercent =
               totalLessons > 0
                 ? Math.round((completedLessons / totalLessons) * 100)
                 : 0;
-            const last = recentActivity.find((a) => a.dialectId === dg.dialectId);
-            const lastLabel = last
-              ? `Last: ${last.unitTitle} · ${relativeDate(last.completedAt)}`
-              : "Not started yet";
-
+            const emoji = dialectEmojis[dg.dialectName] || "📖";
             return (
-              <ProductProgressCard
+              <AccordionItem
                 key={dg.dialectId}
-                name={dg.dialectName}
-                emoji={dialectEmojis[dg.dialectName] || "📖"}
-                progressPercent={progressPercent}
-                totalUnits={totalUnits}
-                completedUnits={completedUnits}
-                lastActivityLabel={lastLabel}
-                continueHref={`/learn/dialect/${dg.dialectId}`}
-                viewProgressHref={`/learn/dialect/${dg.dialectId}`}
-              />
+                value={`dialect-${dg.dialectId}`}
+                className="border rounded-lg bg-card"
+              >
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="text-2xl" aria-hidden="true">{emoji}</span>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-semibold truncate">{dg.dialectName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {progressPercent}% · {completedLessons}/{totalLessons} lessons
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="mb-4">
+                    <Progress value={progressPercent} />
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[...dg.levels]
+                      .sort((a, b) => a.orderIndex - b.orderIndex)
+                      .map((lvl) => {
+                        const locked = !hasLevelAccess(lvl.levelId, lvl.dialectId);
+                        const lvlPct =
+                          lvl.totalLessons > 0
+                            ? Math.round(
+                                (lvl.completedLessons / lvl.totalLessons) * 100
+                              )
+                            : 0;
+                        return (
+                          <Card key={lvl.levelId} className="hover:shadow transition-shadow">
+                            <CardContent className="p-4 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">{lvl.levelName}</p>
+                                <span className="text-xs text-muted-foreground">
+                                  {lvlPct}%
+                                </span>
+                              </div>
+                              <Progress value={lvlPct} />
+                              <p className="text-xs text-muted-foreground">
+                                {lvl.completedUnits}/{lvl.totalUnits} units ·{" "}
+                                {lvl.completedLessons}/{lvl.totalLessons} lessons
+                              </p>
+                              <Button
+                                asChild
+                                size="sm"
+                                variant={locked ? "outline" : "default"}
+                                className="w-full gap-2 mt-2"
+                              >
+                                <Link to={`/learn/level/${lvl.levelId}`}>
+                                  {locked ? "View Level" : "Continue"}
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
 
@@ -221,35 +207,97 @@ export default function DashboardProgress() {
             const mastered = fcSummary.total_mastered;
             const progressPercent =
               totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0;
-            const totalUnits = fcSummary.units.length;
-            const completedUnits = fcSummary.units.filter(
-              (u) => u.total > 0 && u.mastered >= u.total
-            ).length;
-            const streakCount = fcSummary.streak?.current_streak ?? 0;
-            const lastDate = fcSummary.streak?.last_active_date;
-            const lastLabel =
-              streakCount > 0
-                ? `🔥 ${streakCount}-day streak`
-                : lastDate
-                ? `Last studied ${relativeDate(lastDate)}`
-                : "Not started yet";
-
+            const streak = fcSummary.streak?.current_streak ?? 0;
             return (
-              <ProductProgressCard
-                key="flashcards"
-                name="Flash Cards"
-                emoji="🃏"
-                progressPercent={progressPercent}
-                totalUnits={totalUnits}
-                completedUnits={completedUnits}
-                lastActivityLabel={lastLabel}
-                continueHref="/flashcards"
-                viewProgressHref="/flashcards"
-              />
+              <AccordionItem
+                value="flashcards"
+                className="border rounded-lg bg-card"
+              >
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="text-2xl" aria-hidden="true">🃏</span>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-semibold truncate">Flash Cards</p>
+                      <p className="text-xs text-muted-foreground">
+                        {progressPercent}% · {mastered}/{totalCards} mastered
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4 space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <Stat
+                      icon={<Sparkles className="w-4 h-4 text-primary" />}
+                      label="Mastered"
+                      value={mastered}
+                    />
+                    <Stat
+                      icon={<Layers className="w-4 h-4 text-emerald-500" />}
+                      label="Due today"
+                      value={fcSummary.due_today}
+                    />
+                    <Stat
+                      icon={<Flame className="w-4 h-4 text-orange-500" />}
+                      label="Streak"
+                      value={`${streak}d`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    {fcSummary.units.map((u) => {
+                      const pct = u.total
+                        ? Math.round((u.mastered / u.total) * 100)
+                        : 0;
+                      return (
+                        <Link
+                          key={u.unit_id}
+                          to={`/flashcards/study/${u.slug}`}
+                          className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium truncate">{u.title}</span>
+                            <span className="text-muted-foreground">
+                              {u.mastered}/{u.total}
+                            </span>
+                          </div>
+                          <Progress value={pct} />
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  <Button asChild className="w-full gap-2">
+                    <Link to={fcContinueHref}>
+                      Continue
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                </AccordionContent>
+              </AccordionItem>
             );
           })()}
-        </div>
+        </Accordion>
       </div>
     </DashboardLayout>
+  );
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border p-3">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="text-xl font-bold mt-1">{value}</div>
+    </div>
   );
 }

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Sparkles, BookOpen } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UnitRow {
   id: string;
@@ -24,9 +25,17 @@ interface PackRow {
   description: string | null;
   price_cents: number;
   currency: string;
+  product_id: string | null;
+}
+
+interface PackUnitRow {
+  pack_id: string;
+  unit_id: string;
 }
 
 export default function FlashCardsHome() {
+  const { user } = useAuth();
+
   const { data: units } = useQuery({
     queryKey: ["fc-units-public"],
     queryFn: async () => {
@@ -45,12 +54,52 @@ export default function FlashCardsHome() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_packs")
-        .select("id,slug,title,description,price_cents,currency")
+        .select("id,slug,title,description,price_cents,currency,product_id")
         .eq("published", true);
       if (error) throw error;
       return (data ?? []) as PackRow[];
     },
   });
+
+  const { data: packUnits } = useQuery({
+    queryKey: ["fc-pack-units-public"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_pack_units")
+        .select("pack_id,unit_id");
+      if (error) throw error;
+      return (data ?? []) as PackUnitRow[];
+    },
+  });
+
+  const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
+  const firstPack = packs?.[0] ?? null;
+
+  // Helper: build checkout URL for a locked unit; falls back to first published pack
+  function checkoutHrefForUnit(unitId: string): string | null {
+    const match = packUnits?.find((pu) => pu.unit_id === unitId);
+    const pack =
+      (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
+    if (!pack?.product_id) return null;
+    const target = `/checkout?productId=${pack.product_id}`;
+    return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
+  }
+
+  function studyHrefForUnit(slug: string): string {
+    const target = `/flashcards/study/${slug}`;
+    return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
+  }
+
+  const heroFreeHref = firstFreeUnit
+    ? studyHrefForUnit(firstFreeUnit.slug)
+    : "/flashcards";
+
+  const heroPackHref =
+    firstPack?.product_id
+      ? (user
+          ? `/checkout?productId=${firstPack.product_id}`
+          : `/signup?redirect=${encodeURIComponent(`/checkout?productId=${firstPack.product_id}`)}`)
+      : null;
 
   const itemList = {
     "@context": "https://schema.org",
@@ -82,14 +131,15 @@ export default function FlashCardsHome() {
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Button size="lg" asChild>
-              <Link to="/flashcards/unit/unit-1">
-                <Sparkles className="w-4 h-4 mr-2" /> Try Unit 1 Free
+              <Link to={heroFreeHref}>
+                <Sparkles className="w-4 h-4 mr-2" />
+                {firstFreeUnit ? `Try ${firstFreeUnit.title_en} Free` : "Start Free"}
               </Link>
             </Button>
-            {packs?.[0] && (
+            {firstPack && heroPackHref && (
               <Button size="lg" variant="outline" asChild>
-                <Link to={`/flashcards/pack/${packs[0].slug}`}>
-                  Get Full Pack — ${(packs[0].price_cents / 100).toFixed(2)}
+                <Link to={heroPackHref}>
+                  Get Full Pack — ${(firstPack.price_cents / 100).toFixed(2)}
                 </Link>
               </Button>
             )}
@@ -106,32 +156,44 @@ export default function FlashCardsHome() {
             </p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {units.map((u) => (
-                <Card key={u.id} className="hover:shadow-lg transition">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <span>{u.title_en}</span>
-                      {u.is_free ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
-                          Free
-                        </span>
-                      ) : (
-                        <Lock className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                      {u.description}
-                    </p>
-                    <Button asChild variant="outline" size="sm">
-                      <Link to={`/flashcards/unit/${u.slug}`}>
-                        <BookOpen className="w-4 h-4 mr-2" /> Open Unit
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              {units.map((u) => {
+                const href = u.is_free
+                  ? studyHrefForUnit(u.slug)
+                  : checkoutHrefForUnit(u.id) ?? "/flashcards";
+                return (
+                  <Link
+                    key={u.id}
+                    to={href}
+                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+                  >
+                    <Card className="h-full hover:shadow-lg hover:border-primary/40 transition-all">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between text-lg">
+                          <span className="group-hover:text-primary transition-colors">
+                            {u.title_en}
+                          </span>
+                          {u.is_free ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
+                              Free
+                            </span>
+                          ) : (
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                          {u.description}
+                        </p>
+                        <div className="inline-flex items-center text-sm font-medium text-primary">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {u.is_free ? "Start studying" : "Unlock pack"}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

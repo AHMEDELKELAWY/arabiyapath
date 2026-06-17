@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
+import { useFlashcardsDashboard, useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { ProductCard } from "@/components/dashboard/ProductCard";
@@ -52,6 +52,7 @@ export default function Dashboard() {
     isLoading,
   } = useDashboardData();
   const { data: fcSummary } = useFlashcardsDashboard();
+  const { data: fcResumeSlug } = useFlashcardsResumeSlug();
 
   const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
@@ -240,6 +241,14 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
+              // Resume-first behavior: last studied unit → first free unit → flashcards home
+              const firstFreeOrAnyUnit =
+                fcSummary.units[0]?.slug ?? null;
+              const continueHref = fcResumeSlug
+                ? `/flashcards/study/${fcResumeSlug}`
+                : firstFreeOrAnyUnit
+                ? `/flashcards/study/${firstFreeOrAnyUnit}`
+                : "/flashcards";
               return (
                 <ProductCard
                   key="flashcards"
@@ -248,7 +257,7 @@ export default function Dashboard() {
                   progressPercent={progressPercent}
                   unitsLabel={`${fcSummary.units.length} unit${fcSummary.units.length === 1 ? "" : "s"}`}
                   lastActivityLabel={lastLabel}
-                  continueHref="/flashcards"
+                  continueHref={continueHref}
                 />
               );
             })()}

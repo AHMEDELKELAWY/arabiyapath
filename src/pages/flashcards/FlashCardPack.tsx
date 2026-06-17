@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery } from "@tanstack/react-query";
@@ -6,17 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
-import { getPaymentProvider } from "@/lib/payments/registry";
-import { toast } from "@/hooks/use-toast";
-import { Check, Loader2 } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
+import { Check, ArrowRight } from "lucide-react";
 
 export default function FlashCardPack() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   const { data: pack, isLoading } = useQuery({
     queryKey: ["fc-pack", slug],
@@ -33,43 +27,17 @@ export default function FlashCardPack() {
     },
   });
 
-  const handleBuy = async () => {
-    if (!user) {
-      navigate(`/signup?redirect=/flashcards/pack/${slug}`);
-      return;
-    }
-    if (!pack?.product_id) {
-      toast({ title: "Not available", description: "This pack isn't ready for purchase yet." });
-      return;
-    }
-    setLoading(true);
-    trackEvent("begin_checkout", {
-      item_id: pack.id,
-      item_name: pack.title,
-      value: pack.price_cents / 100,
-      currency: pack.currency,
-      product_type: "flashcard_pack",
-    });
-    try {
-      const provider = getPaymentProvider("paypal");
-      const res = await provider.createOrder({ productId: pack.product_id });
-      if (res.freeAccess) {
-        toast({ title: "Access granted!" });
-        navigate("/dashboard");
-        return;
-      }
-      if (res.approvalUrl) window.location.href = res.approvalUrl;
-    } catch (err: any) {
-      toast({ title: "Checkout error", description: err?.message || "Try again.", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
   if (!pack) return <Layout><div className="container py-16">Pack not found.</div></Layout>;
 
   const price = (pack.price_cents / 100).toFixed(2);
+  const checkoutTarget = pack.product_id ? `/checkout?productId=${pack.product_id}` : null;
+  const checkoutHref = checkoutTarget
+    ? user
+      ? checkoutTarget
+      : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`
+    : "/flashcards";
+
   const productLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -109,12 +77,14 @@ export default function FlashCardPack() {
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Spaced repetition (SRS) engine</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Progress + streak tracking</li>
             </ul>
-            <Button size="lg" className="w-full" onClick={handleBuy} disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Buy with PayPal
+            <Button size="lg" className="w-full gap-2" asChild>
+              <Link to={checkoutHref}>
+                Go to Checkout
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </Button>
             <p className="text-xs text-muted-foreground mt-3">
-              Secure payment via PayPal. Coupons can be applied at checkout.
+              Secure checkout with coupons, PayPal, and card payments.
             </p>
           </CardContent>
         </Card>

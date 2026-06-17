@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { FlashCardAudio } from "@/components/flashcards/msa/FlashCardAudio";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { toast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
@@ -51,9 +52,41 @@ export default function FlashCardStudy() {
     },
   });
 
+  const { data: access, isLoading: accessLoading } = useFlashcardUnitAccess(unit?.id);
+
+  // For locked-unit deep links, look up the pack product so we can redirect
+  // straight to the unified checkout (no intermediate pack/unit page).
+  const { data: unlockProductId } = useQuery({
+    queryKey: ["fc-study-unlock-product", unit?.id],
+    enabled: !!unit?.id && access === false && unit?.is_free === false,
+    queryFn: async () => {
+      const { data: pu } = await (supabase as any)
+        .from("flashcard_pack_units")
+        .select("pack_id")
+        .eq("unit_id", unit!.id)
+        .limit(1);
+      let packId = pu?.[0]?.pack_id ?? null;
+      if (!packId) {
+        const { data: anyPack } = await (supabase as any)
+          .from("flashcard_packs")
+          .select("id")
+          .eq("published", true)
+          .limit(1);
+        packId = anyPack?.[0]?.id ?? null;
+      }
+      if (!packId) return null;
+      const { data: pack } = await (supabase as any)
+        .from("flashcard_packs")
+        .select("product_id")
+        .eq("id", packId)
+        .maybeSingle();
+      return pack?.product_id ?? null;
+    },
+  });
+
   const { data: cards } = useQuery({
     queryKey: ["fc-study-cards", unit?.id],
-    enabled: !!unit?.id,
+    enabled: !!unit?.id && (unit?.is_free || access === true),
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
@@ -119,6 +152,14 @@ export default function FlashCardStudy() {
     );
   }
 
+  // Locked deep link → redirect straight to unified checkout (no pack page).
+  if (!unit.is_free && access === false && !accessLoading) {
+    if (unlockProductId) {
+      return <Navigate to={`/checkout?productId=${unlockProductId}`} replace />;
+    }
+    return <Navigate to="/flashcards" replace />;
+  }
+
   if (!cards?.length) {
     return (
       <Layout>
@@ -142,7 +183,7 @@ export default function FlashCardStudy() {
             Card {idx + 1} of {total}
           </p>
           <Button variant="ghost" size="sm" asChild>
-            <Link to={`/flashcards/unit/${unit.slug}`}>Exit</Link>
+            <Link to="/flashcards">Exit</Link>
           </Button>
         </div>
 

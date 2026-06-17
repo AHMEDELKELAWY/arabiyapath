@@ -44,6 +44,36 @@ export default function FlashCardUnit() {
 
   const { data: hasAccess } = useFlashcardUnitAccess(unit?.id);
 
+  // Look up a pack that contains this unit (or first published pack as fallback)
+  // to power the unified-checkout redirect for locked units.
+  const { data: unlockProductId } = useQuery({
+    queryKey: ["fc-unit-unlock-product", unit?.id],
+    enabled: !!unit?.id,
+    queryFn: async () => {
+      const { data: pu } = await (supabase as any)
+        .from("flashcard_pack_units")
+        .select("pack_id")
+        .eq("unit_id", unit!.id)
+        .limit(1);
+      let packId = pu?.[0]?.pack_id ?? null;
+      if (!packId) {
+        const { data: anyPack } = await (supabase as any)
+          .from("flashcard_packs")
+          .select("id")
+          .eq("published", true)
+          .limit(1);
+        packId = anyPack?.[0]?.id ?? null;
+      }
+      if (!packId) return null;
+      const { data: pack } = await (supabase as any)
+        .from("flashcard_packs")
+        .select("product_id")
+        .eq("id", packId)
+        .maybeSingle();
+      return pack?.product_id ?? null;
+    },
+  });
+
   if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
   if (!unit) return <Layout><div className="container py-16">Unit not found.</div></Layout>;
 
@@ -55,6 +85,9 @@ export default function FlashCardUnit() {
     }
     navigate(`/flashcards/study/${unit.slug}`);
   };
+
+  const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
+  const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
 
   return (
     <Layout>
@@ -92,7 +125,7 @@ export default function FlashCardUnit() {
               </Button>
             ) : (
               <Button size="lg" asChild>
-                <Link to="/flashcards">
+                <Link to={unlockHref}>
                   <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
                 </Link>
               </Button>
