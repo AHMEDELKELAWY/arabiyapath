@@ -41,8 +41,10 @@ interface UploadResult {
   cardId: string;
   filename: string;
   status: "ok" | "failed";
+  overwrote: boolean;
   error?: string;
 }
+
 
 export function BulkImageUploadDialog({
   open,
