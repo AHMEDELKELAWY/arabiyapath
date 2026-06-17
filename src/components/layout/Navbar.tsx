@@ -34,7 +34,14 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [dialectsOpen, setDialectsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    setIsOpen(false);
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   const isDialectActive = dialectLinks.some(link => location.pathname === link.href);
 
