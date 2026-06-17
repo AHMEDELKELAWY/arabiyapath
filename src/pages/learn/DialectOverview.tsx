@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useDialectLevels } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
+import { useDashboardData } from "@/hooks/useDashboardData";
 import { isGulfArabic, GULF_SALES_URL } from "@/lib/gulfAccess";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, getDialectSEO, generateCourseSchema } from "@/components/seo/SEOHead";
@@ -11,12 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ChevronRight, 
-  GraduationCap,
-  BookOpen,
-  Trophy
-} from "lucide-react";
+import { LevelProgressCard } from "@/components/dashboard/LevelProgressCard";
 
 export default function DialectOverview() {
   const { dialectId } = useParams();
