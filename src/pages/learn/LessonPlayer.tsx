@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { PageNav } from "@/components/learn/PageNav";
 import { useLesson, useMarkLessonComplete } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
@@ -245,34 +246,24 @@ export default function LessonPlayer() {
         {/* Header with breadcrumb and progress */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="container max-w-6xl py-3 sm:py-4 px-4 sm:px-6">
-            <div className="flex items-center justify-between">
-              {/* Full breadcrumb - Desktop */}
-              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-                <Link to={`/learn/dialect/${dialect?.id}`} className="hover:text-foreground transition-colors">
-                  {dialect?.name}
-                </Link>
-                <span>/</span>
-                <Link to={`/learn/level/${level?.id}`} className="hover:text-foreground transition-colors">
-                  {level?.name}
-                </Link>
-                <span>/</span>
-                <Link to={`/learn/unit/${unit?.id}`} className="hover:text-foreground transition-colors">
-                  {unit?.title}
-                </Link>
-              </div>
-              {/* Short breadcrumb - Mobile */}
-              <Link 
-                to={`/learn/unit/${unit?.id}`} 
-                className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronLeft className="h-3 w-3" />
-                {unit?.title}
-              </Link>
+            <div className="flex items-start justify-between gap-2">
+              <PageNav
+                crumbs={[
+                  { label: "Dashboard", to: "/dashboard" },
+                  { label: dialect?.name || "Course", to: dialect?.id ? `/learn/dialect/${dialect.id}` : "/dashboard" },
+                  { label: level?.name || "Level", to: level?.id ? `/learn/level/${level.id}` : "/dashboard" },
+                  { label: unit?.title || "Unit", to: unit?.id ? `/learn/unit/${unit.id}` : "/dashboard" },
+                  { label: lesson.title },
+                ]}
+                backTo={unit?.id ? `/learn/unit/${unit.id}` : "/dashboard"}
+                backLabel="Back to Unit"
+                className="flex-1 min-w-0"
+              />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLessonList(!showLessonList)}
-                className="gap-1 sm:gap-2 px-2 sm:px-3"
+                className="gap-1 sm:gap-2 px-2 sm:px-3 shrink-0"
               >
                 <List className="h-4 w-4" />
                 <span className="hidden sm:inline">Lessons</span>

@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { PageNav } from "@/components/learn/PageNav";
 import { useEffect } from "react";
 import { useDialectLevels } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -108,7 +109,16 @@ export default function DialectOverview() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background" />
           
-          <div className="relative container max-w-4xl py-10 sm:py-16 px-4 sm:px-6">
+          <div className="relative container max-w-4xl py-6 sm:py-10 px-4 sm:px-6">
+            <PageNav
+              crumbs={[
+                { label: "Dashboard", to: "/dashboard" },
+                { label: dialect.name },
+              ]}
+              backTo="/dashboard"
+              backLabel="Back to Dashboard"
+              className="mb-4 sm:mb-6"
+            />
             <Badge variant="secondary" className="mb-3 sm:mb-4 text-xs sm:text-sm">Arabic Dialect</Badge>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
               {dialect.name}

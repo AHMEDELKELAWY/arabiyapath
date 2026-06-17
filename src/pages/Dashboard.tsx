@@ -88,8 +88,15 @@ export default function Dashboard() {
     }
   });
 
+  // Flash Cards access: purchase OR free units exist OR has any progress/streak.
+  // Free units are accessible to everyone (fc_user_can_study_unit), so any
+  // published unit returned by fc_dashboard_summary means the user has access.
   const hasFlashcards =
-    !!fcSummary && fcSummary.purchases.some((p) => p.status === "active");
+    !!fcSummary &&
+    (fcSummary.purchases.some((p) => p.status === "active") ||
+      fcSummary.units.length > 0 ||
+      fcSummary.total_mastered > 0 ||
+      (fcSummary.streak?.current_streak ?? 0) > 0);
   const hasAnyProduct = ownedDialects.length > 0 || hasFlashcards;
 
   // ===== FREE USER DASHBOARD =====
@@ -225,10 +232,14 @@ export default function Dashboard() {
                 totalCards > 0
                   ? Math.round((mastered / totalCards) * 100)
                   : 0;
+              const streakCount = fcSummary.streak?.current_streak ?? 0;
               const lastDate = fcSummary.streak?.last_active_date;
-              const lastLabel = lastDate
-                ? `Last studied ${relativeDate(lastDate)}`
-                : "Not started yet";
+              const lastLabel =
+                streakCount > 0
+                  ? `🔥 ${streakCount}-day streak`
+                  : lastDate
+                  ? `Last studied ${relativeDate(lastDate)}`
+                  : "Not started yet";
               return (
                 <ProductCard
                   key="flashcards"

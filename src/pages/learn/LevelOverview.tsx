@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { PageNav } from "@/components/learn/PageNav";
 import { useLevelUnits } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
@@ -146,11 +147,16 @@ export default function LevelOverview() {
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm">
           <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-              <Link to={`/learn/dialect/${dialect?.id}`} className="hover:text-foreground transition-colors">
-                {dialect?.name}
-              </Link>
-            </div>
+            <PageNav
+              crumbs={[
+                { label: "Dashboard", to: "/dashboard" },
+                { label: dialect?.name || "Course", to: dialect?.id ? `/learn/dialect/${dialect.id}` : "/dashboard" },
+                { label: level.name },
+              ]}
+              backTo={dialect?.id ? `/learn/dialect/${dialect.id}` : "/dashboard"}
+              backLabel={`Back to ${dialect?.name || "Course"}`}
+              className="mb-3 sm:mb-4"
+            />
             
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
               <div>
