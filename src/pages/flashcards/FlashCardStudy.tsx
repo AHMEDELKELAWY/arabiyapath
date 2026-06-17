@@ -198,11 +198,11 @@ export default function FlashCardStudy() {
                       <FlashCardAudio
                         key={`${current.id}-audio`}
                         src={current.audio_url}
-                        autoPlay
-                        label="Replay audio"
+                        label="Play audio"
                       />
                     </div>
                   )}
+
                 </div>
               </button>
             </div>
