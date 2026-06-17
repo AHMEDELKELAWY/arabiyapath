@@ -122,7 +122,7 @@ export function AffiliateLayout({ children }: AffiliateLayoutProps) {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-            onClick={() => signOut()}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             Sign Out
