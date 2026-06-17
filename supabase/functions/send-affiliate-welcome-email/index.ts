@@ -140,7 +140,7 @@ serve(async (req) => {
                 <ul style="margin:12px 0;padding-left:20px;">
                   <li>Share your affiliate code with friends, family, and followers</li>
                   <li>When someone uses your code during checkout, they get a discount</li>
-                  <li>You earn <strong>${commissionRate}%</strong> commission on every successful purchase</li>
+                  <li>You earn <strong>${safeCommissionRate}%</strong> commission on every successful purchase</li>
                   <li>Track your earnings in your Affiliate Dashboard</li>
                 </ul>
               </div>
