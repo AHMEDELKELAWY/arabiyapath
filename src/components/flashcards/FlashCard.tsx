@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FlashCard as FlashCardType } from "@/data/flashCardsData";
 import { supabase } from "@/integrations/supabase/client";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 interface FlashCardProps {
   card: FlashCardType;
