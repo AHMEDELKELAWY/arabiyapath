@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useFlashcardsDashboard, useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
+import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { ProductCard } from "@/components/dashboard/ProductCard";
@@ -52,7 +52,6 @@ export default function Dashboard() {
     isLoading,
   } = useDashboardData();
   const { data: fcSummary } = useFlashcardsDashboard();
-  const { data: fcResumeSlug } = useFlashcardsResumeSlug();
 
   const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
@@ -241,20 +240,9 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              // Resume strategy:
-              //  1. Most recent / next-due reviewed unit, IF accessible and not fully mastered
-              //  2. Else first accessible incomplete unit
-              //  3. Else /flashcards
-              const accessibleIncomplete = fcSummary.units.filter(
-                (u) => (u.has_access ?? true) && u.mastered < u.total
-              );
-              const resumeUnit = fcResumeSlug
-                ? accessibleIncomplete.find((u) => u.slug === fcResumeSlug)
-                : null;
-              const targetUnit = resumeUnit ?? accessibleIncomplete[0] ?? null;
-              const continueHref = targetUnit
-                ? `/flashcards/study/${targetUnit.slug}?from=dashboard`
-                : "/flashcards";
+              // Continue always lands on the Flash Cards overview so the user
+              // can see all units and pick where to study.
+              const continueHref = "/flashcards";
               return (
                 <ProductCard
                   key="flashcards"
