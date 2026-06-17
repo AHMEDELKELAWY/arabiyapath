@@ -26,7 +26,7 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   unitId: string;
-  unitSlug?: string;
+  unitSlug: string;
   cards: MatcherCard[];
   onComplete?: () => void;
 }
