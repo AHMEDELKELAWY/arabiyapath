@@ -107,9 +107,10 @@ export default function AdminFlashcardCards() {
   });
 
   const unitSlug = useMemo(
-    () => (units ?? []).find((u: any) => u.id === unitId)?.slug || unitId,
+    () => (units ?? []).find((u: any) => u.id === unitId)?.slug || "",
     [units, unitId],
   );
+  const hasSlug = !!unitSlug;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
 
