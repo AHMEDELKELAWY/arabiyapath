@@ -1,21 +1,21 @@
 ## Goal
-Play the same click/transition sound used in lessons whenever the user taps a flash card to flip it.
+When the user clicks "Continue" on the Flash Cards card in the Dashboard, send them to the Flash Cards overview page (`/flashcards`) that lists all units, instead of dropping them straight into a single unit's study screen.
 
-## Sound to reuse
-`useSoundEffects().playSound('lessonTransition')` — already used in `LessonPlayer.tsx` for between-step taps. File: `/sounds/lesson-transition.mp3`.
+## Change
+File: `src/pages/Dashboard.tsx` (lines ~244–257)
 
-## Changes
-1. `src/pages/flashcards/FlashCardStudy.tsx` (MSA study screen)
-   - Import `useSoundEffects`.
-   - On the flip `onClick` (line 277), call `playSound('lessonTransition')` before toggling `flipped`.
+Replace the resume-into-study logic for the flashcards `ProductCard` with a fixed link to the units overview:
 
-2. `src/components/flashcards/FlashCard.tsx` (Gulf trial flash card)
-   - Import `useSoundEffects`.
-   - In `handleFlip`, call `playSound('lessonTransition')` before `setIsFlipped`.
+```ts
+const continueHref = "/flashcards";
+```
 
-No new assets needed — reusing the existing `lesson-transition.mp3` keeps audio consistent with the rest of the courses.
+Remove the now-unused `accessibleIncomplete` / `resumeUnit` / `targetUnit` computation and the `useFlashcardsResumeSlug` import + call if nothing else uses them (a quick grep confirms it's only used here).
+
+## Result
+Dashboard → Flash Cards card → **Continue** → `/flashcards` (units overview showing all unlocked + locked units). The user then picks the unit they want to study.
 
 ## Acceptance
-- Tap a flash card on `/flashcards/study/:slug` → hear the same transition sound used in lessons.
-- Tap the Gulf free-trial flash cards → same sound.
-- No sound on secondary controls (audio replay button, rating buttons) — only the flip tap.
+- Click Continue on Flash Cards card → lands on `/flashcards` showing the full unit list (In The Classroom, On The Road, …).
+- No automatic redirect to `/flashcards/study/...`.
+- Other dashboard behavior (progress %, streak, stats) unchanged.
