@@ -152,6 +152,14 @@ export default function FlashCardStudy() {
     );
   }
 
+  // Locked deep link → redirect straight to unified checkout (no pack page).
+  if (!unit.is_free && access === false && !accessLoading) {
+    if (unlockProductId) {
+      return <Navigate to={`/checkout?productId=${unlockProductId}`} replace />;
+    }
+    return <Navigate to="/flashcards" replace />;
+  }
+
   if (!cards?.length) {
     return (
       <Layout>
