@@ -1,169 +1,140 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePurchases } from "@/hooks/usePurchases";
-import { isFreeTrial } from "@/lib/accessControl";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Circle, ArrowRight, BookOpen, Lock, ShoppingCart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, BarChart3, BookOpen } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
+import { SEOHead } from "@/components/seo/SEOHead";
 
-interface UnitProgress {
-  unitId: string;
-  unitTitle: string;
-  description: string | null;
-  totalLessons: number;
-  completedLessons: number;
-  status: "not_started" | "in_progress" | "completed";
+const dialectEmojis: Record<string, string> = {
+  "Gulf Arabic": "🏜️",
+  "Egyptian Arabic": "🏛️",
+  "Modern Standard Arabic (Fusha)": "📚",
+};
+
+function relativeDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const day = 24 * 60 * 60 * 1000;
+  const days = Math.floor(diffMs / day);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+interface ProductProgressCardProps {
+  name: string;
+  emoji: string;
   progressPercent: number;
-  lastLessonId?: string;
-  lastLessonTitle?: string;
-  levelId: string;
-  levelOrderIndex: number;
-  unitOrderIndex: number;
+  totalUnits: number;
+  completedUnits: number;
+  lastActivityLabel: string;
+  continueHref: string;
+  viewProgressHref: string;
+}
+
+function ProductProgressCard({
+  name,
+  emoji,
+  progressPercent,
+  totalUnits,
+  completedUnits,
+  lastActivityLabel,
+  continueHref,
+  viewProgressHref,
+}: ProductProgressCardProps) {
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <span className="text-3xl" aria-hidden="true">{emoji}</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground truncate">{name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {completedUnits} / {totalUnits} unit{totalUnits === 1 ? "" : "s"} completed
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Progress</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} />
+        </div>
+
+        <p className="text-xs text-muted-foreground truncate">{lastActivityLabel}</p>
+
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <Button asChild className="flex-1 gap-2">
+            <Link to={continueHref}>
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="flex-1 gap-2">
+            <Link to={viewProgressHref}>
+              <BarChart3 className="w-4 h-4" />
+              View Progress
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function DashboardProgress() {
   const { user } = useAuth();
-  const { purchases, isLoading: purchasesLoading, checkLevelAccess } = usePurchases();
+  const { levelsByDialect, recentActivity, hasLevelAccess, isLoading } =
+    useDashboardData();
+  const { data: fcSummary, isLoading: fcLoading } = useFlashcardsDashboard();
 
-  // Fetch full progress data — auto-filtered to purchased content
-  const { data: progressData, isLoading } = useQuery({
-    queryKey: ["detailed-progress", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-
-      const { data: dialectsData, error: dialectsError } = await supabase
-        .from("dialects")
-        .select(`
-          id,
-          name,
-          levels (
-            id,
-            name,
-            order_index,
-            units (
-              id,
-              title,
-              description,
-              order_index,
-              lessons (
-                id,
-                title,
-                order_index
-              )
-            )
-          )
-        `);
-
-      if (dialectsError) throw dialectsError;
-
-      const { data: userProgress, error: progressError } = await supabase
-        .from("user_progress")
-        .select("lesson_id, completed_at")
-        .eq("user_id", user.id);
-
-      if (progressError) throw progressError;
-
-      const completedLessonIds = new Set(userProgress?.map((p) => p.lesson_id));
-
-      const unitProgressList: (UnitProgress & { dialectName: string; dialectId: string; hasAccess: boolean })[] = [];
-
-      dialectsData?.forEach((dialect) => {
-        dialect.levels?.forEach((level) => {
-          const levelOrderIndex = level.order_index || 1;
-
-          level.units?.forEach((unit) => {
-            const unitOrderIndex = unit.order_index || 1;
-            const lessons = unit.lessons || [];
-            const completedLessons = lessons.filter((l) =>
-              completedLessonIds.has(l.id)
-            ).length;
-
-            const status: "not_started" | "in_progress" | "completed" =
-              completedLessons === 0
-                ? "not_started"
-                : completedLessons === lessons.length
-                  ? "completed"
-                  : "in_progress";
-
-            const sortedLessons = [...lessons].sort((a, b) => a.order_index - b.order_index);
-            const lastIncompleteLesson = sortedLessons.find(
-              (l) => !completedLessonIds.has(l.id)
-            );
-
-            const isFree = isFreeTrial(levelOrderIndex, unitOrderIndex);
-            const hasAccess = isFree || checkLevelAccess(level.id, dialect.id, levelOrderIndex, unitOrderIndex);
-
-            unitProgressList.push({
-              dialectId: dialect.id,
-              dialectName: dialect.name,
-              levelId: level.id,
-              levelOrderIndex,
-              unitOrderIndex,
-              unitId: unit.id,
-              unitTitle: unit.title,
-              description: unit.description,
-              totalLessons: lessons.length,
-              completedLessons,
-              status,
-              progressPercent: lessons.length > 0
-                ? Math.round((completedLessons / lessons.length) * 100)
-                : 0,
-              lastLessonId: lastIncompleteLesson?.id,
-              lastLessonTitle: lastIncompleteLesson?.title,
-              hasAccess,
-            });
-          });
-        });
-      });
-
-      return unitProgressList;
-    },
-    enabled: !!user,
-  });
-
-  // Split into accessible vs locked
-  const accessibleUnits = progressData?.filter((u) => u.hasAccess) || [];
-  const lockedUnits = progressData?.filter((u) => !u.hasAccess) || [];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case "in_progress":
-        return <Circle className="w-5 h-5 text-primary fill-primary/20" />;
-      default:
-        return <Circle className="w-5 h-5 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "Completed";
-      case "in_progress":
-        return "In Progress";
-      default:
-        return "Not Started";
-    }
-  };
-
-  const hasAnyPurchase = purchases && purchases.length > 0;
-
-  // Free user — no purchases
-  if (!purchasesLoading && !hasAnyPurchase) {
+  if (isLoading || fcLoading) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-56" />
+            <Skeleton className="h-56" />
+            <Skeleton className="h-56" />
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const ownedDialects = levelsByDialect.filter((dg) =>
+    dg.levels.some((l) => hasLevelAccess(l.levelId, l.dialectId))
+  );
+
+  const hasFlashcards =
+    !!fcSummary &&
+    (fcSummary.purchases.some((p) => p.status === "active") ||
+      fcSummary.units.length > 0 ||
+      fcSummary.total_mastered > 0 ||
+      (fcSummary.streak?.current_streak ?? 0) > 0);
+
+  const hasAnyProduct = ownedDialects.length > 0 || hasFlashcards;
+
+  if (!user || !hasAnyProduct) {
+    return (
+      <DashboardLayout>
+        <SEOHead title="Progress" canonicalPath="/dashboard/progress" noindex />
+        <div className="space-y-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-              Detailed Progress
+              Progress
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Purchase a course to start tracking your progress
@@ -173,7 +144,7 @@ export default function DashboardProgress() {
             <CardContent className="py-12 text-center">
               <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                No active courses
+                No active products
               </h3>
               <p className="text-muted-foreground mb-4">
                 Get started with a free lesson or explore our courses.
@@ -198,127 +169,86 @@ export default function DashboardProgress() {
 
   return (
     <DashboardLayout>
+      <SEOHead title="Progress" canonicalPath="/dashboard/progress" noindex />
       <div className="space-y-6 sm:space-y-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-            Detailed Progress
+            Progress
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Track your learning progress across your purchased units
+            An overview of your learning products. Pick one to dive into details.
           </p>
         </div>
 
-        {/* Progress List — accessible units */}
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-        ) : accessibleUnits.length > 0 ? (
-          <div className="space-y-4">
-            {accessibleUnits.map((unit) => (
-              <Card key={unit.unitId} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex flex-col gap-4 p-4 sm:p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {getStatusIcon(unit.status)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground text-sm sm:text-base">
-                            {unit.unitTitle}
-                          </h3>
-                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                            {unit.dialectName}
-                          </span>
-                        </div>
-                        {unit.description && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2 sm:line-clamp-1">
-                            {unit.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3">
-                          <Progress value={unit.progressPercent} className="h-2 flex-1" />
-                          <span className="text-xs sm:text-sm font-medium text-foreground w-10 sm:w-12 text-right">
-                            {unit.progressPercent}%
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {unit.completedLessons} of {unit.totalLessons} lessons completed
-                        </p>
-                      </div>
-                    </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {ownedDialects.map((dg) => {
+            const totalLessons = dg.levels.reduce((s, l) => s + l.totalLessons, 0);
+            const completedLessons = dg.levels.reduce(
+              (s, l) => s + l.completedLessons,
+              0
+            );
+            const totalUnits = dg.levels.reduce((s, l) => s + l.totalUnits, 0);
+            const completedUnits = dg.levels.reduce(
+              (s, l) => s + l.completedUnits,
+              0
+            );
+            const progressPercent =
+              totalLessons > 0
+                ? Math.round((completedLessons / totalLessons) * 100)
+                : 0;
+            const last = recentActivity.find((a) => a.dialectId === dg.dialectId);
+            const lastLabel = last
+              ? `Last: ${last.unitTitle} · ${relativeDate(last.completedAt)}`
+              : "Not started yet";
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2 border-t sm:border-0 sm:pt-0">
-                      <span
-                        className={cn(
-                          "text-xs font-medium px-2 py-1 rounded text-center sm:text-left",
-                          unit.status === "completed" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                          unit.status === "in_progress" && "bg-primary/10 text-primary",
-                          unit.status === "not_started" && "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {getStatusLabel(unit.status)}
-                      </span>
-                      <div className="flex gap-2 sm:ml-auto">
-                        {unit.status !== "completed" && unit.lastLessonId && (
-                          <Link to={`/learn/lesson/${unit.lastLessonId}`} className="flex-1 sm:flex-initial">
-                            <Button size="sm" variant="outline" className="gap-1 w-full sm:w-auto">
-                              {unit.status === "not_started" ? "Start" : "Continue"}
-                              <ArrowRight className="w-3 h-3" />
-                            </Button>
-                          </Link>
-                        )}
-                        <Link to={`/learn/unit/${unit.unitId}`} className="flex-1 sm:flex-initial">
-                          <Button size="sm" variant="ghost" className="gap-1 w-full sm:w-auto">
-                            <BookOpen className="w-3 h-3" />
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No units available
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Start learning to see your progress here
-              </p>
-              <Link to="/dialects">
-                <Button>Browse Dialects</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+            return (
+              <ProductProgressCard
+                key={dg.dialectId}
+                name={dg.dialectName}
+                emoji={dialectEmojis[dg.dialectName] || "📖"}
+                progressPercent={progressPercent}
+                totalUnits={totalUnits}
+                completedUnits={completedUnits}
+                lastActivityLabel={lastLabel}
+                continueHref={`/learn/dialect/${dg.dialectId}`}
+                viewProgressHref={`/learn/dialect/${dg.dialectId}`}
+              />
+            );
+          })}
 
-        {/* Locked units — collapsed summary */}
-        {lockedUnits.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-muted-foreground" />
-              Locked Content
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              {lockedUnits.length} unit{lockedUnits.length !== 1 ? "s" : ""} available to unlock. Upgrade your plan to access more content.
-            </p>
-            <Link to="/gulf-arabic-course#choose-plan">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                View Upgrade Options
-              </Button>
-            </Link>
-          </section>
-        )}
+          {hasFlashcards && fcSummary && (() => {
+            const totalCards = fcSummary.units.reduce((s, u) => s + u.total, 0);
+            const mastered = fcSummary.total_mastered;
+            const progressPercent =
+              totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0;
+            const totalUnits = fcSummary.units.length;
+            const completedUnits = fcSummary.units.filter(
+              (u) => u.total > 0 && u.mastered >= u.total
+            ).length;
+            const streakCount = fcSummary.streak?.current_streak ?? 0;
+            const lastDate = fcSummary.streak?.last_active_date;
+            const lastLabel =
+              streakCount > 0
+                ? `🔥 ${streakCount}-day streak`
+                : lastDate
+                ? `Last studied ${relativeDate(lastDate)}`
+                : "Not started yet";
+
+            return (
+              <ProductProgressCard
+                key="flashcards"
+                name="Flash Cards"
+                emoji="🃏"
+                progressPercent={progressPercent}
+                totalUnits={totalUnits}
+                completedUnits={completedUnits}
+                lastActivityLabel={lastLabel}
+                continueHref="/flashcards"
+                viewProgressHref="/flashcards"
+              />
+            );
+          })()}
+        </div>
       </div>
     </DashboardLayout>
   );
