@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Sparkles, BookOpen } from "lucide-react";
+import { Lock, Sparkles, BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -145,6 +145,7 @@ export default function FlashCardsHome() {
 
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
   const firstPack = packs?.[0] ?? null;
+  const hasAnyPackAccess = (ownedPackIds?.size ?? 0) > 0;
 
   // Diagnostic log requested for verification.
   useEffect(() => {
@@ -196,7 +197,7 @@ export default function FlashCardsHome() {
     : "/flashcards";
 
   const heroPackHref =
-    firstPack?.product_id
+    firstPack?.product_id && !hasAnyPackAccess
       ? (user
           ? `/checkout?productId=${firstPack.product_id}`
           : `/signup?redirect=${encodeURIComponent(`/checkout?productId=${firstPack.product_id}`)}`)
@@ -259,8 +260,11 @@ export default function FlashCardsHome() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
                 const unlocked = unitUnlocked(u.id, u.is_free);
+                const entitlementLoading = !!user && !u.is_free && ownedPacksQuery.isLoading;
                 let href: string;
-                if (unlocked) {
+                if (entitlementLoading) {
+                  href = "/flashcards";
+                } else if (unlocked) {
                   href = studyHrefForUnit(u.slug);
                 } else {
                   const match = packUnits?.find((pu) => pu.unit_id === u.id);
@@ -291,6 +295,8 @@ export default function FlashCardsHome() {
                             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               Unlocked
                             </span>
+                          ) : entitlementLoading ? (
+                            <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                           ) : (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           )}
@@ -302,7 +308,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {unlocked ? "Start studying" : "Unlock pack"}
+                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack"}
                         </div>
                       </CardContent>
                     </Card>
