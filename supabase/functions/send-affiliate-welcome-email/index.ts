@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,12 +14,39 @@ interface AffiliateWelcomeRequest {
   commissionRate: number;
 }
 
+function escapeHtml(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Admin auth check
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleRow) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { email, fullName, affiliateCode, commissionRate }: AffiliateWelcomeRequest = await req.json();
 
     if (!email || !fullName || !affiliateCode) {
@@ -27,6 +55,11 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Sanitize fields used in HTML body
+    const safeFullName = escapeHtml(fullName);
+    const safeAffiliateCode = escapeHtml(affiliateCode);
+    const safeCommissionRate = escapeHtml(commissionRate);
 
     console.log(`Sending affiliate welcome email to ${email}`);
 
@@ -76,7 +109,7 @@ serve(async (req) => {
           <tr>
             <td style="padding:32px 24px;">
               <div style="font-size:20px;font-weight:600;color:#1e293b;margin-bottom:8px;">
-                🎉 Congratulations, ${fullName}!
+                🎉 Congratulations, ${safeFullName}!
               </div>
               <div style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px;">
                 Your application to join the ArabiyPath Partner Program has been <strong style="color:#16a34a;">approved</strong>! 
@@ -88,7 +121,7 @@ serve(async (req) => {
                   YOUR AFFILIATE CODE
                 </div>
                 <div style="font-size:32px;font-weight:700;letter-spacing:3px;color:#15803d;text-align:center;background:#fff;padding:16px;border-radius:8px;border:2px dashed #86efac;">
-                  ${affiliateCode}
+                  ${safeAffiliateCode}
                 </div>
               </div>
 
@@ -96,7 +129,7 @@ serve(async (req) => {
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
                     <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Your Commission Rate</div>
-                    <div style="font-size:28px;font-weight:700;color:#2f6b58;">${commissionRate}%</div>
+                    <div style="font-size:28px;font-weight:700;color:#2f6b58;">${safeCommissionRate}%</div>
                   </div>
                   <div style="font-size:40px;">💰</div>
                 </div>
@@ -107,7 +140,7 @@ serve(async (req) => {
                 <ul style="margin:12px 0;padding-left:20px;">
                   <li>Share your affiliate code with friends, family, and followers</li>
                   <li>When someone uses your code during checkout, they get a discount</li>
-                  <li>You earn <strong>${commissionRate}%</strong> commission on every successful purchase</li>
+                  <li>You earn <strong>${safeCommissionRate}%</strong> commission on every successful purchase</li>
                   <li>Track your earnings in your Affiliate Dashboard</li>
                 </ul>
               </div>
@@ -140,7 +173,7 @@ serve(async (req) => {
       await client.send({
         from: `ArabiyaPath <${smtpUser}>`,
         to: email,
-        subject: `🎉 Welcome to ArabiyPath Partner Program - Your Code: ${affiliateCode}`,
+        subject: `🎉 Welcome to ArabiyPath Partner Program - Your Code: ${affiliateCode.replace(/[\r\n]/g, "")}`,
         html: htmlContent,
       });
       console.log(`Affiliate welcome email sent successfully to ${email}`);
