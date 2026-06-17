@@ -189,7 +189,7 @@ export function Navbar() {
                     >
                       Dashboard
                     </Link>
-                    <Button variant="outline" className="w-full" onClick={() => { signOut(); setIsOpen(false); }}>
+                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Log out
                     </Button>
