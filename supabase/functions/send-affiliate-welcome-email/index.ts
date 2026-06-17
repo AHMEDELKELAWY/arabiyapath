@@ -109,7 +109,7 @@ serve(async (req) => {
           <tr>
             <td style="padding:32px 24px;">
               <div style="font-size:20px;font-weight:600;color:#1e293b;margin-bottom:8px;">
-                🎉 Congratulations, ${fullName}!
+                🎉 Congratulations, ${safeFullName}!
               </div>
               <div style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px;">
                 Your application to join the ArabiyPath Partner Program has been <strong style="color:#16a34a;">approved</strong>! 
