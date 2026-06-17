@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Lock, Check, Sparkles, ArrowRight } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
