@@ -21,7 +21,7 @@ import {
 const dialectLinks = [
   { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
   { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
-  { href: "/learn/egyptian-arabic", label: "Egyptian Arabic", comingSoon: true },
+  { href: "/flashcards-pack", label: "Flash Cards" },
 ];
 
 const mainNavLinks = [

@@ -78,6 +78,7 @@ const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
 const FlashCardUnit = lazy(() => import("./pages/flashcards/FlashCardUnit"));
 const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
 const FlashCardStudy = lazy(() => import("./pages/flashcards/FlashCardStudy"));
+const FlashCardsSalesPage = lazy(() => import("./pages/FlashCardsSalesPage"));
 
 // Affiliate pages
 const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboard"));
@@ -160,6 +161,7 @@ const App = () => (
               <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
               {/* Flash Cards (MSA) public routes */}
               <Route path="/flashcards" element={<FlashCardsHome />} />
+              <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />
               <Route path="/flashcards/unit/:slug" element={<FlashCardUnit />} />
               <Route path="/flashcards/pack/:slug" element={<FlashCardPack />} />
               <Route path="/flashcards/study/:unitSlug" element={<ProtectedRoute><FlashCardStudy /></ProtectedRoute>} />
