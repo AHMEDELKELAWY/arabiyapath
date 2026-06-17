@@ -144,7 +144,7 @@ export function Navbar() {
                 >
                   Dashboard
                 </Link>
-                <Button variant="outline" size="sm" onClick={signOut}>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Log out
                 </Button>
