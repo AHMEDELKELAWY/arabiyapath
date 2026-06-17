@@ -80,6 +80,12 @@ export default function PaymentSuccess() {
               await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
             }
 
+            // Flashcard packs go straight to /flashcards (unlocked units visible)
+            if (data.productType === "flashcard_pack") {
+              navigate("/flashcards", { replace: true });
+              return;
+            }
+
             // Redirect to thank-you page (fires Meta Pixel)
             navigate("/thank-you-purchase", { replace: true });
             return;
