@@ -128,6 +128,7 @@ export default function Checkout() {
   const dialectName = (product.dialects as any)?.name || "Arabic";
   const levelName = (product.levels as any)?.name || product.name;
   const unitsCount = levelInfo?.units?.length || 0;
+  const successRedirectPath = product.scope === "flashcard_pack" ? "/flashcards" : "/dashboard";
 
   // Features based on product type
   const features = product.scope === "bundle" 
@@ -223,8 +224,11 @@ export default function Checkout() {
                     productType={product.id}
                     productName={product.name}
                     price={product.price}
+                    successRedirectPath={successRedirectPath}
                     onSuccess={() => {
-                      navigate("/dashboard");
+                      if (product.scope !== "flashcard_pack") {
+                        navigate("/dashboard");
+                      }
                     }}
                   />
                 </CardContent>
