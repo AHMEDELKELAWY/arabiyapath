@@ -19,6 +19,7 @@ interface CardCheckoutProps {
   price: number;
   clientToken: string;
   couponCode?: string;
+  successRedirectPath?: string;
   onSuccess?: () => void;
 }
 
@@ -83,6 +84,7 @@ export function CardCheckout({
   price,
   clientToken,
   couponCode,
+  successRedirectPath,
   onSuccess,
 }: CardCheckoutProps) {
   const { user } = useAuth();
@@ -155,7 +157,7 @@ export function CardCheckout({
       await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
       await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
       onSuccess?.();
-      navigate("/dashboard");
+      navigate(result.productType === "flashcard_pack" ? "/flashcards" : successRedirectPath ?? "/dashboard");
     } catch (error) {
       console.error("Capture error:", error);
       toast.error(error instanceof Error ? error.message : "Payment failed");

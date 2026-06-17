@@ -192,6 +192,7 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           freeAccess: true,
+          productType: product.scope,
           message: "Access granted with 100% discount coupon"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

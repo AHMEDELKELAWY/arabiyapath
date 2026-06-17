@@ -197,7 +197,7 @@ serve(async (req) => {
     // === IDEMPOTENCY CHECK: If purchase already exists for this PayPal order, return success ===
     const { data: existingPurchase } = await supabase
       .from("purchases")
-      .select("id")
+      .select("id, product_type")
       .eq("paypal_order_id", orderId)
       .maybeSingle();
 
@@ -208,6 +208,7 @@ serve(async (req) => {
           success: true,
           message: "Order already processed",
           alreadyCaptured: true,
+          productType: existingPurchase.product_type,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -323,14 +324,14 @@ serve(async (req) => {
     // Re-check idempotency after capture (race condition guard)
     const { data: existingAfterCapture } = await supabase
       .from("purchases")
-      .select("id")
+      .select("id, product_type")
       .eq("paypal_order_id", orderId)
       .maybeSingle();
 
     if (existingAfterCapture) {
       console.log(`Purchase created by concurrent request: ${existingAfterCapture.id}`);
       return new Response(
-        JSON.stringify({ success: true, alreadyCaptured: true }),
+        JSON.stringify({ success: true, alreadyCaptured: true, productType: existingAfterCapture.product_type }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

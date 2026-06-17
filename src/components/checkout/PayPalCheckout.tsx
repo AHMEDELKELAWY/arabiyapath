@@ -15,10 +15,11 @@ interface PayPalCheckoutProps {
   productType: string;
   productName: string;
   price: number;
+  successRedirectPath?: string;
   onSuccess?: () => void;
 }
 
-export function PayPalCheckout({ productType, productName, price, onSuccess }: PayPalCheckoutProps) {
+export function PayPalCheckout({ productType, productName, price, successRedirectPath, onSuccess }: PayPalCheckoutProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -141,7 +142,7 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
         await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
         await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
-        navigate("/dashboard");
+        navigate(data.productType === "flashcard_pack" ? "/flashcards" : successRedirectPath ?? "/dashboard");
         return;
       }
 
@@ -200,7 +201,7 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
         await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
         await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
-        navigate("/dashboard");
+        navigate(data.productType === "flashcard_pack" ? "/flashcards" : successRedirectPath ?? "/dashboard");
       }
     } catch (error) {
       console.error("Free access error:", error);
@@ -387,6 +388,7 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
               price={finalPrice}
               clientToken={clientToken}
               couponCode={appliedCoupon?.code}
+              successRedirectPath={successRedirectPath}
               onSuccess={onSuccess}
             />
           ) : (

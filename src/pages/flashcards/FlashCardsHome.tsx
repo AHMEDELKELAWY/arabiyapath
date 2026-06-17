@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Sparkles, BookOpen } from "lucide-react";
+import { Lock, Sparkles, BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -38,7 +38,7 @@ interface PackUnitRow {
 export default function FlashCardsHome() {
   const { user } = useAuth();
 
-  const { data: units } = useQuery({
+  const unitsQuery = useQuery({
     queryKey: ["fc-units-public"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -49,9 +49,12 @@ export default function FlashCardsHome() {
       if (error) throw error;
       return (data ?? []) as UnitRow[];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+  const units = unitsQuery.data;
 
-  const { data: packs } = useQuery({
+  const packsQuery = useQuery({
     queryKey: ["fc-packs-public"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -61,9 +64,12 @@ export default function FlashCardsHome() {
       if (error) throw error;
       return (data ?? []) as PackRow[];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+  const packs = packsQuery.data;
 
-  const { data: packUnits } = useQuery({
+  const packUnitsQuery = useQuery({
     queryKey: ["fc-pack-units-public"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -72,10 +78,14 @@ export default function FlashCardsHome() {
       if (error) throw error;
       return (data ?? []) as PackUnitRow[];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+  const packUnits = packUnitsQuery.data;
 
   // Per-pack ownership via server RPC — single source of truth used everywhere.
-  const { data: ownedPackIds } = useQuery({
+  const ownedPacksQuery = useQuery({
     queryKey: ["fc-owned-packs", user?.id, packs?.map((p) => p.id).join(",") ?? ""],
     enabled: !!user && !!packs?.length,
     staleTime: 0,
@@ -98,32 +108,83 @@ export default function FlashCardsHome() {
       return new Set(results.filter(Boolean) as string[]);
     },
   });
+  const ownedPackIds = ownedPacksQuery.data;
+
+  const unitAccessQuery = useQuery({
+    queryKey: ["fc-home-unit-access", user?.id ?? "anon", units?.map((u) => u.id).join(",") ?? ""],
+    enabled: !!user && !!units?.length,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const entries = await Promise.all(
+        (units ?? []).map(async (u) => {
+          const { data, error } = await (supabase.rpc as any)("fc_user_can_study_unit", {
+            _user_id: user!.id,
+            _unit_id: u.id,
+          });
+          if (error) {
+            console.error("[FlashCardsHome] fc_user_can_study_unit", u.slug, error);
+            return [u.id, false] as const;
+          }
+          return [u.id, !!data] as const;
+        })
+      );
+      return new Map(entries);
+    },
+  });
 
   // Compute access per unit: free OR user owns a pack containing this unit.
   function unitUnlocked(unitId: string, isFree: boolean): boolean {
     if (isFree) return true;
     if (!user || !ownedPackIds || !packUnits) return false;
     const packsForUnit = packUnits.filter((pu) => pu.unit_id === unitId).map((pu) => pu.pack_id);
-    return packsForUnit.some((pid) => ownedPackIds.has(pid));
+    if (packsForUnit.some((pid) => ownedPackIds.has(pid))) return true;
+    return ownedPackIds.size > 0 && packUnits.length === 0;
   }
 
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
   const firstPack = packs?.[0] ?? null;
+  const hasAnyPackAccess = (ownedPackIds?.size ?? 0) > 0;
 
   // Diagnostic log requested for verification.
   useEffect(() => {
     if (!units) return;
-    console.log("[FlashCardsHome] access state", {
+    const packAccess = (packs ?? []).map((p) => ({
+      packId: p.id,
+      packSlug: p.slug,
+      hasPackAccess: ownedPackIds?.has(p.id) ?? false,
+    }));
+    console.log("[FlashCardsHome] entitlement debug", {
       userId: user?.id ?? null,
+      authUid: user?.id ?? null,
+      packOwnershipResult: packAccess,
+      hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
       ownedPackIds: ownedPackIds ? Array.from(ownedPackIds) : null,
+      packUnitsCount: packUnits?.length ?? null,
+      packUnits: packUnits ?? null,
+      reactQueryCache: {
+        unitsUpdatedAt: unitsQuery.dataUpdatedAt,
+        packsUpdatedAt: packsQuery.dataUpdatedAt,
+        packUnitsUpdatedAt: packUnitsQuery.dataUpdatedAt,
+        ownedPacksUpdatedAt: ownedPacksQuery.dataUpdatedAt,
+        unitAccessUpdatedAt: unitAccessQuery.dataUpdatedAt,
+        packUnitsFetching: packUnitsQuery.isFetching,
+        ownedPacksFetching: ownedPacksQuery.isFetching,
+        unitAccessFetching: unitAccessQuery.isFetching,
+      },
       units: units.map((u) => ({
         slug: u.slug,
         is_free: u.is_free,
-        unlocked: unitUnlocked(u.id, u.is_free),
+        currentUserId: user?.id ?? null,
+        hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
+        canStudy: unitAccessQuery.data?.get(u.id) ?? null,
+        uiUnlocked: unitUnlocked(u.id, u.is_free),
+        lockStateShownInUI: unitUnlocked(u.id, u.is_free) ? "Start studying" : "Unlock pack",
       })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [units, ownedPackIds, user?.id, packUnits]);
+  }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
 
 
   function studyHrefForUnit(slug: string): string {
@@ -136,7 +197,7 @@ export default function FlashCardsHome() {
     : "/flashcards";
 
   const heroPackHref =
-    firstPack?.product_id
+    firstPack?.product_id && !hasAnyPackAccess
       ? (user
           ? `/checkout?productId=${firstPack.product_id}`
           : `/signup?redirect=${encodeURIComponent(`/checkout?productId=${firstPack.product_id}`)}`)
@@ -199,8 +260,11 @@ export default function FlashCardsHome() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
                 const unlocked = unitUnlocked(u.id, u.is_free);
+                const entitlementLoading = !!user && !u.is_free && ownedPacksQuery.isLoading;
                 let href: string;
-                if (unlocked) {
+                if (entitlementLoading) {
+                  href = "/flashcards";
+                } else if (unlocked) {
                   href = studyHrefForUnit(u.slug);
                 } else {
                   const match = packUnits?.find((pu) => pu.unit_id === u.id);
@@ -231,6 +295,8 @@ export default function FlashCardsHome() {
                             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               Unlocked
                             </span>
+                          ) : entitlementLoading ? (
+                            <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                           ) : (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           )}
@@ -242,7 +308,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {unlocked ? "Start studying" : "Unlock pack"}
+                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack"}
                         </div>
                       </CardContent>
                     </Card>
