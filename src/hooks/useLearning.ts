@@ -220,6 +220,7 @@ export function useMarkLessonComplete() {
       queryClient.invalidateQueries({ queryKey: ["lesson"] });
       queryClient.invalidateQueries({ queryKey: ["unit-lessons"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["user-progress"] });
     },
   });
 }
