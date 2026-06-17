@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,13 +33,14 @@ interface CardRow {
 
 export default function FlashCardStudy() {
   const { unitSlug } = useParams<{ unitSlug: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const exitHref = "/flashcards";
+  const exitHref = searchParams.get("from") === "dashboard" ? "/dashboard" : "/flashcards";
 
   const { data: unit } = useQuery({
     queryKey: ["fc-unit-by-slug", unitSlug],
