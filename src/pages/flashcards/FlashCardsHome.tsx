@@ -86,7 +86,7 @@ export default function FlashCardsHome() {
   }
 
   function studyHrefForUnit(slug: string): string {
-    const target = `/flashcards/study/${slug}`;
+    const target = `/flashcards/study/${slug}?from=home`;
     return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
   }
 
