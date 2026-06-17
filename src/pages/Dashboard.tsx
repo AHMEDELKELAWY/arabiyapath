@@ -245,9 +245,9 @@ export default function Dashboard() {
               const firstFreeOrAnyUnit =
                 fcSummary.units[0]?.slug ?? null;
               const continueHref = fcResumeSlug
-                ? `/flashcards/study/${fcResumeSlug}`
+                ? `/flashcards/study/${fcResumeSlug}?from=dashboard`
                 : firstFreeOrAnyUnit
-                ? `/flashcards/study/${firstFreeOrAnyUnit}`
+                ? `/flashcards/study/${firstFreeOrAnyUnit}?from=dashboard`
                 : "/flashcards";
               return (
                 <ProductCard

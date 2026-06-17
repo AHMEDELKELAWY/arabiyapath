@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, Sparkles } from "lucide-react";
 
 export default function FlashCardPack() {
   const { slug } = useParams<{ slug: string }>();
@@ -27,6 +27,22 @@ export default function FlashCardPack() {
     },
   });
 
+  const { data: freeUnit } = useQuery({
+    queryKey: ["fc-pack-free-unit"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_units")
+        .select("slug,title_en")
+        .eq("is_free", true)
+        .eq("published", true)
+        .order("order_index")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { slug: string; title_en: string } | null;
+    },
+  });
+
   if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
   if (!pack) return <Layout><div className="container py-16">Pack not found.</div></Layout>;
 
@@ -37,6 +53,13 @@ export default function FlashCardPack() {
       ? checkoutTarget
       : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`
     : "/flashcards";
+
+  const freeStudyTarget = freeUnit ? `/flashcards/study/${freeUnit.slug}?from=home` : null;
+  const freeHref = freeStudyTarget
+    ? user
+      ? freeStudyTarget
+      : `/signup?redirect=${encodeURIComponent(freeStudyTarget)}`
+    : null;
 
   const productLd = {
     "@context": "https://schema.org",
@@ -70,20 +93,32 @@ export default function FlashCardPack() {
             <p className="text-sm text-muted-foreground mb-6">
               {pack.access_type === "lifetime" ? "Lifetime access" : pack.access_type}
             </p>
-            <ul className="text-left max-w-sm mx-auto space-y-2 mb-8 text-sm">
+
+            <div className="flex flex-col gap-3 mb-8">
+              <Button size="lg" className="w-full gap-2" asChild>
+                <Link to={checkoutHref}>
+                  Get Lifetime Access
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+              {freeHref && (
+                <Button size="lg" variant="outline" className="w-full gap-2" asChild>
+                  <Link to={freeHref}>
+                    <Sparkles className="w-4 h-4" />
+                    Try Free Unit
+                  </Link>
+                </Button>
+              )}
+            </div>
+
+            <ul className="text-left max-w-sm mx-auto space-y-2 mb-6 text-sm">
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> All units included</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Realistic image flash cards</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Native MSA audio with full tashkeel</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Spaced repetition (SRS) engine</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Progress + streak tracking</li>
             </ul>
-            <Button size="lg" className="w-full gap-2" asChild>
-              <Link to={checkoutHref}>
-                Go to Checkout
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-xs text-muted-foreground">
               Secure checkout with coupons, PayPal, and card payments.
             </p>
           </CardContent>
