@@ -129,7 +129,7 @@ serve(async (req) => {
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
                     <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Your Commission Rate</div>
-                    <div style="font-size:28px;font-weight:700;color:#2f6b58;">${commissionRate}%</div>
+                    <div style="font-size:28px;font-weight:700;color:#2f6b58;">${safeCommissionRate}%</div>
                   </div>
                   <div style="font-size:40px;">💰</div>
                 </div>
