@@ -6,7 +6,7 @@ export interface FlashcardsDashboardSummary {
   streak: { current_streak: number; longest_streak: number; last_active_date: string | null } | null;
   due_today: number;
   total_mastered: number;
-  units: Array<{ unit_id: string; slug: string; title: string; total: number; mastered: number; has_access?: boolean }>;
+  units: Array<{ unit_id: string; slug: string; title: string; total: number; mastered: number; reviewed?: number; has_access?: boolean }>;
   purchases: Array<{
     id: string;
     pack_id: string;

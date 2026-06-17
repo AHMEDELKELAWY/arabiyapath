@@ -233,7 +233,7 @@ export default function Dashboard() {
                   ? Math.round((mastered / totalCards) * 100)
                   : 0;
               const completedUnits = fcSummary.units.filter(
-                (u) => u.total > 0 && u.mastered >= u.total
+                (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
               ).length;
               const totalUnits = fcSummary.units.length;
               const streakCount = fcSummary.streak?.current_streak ?? 0;

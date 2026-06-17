@@ -24,7 +24,7 @@ export function FlashcardsDashboardSection() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={<Flame className="w-4 h-4 text-orange-500" />} label="Current streak" value={`${summary.streak?.current_streak ?? 0}d`} />
         <Stat icon={<Sparkles className="w-4 h-4 text-primary" />} label="Mastered" value={summary.total_mastered} />
-        <Stat icon={<Layers className="w-4 h-4 text-emerald-500" />} label="Units completed" value={`${summary.units.filter(u => u.total > 0 && u.mastered >= u.total).length}/${summary.units.length}`} />
+        <Stat icon={<Layers className="w-4 h-4 text-emerald-500" />} label="Units completed" value={`${summary.units.filter(u => u.total > 0 && (u.reviewed ?? 0) >= u.total).length}/${summary.units.length}`} />
         <Stat icon={<ShoppingBag className="w-4 h-4 text-muted-foreground" />} label="Due today" value={summary.due_today} />
       </div>
 

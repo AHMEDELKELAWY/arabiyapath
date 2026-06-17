@@ -135,6 +135,7 @@ export default function FlashCardStudy() {
       return;
     }
     qc.invalidateQueries({ queryKey: ["fc-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["fc-resume-slug"] });
     if (idx + 1 < total) {
       setIdx(idx + 1);
     } else {
