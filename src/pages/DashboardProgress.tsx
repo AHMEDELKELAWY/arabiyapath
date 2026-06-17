@@ -208,6 +208,10 @@ export default function DashboardProgress() {
             const progressPercent =
               totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0;
             const streak = fcSummary.streak?.current_streak ?? 0;
+            const completedUnits = fcSummary.units.filter(
+              (u) => u.total > 0 && u.mastered >= u.total
+            ).length;
+            const totalUnits = fcSummary.units.length;
             return (
               <AccordionItem
                 value="flashcards"
@@ -219,11 +223,12 @@ export default function DashboardProgress() {
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-semibold truncate">Flash Cards</p>
                       <p className="text-xs text-muted-foreground">
-                        {progressPercent}% · {mastered}/{totalCards} mastered
+                        {progressPercent}% · {mastered}/{totalCards} cards · {completedUnits}/{totalUnits} units
                       </p>
                     </div>
                   </div>
                 </AccordionTrigger>
+
                 <AccordionContent className="px-4 pb-4 space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <Stat
