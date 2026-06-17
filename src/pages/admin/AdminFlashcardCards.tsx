@@ -107,9 +107,10 @@ export default function AdminFlashcardCards() {
   });
 
   const unitSlug = useMemo(
-    () => (units ?? []).find((u: any) => u.id === unitId)?.slug || unitId,
+    () => (units ?? []).find((u: any) => u.id === unitId)?.slug || "",
     [units, unitId],
   );
+  const hasSlug = !!unitSlug;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
 
@@ -370,7 +371,18 @@ export default function AdminFlashcardCards() {
               <span className="cursor-pointer"><Upload className="w-4 h-4 mr-2" /> Import CSV/JSON</span>
             </Button>
           </label>
-          <Button variant="outline" onClick={() => setBulkOpen(true)} disabled={!unitId}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!hasSlug) {
+                toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
+                return;
+              }
+              setBulkOpen(true);
+            }}
+            disabled={!unitId || !hasSlug}
+            title={!hasSlug ? "Unit has no slug" : undefined}
+          >
             <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
           </Button>
           <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
