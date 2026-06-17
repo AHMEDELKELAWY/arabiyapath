@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +81,8 @@ export default function Login() {
             </div>
 
             <div className="bg-card rounded-2xl border border-border p-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <OAuthButtons redirectUrl={redirectUrl} />
+              <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" placeholder="you@example.com" className="h-12" value={email} onChange={(e) => setEmail(e.target.value)} required />

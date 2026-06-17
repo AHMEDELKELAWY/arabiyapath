@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
 const benefits = ["Access free trial lessons", "Track your progress", "Earn certificates", "Join the community"];
 
@@ -149,7 +150,8 @@ export default function Signup() {
                 </div>
 
                 <div className="bg-card rounded-2xl border border-border p-8">
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  <OAuthButtons redirectUrl={redirectUrl} />
+                  <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" placeholder="John" className="h-12" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></div>
                       <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" placeholder="Doe" className="h-12" value={lastName} onChange={(e) => setLastName(e.target.value)} /></div>
