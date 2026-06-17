@@ -1,17 +1,9 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,7 +13,7 @@ import {
   Repeat,
   TrendingUp,
   Award,
-  Loader2,
+  Sparkles,
 } from "lucide-react";
 
 const PACK_SLUG = "msa-flashcards-pack";
@@ -59,8 +51,7 @@ const featureCards = [
 ];
 
 export default function FlashCardsSalesPage() {
-  const { user, isLoading: authLoading } = useAuth();
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const { user } = useAuth();
 
   const { data: pack, isLoading } = useQuery({
     queryKey: ["fc-pack", PACK_SLUG],
@@ -73,6 +64,22 @@ export default function FlashCardsSalesPage() {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: freeUnit } = useQuery({
+    queryKey: ["fc-sales-free-unit"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_units")
+        .select("slug,title_en")
+        .eq("is_free", true)
+        .eq("published", true)
+        .order("order_index")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { slug: string; title_en: string } | null;
     },
   });
 
@@ -94,7 +101,14 @@ export default function FlashCardsSalesPage() {
     },
   };
 
-  const openCheckout = () => setCheckoutOpen(true);
+  const checkoutTarget = pack?.product_id ? `/checkout?productId=${pack.product_id}` : "/flashcards";
+  const checkoutHref = user
+    ? checkoutTarget
+    : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
+  const freeStudyTarget = freeUnit ? `/flashcards/study/${freeUnit.slug}?from=home` : "/flashcards";
+  const freeHref = user
+    ? freeStudyTarget
+    : `/signup?redirect=${encodeURIComponent(freeStudyTarget)}`;
 
   return (
     <Layout>
