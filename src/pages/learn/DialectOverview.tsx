@@ -20,6 +20,7 @@ export default function DialectOverview() {
   const { user } = useAuth();
   const { data, isLoading } = useDialectLevels(dialectId);
   const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
+  const { levelsByDialect, hasLevelAccess } = useDashboardData();
 
   // Hard redirect: Gulf Arabic without any purchase → sales page
   useEffect(() => {
