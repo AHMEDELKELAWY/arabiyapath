@@ -43,7 +43,13 @@ const sidebarLinks = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="min-h-screen flex bg-muted/30">
