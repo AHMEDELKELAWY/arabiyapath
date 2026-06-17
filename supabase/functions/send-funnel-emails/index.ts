@@ -162,6 +162,17 @@ serve(async (req) => {
   }
 
   try {
+    // Require service-role bearer (internal scheduler/cron only)
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const authHeader = req.headers.get("Authorization") || "";
+    const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!serviceKey || provided !== serviceKey) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { email, emailNumber }: EmailRequest = await req.json();
 
     if (!email || emailNumber === undefined) {
