@@ -1,39 +1,61 @@
-## Storage Path Improvement for Flash Card Images
+# Dashboard Overview → "My Learning" Hub
 
-Switch all newly uploaded flash card images from `content/flashcards/images/<unit-id>/...` to `content/flashcards/images/<unit-slug>/...`. No DB changes, no migrations, no edits to existing image URLs.
+Reorganize only the dashboard Overview navigation hierarchy. No backend, schema, route, progress, purchase, or flashcard logic changes.
 
-### Scope
-Only two upload paths write to the `content` bucket today:
-- `BulkImageUploadDialog.tsx` (Bulk Image Upload)
-- `CardRow.tsx` → "Replace Image" (per-card)
+## New hierarchy
 
-The "Generate Image" edge function (`generate-flashcard-image`) writes to a different bucket (`lesson-images`, path `flashcards/<cardId>.png`) and is out of scope per the request (no DB/edge changes).
+```
+Overview (/dashboard)        → list of OWNED products only
+   └── Product card click    → existing product page
+        ├── Gulf Arabic      → /learn/dialect/<gulfDialectId>   (Level 2: existing level cards)
+        │     └── Level      → /learn/level/:levelId            (Level 3: existing unit list)
+        │           └── Unit → /learn/unit/:unitId              (existing lessons)
+        ├── MSA Fusha        → /learn/dialect/<fushaDialectId>  (same flow)
+        └── Flash Cards      → /flashcards                      (existing units hub)
+```
 
-### Current state
-- `AdminFlashcardCards.tsx` already resolves the unit slug from the loaded units list and passes it as `unitSlug` to `BulkImageUploadDialog` and as `unitFolder` to `CardRow`.
-- `BulkImageUploadDialog` uses `folder = unitSlug || unitId` — it can still silently fall back to the UUID if slug is missing.
-- `AdminFlashcardCards.tsx` resolves `unitSlug` with a UUID fallback: `find(...)?.slug || unitId`.
+All target pages already exist. No new routes, no duplicate pages.
 
-### Changes
+## Scope of changes (frontend only, `src/pages/Dashboard.tsx` + 1 new card component)
 
-1. `src/pages/admin/AdminFlashcardCards.tsx`
-   - Compute `unitSlug` as the unit's `slug` only (no UUID fallback).
-   - Gate the "Bulk Image Upload" button and the per-card "Replace Image" UI behavior so they only operate when `unitSlug` is present. If slug is missing, disable the action and show a toast: "This unit has no slug — set one before uploading images." (Pure UI guard, no schema change.)
+### 1. `src/pages/Dashboard.tsx` — Overview rewrite
+- Keep header ("Welcome, {firstName}"), `ContinueLearningCard`, `RecentActivityList`, `QuizResultsList`, `CertificatesList`, "Explore Other Dialects", and free-user empty state — unchanged.
+- Replace the current "Your Course" section (which renders `LevelProgressCard`s + `LockedLevelCard`s per dialect) with a **single "My Learning" product grid** that lists one card per owned product:
+  - **Language course products**: derive from `ownedDialects` (already computed via `useDashboardData` + `hasLevelAccess`). One card per owned dialect.
+  - **Flash Cards product**: derive from `useFlashcardsDashboard()` — show the card when `summary.purchases.some(p => p.status === "active")` is true.
+- Remove the inline `FlashcardsDashboardSection` from the paid view (its stats + per-unit progress remain available inside the Flash Cards product page at `/flashcards`). Free-user view keeps the existing `FlashcardsDashboardSection` as an upsell (unchanged).
+- `LockedLevelCard` and per-level grids are removed from Overview; locked levels are surfaced inside the existing `/learn/dialect/:dialectId` page (no change there).
 
-2. `src/components/admin/flashcards/BulkImageUploadDialog.tsx`
-   - Require `unitSlug` (drop `unitId` fallback for the upload folder).
-   - Build path strictly as: `flashcards/images/${unitSlug}/${file.name}`.
+### 2. New `src/components/dashboard/ProductCard.tsx`
+Generic card used by the Overview grid. Props:
+```
+{ name, icon/emoji, progressPercent, unitsLabel ("12 units"),
+  lastActivityLabel ("Last: <unit title> · 2d ago" | "Not started yet"),
+  continueHref }
+```
+Renders: title row, `Progress` bar, meta row, `Continue` button (`asChild` `<Link>`) — and the whole card is also a `<Link>` to `continueHref` (CTA requirements memory: React Router links, no fake buttons).
 
-3. `src/components/admin/flashcards/CardRow.tsx`
-   - Keep accepting `unitFolder` but treat it as the slug. Path stays: `flashcards/images/${unitFolder}/${file.name}`.
-   - No behavior change beyond the parent passing the slug only.
+### 3. Per-product data mapping (computed in `Dashboard.tsx` from existing hooks — no new queries)
 
-### Out of scope (explicitly unchanged)
-- `flashcards` table, all `flashcard_*` tables, RLS, RPCs, edge functions, PayPal, products, packs, sales.
-- Existing `image_url` values in the DB — left as-is. Old Unit 1 images keep loading from their current UUID-folder paths.
-- `generate-flashcard-image` edge function (different bucket, not part of this request).
+**Gulf Arabic / MSA Fusha cards (one per owned dialect in `ownedDialects`):**
+- `progressPercent` = weighted avg across that dialect's levels: `sum(completedLessons) / sum(totalLessons)`.
+- `unitsLabel` = `sum(totalUnits)` across the dialect's levels → "N units".
+- `lastActivityLabel` = most recent `recentActivity` entry whose `dialectId` matches, else "Not started yet".
+- `continueHref` = `/learn/dialect/${dialectId}` (existing DialectOverview shows the Beginner/Intermediate/Advanced level cards = Level 2 per spec).
 
-### Verification
-- Upload a new image to a unit whose slug is `in-the-classroom` → object lands at `content/flashcards/images/in-the-classroom/<filename>`.
-- Old Unit 1 images still render (URLs in DB unchanged).
-- A unit without a slug cannot upload — button disabled with a clear message.
+**Flash Cards card (only if active flashcard purchase exists):**
+- `progressPercent` = `summary.total_mastered / sum(units.total)` (0 if denominator 0).
+- `unitsLabel` = `summary.units.length` → "N units".
+- `lastActivityLabel` = `summary.streak?.last_active_date` → "Last studied <relative>", else "Not started yet".
+- `continueHref` = `/flashcards`.
+
+### 4. Empty / free-user state
+Unchanged: if no owned language dialects AND no active flashcard pack, render the existing "Start Your Arabic Journey" empty card + `FlashcardsDashboardSection` upsell as today.
+
+## Explicitly unchanged
+- All routes in `App.tsx`.
+- `useDashboardData`, `useFlashcardsDashboard`, `usePurchases`, access-control logic, RLS, RPCs.
+- `DashboardLayout` sidebar (Overview / Progress / Account links stay).
+- `LessonPlayer`, `UnitOverview`, `LevelOverview`, `DialectOverview`, `/flashcards*` pages.
+- Purchases, PayPal, enrollments, flashcard SRS, `fc_*` RPCs.
+- Existing components `LevelProgressCard`, `LockedLevelCard`, `FlashcardsDashboardSection` remain in the codebase (still used by free-user view).
