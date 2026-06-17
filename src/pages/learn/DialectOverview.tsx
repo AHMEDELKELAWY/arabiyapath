@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useDialectLevels } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchases } from "@/hooks/usePurchases";
+import { useDashboardData } from "@/hooks/useDashboardData";
 import { isGulfArabic, GULF_SALES_URL } from "@/lib/gulfAccess";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, getDialectSEO, generateCourseSchema } from "@/components/seo/SEOHead";
@@ -11,12 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ChevronRight, 
-  GraduationCap,
-  BookOpen,
-  Trophy
-} from "lucide-react";
+import { LevelProgressCard } from "@/components/dashboard/LevelProgressCard";
 
 export default function DialectOverview() {
   const { dialectId } = useParams();
@@ -24,6 +20,7 @@ export default function DialectOverview() {
   const { user } = useAuth();
   const { data, isLoading } = useDialectLevels(dialectId);
   const { checkLevelAccess, isLoading: purchasesLoading } = usePurchases();
+  const { levelsByDialect, hasLevelAccess } = useDashboardData();
 
   // Hard redirect: Gulf Arabic without any purchase → sales page
   useEffect(() => {
@@ -75,21 +72,10 @@ export default function DialectOverview() {
   const canonicalPath = `/learn/dialect/${dialectId}`;
   const courseSchema = generateCourseSchema(dialect.name, seoData.description, canonicalPath);
 
-  const getLevelIcon = (index: number) => {
-    switch (index) {
-      case 0: return BookOpen;
-      case 1: return GraduationCap;
-      default: return Trophy;
-    }
-  };
-
-  const getLevelColor = (index: number) => {
-    switch (index) {
-      case 0: return "from-green-500 to-emerald-600";
-      case 1: return "from-blue-500 to-indigo-600";
-      default: return "from-purple-500 to-pink-600";
-    }
-  };
+  const dialectGroup = levelsByDialect.find((g) => g.dialectId === dialectId);
+  const progressByLevel = new Map(
+    (dialectGroup?.levels || []).map((l) => [l.levelId, l])
+  );
 
   return (
     <>
@@ -137,42 +123,26 @@ export default function DialectOverview() {
             Choose Your Level
           </h2>
           
-          <div className="grid gap-4 sm:gap-6">
-            {levels.map((level, index) => {
-              const Icon = getLevelIcon(index);
-              const gradientClass = getLevelColor(index);
-              
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+            {levels.map((level) => {
+              const p = progressByLevel.get(level.id);
               return (
-                <Link key={level.id} to={`/learn/level/${level.id}`}>
-                  <Card className="transition-all hover:shadow-lg hover:scale-[1.01] sm:hover:scale-[1.02] overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="flex items-stretch">
-                        {/* Icon Section */}
-                        <div className={`bg-gradient-to-br ${gradientClass} p-4 sm:p-6 md:p-8 flex items-center justify-center`}>
-                          <Icon className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 p-4 sm:p-6 flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">
-                              {level.name}
-                            </h3>
-                            <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1 line-clamp-2">
-                              {index === 0 && "Start your journey with essential phrases"}
-                              {index === 1 && "Expand vocabulary and handle complex situations"}
-                              {index === 2 && "Achieve fluency with advanced topics"}
-                            </p>
-                          </div>
-                          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground shrink-0" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <LevelProgressCard
+                  key={level.id}
+                  levelId={level.id}
+                  levelName={level.name}
+                  dialectId={dialectId!}
+                  completedLessons={p?.completedLessons ?? 0}
+                  totalLessons={p?.totalLessons ?? 0}
+                  completedUnits={p?.completedUnits ?? 0}
+                  totalUnits={p?.totalUnits ?? 0}
+                  progressPercent={p?.progressPercent ?? 0}
+                  hasAccess={user ? hasLevelAccess(level.id, dialectId!) : false}
+                />
               );
             })}
           </div>
+
 
           {levels.length === 0 && (
             <Card className="p-6 sm:p-8 text-center">
