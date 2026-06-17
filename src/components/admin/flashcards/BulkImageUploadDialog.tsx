@@ -214,8 +214,11 @@ export function BulkImageUploadDialog({
           <div className="space-y-3">
             <div className="flex gap-2 flex-wrap">
               <Badge variant="default">Matched: {match.matches.length}</Badge>
-              <Badge variant="secondary">Unmatched images: {match.unmatchedFiles.length}</Badge>
-              <Badge variant="outline">Cards missing images: {match.missingCards.length}</Badge>
+              <Badge variant="secondary">
+                Will Replace Existing Images: {match.matches.filter((m) => m.overwrites).length}
+              </Badge>
+              <Badge variant="secondary">Unmatched Files: {match.unmatchedFiles.length}</Badge>
+              <Badge variant="outline">Missing Cards: {cards.length - match.matches.length}</Badge>
             </div>
 
             <div className="border rounded-md max-h-72 overflow-y-auto">
@@ -236,7 +239,9 @@ export function BulkImageUploadDialog({
                       <td className="p-2 font-mono text-xs">{m.file.name}</td>
                       <td className="p-2">
                         {m.overwrites ? (
-                          <Badge variant="secondary" className="text-xs">will overwrite</Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            Will Replace Existing Image
+                          </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs">new</Badge>
                         )}
@@ -250,7 +255,7 @@ export function BulkImageUploadDialog({
             {match.unmatchedFiles.length > 0 && (
               <details className="text-sm">
                 <summary className="cursor-pointer font-medium">
-                  Unmatched images ({match.unmatchedFiles.length})
+                  Unmatched Files ({match.unmatchedFiles.length})
                 </summary>
                 <ul className="mt-1 pl-4 list-disc text-muted-foreground font-mono text-xs">
                   {match.unmatchedFiles.map((f) => <li key={f.name}>{f.name}</li>)}
@@ -279,6 +284,7 @@ export function BulkImageUploadDialog({
             </DialogFooter>
           </div>
         )}
+
 
         {stage === "uploading" && (
           <div className="space-y-3 py-4">
