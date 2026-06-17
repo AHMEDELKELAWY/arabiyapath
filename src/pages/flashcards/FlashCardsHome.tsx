@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Sparkles, BookOpen } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+
 
 interface UnitRow {
   id: string;
@@ -72,18 +74,57 @@ export default function FlashCardsHome() {
     },
   });
 
+  // Per-pack ownership via server RPC — single source of truth used everywhere.
+  const { data: ownedPackIds } = useQuery({
+    queryKey: ["fc-owned-packs", user?.id, packs?.map((p) => p.id).join(",") ?? ""],
+    enabled: !!user && !!packs?.length,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const results = await Promise.all(
+        (packs ?? []).map(async (p) => {
+          const { data, error } = await (supabase.rpc as any)("fc_user_has_pack_access", {
+            _user_id: user!.id,
+            _pack_id: p.id,
+          });
+          if (error) {
+            console.error("[FlashCardsHome] fc_user_has_pack_access", p.slug, error);
+            return null;
+          }
+          return data ? p.id : null;
+        })
+      );
+      return new Set(results.filter(Boolean) as string[]);
+    },
+  });
+
+  // Compute access per unit: free OR user owns a pack containing this unit.
+  function unitUnlocked(unitId: string, isFree: boolean): boolean {
+    if (isFree) return true;
+    if (!user || !ownedPackIds || !packUnits) return false;
+    const packsForUnit = packUnits.filter((pu) => pu.unit_id === unitId).map((pu) => pu.pack_id);
+    return packsForUnit.some((pid) => ownedPackIds.has(pid));
+  }
+
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
   const firstPack = packs?.[0] ?? null;
 
-  // Helper: build checkout URL for a locked unit; falls back to first published pack
-  function checkoutHrefForUnit(unitId: string): string | null {
-    const match = packUnits?.find((pu) => pu.unit_id === unitId);
-    const pack =
-      (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
-    if (!pack?.product_id) return null;
-    const target = `/checkout?productId=${pack.product_id}`;
-    return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
-  }
+  // Diagnostic log requested for verification.
+  useEffect(() => {
+    if (!units) return;
+    console.log("[FlashCardsHome] access state", {
+      userId: user?.id ?? null,
+      ownedPackIds: ownedPackIds ? Array.from(ownedPackIds) : null,
+      units: units.map((u) => ({
+        slug: u.slug,
+        is_free: u.is_free,
+        unlocked: unitUnlocked(u.id, u.is_free),
+      })),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units, ownedPackIds, user?.id, packUnits]);
+
 
   function studyHrefForUnit(slug: string): string {
     const target = `/flashcards/study/${slug}?from=home`;
@@ -157,9 +198,19 @@ export default function FlashCardsHome() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
-                const href = u.is_free
-                  ? studyHrefForUnit(u.slug)
-                  : checkoutHrefForUnit(u.id) ?? "/flashcards";
+                const unlocked = unitUnlocked(u.id, u.is_free);
+                let href: string;
+                if (unlocked) {
+                  href = studyHrefForUnit(u.slug);
+                } else {
+                  const match = packUnits?.find((pu) => pu.unit_id === u.id);
+                  const pack =
+                    (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
+                  const target = pack?.product_id
+                    ? `/checkout?productId=${pack.product_id}`
+                    : "/flashcards";
+                  href = user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
+                }
                 return (
                   <Link
                     key={u.id}
@@ -176,6 +227,10 @@ export default function FlashCardsHome() {
                             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
                               Free
                             </span>
+                          ) : unlocked ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              Unlocked
+                            </span>
                           ) : (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           )}
@@ -187,7 +242,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {u.is_free ? "Start studying" : "Unlock pack"}
+                          {unlocked ? "Start studying" : "Unlock pack"}
                         </div>
                       </CardContent>
                     </Card>

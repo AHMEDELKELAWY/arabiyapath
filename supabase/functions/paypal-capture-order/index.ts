@@ -377,6 +377,7 @@ serve(async (req) => {
         success: true,
         captureId: capture.id,
         status: captureData.status,
+        productType: pendingOrder.product_type,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
