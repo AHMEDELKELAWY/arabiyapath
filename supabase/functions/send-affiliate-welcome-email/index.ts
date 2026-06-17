@@ -173,7 +173,7 @@ serve(async (req) => {
       await client.send({
         from: `ArabiyaPath <${smtpUser}>`,
         to: email,
-        subject: `🎉 Welcome to ArabiyPath Partner Program - Your Code: ${affiliateCode}`,
+        subject: `🎉 Welcome to ArabiyPath Partner Program - Your Code: ${affiliateCode.replace(/[\r\n]/g, "")}`,
         html: htmlContent,
       });
       console.log(`Affiliate welcome email sent successfully to ${email}`);
