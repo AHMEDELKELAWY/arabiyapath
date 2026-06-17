@@ -198,9 +198,19 @@ export default function FlashCardsHome() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
-                const href = u.is_free
-                  ? studyHrefForUnit(u.slug)
-                  : checkoutHrefForUnit(u.id) ?? "/flashcards";
+                const unlocked = unitUnlocked(u.id, u.is_free);
+                let href: string;
+                if (unlocked) {
+                  href = studyHrefForUnit(u.slug);
+                } else {
+                  const match = packUnits?.find((pu) => pu.unit_id === u.id);
+                  const pack =
+                    (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
+                  const target = pack?.product_id
+                    ? `/checkout?productId=${pack.product_id}`
+                    : "/flashcards";
+                  href = user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
+                }
                 return (
                   <Link
                     key={u.id}
@@ -217,6 +227,10 @@ export default function FlashCardsHome() {
                             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
                               Free
                             </span>
+                          ) : unlocked ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              Unlocked
+                            </span>
                           ) : (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           )}
@@ -228,7 +242,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {u.is_free ? "Start studying" : "Unlock pack"}
+                          {unlocked ? "Start studying" : "Unlock pack"}
                         </div>
                       </CardContent>
                     </Card>
