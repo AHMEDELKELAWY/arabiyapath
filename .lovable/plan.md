@@ -1,76 +1,58 @@
-## Confirmed root cause
+## Verified live values
 
-For the current user, a 100% coupon checkout created active rows in `purchases`:
+Current authenticated user observed in browser/API calls:
 
-- `product_id`: `f08e7407-21fc-4fc0-81f5-21237888ac4a`
-- `product_type`: `flashcard_pack`
-- `payment_method`: `free_coupon`
-- `amount`: `0.00`
-- `status`: `active`
-- linked pack: `ddbbcb57-8996-44bb-83d2-d5f476d5724c`
+- `auth.uid()` / JWT subject: `40e9c254-fa78-4774-9e9d-85e5bbadc748`
+- Published pack: `msa-flashcards-pack` / `ddbbcb57-8996-44bb-83d2-d5f476d5724c`
+- `fc_user_has_pack_access(user, pack)`: `true`
+- `flashcard_pack_units`: `0 rows`
+- Unit results:
+  - `In-The-Classroom` / `4df9fbde-2bea-475b-91fa-cea4e589ee38`: `is_free=true`, RPC response `fc_user_can_study_unit=true`
+  - `on-the-road` / `1e12e126-90f5-4bec-b2c8-26afbe115b0b`: `is_free=false`, RPC response `fc_user_can_study_unit=false`
+- `FlashCardsHome.tsx` currently renders:
+  - `Start studying` when `unitUnlocked(unit.id, unit.is_free)` is `true`
+  - `Unlock pack` when `unitUnlocked(...)` is `false` and `ownedPacksQuery` is no longer loading
 
-But the same zero-dollar checkout path did **not** create matching `flashcard_purchases` rows. The paid PayPal capture flow already mirrors flashcard pack purchases into `flashcard_purchases`; the 100% coupon branch in `paypal-create-order` creates only `purchases` and returns `freeAccess: true`.
+## Root causes
 
-That makes ownership inconsistent across screens because some parts now read canonical `purchases`, while other flashcard/admin/dashboard flows still expect `flashcard_purchases` to exist.
+1. **Backend entitlement mismatch**
+   - Ownership exists and pack access is true.
+   - But there are no rows in `flashcard_pack_units`, so `fc_user_can_study_unit()` cannot associate `On The Road` with the purchased pack and returns `false`.
+   - The dashboard still shows units because `fc_dashboard_summary()` lists published units, not because `On The Road` has unit-level access.
+
+2. **Home page race/flicker**
+   - `FlashCardsHome.tsx` initially logs/renders before pack ownership resolves, so `On The Road` can show `Unlock pack` until `ownedPacksQuery` returns true.
+   - The production complaint matches this render condition: `ownedPacksQuery` not ready + premium unit = `Unlock pack`.
+
+3. **Exit source is ignored**
+   - `FlashCardStudy.tsx` hardcodes `const exitHref = "/flashcards"`.
+   - Even when the URL is `/flashcards/study/In-The-Classroom?from=dashboard`, the `from` query param is never read, so Exit always returns to `/flashcards`.
 
 ## Fix plan
 
-### 1. Fix the zero-dollar checkout grant path
-Edit `supabase/functions/paypal-create-order/index.ts`:
+1. **Fix the single source of truth for study access**
+   - Update `FlashCardsHome.tsx` to use the per-unit RPC result (`fc_user_can_study_unit`) as the primary rendered entitlement once loaded.
+   - Keep pack ownership only as secondary context, not the condition that decides each unit’s final lock state.
+   - For authenticated users, do not render `Unlock pack` for premium units until both entitlement queries have finished.
 
-- After the `purchases` insert in the `finalPrice === 0` branch, detect `product.scope === "flashcard_pack"`.
-- Look up the matching `flashcard_packs` row by `product_id`.
-- Insert an active `flashcard_purchases` row with:
-  - `user_id`
-  - `pack_id`
-  - `provider_code: "paypal"` unless a `free_coupon` provider exists
-  - `provider_order_id: purchase.id` or a deterministic `free_coupon:<purchase.id>` marker
-  - `amount_cents: 0`
-  - `discount_cents: pack.price_cents`
-  - `currency`
-  - `coupon_id`
-  - `status: "active"`
-  - `purchased_at: now()`
-- Treat duplicate insert errors as success/idempotent so retrying the zero-dollar checkout does not break access.
+2. **Fix the backend unit entitlement logic**
+   - Add a database migration to make `fc_user_can_study_unit()` treat an active owned flashcard pack as access when no explicit pack-unit mapping rows exist.
+   - This aligns it with the current real data state: the user owns the pack, but `flashcard_pack_units` is empty.
+   - No purchase records will be changed.
 
-### 2. Backfill the affected purchases
-Create a migration to backfill missing `flashcard_purchases` rows from existing active flashcard-pack rows in `purchases`, including 100% coupon purchases:
+3. **Fix the Exit return source**
+   - Update `FlashCardStudy.tsx` to read `from` via `useSearchParams()`.
+   - If `from=dashboard`, set `exitHref` to `/dashboard`.
+   - Otherwise keep `/flashcards` for home/sales/default entry paths.
+   - Update the completion screen “Back to Flash Cards” button to use the same computed exit target.
 
-- Source: active `purchases` joined to `flashcard_packs` by `product_id`.
-- Insert only when no active `flashcard_purchases` exists for the same `user_id + pack_id`.
-- Use `amount_cents = round(amount * 100)` and for zero-dollar coupon rows set `discount_cents` to the pack price.
+4. **Fix dashboard flashcard links consistently**
+   - Ensure all dashboard-origin study links include `?from=dashboard`, including:
+     - main Dashboard Flash Cards Continue card
+     - Dashboard progress Flash Cards Continue button
+     - unit links inside dashboard flashcard progress sections
 
-This repairs the current user's already-created coupon purchases and any historical affected users.
-
-### 3. Make ownership checks explicitly accept zero-dollar coupon purchases
-Create a small migration updating:
-
-- `fc_user_has_pack_access`
-- `fc_user_can_study_unit`
-- `fc_dashboard_summary`
-
-Ensure canonical `purchases` access checks accept `status IN ('active', 'completed')`, regardless of `amount`, `payment_method`, or PayPal IDs. This makes 100% coupon ownership first-class and permanent.
-
-### 4. Refresh dashboard/access cache after free coupon success
-Edit `src/components/checkout/PayPalCheckout.tsx`:
-
-- In the `freeAccess` success path, invalidate all relevant keys:
-  - `['purchases', user.id]`
-  - `['user-purchases', user.id]`
-  - `['fc-dashboard']`
-  - `['fc-resume-slug']`
-  - `['fc-unit-access']`
-- Then navigate to `/dashboard`.
-
-### 5. Verify manually
-After implementation:
-
-- Confirm current user has both:
-  - active `purchases` row for the flashcard product
-  - active `flashcard_purchases` row for the flashcard pack
-- Confirm `fc_user_has_pack_access(user, pack)` returns `true`.
-- Confirm `fc_user_can_study_unit(user, premiumUnit)` returns `true`.
-- Confirm `fc_dashboard_summary()` returns the flashcard purchase and premium units with `has_access: true`.
-- Open Dashboard and Flash Cards catalog: premium units should be unlocked immediately after a 100% coupon checkout, after refresh, and after logout/login.
-
-No UI workaround. The fix is in the ownership/grant flow.
+5. **Validate before claiming fixed**
+   - Re-open `/flashcards` as the current user and verify both unit cards show `Start studying`.
+   - Navigate Dashboard → Flash Cards Continue → Study → Exit and verify the final URL is `/dashboard`.
+   - Re-check the RPC/network responses for pack access and unit access after the migration.
