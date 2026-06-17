@@ -17,8 +17,10 @@ export function FlashCard({ card, onMastered, isReviewed }: FlashCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMasteredAnimation, setShowMasteredAnimation] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playSound } = useSoundEffects();
 
   const handleFlip = () => {
+    playSound('lessonTransition');
     setIsFlipped(!isFlipped);
     // Haptic feedback on mobile if supported
     if (navigator.vibrate) {
