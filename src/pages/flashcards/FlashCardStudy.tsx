@@ -1,16 +1,17 @@
-import { useEffect, useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useParams, Link, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { FlashCardAudio } from "@/components/flashcards/msa/FlashCardAudio";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { toast } from "@/hooks/use-toast";
-import { Lock } from "lucide-react";
+import { Lock, Check, Sparkles, ArrowRight } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -30,12 +31,42 @@ interface CardRow {
   audio_example_url: string | null;
 }
 
+function resolveSource(state: unknown, search: string): "dashboard" | "home" {
+  const fromState = (state as { from?: string } | null)?.from;
+  if (fromState === "dashboard") return "dashboard";
+  if (fromState === "home") return "home";
+
+  const params = new URLSearchParams(search);
+  const fromQuery = params.get("from");
+  if (fromQuery === "dashboard") return "dashboard";
+  if (fromQuery === "home") return "home";
+
+  if (typeof document !== "undefined" && document.referrer) {
+    try {
+      const url = new URL(document.referrer);
+      if (url.pathname.includes("/dashboard")) return "dashboard";
+    } catch {
+      /* ignore */
+    }
+  }
+  return "home";
+}
+
 export default function FlashCardStudy() {
   const { unitSlug } = useParams<{ unitSlug: string }>();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const location = useLocation();
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  // Resolve the session source ONCE and keep it stable for the entire session,
+  // even across card-to-card navigation. The ref is never reassigned.
+  const sourceRef = useRef<"dashboard" | "home">(
+    resolveSource(location.state, location.search)
+  );
+  const exitHref = sourceRef.current === "dashboard" ? "/dashboard" : "/flashcards";
 
   const { data: unit } = useQuery({
     queryKey: ["fc-unit-by-slug", unitSlug],
@@ -54,11 +85,11 @@ export default function FlashCardStudy() {
 
   const { data: access, isLoading: accessLoading } = useFlashcardUnitAccess(unit?.id);
 
-  // For locked-unit deep links, look up the pack product so we can redirect
-  // straight to the unified checkout (no intermediate pack/unit page).
+  // For locked-unit deep links and free-unit completion upsell, look up the
+  // pack product so we can redirect straight to the unified checkout.
   const { data: unlockProductId } = useQuery({
     queryKey: ["fc-study-unlock-product", unit?.id],
-    enabled: !!unit?.id && access === false && unit?.is_free === false,
+    enabled: !!unit?.id,
     queryFn: async () => {
       const { data: pu } = await (supabase as any)
         .from("flashcard_pack_units")
@@ -132,7 +163,7 @@ export default function FlashCardStudy() {
       setIdx(idx + 1);
     } else {
       trackEvent("flashcard_unit_complete", { unit_id: unit?.id, unit_slug: unit?.slug, total_cards: total });
-      toast({ title: "Session complete!", description: "Great work." });
+      setCompleted(true);
     }
   };
 
@@ -170,6 +201,79 @@ export default function FlashCardStudy() {
     );
   }
 
+  // Free unit just completed and user has no pack access → conversion screen.
+  if (completed && unit.is_free && access !== true) {
+    const upgradeHref = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
+    const benefits = [
+      "500+ Arabic flashcards",
+      "Native Arabic audio pronunciation",
+      "Realistic image-based learning",
+      "Full Arabic vowelization (Tashkeel)",
+      "Smart spaced repetition reviews",
+      "Vocabulary from real conversations",
+      "Progress tracking and learning streaks",
+    ];
+    return (
+      <Layout>
+        <SEOHead title={`Completed — ${unit.title_en}`} noindex />
+        <section className="container max-w-2xl py-12 px-4">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold mb-2">Congratulations!</h1>
+              <p className="text-muted-foreground mb-6">
+                You completed the free flashcard unit.
+              </p>
+              <p className="font-semibold mb-3">
+                Unlock the complete Flash Cards Pack and get access to:
+              </p>
+              <ul className="text-left max-w-sm mx-auto space-y-2 mb-8 text-sm">
+                {benefits.map((b) => (
+                  <li key={b} className="flex gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col gap-3">
+                <Button size="lg" className="w-full gap-2" asChild>
+                  <Link to={upgradeHref}>
+                    Unlock Full Pack
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="w-full" asChild>
+                  <Link to={exitHref}>Back to {sourceRef.current === "dashboard" ? "Dashboard" : "Flash Cards"}</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </Layout>
+    );
+  }
+
+  // Paid user just completed the unit → simple congrats with exit back to source.
+  if (completed) {
+    return (
+      <Layout>
+        <SEOHead title={`Completed — ${unit.title_en}`} noindex />
+        <section className="container max-w-md py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
+          <p className="text-muted-foreground mb-6">Great work.</p>
+          <Button size="lg" asChild>
+            <Link to={exitHref}>Back to {sourceRef.current === "dashboard" ? "Dashboard" : "Flash Cards"}</Link>
+          </Button>
+        </section>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <SEOHead
@@ -183,7 +287,7 @@ export default function FlashCardStudy() {
             Card {idx + 1} of {total}
           </p>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/flashcards">Exit</Link>
+            <Link to={exitHref}>Exit</Link>
           </Button>
         </div>
 
