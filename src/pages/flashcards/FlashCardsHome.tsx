@@ -181,15 +181,19 @@ export default function FlashCardsHome() {
         ownedPacksFetching: ownedPacksQuery.isFetching,
         unitAccessFetching: unitAccessQuery.isFetching,
       },
-      units: units.map((u) => ({
-        slug: u.slug,
-        is_free: u.is_free,
-        currentUserId: user?.id ?? null,
-        hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
-        canStudy: unitAccessQuery.data?.get(u.id) ?? null,
-        uiUnlocked: unitUnlocked(u.id, u.is_free),
-        lockStateShownInUI: unitUnlocked(u.id, u.is_free) ? "Start studying" : "Unlock pack",
-      })),
+      units: units.map((u) => {
+        const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
+        const unlocked = unitUnlocked(u.id, u.is_free);
+        return {
+          slug: u.slug,
+          is_free: u.is_free,
+          currentUserId: user?.id ?? null,
+          hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
+          canStudy: unitAccessQuery.data?.get(u.id) ?? null,
+          uiUnlocked: unlocked,
+          lockStateShownInUI: entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack",
+        };
+      }),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
