@@ -370,6 +370,64 @@ export default function Pricing() {
           </section>
         )}
 
+        {/* Flash Cards Section */}
+        <section className="py-12 border-t border-border/50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-muted mb-3">
+                  <span className="text-2xl">🗂️</span>
+                  <h2 className="text-xl font-bold text-foreground">Flash Cards</h2>
+                </div>
+                <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+                  Visual vocabulary training with realistic images, native Arabic audio, and spaced repetition.
+                </p>
+              </div>
+
+              <div className="max-w-md mx-auto">
+                <div className="bg-card rounded-2xl border border-border p-7 flex flex-col">
+                  <div className="text-center mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                      <BookOpen className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-bold text-foreground">
+                      Modern Standard Arabic Flash Cards
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Visual vocabulary training
+                    </p>
+                  </div>
+
+                  <div className="text-center mb-6">
+                    <span className="text-4xl font-bold text-foreground">$19.99</span>
+                    <span className="text-muted-foreground text-sm"> /one-time</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-6 flex-1">
+                    {[
+                      "All flash card units included",
+                      "Realistic image flash cards",
+                      "Native Arabic audio",
+                      "Spaced repetition review",
+                      "Progress tracking",
+                      "Lifetime access",
+                    ].map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm">
+                        <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span className="text-foreground">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button asChild className="w-full" size="lg">
+                    <Link to="/flashcards-pack">Get Flash Cards</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Trust Signals */}
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
