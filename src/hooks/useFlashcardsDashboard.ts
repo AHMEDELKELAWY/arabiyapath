@@ -31,3 +31,31 @@ export function useFlashcardsDashboard() {
     },
   });
 }
+
+/**
+ * Returns the slug of the user's most recently studied flashcard unit (read-only).
+ * Used by the dashboard "Continue" button to resume learning immediately.
+ */
+export function useFlashcardsResumeSlug() {
+  const { user } = useAuth();
+  return useQuery<string | null>({
+    queryKey: ["fc-resume-slug", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_progress")
+        .select("last_reviewed_at, flashcards!inner(unit_id, flashcard_units!inner(slug, published))")
+        .eq("user_id", user!.id)
+        .eq("flashcards.flashcard_units.published", true)
+        .order("last_reviewed_at", { ascending: false, nullsFirst: false })
+        .limit(1);
+      if (error) {
+        console.error("[useFlashcardsResumeSlug]", error);
+        return null;
+      }
+      const row = Array.isArray(data) ? data[0] : null;
+      const slug = row?.flashcards?.flashcard_units?.slug ?? null;
+      return slug ?? null;
+    },
+  });
+}
