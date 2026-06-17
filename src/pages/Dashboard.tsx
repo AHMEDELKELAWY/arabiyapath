@@ -52,7 +52,6 @@ export default function Dashboard() {
     isLoading,
   } = useDashboardData();
   const { data: fcSummary } = useFlashcardsDashboard();
-  const { data: fcResumeSlug } = useFlashcardsResumeSlug();
 
   const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
