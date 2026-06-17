@@ -307,6 +307,8 @@ export function useSubmitQuiz() {
       queryClient.invalidateQueries({ queryKey: ["unit-lessons"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["certificates"] });
+      queryClient.invalidateQueries({ queryKey: ["quiz-attempts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-progress"] });
     },
   });
 }
