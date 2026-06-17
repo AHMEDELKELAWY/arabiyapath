@@ -151,6 +151,9 @@ export function CardCheckout({
       toast.success("Payment successful! Enjoy your course.");
       await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
       await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
+      await queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
+      await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
       onSuccess?.();
       navigate("/dashboard");
     } catch (error) {

@@ -75,6 +75,9 @@ export default function PaymentSuccess() {
               await queryClient.invalidateQueries({ queryKey: ["purchases", user.id] });
               await queryClient.invalidateQueries({ queryKey: ["user-purchases", user.id] });
               await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
+              await queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] });
+              await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
+              await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
             }
 
             // Redirect to thank-you page (fires Meta Pixel)

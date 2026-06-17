@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, Link, Navigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,42 +31,15 @@ interface CardRow {
   audio_example_url: string | null;
 }
 
-function resolveSource(state: unknown, search: string): "dashboard" | "home" {
-  const fromState = (state as { from?: string } | null)?.from;
-  if (fromState === "dashboard") return "dashboard";
-  if (fromState === "home") return "home";
-
-  const params = new URLSearchParams(search);
-  const fromQuery = params.get("from");
-  if (fromQuery === "dashboard") return "dashboard";
-  if (fromQuery === "home") return "home";
-
-  if (typeof document !== "undefined" && document.referrer) {
-    try {
-      const url = new URL(document.referrer);
-      if (url.pathname.includes("/dashboard")) return "dashboard";
-    } catch {
-      /* ignore */
-    }
-  }
-  return "home";
-}
-
 export default function FlashCardStudy() {
   const { unitSlug } = useParams<{ unitSlug: string }>();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const location = useLocation();
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Resolve the session source ONCE and keep it stable for the entire session,
-  // even across card-to-card navigation. The ref is never reassigned.
-  const sourceRef = useRef<"dashboard" | "home">(
-    resolveSource(location.state, location.search)
-  );
-  const exitHref = sourceRef.current === "dashboard" ? "/dashboard" : "/flashcards";
+  const exitHref = "/flashcards";
 
   const { data: unit } = useQuery({
     queryKey: ["fc-unit-by-slug", unitSlug],
@@ -245,7 +218,7 @@ export default function FlashCardStudy() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
-                  <Link to={exitHref}>Back to {sourceRef.current === "dashboard" ? "Dashboard" : "Flash Cards"}</Link>
+                  <Link to={exitHref}>Back to Flash Cards</Link>
                 </Button>
               </div>
             </CardContent>
@@ -267,7 +240,7 @@ export default function FlashCardStudy() {
           <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
           <p className="text-muted-foreground mb-6">Great work.</p>
           <Button size="lg" asChild>
-            <Link to={exitHref}>Back to {sourceRef.current === "dashboard" ? "Dashboard" : "Flash Cards"}</Link>
+            <Link to={exitHref}>Back to Flash Cards</Link>
           </Button>
         </section>
       </Layout>
