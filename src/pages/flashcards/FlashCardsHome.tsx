@@ -134,13 +134,21 @@ export default function FlashCardsHome() {
     },
   });
 
-  // Compute access per unit: free OR user owns a pack containing this unit.
+  // Compute access per unit from the server-side unit entitlement RPC.
   function unitUnlocked(unitId: string, isFree: boolean): boolean {
     if (isFree) return true;
-    if (!user || !ownedPackIds || !packUnits) return false;
+    if (!user) return false;
+    const rpcAccess = unitAccessQuery.data?.get(unitId);
+    if (typeof rpcAccess === "boolean") return rpcAccess;
+    if (!ownedPackIds || !packUnits) return false;
     const packsForUnit = packUnits.filter((pu) => pu.unit_id === unitId).map((pu) => pu.pack_id);
     if (packsForUnit.some((pid) => ownedPackIds.has(pid))) return true;
     return ownedPackIds.size > 0 && packUnits.length === 0;
+  }
+
+  function unitEntitlementLoading(unitId: string, isFree: boolean): boolean {
+    if (!user || isFree) return false;
+    return !unitAccessQuery.data?.has(unitId) || unitAccessQuery.isFetching || ownedPacksQuery.isLoading;
   }
 
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
@@ -260,7 +268,7 @@ export default function FlashCardsHome() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
                 const unlocked = unitUnlocked(u.id, u.is_free);
-                const entitlementLoading = !!user && !u.is_free && ownedPacksQuery.isLoading;
+                const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
                 let href: string;
                 if (entitlementLoading) {
                   href = "/flashcards";
