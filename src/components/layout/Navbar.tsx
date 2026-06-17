@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,14 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [dialectsOpen, setDialectsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    setIsOpen(false);
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   const isDialectActive = dialectLinks.some(link => location.pathname === link.href);
 
@@ -137,7 +144,7 @@ export function Navbar() {
                 >
                   Dashboard
                 </Link>
-                <Button variant="outline" size="sm" onClick={signOut}>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Log out
                 </Button>
@@ -182,7 +189,7 @@ export function Navbar() {
                     >
                       Dashboard
                     </Link>
-                    <Button variant="outline" className="w-full" onClick={() => { signOut(); setIsOpen(false); }}>
+                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Log out
                     </Button>

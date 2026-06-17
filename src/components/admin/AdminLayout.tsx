@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -43,7 +43,13 @@ const sidebarLinks = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="min-h-screen flex bg-muted/30">
@@ -104,7 +110,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-            onClick={() => signOut()}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             Sign Out

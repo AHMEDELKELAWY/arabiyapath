@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -28,8 +28,14 @@ const sidebarLinks = [
 
 export function AffiliateLayout({ children }: AffiliateLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, profile } = useAuth();
   const { data: couponData } = useAffiliateCoupon();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   const copyLink = () => {
     const link = `${window.location.origin}/pricing?coupon=${couponData?.coupon?.code || couponData?.affiliateCode}`;
@@ -116,7 +122,7 @@ export function AffiliateLayout({ children }: AffiliateLayoutProps) {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-            onClick={() => signOut()}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             Sign Out
