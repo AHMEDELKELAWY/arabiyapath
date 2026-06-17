@@ -121,8 +121,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (err) {
+      // Ignore missing-session or network errors; we still want to clear local state
+      console.warn('signOut error (ignored):', err);
+    }
+    // Always clear local state in case the listener doesn't fire
+    setUser(null);
+    setSession(null);
     setProfile(null);
+    setIsAdmin(null);
+    // Safety net: remove any lingering supabase auth tokens
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // ignore storage access errors
+    }
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
