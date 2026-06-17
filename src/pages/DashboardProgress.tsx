@@ -99,9 +99,9 @@ export default function DashboardProgress() {
 
   const firstFreeOrAnyUnit = fcSummary?.units[0]?.slug ?? null;
   const fcContinueHref = fcResumeSlug
-    ? `/flashcards/study/${fcResumeSlug}`
+    ? `/flashcards/study/${fcResumeSlug}?from=dashboard`
     : firstFreeOrAnyUnit
-    ? `/flashcards/study/${firstFreeOrAnyUnit}`
+    ? `/flashcards/study/${firstFreeOrAnyUnit}?from=dashboard`
     : "/flashcards";
 
   // Default open: every product
@@ -251,7 +251,7 @@ export default function DashboardProgress() {
                       return (
                         <Link
                           key={u.unit_id}
-                          to={`/flashcards/study/${u.slug}`}
+                          to={`/flashcards/study/${u.slug}?from=dashboard`}
                           className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
                         >
                           <div className="flex justify-between text-sm mb-1">

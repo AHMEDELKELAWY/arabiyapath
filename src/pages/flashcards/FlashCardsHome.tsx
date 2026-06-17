@@ -134,13 +134,21 @@ export default function FlashCardsHome() {
     },
   });
 
-  // Compute access per unit: free OR user owns a pack containing this unit.
+  // Compute access per unit from the server-side unit entitlement RPC.
   function unitUnlocked(unitId: string, isFree: boolean): boolean {
     if (isFree) return true;
-    if (!user || !ownedPackIds || !packUnits) return false;
+    if (!user) return false;
+    const rpcAccess = unitAccessQuery.data?.get(unitId);
+    if (typeof rpcAccess === "boolean") return rpcAccess;
+    if (!ownedPackIds || !packUnits) return false;
     const packsForUnit = packUnits.filter((pu) => pu.unit_id === unitId).map((pu) => pu.pack_id);
     if (packsForUnit.some((pid) => ownedPackIds.has(pid))) return true;
     return ownedPackIds.size > 0 && packUnits.length === 0;
+  }
+
+  function unitEntitlementLoading(unitId: string, isFree: boolean): boolean {
+    if (!user || isFree) return false;
+    return !unitAccessQuery.data?.has(unitId) || unitAccessQuery.isFetching || ownedPacksQuery.isLoading;
   }
 
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
@@ -173,15 +181,19 @@ export default function FlashCardsHome() {
         ownedPacksFetching: ownedPacksQuery.isFetching,
         unitAccessFetching: unitAccessQuery.isFetching,
       },
-      units: units.map((u) => ({
-        slug: u.slug,
-        is_free: u.is_free,
-        currentUserId: user?.id ?? null,
-        hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
-        canStudy: unitAccessQuery.data?.get(u.id) ?? null,
-        uiUnlocked: unitUnlocked(u.id, u.is_free),
-        lockStateShownInUI: unitUnlocked(u.id, u.is_free) ? "Start studying" : "Unlock pack",
-      })),
+      units: units.map((u) => {
+        const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
+        const unlocked = unitUnlocked(u.id, u.is_free);
+        return {
+          slug: u.slug,
+          is_free: u.is_free,
+          currentUserId: user?.id ?? null,
+          hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
+          canStudy: unitAccessQuery.data?.get(u.id) ?? null,
+          uiUnlocked: unlocked,
+          lockStateShownInUI: entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack",
+        };
+      }),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
@@ -260,7 +272,7 @@ export default function FlashCardsHome() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {units.map((u) => {
                 const unlocked = unitUnlocked(u.id, u.is_free);
-                const entitlementLoading = !!user && !u.is_free && ownedPacksQuery.isLoading;
+                const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
                 let href: string;
                 if (entitlementLoading) {
                   href = "/flashcards";
