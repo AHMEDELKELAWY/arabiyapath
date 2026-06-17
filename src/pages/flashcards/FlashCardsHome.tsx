@@ -74,18 +74,57 @@ export default function FlashCardsHome() {
     },
   });
 
+  // Per-pack ownership via server RPC — single source of truth used everywhere.
+  const { data: ownedPackIds } = useQuery({
+    queryKey: ["fc-owned-packs", user?.id, packs?.map((p) => p.id).join(",") ?? ""],
+    enabled: !!user && !!packs?.length,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const results = await Promise.all(
+        (packs ?? []).map(async (p) => {
+          const { data, error } = await (supabase.rpc as any)("fc_user_has_pack_access", {
+            _user_id: user!.id,
+            _pack_id: p.id,
+          });
+          if (error) {
+            console.error("[FlashCardsHome] fc_user_has_pack_access", p.slug, error);
+            return null;
+          }
+          return data ? p.id : null;
+        })
+      );
+      return new Set(results.filter(Boolean) as string[]);
+    },
+  });
+
+  // Compute access per unit: free OR user owns a pack containing this unit.
+  function unitUnlocked(unitId: string, isFree: boolean): boolean {
+    if (isFree) return true;
+    if (!user || !ownedPackIds || !packUnits) return false;
+    const packsForUnit = packUnits.filter((pu) => pu.unit_id === unitId).map((pu) => pu.pack_id);
+    return packsForUnit.some((pid) => ownedPackIds.has(pid));
+  }
+
   const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
   const firstPack = packs?.[0] ?? null;
 
-  // Helper: build checkout URL for a locked unit; falls back to first published pack
-  function checkoutHrefForUnit(unitId: string): string | null {
-    const match = packUnits?.find((pu) => pu.unit_id === unitId);
-    const pack =
-      (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
-    if (!pack?.product_id) return null;
-    const target = `/checkout?productId=${pack.product_id}`;
-    return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
-  }
+  // Diagnostic log requested for verification.
+  useEffect(() => {
+    if (!units) return;
+    console.log("[FlashCardsHome] access state", {
+      userId: user?.id ?? null,
+      ownedPackIds: ownedPackIds ? Array.from(ownedPackIds) : null,
+      units: units.map((u) => ({
+        slug: u.slug,
+        is_free: u.is_free,
+        unlocked: unitUnlocked(u.id, u.is_free),
+      })),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units, ownedPackIds, user?.id, packUnits]);
+
 
   function studyHrefForUnit(slug: string): string {
     const target = `/flashcards/study/${slug}?from=home`;
