@@ -122,7 +122,7 @@ export function BulkImageUploadDialog({
     if (e.dataTransfer.files?.length) ingestFileList(e.dataTransfer.files);
   };
 
-  const folder = unitSlug || unitId;
+  const folder = unitSlug;
 
   const runUploads = async () => {
     if (!match) return;
