@@ -29,12 +29,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut, isAdmin } = useAuth();
   const { data: affiliateProfile } = useAffiliateProfile();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const isAffiliate = !!affiliateProfile;
 
   const handleSignOut = async () => {
     await signOut();
+    navigate("/", { replace: true });
   };
 
   return (
