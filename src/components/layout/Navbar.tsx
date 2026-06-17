@@ -18,7 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const dialectLinks = [
+const dialectLinks: { href: string; label: string; comingSoon?: boolean }[] = [
   { href: "/learn/gulf-arabic", label: "Gulf Arabic" },
   { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
   { href: "/flashcards-pack", label: "Flash Cards" },
