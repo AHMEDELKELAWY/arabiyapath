@@ -1,16 +1,17 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
-import { LevelProgressCard } from "@/components/dashboard/LevelProgressCard";
+import { ProductCard } from "@/components/dashboard/ProductCard";
 import { RecentActivityList } from "@/components/dashboard/RecentActivityList";
 import { QuizResultsList } from "@/components/dashboard/QuizResultsList";
 import { CertificatesList } from "@/components/dashboard/CertificatesList";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, ArrowRight, Sparkles, Globe } from "lucide-react";
+import { ArrowRight, Sparkles, Globe } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 import { FlashcardsDashboardSection } from "@/components/dashboard/FlashcardsDashboardSection";
 import { SEOHead } from "@/components/seo/SEOHead";
@@ -27,6 +28,19 @@ const dialectSalesPages: Record<string, string> = {
   "Modern Standard Arabic (Fusha)": "/learn/fusha-arabic",
 };
 
+function relativeDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const day = 24 * 60 * 60 * 1000;
+  const days = Math.floor(diffMs / day);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const {
@@ -37,6 +51,7 @@ export default function Dashboard() {
     hasLevelAccess,
     isLoading,
   } = useDashboardData();
+  const { data: fcSummary } = useFlashcardsDashboard();
 
   const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
@@ -58,7 +73,7 @@ export default function Dashboard() {
     );
   }
 
-  // Separate dialects into: owned (has at least one unlocked level) vs other
+  // Separate dialects into owned vs other
   const ownedDialects: typeof levelsByDialect = [];
   const otherDialects: typeof levelsByDialect = [];
 
@@ -73,10 +88,12 @@ export default function Dashboard() {
     }
   });
 
-  const hasAnyPurchase = ownedDialects.length > 0;
+  const hasFlashcards =
+    !!fcSummary && fcSummary.purchases.some((p) => p.status === "active");
+  const hasAnyProduct = ownedDialects.length > 0 || hasFlashcards;
 
-  // ===== FREE USER DASHBOARD (no purchases) =====
-  if (!hasAnyPurchase) {
+  // ===== FREE USER DASHBOARD =====
+  if (!hasAnyProduct) {
     return (
       <DashboardLayout>
         <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
@@ -140,7 +157,6 @@ export default function Dashboard() {
     <DashboardLayout>
       <SEOHead title="Dashboard" canonicalPath="/dashboard" noindex />
       <div className="space-y-10">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-1">
             Welcome, {firstName} 👋
@@ -150,85 +166,89 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Continue Learning CTA */}
         <ContinueLearningCard
           lastActivity={lastActivity}
           hasAnyProgress={hasAnyProgress}
         />
 
-        {/* ===== YOUR COURSE SECTION ===== */}
-        {ownedDialects.map((dialectGroup) => {
-          const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
-          const unlockedLevels = dialectGroup.levels.filter((l) =>
-            hasLevelAccess(l.levelId, l.dialectId)
-          );
-          const lockedLevels = dialectGroup.levels.filter(
-            (l) => !hasLevelAccess(l.levelId, l.dialectId)
-          );
+        {/* ===== MY LEARNING ===== */}
+        <section>
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            My Learning
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ownedDialects.map((dialectGroup) => {
+              const emoji = dialectEmojis[dialectGroup.dialectName] || "📖";
+              const totalLessons = dialectGroup.levels.reduce(
+                (s, l) => s + l.totalLessons,
+                0
+              );
+              const completedLessons = dialectGroup.levels.reduce(
+                (s, l) => s + l.completedLessons,
+                0
+              );
+              const totalUnits = dialectGroup.levels.reduce(
+                (s, l) => s + l.totalUnits,
+                0
+              );
+              const progressPercent =
+                totalLessons > 0
+                  ? Math.round((completedLessons / totalLessons) * 100)
+                  : 0;
+              const last = recentActivity.find(
+                (a) => a.dialectId === dialectGroup.dialectId
+              );
+              const lastLabel = last
+                ? `Last: ${last.unitTitle} · ${relativeDate(last.completedAt)}`
+                : "Not started yet";
 
-          return (
-            <div key={dialectGroup.dialectId} className="space-y-6">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">{emoji}</span>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    Your Course
-                  </h2>
-                </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {unlockedLevels.map((level) => (
-                    <LevelProgressCard
-                      key={level.levelId}
-                      levelId={level.levelId}
-                      levelName={level.levelName}
-                      dialectId={level.dialectId}
-                      completedLessons={level.completedLessons}
-                      totalLessons={level.totalLessons}
-                      completedUnits={level.completedUnits}
-                      totalUnits={level.totalUnits}
-                      progressPercent={level.progressPercent}
-                      hasAccess={true}
-                    />
-                  ))}
-                </div>
-              </div>
+              return (
+                <ProductCard
+                  key={dialectGroup.dialectId}
+                  name={dialectGroup.dialectName}
+                  emoji={emoji}
+                  progressPercent={progressPercent}
+                  unitsLabel={`${totalUnits} unit${totalUnits === 1 ? "" : "s"}`}
+                  lastActivityLabel={lastLabel}
+                  continueHref={`/learn/dialect/${dialectGroup.dialectId}`}
+                />
+              );
+            })}
 
-              {lockedLevels.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 text-amber-500" />
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Unlock More Levels
-                    </h2>
-                  </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {lockedLevels.map((level) => (
-                      <LockedLevelCard
-                        key={level.levelId}
-                        levelName={level.levelName}
-                        dialectId={level.dialectId}
-                        dialectName={dialectGroup.dialectName}
-                        totalLessons={level.totalLessons}
-                        totalUnits={level.totalUnits}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            {hasFlashcards && fcSummary && (() => {
+              const totalCards = fcSummary.units.reduce(
+                (s, u) => s + u.total,
+                0
+              );
+              const mastered = fcSummary.total_mastered;
+              const progressPercent =
+                totalCards > 0
+                  ? Math.round((mastered / totalCards) * 100)
+                  : 0;
+              const lastDate = fcSummary.streak?.last_active_date;
+              const lastLabel = lastDate
+                ? `Last studied ${relativeDate(lastDate)}`
+                : "Not started yet";
+              return (
+                <ProductCard
+                  key="flashcards"
+                  name="Flash Cards"
+                  emoji="🃏"
+                  progressPercent={progressPercent}
+                  unitsLabel={`${fcSummary.units.length} unit${fcSummary.units.length === 1 ? "" : "s"}`}
+                  lastActivityLabel={lastLabel}
+                  continueHref="/flashcards"
+                />
+              );
+            })()}
+          </div>
+        </section>
 
-        {/* Activity & Quiz Results */}
         <div className="grid lg:grid-cols-2 gap-6">
           <RecentActivityList activities={recentActivity} />
           <QuizResultsList results={quizResults} />
         </div>
 
-        {/* Flash Cards */}
-        <FlashcardsDashboardSection />
-
-        {/* Certificates */}
         <CertificatesList certificates={certificates} />
 
         {/* ===== EXPLORE OTHER DIALECTS ===== */}
@@ -275,58 +295,5 @@ export default function Dashboard() {
         )}
       </div>
     </DashboardLayout>
-  );
-}
-
-/* ──────────── Locked Level Card ──────────── */
-
-function LockedLevelCard({
-  levelName,
-  dialectId,
-  dialectName,
-  totalLessons,
-  totalUnits,
-}: {
-  levelName: string;
-  dialectId: string;
-  dialectName: string;
-  totalLessons: number;
-  totalUnits: number;
-}) {
-  const upgradeLink =
-    dialectSalesPages[dialectName]
-      ? `${dialectSalesPages[dialectName]}#choose-your-plan`
-      : `/dialects`;
-
-  const isComingSoon = totalLessons === 0;
-
-  return (
-    <Card className="relative overflow-hidden opacity-60 hover:opacity-80 transition-opacity">
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-            <Lock className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-foreground">{levelName}</h4>
-            {isComingSoon ? (
-              <p className="text-xs text-muted-foreground mt-1">🔜 Coming Soon</p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1">
-                {totalUnits} units · {totalLessons} lessons
-              </p>
-            )}
-            {!isComingSoon && (
-              <Link to={upgradeLink} className="mt-3 block">
-                <Button size="sm" variant="outline" className="w-full gap-1 text-xs">
-                  Upgrade to Unlock
-                  <ArrowRight className="w-3 h-3" />
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
