@@ -276,7 +276,7 @@ export default function FlashCardStudy() {
             >
               <button
                 type="button"
-                onClick={() => setFlipped((f) => !f)}
+                onClick={() => { playSound('lessonTransition'); setFlipped((f) => !f); }}
                 aria-label={flipped ? "Show image" : "Reveal answer"}
                 className={cn(
                   "relative w-full h-full transition-transform duration-500 ease-out rounded-2xl",
