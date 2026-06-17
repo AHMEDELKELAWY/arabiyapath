@@ -28,8 +28,14 @@ const sidebarLinks = [
 
 export function AffiliateLayout({ children }: AffiliateLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, profile } = useAuth();
   const { data: couponData } = useAffiliateCoupon();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   const copyLink = () => {
     const link = `${window.location.origin}/pricing?coupon=${couponData?.coupon?.code || couponData?.affiliateCode}`;
