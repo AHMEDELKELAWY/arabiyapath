@@ -149,6 +149,43 @@ serve(async (req) => {
         throw new Error("Failed to create purchase record");
       }
 
+      // Mirror into flashcard_purchases when this is a flash card pack
+      // so flashcard ownership matches the paid PayPal path exactly.
+      try {
+        if (product.scope === "flashcard_pack") {
+          const { data: pack } = await supabase
+            .from("flashcard_packs")
+            .select("id, price_cents, currency")
+            .eq("product_id", product.id)
+            .maybeSingle();
+          if (pack?.id) {
+            const { error: fcErr } = await supabase
+              .from("flashcard_purchases")
+              .insert({
+                user_id: userId,
+                pack_id: pack.id,
+                provider_code: "paypal", // only registered provider; purchases.payment_method records "free_coupon"
+                provider_order_id: `free_coupon:${purchase.id}`,
+                amount_cents: 0,
+                discount_cents: pack.price_cents ?? 0,
+                currency: pack.currency || "USD",
+                coupon_id: couponId,
+                status: "active",
+                purchased_at: new Date().toISOString(),
+              });
+            if (fcErr && (fcErr as any).code !== "23505") {
+              console.error("Free-coupon flashcard_purchases mirror error:", fcErr);
+            } else {
+              console.log(`Free coupon: flashcard_purchases row created for pack ${pack.id}, user ${userId}`);
+            }
+          } else {
+            console.warn(`Free coupon flashcard grant: no pack found for product ${product.id}`);
+          }
+        }
+      } catch (e) {
+        console.error("Free coupon flashcard mirror failed:", e);
+      }
+
       console.log(`Free access granted via coupon. Affiliate ${affiliateId || 'none'} tracked but no commission on $0 sale.`);
 
       return new Response(
