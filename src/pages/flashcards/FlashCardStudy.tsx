@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Lock, Check, Sparkles, ArrowRight } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
@@ -39,6 +40,7 @@ export default function FlashCardStudy() {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const { playSound } = useSoundEffects();
 
   const exitHref = searchParams.get("from") === "dashboard" ? "/dashboard" : "/flashcards";
 
@@ -274,7 +276,7 @@ export default function FlashCardStudy() {
             >
               <button
                 type="button"
-                onClick={() => setFlipped((f) => !f)}
+                onClick={() => { playSound('lessonTransition'); setFlipped((f) => !f); }}
                 aria-label={flipped ? "Show image" : "Reveal answer"}
                 className={cn(
                   "relative w-full h-full transition-transform duration-500 ease-out rounded-2xl",

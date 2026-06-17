@@ -1,27 +1,21 @@
-## Problem
-"Log Out" / "Sign Out" buttons in the Dashboard, Admin, Affiliate sidebars and Navbar do not log the user out reliably. Root causes:
+## Goal
+Play the same click/transition sound used in lessons whenever the user taps a flash card to flip it.
 
-1. `AuthContext.signOut()` calls `supabase.auth.signOut()` with no `try/catch`. If the session is already missing/expired (`AuthSessionMissingError`), it throws and local state (`user`, `session`, `profile`, `isAdmin`) is never cleared, so the UI keeps showing the user as logged in.
-2. After sign-out, most call sites (`DashboardLayout`, `AdminLayout`, `AffiliateLayout`, `Navbar`) do not navigate. The user stays on a protected page and only `ProtectedRoute` would redirect — but only if state actually flipped (see #1).
-3. `signOut` only clears `profile`, not `user`/`session`/`isAdmin`, leaving stale auth state if the listener doesn't fire.
+## Sound to reuse
+`useSoundEffects().playSound('lessonTransition')` — already used in `LessonPlayer.tsx` for between-step taps. File: `/sounds/lesson-transition.mp3`.
 
-## Fix
+## Changes
+1. `src/pages/flashcards/FlashCardStudy.tsx` (MSA study screen)
+   - Import `useSoundEffects`.
+   - On the flip `onClick` (line 277), call `playSound('lessonTransition')` before toggling `flipped`.
 
-### `src/contexts/AuthContext.tsx`
-Make `signOut` bulletproof:
-- Wrap `supabase.auth.signOut({ scope: 'local' })` in `try/catch` (ignore `AuthSessionMissingError`).
-- Always clear `user`, `session`, `profile`, `isAdmin` after the call.
-- Clear any stale Supabase tokens from `localStorage` (`sb-*-auth-token`) as a safety net.
+2. `src/components/flashcards/FlashCard.tsx` (Gulf trial flash card)
+   - Import `useSoundEffects`.
+   - In `handleFlip`, call `playSound('lessonTransition')` before `setIsFlipped`.
 
-### Sign-out call sites — navigate to `/` after sign-out
-- `src/components/dashboard/DashboardLayout.tsx` — `handleSignOut` should `await signOut()` then `navigate("/")`.
-- `src/components/admin/AdminLayout.tsx` — wrap `signOut` in a handler that navigates to `/`.
-- `src/components/affiliate/AffiliateLayout.tsx` — same.
-- `src/components/layout/Navbar.tsx` — same for the mobile menu Sign Out button.
-
-`DashboardAccount.tsx` already navigates and will keep working.
+No new assets needed — reusing the existing `lesson-transition.mp3` keeps audio consistent with the rest of the courses.
 
 ## Acceptance
-- Clicking "Log Out" from the Dashboard sidebar (desktop & mobile), Admin sidebar, Affiliate sidebar, Navbar, or Account page signs the user out and redirects to `/`.
-- Works even when the Supabase session is already expired (no silent failure).
-- Re-visiting any protected route afterwards redirects to `/login`.
+- Tap a flash card on `/flashcards/study/:slug` → hear the same transition sound used in lessons.
+- Tap the Gulf free-trial flash cards → same sound.
+- No sound on secondary controls (audio replay button, rating buttons) — only the flip tap.

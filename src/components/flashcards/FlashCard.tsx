@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FlashCard as FlashCardType } from "@/data/flashCardsData";
 import { supabase } from "@/integrations/supabase/client";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 interface FlashCardProps {
   card: FlashCardType;
@@ -16,8 +17,10 @@ export function FlashCard({ card, onMastered, isReviewed }: FlashCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMasteredAnimation, setShowMasteredAnimation] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playSound } = useSoundEffects();
 
   const handleFlip = () => {
+    playSound('lessonTransition');
     setIsFlipped(!isFlipped);
     // Haptic feedback on mobile if supported
     if (navigator.vibrate) {
