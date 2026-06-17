@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface OAuthButtonsProps {
   redirectUrl?: string;
@@ -8,21 +9,30 @@ interface OAuthButtonsProps {
 
 export function OAuthButtons({ redirectUrl = "/dashboard" }: OAuthButtonsProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleOAuth = async (provider: "google" | "apple") => {
     const target = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/dashboard";
-    const redirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(target)}`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo },
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin,
     });
-    if (error) {
+
+    if (result.error) {
       toast({
         title: "Sign-in failed",
-        description: error.message,
+        description: result.error.message,
         variant: "destructive",
       });
+      return;
     }
+
+    if (result.redirected) {
+      // Browser will redirect to the provider — nothing else to do.
+      return;
+    }
+
+    // Tokens received and session is set — go to intended destination.
+    navigate(target, { replace: true });
   };
 
   return (
