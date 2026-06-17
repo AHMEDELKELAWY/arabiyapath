@@ -1,106 +1,88 @@
+# Flash Cards Admin + Study UX Improvements
 
-# Flash Cards — Bulk Image Upload
-
-A new admin-only feature inside `/admin/flashcards/cards` that lets admins upload many flash card images at once (ZIP or multi-select) and auto-link them to the current unit's cards by order, without touching any other card data or the database schema.
+UI-only changes. No schema, RLS, RPC, payments, or access-control changes. Only `image_url`, `audio_url`, `published`, and `order_index` fields on `flashcards` are written, using existing update calls.
 
 ## Scope
 
-- UI-only addition + client-side ZIP parsing + Supabase Storage uploads.
-- No DB migration. Only `flashcards.image_url` is updated (one column, one row per matched card).
-- Operates strictly on the **currently selected unit** in the cards admin page.
+- **Edit** `src/pages/admin/AdminFlashcardCards.tsx` — toolbar + bulk actions + search/sort/jump, wire new row component.
+- **Edit** `src/components/admin/flashcards/BulkImageUploadDialog.tsx` — richer preview badges + richer results summary.
+- **Edit** `src/pages/flashcards/FlashCardStudy.tsx` — disable audio auto-play.
+- **New** `src/components/admin/flashcards/CardRow.tsx` — extracted row component.
+- **New** `src/components/admin/flashcards/UnitStatsBar.tsx` — counters + bulk action toolbar.
 
-## User Flow
+All admin mutations end with `qc.invalidateQueries(["admin-fc-cards", unitId])`.
 
-1. Admin opens `/admin/flashcards/cards`, selects a unit.
-2. Clicks new **Bulk Image Upload** button (placed between *Import CSV/JSON* and *New Card*).
-3. A dialog opens, allowing either:
-   - Drop/select a `.zip`, or
-   - Drop/select many image files (`.jpg`, `.jpeg`, `.png`, `.webp`).
-4. Client extracts and parses filenames, builds a match preview table:
-   ```
-   Card #1  "بَيْت"       ← msa-u01-001.jpg     [ok]
-   Card #2  "كِتاب"       ← msa-u01-002.jpg     [ok, will overwrite]
-   Card #3  "قَلَم"       ← (no image)          [missing]
-   --
-   Unmatched files: extra-photo.jpg, cover.png
-   ```
-   Shows three counts: **Matched**, **Unmatched images**, **Cards missing images**.
-5. Admin clicks **Confirm Upload**.
-6. Files are uploaded in batches to `content/flashcards/images/`, then `flashcards.image_url` is updated for each matched card.
-7. Final results screen shows the same three counts plus per-card success/failure.
+## Admin Page (`/admin/flashcards/cards`)
 
-## Matching Logic
+### Toolbar above list
 
-Filename → card order. Service is structured so an `image_key` strategy can be plugged in later without UI changes.
+1. **Stats**: `Total · Published · Draft · Images · Audio` (computed from `cards`).
+2. **Bulk publish**: `Publish All` / `Unpublish All` (confirm) — `update({ published }).eq("unit_id", unitId)`.
+3. **Bulk media generate**: `Generate Missing Images`, `Generate Missing Audio` — sequential loop over cards with empty `image_url` / `audio_url`, calling existing `generate-flashcard-image` / `generate-flashcard-audio` edge functions; progress toast `x / N`, final success/fail counts.
+4. **Bulk media remove**: `Remove All Images In Unit`, `Remove All Audio In Unit` (confirm) — `update({ image_url: null })` / `update({ audio_url: null })` scoped to unit.
+5. **Recalculate Card Numbers** (confirm) — load cards ordered by current `order_index`, reassign `1..N`, batch `update({ order_index }).eq("id", ...)`. Only `order_index` is touched.
+6. **Search** input — client-side filter by Arabic substring, English substring, or numeric `order_index` equality.
+7. **Jump to #** input — on Enter, scrolls `#card-<id>` into view and applies a `ring-2 ring-primary` highlight class for ~3 s via timeout (state: `highlightId`).
+8. **Sort** select — Card # ↑ (default), Arabic, Published, Has Image, Has Audio. All client-side over fetched array.
 
-Resolution order (per file):
-1. **image_key match** (future): if filename stem equals `flashcards.image_key` (column doesn't exist yet — strategy stubbed, disabled today).
-2. **Order match**: extract the **last run of digits** from the filename stem and parse as integer. That integer is matched against the card's `order_index` within the current unit.
-   - `msa-u01-001.jpg` → 1
-   - `msa-u01-012.png` → 12
-   - `7.webp` → 7
-   - Leading zeros ignored.
-3. Files with no digits, duplicates resolving to the same card, or numbers with no matching card → **Unmatched images**.
-4. Cards in the unit with no file mapped → **Cards missing images** (only counted/reported, never modified).
+### Card row (`CardRow.tsx`) layout
 
-Existing `image_url` values on matched cards **will be overwritten** — preview clearly flags this with a "will overwrite" badge.
+```
+[#6]  قَلَمٌ فَوْقَ حَقِيبَةٍ                       [Published ✓ toggle]
+      A pen on a bag
+      Image: Available · msa-u01-006.jpg
+      Audio: Missing
+      ⚠ Duplicate Card Number      (only if order_index appears > once)
 
-## Upload Process (Client)
+[thumbnail]   [Generate Image]  [Generate Audio]
+              [Replace Image]   [Remove Image]  [Remove Audio]
+              [Edit]            [Delete]
+```
 
-- ZIP parsing: use `jszip` (small, browser-friendly). If not already installed, add it.
-- For each image entry:
-  - Skip directories, dotfiles, non-image extensions, and files >10 MB each (configurable constant).
-  - Upload to bucket `content` at path `flashcards/images/<unit-slug>/<original-filename>` using `upsert: true` so re-runs replace cleanly.
-  - Get public URL via `supabase.storage.from('content').getPublicUrl(path)`.
-- Concurrency: upload in batches of 8 in parallel, with a progress bar `(done / total)`.
-- After all uploads succeed, run DB updates in batches of 50 using individual `update().eq('id', cardId)` calls (no schema RPC needed). Failures are collected, not thrown.
+- Card # = `order_index`, always visible.
+- Duplicate badge: parent passes `duplicateOrders: Set<number>` (computed once over `cards`); row shows badge when its `order_index` is in the set.
+- Filename = last segment of `image_url` pathname.
+- Publish toggle → `update({ published }).eq("id", c.id)`.
+- Remove Image / Remove Audio → confirm → null that one column.
+- Replace Image → hidden per-row `<input type="file">`; upload to `content/flashcards/images/<unit-slug>/<filename>` with `upsert:true`; then `update({ image_url })`. No other fields touched.
+- Generate Image / Audio → existing edge function invokes.
+- Edit / Delete → unchanged dialogs.
+- Row wrapper `id={`card-${c.id}`}` for the Jump feature, and conditional ring when `highlightId === c.id`.
 
-## Results Screen
+## Bulk Image Upload Dialog updates
 
-Displayed in the same dialog after Confirm:
-- **Matched & updated:** N
-- **Unmatched images:** list with filenames
-- **Cards missing images:** list with card order + Arabic text
-- **Failed updates:** list with reason (if any)
-- "Close" button; on close, the cards query is invalidated so thumbnails refresh.
+Matching still uses `order_index` (preserves current behavior; the visible Card # in the admin list now lets admins audit numbering before uploading).
 
-## Safety
+### Preview stage badges
+- Existing per-row match preview gains a **`Will Replace Existing Image`** badge when the matched card already has a non-null `image_url`.
 
-- Confirm step is mandatory; nothing is written before Confirm.
-- Only `image_url` is updated. No edits to `arabic_text`, `english_translation`, `transliteration`, `examples`, `audio_url`, `published`, `order_index`, or SRS/progress tables.
-- Scoped to the selected unit only.
-- Per-file size cap and image-extension allowlist.
-- All work happens in admin UI guarded by existing `AdminRoute`.
+### Results stage summary
+Replace current two-count summary with:
 
-## Storage
+```
+Matched:                  X
+Updated:                  X
+Replaced Existing Images: X
+Missing Cards:            X   (cards in unit with no file mapped)
+Unmatched Files:          X   (files with no card match)
+```
 
-- Bucket: existing public `content` bucket.
-- Prefix: `flashcards/images/`.
-- Final path: `flashcards/images/<unit-slug-or-id>/<original-filename>`.
-- No bucket changes, no new RLS.
+Counters tracked during the upload loop:
+- `matched` = files that mapped to a card.
+- `updated` = successful `update({ image_url })` calls.
+- `replacedExisting` = subset of `updated` where the prior `image_url` was non-null (recorded from preview snapshot).
+- `missingCards` = cards in unit with no matched file (computed from preview).
+- `unmatchedFiles` = files with no card (computed from preview).
 
-## Files to Add / Modify
+No other behavior of the dialog changes (still client-side, jszip, 8-parallel uploads, `image_url`-only writes).
 
-- **New:** `src/components/admin/flashcards/BulkImageUploadDialog.tsx`
-  - Dialog with dropzone, ZIP/multi-file handling, preview table, progress, results.
-- **New:** `src/lib/flashcards/bulkImageMatcher.ts`
-  - Pure functions: `extractOrderFromFilename(name)`, `matchFilesToCards(files, cards, strategy)`, returning `{ matches, unmatchedFiles, missingCards }`. Strategy param defaults to `'order'`; `'image_key'` reserved for later.
-- **Modified:** `src/pages/admin/AdminFlashcardCards.tsx`
-  - Add **Bulk Image Upload** button next to the existing toolbar buttons.
-  - Open the new dialog, pass `unitId`, current `cards`, and invalidate query on success.
-- **Dependency:** add `jszip` via `bun add jszip` if not already present.
+## Study Mode (`FlashCardStudy.tsx`)
 
-## Out of Scope
+Single change: remove `autoPlay` on the back-side `<FlashCardAudio>` so audio plays **only** when the learner clicks the replay button. Flip animation, image-first front, Arabic/English on back, and two-button assessment (`I Didn't Know It` → `again`, `I Knew It` → `good`) remain unchanged.
 
-- No schema migration; no `image_key` column added now.
-- No changes to `AdminProducts`, `AdminFlashcardPacks`, `FlashCardStudy`, or any non-admin page.
-- No audio bulk upload (can mirror this pattern later).
-- No server-side function — all work runs client-side under the admin's session.
+## Out of scope (unchanged)
 
-## Verification
-
-- Upload a small ZIP with `1.jpg`, `2.jpg`, `3.jpg` against a unit with ≥3 cards → preview lists three matches, Confirm updates three `image_url` values, others untouched.
-- Upload `msa-u01-001..010.jpg` against a 12-card unit → 10 matched, 0 unmatched, 2 missing.
-- Add an extra `cover.png` → appears under Unmatched.
-- Re-run same ZIP → uploads succeed (upsert), URLs updated, no duplicates in storage.
-- Confirm `arabic_text`, `audio_url`, `published`, and `flashcard_progress` rows are unchanged.
+- `flashcards` schema and all `flashcard_*` tables.
+- `fc_apply_review`, `fc_user_can_study_unit`, `fc_user_has_pack_access`, `fc_dashboard_summary`, `sm2.ts`.
+- PayPal, products, purchases, access control, packs, sales pages.
+- No new RLS, migrations, or edge functions.
