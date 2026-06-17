@@ -136,6 +136,9 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
         toast.success("Access granted! Enjoy your course.");
         await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
         await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
         navigate("/dashboard");
         return;
@@ -191,6 +194,9 @@ export function PayPalCheckout({ productType, productName, price, onSuccess }: P
         toast.success("Access granted! Enjoy your course.");
         await queryClient.invalidateQueries({ queryKey: ["purchases", user?.id] });
         await queryClient.invalidateQueries({ queryKey: ["dialects-full"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
+        await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
         navigate("/dashboard");
       }

@@ -142,10 +142,19 @@ export default function FlashCardsSalesPage() {
               </span>
               <span className="text-muted-foreground">/ one-time</span>
             </div>
-            <Button size="lg" className="px-8" onClick={openCheckout} disabled={isLoading || !pack}>
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Get Lifetime Access
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button size="lg" className="px-8" disabled={isLoading || !pack} asChild>
+                <Link to={checkoutHref}>Get Lifetime Access</Link>
+              </Button>
+              {freeUnit && (
+                <Button size="lg" variant="outline" className="px-8 gap-2" asChild>
+                  <Link to={freeHref}>
+                    <Sparkles className="w-4 h-4" />
+                    Try Free Unit
+                  </Link>
+                </Button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-4">
               One-time payment · Lifetime access · 30-day guarantee
             </p>
@@ -195,6 +204,21 @@ export default function FlashCardsSalesPage() {
                   </span>
                   <span className="text-muted-foreground text-sm"> /one-time</span>
                 </div>
+                <div className="flex flex-col gap-3 mb-6">
+                  <Button
+                    className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                    size="lg"
+                    disabled={!pack}
+                    asChild
+                  >
+                    <Link to={checkoutHref}>Get Lifetime Access</Link>
+                  </Button>
+                  {freeUnit && (
+                    <Button className="w-full" size="lg" variant="outline" asChild>
+                      <Link to={freeHref}>Try Free Unit</Link>
+                    </Button>
+                  )}
+                </div>
                 <ul className="space-y-3 mb-6">
                   {features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm">
@@ -203,79 +227,14 @@ export default function FlashCardsSalesPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  size="lg"
-                  onClick={openCheckout}
-                  disabled={!pack}
-                >
-                  Get Flash Cards
-                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Secure checkout with coupons, PayPal, and card payments.
+                </p>
               </div>
             )}
           </div>
         </div>
       </section>
-
-      {/* Checkout Dialog (same pattern as Pricing page) */}
-      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Complete Your Purchase</DialogTitle>
-          </DialogHeader>
-          {pack && (
-            <div className="space-y-6">
-              <div className="bg-muted/50 rounded-xl p-5 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-lg">
-                      {productName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Flash Cards · Lifetime access
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold text-primary">
-                    ${price.toFixed(2)}
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    ✓ One-time payment · ✓ Lifetime access · ✓ 30-day guarantee
-                  </p>
-                </div>
-              </div>
-
-              {authLoading && (
-                <div className="flex flex-col items-center justify-center py-8 gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Verifying...</p>
-                </div>
-              )}
-              {!authLoading && !user && (
-                <div className="bg-muted/50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Create an account to complete your purchase
-                  </p>
-                  <Button asChild className="w-full">
-                    <Link to={`/signup?redirect=${encodeURIComponent("/flashcards-pack")}`}>
-                      Sign Up to Continue
-                    </Link>
-                  </Button>
-                </div>
-              )}
-              {!authLoading && user && pack.product_id && (
-                <PayPalCheckout
-                  productType={pack.product_id}
-                  productName={productName}
-                  price={price}
-                  onSuccess={() => setCheckoutOpen(false)}
-                />
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }
