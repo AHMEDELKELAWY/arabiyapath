@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useFlashcardsDashboard, useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
+import { useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { ProductCard } from "@/components/dashboard/ProductCard";
