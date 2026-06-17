@@ -121,7 +121,7 @@ serve(async (req) => {
                   YOUR AFFILIATE CODE
                 </div>
                 <div style="font-size:32px;font-weight:700;letter-spacing:3px;color:#15803d;text-align:center;background:#fff;padding:16px;border-radius:8px;border:2px dashed #86efac;">
-                  ${affiliateCode}
+                  ${safeAffiliateCode}
                 </div>
               </div>
 
