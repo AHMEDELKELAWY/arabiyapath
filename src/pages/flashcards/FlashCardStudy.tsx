@@ -42,6 +42,14 @@ export default function FlashCardStudy() {
   const [completed, setCompleted] = useState(false);
   const { playSound } = useSoundEffects();
 
+  // Bust dashboard caches on unmount so Progress/Dashboard show latest reviewed counts.
+  useEffect(() => {
+    return () => {
+      qc.invalidateQueries({ queryKey: ["fc-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["fc-resume-slug"] });
+    };
+  }, [qc]);
+
   const exitHref = searchParams.get("from") === "dashboard" ? "/dashboard" : "/flashcards";
 
   const { data: unit } = useQuery({
