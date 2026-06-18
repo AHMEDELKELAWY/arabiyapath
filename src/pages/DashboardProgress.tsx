@@ -204,9 +204,13 @@ export default function DashboardProgress() {
 
           {hasFlashcards && fcSummary && (() => {
             const totalCards = fcSummary.units.reduce((s, u) => s + u.total, 0);
+            const reviewedCards = fcSummary.units.reduce(
+              (s, u) => s + (u.reviewed ?? u.mastered ?? 0),
+              0
+            );
             const mastered = fcSummary.total_mastered;
             const progressPercent =
-              totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0;
+              totalCards > 0 ? Math.round((reviewedCards / totalCards) * 100) : 0;
             const streak = fcSummary.streak?.current_streak ?? 0;
             const completedUnits = fcSummary.units.filter(
               (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
@@ -223,7 +227,7 @@ export default function DashboardProgress() {
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-semibold truncate">Flash Cards</p>
                       <p className="text-xs text-muted-foreground">
-                        {progressPercent}% · {mastered}/{totalCards} cards · {completedUnits}/{totalUnits} units
+                        {progressPercent}% · {reviewedCards}/{totalCards} cards · {completedUnits}/{totalUnits} units
                       </p>
                     </div>
                   </div>
@@ -250,8 +254,9 @@ export default function DashboardProgress() {
 
                   <div className="space-y-2">
                     {fcSummary.units.map((u) => {
+                      const reviewed = u.reviewed ?? u.mastered ?? 0;
                       const pct = u.total
-                        ? Math.round((u.mastered / u.total) * 100)
+                        ? Math.round((reviewed / u.total) * 100)
                         : 0;
                       return (
                         <Link
@@ -262,7 +267,7 @@ export default function DashboardProgress() {
                           <div className="flex justify-between text-sm mb-1">
                             <span className="font-medium truncate">{u.title}</span>
                             <span className="text-muted-foreground">
-                              {u.mastered}/{u.total}
+                              {reviewed}/{u.total}
                             </span>
                           </div>
                           <Progress value={pct} />
