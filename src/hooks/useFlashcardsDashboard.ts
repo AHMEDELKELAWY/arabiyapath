@@ -22,12 +22,19 @@ export function useFlashcardsDashboard() {
   return useQuery<FlashcardsDashboardSummary>({
     queryKey: ["fc-dashboard", user?.id],
     enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("fc_dashboard_summary");
       if (error) throw error;
-      return (data as FlashcardsDashboardSummary) ?? {
+      const summary = (data as FlashcardsDashboardSummary) ?? {
         streak: null, due_today: 0, total_mastered: 0, units: [], purchases: [],
       };
+      if (import.meta.env.DEV && summary.units?.some((u) => u.reviewed === undefined)) {
+        console.warn("[fc-dashboard] RPC returned units without `reviewed` field; falling back to mastered.");
+      }
+      return summary;
     },
   });
 }
