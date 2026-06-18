@@ -24,7 +24,7 @@ export function FlashcardsDashboardSection() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={<Flame className="w-4 h-4 text-orange-500" />} label="Current streak" value={`${summary.streak?.current_streak ?? 0}d`} />
         <Stat icon={<Sparkles className="w-4 h-4 text-primary" />} label="Mastered" value={summary.total_mastered} />
-        <Stat icon={<Layers className="w-4 h-4 text-emerald-500" />} label="Units completed" value={`${summary.units.filter(u => u.total > 0 && (u.reviewed ?? 0) >= u.total).length}/${summary.units.length}`} />
+        <Stat icon={<Layers className="w-4 h-4 text-emerald-500" />} label="Units completed" value={`${summary.units.filter(u => u.total > 0 && (u.reviewed ?? u.mastered ?? 0) >= u.total).length}/${summary.units.length}`} />
         <Stat icon={<ShoppingBag className="w-4 h-4 text-muted-foreground" />} label="Due today" value={summary.due_today} />
       </div>
 
@@ -36,14 +36,15 @@ export function FlashcardsDashboardSection() {
           </CardHeader>
           <CardContent className="space-y-3">
             {summary.units.map((u) => {
-              const pct = u.total ? Math.round((u.mastered / u.total) * 100) : 0;
+              const reviewed = u.reviewed ?? u.mastered ?? 0;
+              const pct = u.total ? Math.round((reviewed / u.total) * 100) : 0;
               return (
                 <div key={u.unit_id}>
                   <div className="flex justify-between text-sm mb-1">
                     <Link to={`/flashcards/study/${u.slug}?from=dashboard`} className="hover:underline">
                       {u.title}
                     </Link>
-                    <span className="text-muted-foreground">{u.mastered}/{u.total}</span>
+                    <span className="text-muted-foreground">{reviewed}/{u.total}</span>
                   </div>
                   <Progress value={pct} />
                 </div>
