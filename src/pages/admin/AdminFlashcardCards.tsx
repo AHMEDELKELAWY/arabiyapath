@@ -12,6 +12,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Plus, Loader2, Upload, Images, Search, ListOrdered,
   CheckCircle2, EyeOff, Eye, ImageIcon, Volume2, Trash2, Sparkles,
 } from "lucide-react";
