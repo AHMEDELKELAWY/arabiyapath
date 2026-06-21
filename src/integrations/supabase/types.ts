@@ -1489,6 +1489,7 @@ export type Database = {
           percent_off: number
         }[]
       }
+      user_can_access_unit: { Args: { _unit_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
