@@ -12,6 +12,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Plus, Loader2, Upload, Images, Search, ListOrdered,
   CheckCircle2, EyeOff, Eye, ImageIcon, Volume2, Trash2, Sparkles,
 } from "lucide-react";
@@ -518,27 +522,42 @@ export default function AdminFlashcardCards() {
         </>
       )}
 
-      {editing !== null && (
-        <Card className="mt-6">
-          <CardHeader><CardTitle>{editing?.id ? "Edit Card" : "New Card"}</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Input placeholder="Arabic (with tashkeel)" value={form.arabic_text} dir="rtl" onChange={(e) => setForm({ ...form, arabic_text: e.target.value })} />
-            <Input placeholder="English translation" value={form.english_translation} onChange={(e) => setForm({ ...form, english_translation: e.target.value })} />
-            <Input placeholder="Transliteration" value={form.transliteration ?? ""} onChange={(e) => setForm({ ...form, transliteration: e.target.value })} />
-            <Textarea placeholder="Example (Arabic with tashkeel)" value={form.example_arabic ?? ""} dir="rtl" onChange={(e) => setForm({ ...form, example_arabic: e.target.value })} />
-            <Textarea placeholder="Example (English)" value={form.example_english ?? ""} onChange={(e) => setForm({ ...form, example_english: e.target.value })} />
-            <Input placeholder="Image URL (optional override)" value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-            <Input placeholder="Image alt text" value={form.image_alt ?? ""} onChange={(e) => setForm({ ...form, image_alt: e.target.value })} />
-            <Input placeholder="Audio URL (optional override)" value={form.audio_url ?? ""} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} />
-            <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} />
+      <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? `Edit Card #${editing.order_index}` : "New Card"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1"><Label>Arabic (with tashkeel)</Label>
+              <Input value={form.arabic_text} dir="rtl" onChange={(e) => setForm({ ...form, arabic_text: e.target.value })} /></div>
+            <div className="space-y-1"><Label>English translation</Label>
+              <Input value={form.english_translation} onChange={(e) => setForm({ ...form, english_translation: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Transliteration</Label>
+              <Input value={form.transliteration ?? ""} onChange={(e) => setForm({ ...form, transliteration: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Example (Arabic with tashkeel)</Label>
+              <Textarea value={form.example_arabic ?? ""} dir="rtl" onChange={(e) => setForm({ ...form, example_arabic: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Example (English)</Label>
+              <Textarea value={form.example_english ?? ""} onChange={(e) => setForm({ ...form, example_english: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Notes</Label>
+              <Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Image URL (optional override)</Label>
+              <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Image alt text</Label>
+              <Input value={form.image_alt ?? ""} onChange={(e) => setForm({ ...form, image_alt: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Audio URL (optional override)</Label>
+              <Input value={form.audio_url ?? ""} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Example audio URL</Label>
+              <Input value={form.audio_example_url ?? ""} onChange={(e) => setForm({ ...form, audio_example_url: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Card number (order)</Label>
+              <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} /></div>
             <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} /> <span>Published</span></div>
-            <div className="flex gap-2">
-              <Button onClick={save}>Save</Button>
-              <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button onClick={save}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
