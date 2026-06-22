@@ -151,7 +151,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
               onClick={playAudio}
               disabled={!current.audio_url}
               aria-label="Play audio"
-              className="relative block w-full group focus:outline-none focus:ring-2 focus:ring-primary rounded-2xl"
+              className="relative block mx-auto w-full max-w-[333px] md:max-w-[667px] group focus:outline-none focus:ring-2 focus:ring-primary rounded-2xl"
             >
               <FlashCardImage
                 src={current.image_url}
