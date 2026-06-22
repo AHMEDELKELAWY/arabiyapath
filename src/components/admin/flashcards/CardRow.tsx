@@ -112,6 +112,17 @@ export function CardRow({
       )}
     >
       <CardContent className="p-4 flex gap-4">
+        {selectable && (
+          <div className="flex items-start pt-1">
+            <input
+              type="checkbox"
+              checked={!!selected}
+              onChange={onToggleSelect}
+              aria-label="Select card"
+              className="w-4 h-4 accent-primary cursor-pointer"
+            />
+          </div>
+        )}
         <div className="w-32 shrink-0 space-y-1">
           <FlashCardImage src={c.image_url} alt={c.image_alt || c.english_translation} />
           {filename && (
