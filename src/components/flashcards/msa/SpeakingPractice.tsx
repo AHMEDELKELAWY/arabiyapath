@@ -210,12 +210,14 @@ export function SpeakingPractice({ unitId }: Props) {
     "text-destructive";
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-5">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Card {safeIdx + 1} of {total}</span>
+    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6 md:p-8 space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
+          </div>
           {flipped && (
-            <Button variant="ghost" size="sm" onClick={() => setFlipped(false)} className="gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setFlipped(false)} className="gap-1 shrink-0">
               <RotateCcw className="w-3.5 h-3.5" /> Flip back
             </Button>
           )}
@@ -240,6 +242,7 @@ export function SpeakingPractice({ unitId }: Props) {
                 <FlashCardImage
                   src={current.image_url}
                   alt={current.image_alt || "Flash card image"}
+                  capped
                   className="group-hover:opacity-95 transition-opacity"
                 />
                 <p className="text-center text-xs text-muted-foreground mt-3">
@@ -252,7 +255,7 @@ export function SpeakingPractice({ unitId }: Props) {
             <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-y-auto">
               <div className="space-y-4">
                 <div className="text-center space-y-1">
-                  <p className="text-3xl md:text-4xl font-bold leading-loose" dir="rtl" lang="ar">
+                  <p className="text-3xl md:text-4xl font-bold leading-loose break-words" dir="rtl" lang="ar">
                     {current.arabic_text}
                   </p>
                   {current.transliteration && (
@@ -263,18 +266,18 @@ export function SpeakingPractice({ unitId }: Props) {
 
                 <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="auto" />
                 <div className="flex justify-center">
-                  <Button variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
+                  <Button variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2 min-h-[44px]">
                     <Play className="w-4 h-4" /> Listen to native
                   </Button>
                 </div>
 
                 <div className="flex justify-center gap-2">
                   {!recording ? (
-                    <Button onClick={startRecording} disabled={busy} className="gap-2" size="lg">
+                    <Button onClick={startRecording} disabled={busy} className="gap-2 min-h-[44px]" size="lg">
                       <Mic className="w-4 h-4" /> {userBlobUrl ? "Record again" : "Record yourself"}
                     </Button>
                   ) : (
-                    <Button onClick={stopRecording} variant="destructive" className="gap-2" size="lg">
+                    <Button onClick={stopRecording} variant="destructive" className="gap-2 min-h-[44px]" size="lg">
                       <Square className="w-4 h-4" /> Stop
                     </Button>
                   )}
@@ -327,20 +330,23 @@ export function SpeakingPractice({ unitId }: Props) {
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-3 pt-2">
+        {/* Navigation — mobile-first */}
+        <div
+          className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={safeIdx === 0 || recording}
-            className="gap-1"
+            className="gap-1 sm:w-auto min-h-[44px]"
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </Button>
           <Button
             onClick={() => setIdx((i) => Math.min(total - 1, i + 1))}
             disabled={safeIdx === total - 1 || recording}
-            className="gap-1"
+            className="gap-1 w-full sm:w-auto min-h-[44px]"
           >
             Next <ChevronRight className="w-4 h-4" />
           </Button>
@@ -349,3 +355,4 @@ export function SpeakingPractice({ unitId }: Props) {
     </Card>
   );
 }
+
