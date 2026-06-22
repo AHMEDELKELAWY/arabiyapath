@@ -18,6 +18,9 @@ interface Props {
   duplicate: boolean;
   highlighted: boolean;
   busy: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onBusyChange: (id: string | null) => void;
   onMutated: () => void;
   onEdit: (c: any) => void;
