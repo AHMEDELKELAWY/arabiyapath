@@ -121,11 +121,11 @@ export function ListeningQuiz({ unitId }: Props) {
   if (done) {
     const pct = Math.round((score / total) * 100);
     return (
-      <Card>
-        <CardContent className="p-8 text-center space-y-4">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-6 md:p-8 text-center space-y-4">
           <h3 className="text-2xl font-bold">Listening complete</h3>
           <p className="text-lg">Score: {score} / {total} ({pct}%)</p>
-          <Button onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2">
+          <Button onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2 min-h-[44px]">
             <RotateCcw className="w-4 h-4" /> Restart
           </Button>
         </CardContent>
