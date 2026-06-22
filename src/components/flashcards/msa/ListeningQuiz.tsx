@@ -109,7 +109,7 @@ export function ListeningQuiz({ unitId }: Props) {
     return (
       <Card>
         <CardContent className="p-8 text-center text-muted-foreground">
-          Not enough sentence cards with audio + images in this unit yet for a listening quiz.
+          Not enough cards with audio and images in this unit yet for a listening quiz.
         </CardContent>
       </Card>
     );
