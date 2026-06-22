@@ -188,14 +188,7 @@ export default function FlashCardUnit() {
 
             <TabsContent value="speaking">
               {canStudy ? (
-                <div className="space-y-3">
-                  <SpeakingPractice unitId={unit.id} />
-                  <div className="text-center">
-                    <Button variant="ghost" size="sm" onClick={handleStudy}>
-                      <PlayCircle className="w-4 h-4 mr-2" /> Or run a spaced-repetition session
-                    </Button>
-                  </div>
-                </div>
+                <SpeakingPractice unitId={unit.id} />
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center flex flex-col items-center gap-3">
