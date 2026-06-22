@@ -1,10 +1,25 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { MinimalFooter } from "./MinimalFooter";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatbaseInit, openChatbase } from "@/hooks/useChatbase";
+
+const HIDDEN_CHATBASE_PREFIXES = [
+  "/dashboard",
+  "/flashcards",
+  "/courses",
+  "/lesson",
+  "/learn",
+];
+
+function shouldHideChatbase(pathname: string): boolean {
+  return HIDDEN_CHATBASE_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
+}
 
 interface LayoutProps {
   children: ReactNode;
