@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
-import { LearningBrowser } from "@/components/flashcards/msa/LearningBrowser";
-import { ListeningPlayer } from "@/components/flashcards/msa/ListeningPlayer";
+import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
+import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
+import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
@@ -123,10 +124,10 @@ export default function FlashCardUnit() {
             Choose how you want to practice this unit.
           </p>
 
-          <Tabs defaultValue="speaking" className="w-full">
+          <Tabs defaultValue="learn" className="w-full">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
-              <TabsTrigger value="learning" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
-                <BookOpen className="w-4 h-4" /> Learning
+              <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
+                <BookOpen className="w-4 h-4" /> Learn
               </TabsTrigger>
               <TabsTrigger value="listening" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
                 <Headphones className="w-4 h-4" /> Listening
@@ -139,16 +140,16 @@ export default function FlashCardUnit() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="learning">
+            <TabsContent value="learn">
               {canStudy ? (
-                <LearningBrowser unitId={unit.id} />
+                <LearnVocabBrowser unitId={unit.id} />
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <BookOpen className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold">Learning</h3>
+                    <h3 className="text-lg font-semibold">Learn</h3>
                     <p className="text-sm text-muted-foreground max-w-md">
                       Browse each card with its Arabic word, transliteration, English meaning, image, and native audio — at your own pace.
                     </p>
@@ -164,7 +165,7 @@ export default function FlashCardUnit() {
 
             <TabsContent value="listening">
               {canStudy ? (
-                <ListeningPlayer unitId={unit.id} />
+                <ListeningQuiz unitId={unit.id} />
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center flex flex-col items-center gap-3">
@@ -216,11 +217,26 @@ export default function FlashCardUnit() {
             </TabsContent>
 
             <TabsContent value="test">
-              <ComingSoonCard
-                icon={<GraduationCap className="w-6 h-6 text-primary" />}
-                title="Test Yourself"
-                description="A short multiple-choice quiz built from this unit's cards, with a final score."
-              />
+              {canStudy ? (
+                <TestYourselfQuiz unitId={unit.id} />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <GraduationCap className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Test Yourself</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      A 10-question mixed quiz built from this unit's cards, with a final score.
+                    </p>
+                    <Button asChild className="mt-2">
+                      <Link to={unlockHref}>
+                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
