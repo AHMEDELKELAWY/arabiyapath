@@ -25,7 +25,7 @@ interface Props {
 // Normalize Arabic for comparison: strip tashkeel/punctuation/spaces.
 function normalizeArabic(s: string): string {
   return s
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "") // diacritics
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
     .replace(/[ٱإأآا]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه")
@@ -37,7 +37,6 @@ function similarity(a: string, b: string): number {
   const x = normalizeArabic(a);
   const y = normalizeArabic(b);
   if (!x || !y) return 0;
-  // Levenshtein
   const m = x.length, n = y.length;
   const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
   for (let i = 0; i <= m; i++) dp[i][0] = i;
@@ -55,6 +54,7 @@ function similarity(a: string, b: string): number {
 
 export function SpeakingPractice({ unitId }: Props) {
   const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [userBlobUrl, setUserBlobUrl] = useState<string | null>(null);
@@ -86,14 +86,14 @@ export function SpeakingPractice({ unitId }: Props) {
   const safeIdx = total > 0 ? Math.min(idx, total - 1) : 0;
   const current = cards?.[safeIdx];
 
-  // Reset attempt state when card changes.
+  // Reset attempt + flip state when card changes.
   useEffect(() => {
     setUserBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
     setTranscript(null);
     setScore(null);
+    setFlipped(false);
   }, [current?.id]);
 
-  // Stop tracks on unmount.
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (userBlobUrl) URL.revokeObjectURL(userBlobUrl);
@@ -167,9 +167,7 @@ export function SpeakingPractice({ unitId }: Props) {
       const form = new FormData();
       form.append("file", file);
 
-      const { data, error } = await supabase.functions.invoke("transcribe-speech", {
-        body: form,
-      });
+      const { data, error } = await supabase.functions.invoke("transcribe-speech", { body: form });
       if (error) throw error;
       const t = (data as any)?.transcript ?? "";
       setTranscript(t);
@@ -215,84 +213,118 @@ export function SpeakingPractice({ unitId }: Props) {
       <CardContent className="p-6 space-y-5">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Card {safeIdx + 1} of {total}</span>
-        </div>
-
-        <FlashCardImage src={current.image_url} alt={current.image_alt || current.english_translation} />
-
-        <div className="text-center space-y-1">
-          <p className="text-3xl md:text-4xl font-bold leading-loose" dir="rtl" lang="ar">
-            {current.arabic_text}
-          </p>
-          {current.transliteration && (
-            <p className="text-base text-muted-foreground italic">{current.transliteration}</p>
-          )}
-          <p className="text-base">{current.english_translation}</p>
-        </div>
-
-        {/* Reference audio */}
-        <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="auto" />
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
-            <Play className="w-4 h-4" /> Listen to native
-          </Button>
-        </div>
-
-        {/* Record controls */}
-        <div className="flex justify-center gap-2">
-          {!recording ? (
-            <Button onClick={startRecording} disabled={busy} className="gap-2" size="lg">
-              <Mic className="w-4 h-4" /> {userBlobUrl ? "Record again" : "Record yourself"}
-            </Button>
-          ) : (
-            <Button onClick={stopRecording} variant="destructive" className="gap-2" size="lg">
-              <Square className="w-4 h-4" /> Stop
+          {flipped && (
+            <Button variant="ghost" size="sm" onClick={() => setFlipped(false)} className="gap-1">
+              <RotateCcw className="w-3.5 h-3.5" /> Flip back
             </Button>
           )}
         </div>
 
-        {recording && (
-          <p className="text-center text-xs text-muted-foreground animate-pulse">
-            Recording… speak the Arabic above clearly.
-          </p>
-        )}
-
-        {/* Playback comparison */}
-        {userBlobUrl && (
-          <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-            <p className="text-sm font-medium text-center">Compare</p>
-            <audio ref={userAudioRef} src={userBlobUrl} preload="auto" />
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button size="sm" variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
-                <Play className="w-4 h-4" /> Native
-              </Button>
-              <Button size="sm" variant="outline" onClick={playUser} className="gap-2">
-                <Play className="w-4 h-4" /> Your recording
-              </Button>
-              <Button size="sm" variant="ghost" onClick={reset} className="gap-2">
-                <RotateCcw className="w-4 h-4" /> Reset
-              </Button>
+        {/* Flip card */}
+        <div className="[perspective:1200px]">
+          <div
+            className={cn(
+              "relative w-full transition-transform duration-500 [transform-style:preserve-3d]",
+              flipped && "[transform:rotateY(180deg)]"
+            )}
+          >
+            {/* FRONT — image only */}
+            <div className="[backface-visibility:hidden]">
+              <button
+                type="button"
+                onClick={() => setFlipped(true)}
+                className="block w-full text-left group focus:outline-none focus:ring-2 focus:ring-primary rounded-2xl"
+                aria-label="Reveal sentence"
+              >
+                <FlashCardImage
+                  src={current.image_url}
+                  alt={current.image_alt || "Flash card image"}
+                  className="group-hover:opacity-95 transition-opacity"
+                />
+                <p className="text-center text-xs text-muted-foreground mt-3">
+                  Tap the image to reveal the sentence
+                </p>
+              </button>
             </div>
 
-            {busy && (
-              <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Analyzing your pronunciation…
-              </p>
-            )}
+            {/* BACK — content */}
+            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-y-auto">
+              <div className="space-y-4">
+                <div className="text-center space-y-1">
+                  <p className="text-3xl md:text-4xl font-bold leading-loose" dir="rtl" lang="ar">
+                    {current.arabic_text}
+                  </p>
+                  {current.transliteration && (
+                    <p className="text-base text-muted-foreground italic">{current.transliteration}</p>
+                  )}
+                  <p className="text-base">{current.english_translation}</p>
+                </div>
 
-            {!busy && transcript !== null && (
-              <div className="space-y-2 text-center">
-                <p className="text-xs text-muted-foreground">We heard:</p>
-                <p className="text-lg" dir="rtl" lang="ar">{transcript || "—"}</p>
-                {scorePct !== null && (
-                  <p className={cn("text-2xl font-bold flex items-center justify-center gap-2", scoreColor)}>
-                    {scorePct >= 80 ? <Check className="w-6 h-6" /> : scorePct < 50 ? <X className="w-6 h-6" /> : null}
-                    {scorePct}% match
+                <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="auto" />
+                <div className="flex justify-center">
+                  <Button variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
+                    <Play className="w-4 h-4" /> Listen to native
+                  </Button>
+                </div>
+
+                <div className="flex justify-center gap-2">
+                  {!recording ? (
+                    <Button onClick={startRecording} disabled={busy} className="gap-2" size="lg">
+                      <Mic className="w-4 h-4" /> {userBlobUrl ? "Record again" : "Record yourself"}
+                    </Button>
+                  ) : (
+                    <Button onClick={stopRecording} variant="destructive" className="gap-2" size="lg">
+                      <Square className="w-4 h-4" /> Stop
+                    </Button>
+                  )}
+                </div>
+
+                {recording && (
+                  <p className="text-center text-xs text-muted-foreground animate-pulse">
+                    Recording… speak the Arabic above clearly.
                   </p>
                 )}
+
+                {userBlobUrl && (
+                  <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                    <p className="text-sm font-medium text-center">Compare</p>
+                    <audio ref={userAudioRef} src={userBlobUrl} preload="auto" />
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button size="sm" variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
+                        <Play className="w-4 h-4" /> Native
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={playUser} className="gap-2">
+                        <Play className="w-4 h-4" /> Your recording
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={reset} className="gap-2">
+                        <RotateCcw className="w-4 h-4" /> Reset
+                      </Button>
+                    </div>
+
+                    {busy && (
+                      <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Analyzing your pronunciation…
+                      </p>
+                    )}
+
+                    {!busy && transcript !== null && (
+                      <div className="space-y-2 text-center">
+                        <p className="text-xs text-muted-foreground">We heard:</p>
+                        <p className="text-lg" dir="rtl" lang="ar">{transcript || "—"}</p>
+                        {scorePct !== null && (
+                          <p className={cn("text-2xl font-bold flex items-center justify-center gap-2", scoreColor)}>
+                            {scorePct >= 80 ? <Check className="w-6 h-6" /> : scorePct < 50 ? <X className="w-6 h-6" /> : null}
+                            {scorePct}% match
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between gap-3 pt-2">
