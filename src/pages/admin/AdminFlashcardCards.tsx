@@ -490,6 +490,30 @@ export default function AdminFlashcardCards() {
       </div>
 
       {unitId && (
+        <div className="flex gap-1 mb-6 border-b">
+          {([
+            { v: "speaking", label: "Speaking Content" },
+            { v: "learn", label: "Learn Content" },
+          ] as { v: CardKind; label: string }[]).map((t) => (
+            <button
+              key={t.v}
+              type="button"
+              onClick={() => setKind(t.v)}
+              className={
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors " +
+                (kind === t.v
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+
+      {unitId && (
         <BulkImageUploadDialog
           open={bulkOpen}
           onOpenChange={setBulkOpen}
