@@ -424,19 +424,37 @@ export default function AdminFlashcardCards() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Flash Cards</h1>
+          <h1 className="text-2xl font-bold">
+            {kind === "learn" ? "Learn Content" : "Speaking Content"}
+          </h1>
           <select
             className="border rounded px-2 py-1 bg-background"
             value={unitId}
-            onChange={(e) => { window.location.search = `?unit=${e.target.value}`; }}
+            onChange={(e) => {
+              const p = new URLSearchParams();
+              if (e.target.value) p.set("unit", e.target.value);
+              p.set("kind", kind);
+              setParams(p, { replace: true });
+              setSelected(new Set());
+            }}
           >
             <option value="">— select unit —</option>
             {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {kind === "speaking" && selected.size > 0 && (
+            <Button
+              variant="default"
+              onClick={copySelectedToLearn}
+              disabled={copying}
+            >
+              {copying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Copy {selected.size} to Learn
+            </Button>
+          )}
           <label>
             <input
               type="file"
