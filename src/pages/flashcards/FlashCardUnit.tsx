@@ -109,49 +109,48 @@ export default function FlashCardUnit() {
           inLanguage: "ar",
         }}
       />
-      <section className="container max-w-3xl py-12 px-4">
-        <div className="mb-4">
-          <Button variant="outline" size="sm" onClick={() => {
+      <section className="container max-w-3xl py-6 md:py-8 px-4">
+        <div className="mb-3">
+          <Button variant="ghost" size="sm" className="-ml-2" onClick={() => {
             if (window.history.length > 1) {
               navigate(-1);
             } else {
               navigate('/flashcards');
             }
           }}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Units
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Units
           </Button>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">{unit.title_en}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-1">{unit.title_en}</h1>
         {unit.title_ar && (
-          <p className="text-2xl text-muted-foreground mb-4" dir="rtl">{unit.title_ar}</p>
+          <p className="text-lg md:text-xl text-muted-foreground mb-1" dir="rtl" lang="ar">{unit.title_ar}</p>
         )}
-        <p className="text-muted-foreground mb-6">{unit.description}</p>
+        {typeof cardCount === "number" && cardCount > 0 && (
+          <span className="inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+            {cardCount} Cards
+          </span>
+        )}
 
-        <div className="mb-6">
-          <h2 className="text-xl md:text-2xl font-semibold mb-1 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" /> In the Classroom
-          </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Choose how you want to practice this unit.
-          </p>
-
+        <div className="mt-4">
           <Tabs defaultValue="learn" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
-              <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
-                <BookOpen className="w-4 h-4" /> Learn
-              </TabsTrigger>
-              <TabsTrigger value="listening" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
-                <Headphones className="w-4 h-4" /> Listening
-              </TabsTrigger>
-              <TabsTrigger value="speaking" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
-                <Mic className="w-4 h-4" /> Speaking
-              </TabsTrigger>
-              <TabsTrigger value="test" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
-                <GraduationCap className="w-4 h-4" /> Test Yourself
-              </TabsTrigger>
-            </TabsList>
+            <div className="sticky top-16 z-30 -mx-4 px-4 py-2 bg-background/85 backdrop-blur border-b border-border/40">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+                <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                  <BookOpen className="w-4 h-4" /> Learn
+                </TabsTrigger>
+                <TabsTrigger value="listening" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                  <Headphones className="w-4 h-4" /> Listening
+                </TabsTrigger>
+                <TabsTrigger value="speaking" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                  <Mic className="w-4 h-4" /> Speaking
+                </TabsTrigger>
+                <TabsTrigger value="test" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                  <GraduationCap className="w-4 h-4" /> Test Yourself
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <TabsContent value="learn">
+            <TabsContent value="learn" className="mt-4">
               {canStudy ? (
                 <LearnVocabBrowser unitId={unit.id} />
               ) : (
@@ -174,7 +173,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="listening">
+            <TabsContent value="listening" className="mt-4">
               {canStudy ? (
                 <ListeningQuiz unitId={unit.id} />
               ) : (
@@ -197,7 +196,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="speaking">
+            <TabsContent value="speaking" className="mt-4">
               {canStudy ? (
                 <SpeakingPractice unitId={unit.id} />
               ) : (
@@ -220,7 +219,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="test">
+            <TabsContent value="test" className="mt-4">
               {canStudy ? (
                 <TestYourselfQuiz unitId={unit.id} />
               ) : (

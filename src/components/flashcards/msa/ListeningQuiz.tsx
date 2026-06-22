@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Play, Check, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
+import { ActivityProgress } from "./ActivityProgress";
 
 interface CardRow {
   id: string;
@@ -120,11 +121,11 @@ export function ListeningQuiz({ unitId }: Props) {
   if (done) {
     const pct = Math.round((score / total) * 100);
     return (
-      <Card>
-        <CardContent className="p-8 text-center space-y-4">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-6 md:p-8 text-center space-y-4">
           <h3 className="text-2xl font-bold">Listening complete</h3>
           <p className="text-lg">Score: {score} / {total} ({pct}%)</p>
-          <Button onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2">
+          <Button onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2 min-h-[44px]">
             <RotateCcw className="w-4 h-4" /> Restart
           </Button>
         </CardContent>
@@ -157,17 +158,17 @@ export function ListeningQuiz({ unitId }: Props) {
   const tryAgain = () => setPicked(null);
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-5">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Question {i + 1} of {total}</span>
-          <span>Score: {score}</span>
+    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6 md:p-8 space-y-5">
+        <div className="space-y-2">
+          <ActivityProgress current={i + 1} total={total} label="Question" />
+          <p className="text-xs text-muted-foreground text-right">Score: {score}</p>
         </div>
 
         <audio ref={audioRef} src={q.audio} preload="auto" />
 
         <div className="flex justify-center">
-          <Button size="lg" onClick={replay} className="gap-2">
+          <Button size="lg" onClick={replay} className="gap-2 min-h-[44px]">
             <Play className="w-5 h-5" /> Play audio
           </Button>
         </div>
