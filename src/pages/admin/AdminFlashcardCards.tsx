@@ -273,11 +273,13 @@ export default function AdminFlashcardCards() {
     }
   };
 
-  // ---- Bulk actions ----
+  // ---- Bulk actions (scoped to current kind) ----
   const bulkSetPublished = async (published: boolean) => {
-    if (!confirm(`${published ? "Publish" : "Unpublish"} all cards in this unit?`)) return;
+    if (!confirm(`${published ? "Publish" : "Unpublish"} all ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit?`)) return;
     setBulkBusy("publish");
-    const { error } = await (supabase as any).from("flashcards").update({ published }).eq("unit_id", unitId);
+    const { error } = await (supabase as any)
+      .from("flashcards").update({ published })
+      .eq("unit_id", unitId).eq("kind", kind);
     setBulkBusy(null);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: published ? "All cards published" : "All cards unpublished" });
@@ -286,43 +288,100 @@ export default function AdminFlashcardCards() {
 
   const bulkClear = async (column: "image_url" | "audio_url") => {
     const label = column === "image_url" ? "images" : "audio";
-    if (!confirm(`Remove ALL ${label} in this unit? This cannot be undone.`)) return;
+    if (!confirm(`Remove ALL ${label} for ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit? This cannot be undone.`)) return;
     setBulkBusy(column);
-    const { error } = await (supabase as any).from("flashcards").update({ [column]: null }).eq("unit_id", unitId);
+    const { error } = await (supabase as any)
+      .from("flashcards").update({ [column]: null })
+      .eq("unit_id", unitId).eq("kind", kind);
     setBulkBusy(null);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: `All ${label} removed` });
     invalidate();
   };
 
-  const bulkGenerateMissing = async (kind: "image" | "audio") => {
+  const bulkGenerateMissing = async (asset: "image" | "audio") => {
     const list = (cards ?? []).filter((c: any) =>
-      kind === "image" ? !c.image_url : !c.audio_url,
+      asset === "image" ? !c.image_url : !c.audio_url,
     );
-    if (!list.length) return toast({ title: `No cards missing ${kind}` });
-    if (!confirm(`Generate ${kind} for ${list.length} card${list.length === 1 ? "" : "s"}?`)) return;
-    setBulkBusy(`gen-${kind}`);
+    if (!list.length) return toast({ title: `No cards missing ${asset}` });
+    if (!confirm(`Generate ${asset} for ${list.length} card${list.length === 1 ? "" : "s"}?`)) return;
+    setBulkBusy(`gen-${asset}`);
     let ok = 0, fail = 0;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       try {
-        const fn = kind === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
-        const body = kind === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
+        const fn = asset === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
+        const body = asset === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
         const { error } = await supabase.functions.invoke(fn, { body });
         if (error) throw error;
         ok++;
       } catch {
         fail++;
       }
-      toast({ title: `Generating ${kind}…`, description: `${i + 1} / ${list.length}` });
+      toast({ title: `Generating ${asset}…`, description: `${i + 1} / ${list.length}` });
     }
     setBulkBusy(null);
     toast({
-      title: `Bulk ${kind} generation complete`,
+      title: `Bulk ${asset} generation complete`,
       description: `Success: ${ok} · Failed: ${fail}`,
       variant: fail ? "destructive" : "default",
     });
     invalidate();
+  };
+
+  // ---- Copy Selected To Learn ----
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const copySelectedToLearn = async () => {
+    if (kind !== "speaking") return;
+    if (!selected.size) return toast({ title: "Select at least one Speaking card first" });
+    if (!confirm(`Copy ${selected.size} card(s) to Learn?`)) return;
+    setCopying(true);
+    try {
+      const { data: existingLearn, error: lerr } = await (supabase as any)
+        .from("flashcards").select("order_index")
+        .eq("unit_id", unitId).eq("kind", "learn")
+        .order("order_index", { ascending: false }).limit(1);
+      if (lerr) throw lerr;
+      let nextOrder = ((existingLearn?.[0]?.order_index as number) ?? 0) + 1;
+
+      const sources = (cards ?? [])
+        .filter((c: any) => selected.has(c.id))
+        .sort((a: any, b: any) => a.order_index - b.order_index);
+
+      const payload = sources.map((c: any) => ({
+        unit_id: unitId,
+        kind: "learn" as const,
+        arabic_text: c.arabic_text,
+        english_translation: c.english_translation,
+        transliteration: c.transliteration ?? null,
+        example_arabic: c.example_arabic ?? null,
+        example_english: c.example_english ?? null,
+        image_url: c.image_url ?? null,
+        image_alt: c.image_alt ?? null,
+        audio_url: c.audio_url ?? null,
+        audio_example_url: c.audio_example_url ?? null,
+        notes: c.notes ?? null,
+        order_index: nextOrder++,
+        published: !!c.published,
+      }));
+
+      const { error } = await (supabase as any).from("flashcards").insert(payload);
+      if (error) throw error;
+      toast({ title: `Copied ${payload.length} card(s) to Learn` });
+      setSelected(new Set());
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Copy failed", description: e.message, variant: "destructive" });
+    } finally {
+      setCopying(false);
+    }
   };
 
   const renumberCards = async () => {
