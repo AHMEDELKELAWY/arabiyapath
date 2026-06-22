@@ -83,10 +83,27 @@ function loadChatbaseScript(): Promise<void> {
   });
 }
 
-export function useChatbaseInit() {
+interface UseChatbaseInitOptions {
+  disabled?: boolean;
+}
+
+export function useChatbaseInit(options?: UseChatbaseInitOptions) {
+  const { disabled } = options || {};
   const loadedRef = useRef(false);
 
   useEffect(() => {
+    if (disabled) {
+      // If widget is already loaded, try to close it
+      if (window.chatbase && typeof window.chatbase === "function") {
+        try {
+          window.chatbase("close");
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
     // Lazy load after delay (fallback if user doesn't click button)
     const timer = setTimeout(() => {
       if (!loadedRef.current && !window.__chatbaseLoaded) {
@@ -96,7 +113,7 @@ export function useChatbaseInit() {
     }, LAZY_LOAD_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [disabled]);
 }
 
 export function openChatbase() {
