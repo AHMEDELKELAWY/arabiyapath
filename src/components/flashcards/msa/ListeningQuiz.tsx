@@ -158,17 +158,17 @@ export function ListeningQuiz({ unitId }: Props) {
   const tryAgain = () => setPicked(null);
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-5">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Question {i + 1} of {total}</span>
-          <span>Score: {score}</span>
+    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6 md:p-8 space-y-5">
+        <div className="space-y-2">
+          <ActivityProgress current={i + 1} total={total} label="Question" />
+          <p className="text-xs text-muted-foreground text-right">Score: {score}</p>
         </div>
 
         <audio ref={audioRef} src={q.audio} preload="auto" />
 
         <div className="flex justify-center">
-          <Button size="lg" onClick={replay} className="gap-2">
+          <Button size="lg" onClick={replay} className="gap-2 min-h-[44px]">
             <Play className="w-5 h-5" /> Play audio
           </Button>
         </div>
