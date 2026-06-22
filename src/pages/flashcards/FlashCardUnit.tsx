@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
+import { LearningBrowser } from "@/components/flashcards/msa/LearningBrowser";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
@@ -137,11 +138,26 @@ export default function FlashCardUnit() {
             </TabsList>
 
             <TabsContent value="learning">
-              <ComingSoonCard
-                icon={<BookOpen className="w-6 h-6 text-primary" />}
-                title="Learning"
-                description="Browse each card with its word, translation, and image — at your own pace, no SRS pressure."
-              />
+              {canStudy ? (
+                <LearningBrowser unitId={unit.id} />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Learning</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Browse each card with its Arabic word, transliteration, English meaning, image, and native audio — at your own pace.
+                    </p>
+                    <Button asChild className="mt-2">
+                      <Link to={unlockHref}>
+                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="listening">
