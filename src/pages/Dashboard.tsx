@@ -244,7 +244,7 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              const continueHref = "/dashboard/progress";
+              const continueHref = "/dashboard/progress#flashcards-section";
               return (
                 <ProductCard
                   key="flashcards"

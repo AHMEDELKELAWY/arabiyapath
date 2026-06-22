@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
+import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
@@ -95,7 +95,7 @@ export default function FlashCardUnit() {
   const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
 
   return (
-    <Layout>
+    <Layout minimalFooter>
       <SEOHead
         title={unit.seo_title || `${unit.title_en} — Flash Cards`}
         description={unit.seo_description || unit.description || "MSA Arabic flash cards."}
@@ -110,6 +110,17 @@ export default function FlashCardUnit() {
         }}
       />
       <section className="container max-w-3xl py-12 px-4">
+        <div className="mb-4">
+          <Button variant="outline" size="sm" onClick={() => {
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/flashcards');
+            }
+          }}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Units
+          </Button>
+        </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-3">{unit.title_en}</h1>
         {unit.title_ar && (
           <p className="text-2xl text-muted-foreground mb-4" dir="rtl">{unit.title_ar}</p>
