@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Check, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isSentence, sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
+import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 
 interface CardRow {
   id: string;
