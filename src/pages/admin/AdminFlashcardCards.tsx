@@ -113,11 +113,15 @@ export default function AdminFlashcardCards() {
   });
 
   const { data: cards } = useQuery({
-    queryKey: ["admin-fc-cards", unitId],
+    queryKey: ["admin-fc-cards", unitId, kind],
     enabled: !!unitId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("flashcards").select("*").eq("unit_id", unitId).order("order_index");
+        .from("flashcards")
+        .select("*")
+        .eq("unit_id", unitId)
+        .eq("kind", kind)
+        .order("order_index");
       if (error) throw error;
       return data ?? [];
     },
