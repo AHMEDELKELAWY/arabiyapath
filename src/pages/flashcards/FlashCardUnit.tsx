@@ -162,11 +162,26 @@ export default function FlashCardUnit() {
             </TabsContent>
 
             <TabsContent value="listening">
-              <ComingSoonCard
-                icon={<Headphones className="w-6 h-6 text-primary" />}
-                title="Listening"
-                description="Hear the native audio and type or choose the matching Arabic word."
-              />
+              {canStudy ? (
+                <ListeningPlayer unitId={unit.id} />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Headphones className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Listening</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Play the unit's audio and follow along as each card highlights in turn.
+                    </p>
+                    <Button asChild className="mt-2">
+                      <Link to={unlockHref}>
+                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="speaking">
