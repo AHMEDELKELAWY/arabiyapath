@@ -51,8 +51,10 @@ export function ListeningQuiz({ unitId }: Props) {
   });
 
   const prompts: Prompt[] = useMemo(() => {
+    // Pool from BOTH kinds. Any card with an image and any usable audio
+    // (sentence audio if present, otherwise main audio) is a valid prompt.
     const pool = (cards ?? []).filter(
-      (c) => isSentence(c) && c.image_url && sentenceAudio(c)
+      (c) => c.image_url && sentenceAudio(c)
     );
     if (pool.length < 3) return [];
     const ordered = shuffle(pool);
