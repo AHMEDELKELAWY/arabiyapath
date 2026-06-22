@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -109,6 +110,17 @@ export default function DashboardProgress() {
     ...ownedDialects.map((dg) => `dialect-${dg.dialectId}`),
     ...(hasFlashcards ? ["flashcards"] : []),
   ];
+
+  useEffect(() => {
+    if (window.location.hash === '#flashcards-section') {
+      document
+        .getElementById('flashcards-section')
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+    }
+  }, []);
 
   return (
     <DashboardLayout>
