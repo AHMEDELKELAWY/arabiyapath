@@ -105,7 +105,7 @@ export default function FlashCardsSalesPage() {
   const checkoutHref = user
     ? checkoutTarget
     : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
-  const freeStudyTarget = freeUnit ? `/flashcards/study/${freeUnit.slug}?from=home` : "/flashcards";
+  const freeStudyTarget = freeUnit ? `/flashcards/unit/${freeUnit.slug}?from=home` : "/flashcards";
   const freeHref = user
     ? freeStudyTarget
     : `/signup?redirect=${encodeURIComponent(freeStudyTarget)}`;

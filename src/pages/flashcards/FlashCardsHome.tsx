@@ -199,13 +199,13 @@ export default function FlashCardsHome() {
   }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
 
 
-  function studyHrefForUnit(slug: string): string {
-    const target = `/flashcards/study/${slug}?from=home`;
+  function lessonHrefForUnit(slug: string): string {
+    const target = `/flashcards/unit/${slug}?from=home`;
     return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
   }
 
   const heroFreeHref = firstFreeUnit
-    ? studyHrefForUnit(firstFreeUnit.slug)
+    ? lessonHrefForUnit(firstFreeUnit.slug)
     : "/flashcards";
 
   const heroPackHref =
@@ -277,7 +277,7 @@ export default function FlashCardsHome() {
                 if (entitlementLoading) {
                   href = "/flashcards";
                 } else if (unlocked) {
-                  href = studyHrefForUnit(u.slug);
+                  href = lessonHrefForUnit(u.slug);
                 } else {
                   const match = packUnits?.find((pu) => pu.unit_id === u.id);
                   const pack =
