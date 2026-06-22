@@ -619,7 +619,11 @@ export default function AdminFlashcardCards() {
           {/* Cards */}
           <div className="grid gap-3">
             {visibleCards.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No cards match.</p>
+              <p className="text-sm text-muted-foreground">
+                {kind === "learn"
+                  ? "No Learn cards yet. Use New Card, Import CSV/JSON, or Copy from Speaking."
+                  : "No cards match."}
+              </p>
             ) : (
               visibleCards.map((c: any) => (
                 <CardRow
@@ -629,6 +633,9 @@ export default function AdminFlashcardCards() {
                   duplicate={duplicateOrders.has(c.order_index)}
                   highlighted={highlightId === c.id}
                   busy={busyId === c.id}
+                  selectable={kind === "speaking"}
+                  selected={selected.has(c.id)}
+                  onToggleSelect={() => toggleSelect(c.id)}
                   onBusyChange={setBusyId}
                   onMutated={invalidate}
                   onEdit={startEdit}
