@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock, PlayCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 
@@ -111,28 +112,106 @@ export default function FlashCardUnit() {
         )}
         <p className="text-muted-foreground mb-6">{unit.description}</p>
 
-        <Card className="mb-6">
-          <CardContent className="p-6 flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="font-medium">{cardCount ?? "—"} cards</p>
-              <p className="text-sm text-muted-foreground">
-                {unit.is_free ? "Free unit — no purchase required." : "Premium unit."}
-              </p>
-            </div>
-            {canStudy ? (
-              <Button size="lg" onClick={handleStudy}>
-                <PlayCircle className="w-4 h-4 mr-2" /> Start Studying
-              </Button>
-            ) : (
-              <Button size="lg" asChild>
-                <Link to={unlockHref}>
-                  <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
-                </Link>
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold mb-1 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" /> In the Classroom
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Choose how you want to practice this unit.
+          </p>
+
+          <Tabs defaultValue="speaking" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsTrigger value="learning" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
+                <BookOpen className="w-4 h-4" /> Learning
+              </TabsTrigger>
+              <TabsTrigger value="listening" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
+                <Headphones className="w-4 h-4" /> Listening
+              </TabsTrigger>
+              <TabsTrigger value="speaking" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
+                <Mic className="w-4 h-4" /> Speaking
+              </TabsTrigger>
+              <TabsTrigger value="test" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3">
+                <GraduationCap className="w-4 h-4" /> Test Yourself
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="learning">
+              <ComingSoonCard
+                icon={<BookOpen className="w-6 h-6 text-primary" />}
+                title="Learning"
+                description="Browse each card with its word, translation, and image — at your own pace, no SRS pressure."
+              />
+            </TabsContent>
+
+            <TabsContent value="listening">
+              <ComingSoonCard
+                icon={<Headphones className="w-6 h-6 text-primary" />}
+                title="Listening"
+                description="Hear the native audio and type or choose the matching Arabic word."
+              />
+            </TabsContent>
+
+            <TabsContent value="speaking">
+              <Card>
+                <CardContent className="p-6 flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <p className="font-medium">{cardCount ?? "—"} cards</p>
+                    <p className="text-sm text-muted-foreground">
+                      {unit.is_free ? "Free unit — no purchase required." : "Premium unit."}
+                    </p>
+                  </div>
+                  {canStudy ? (
+                    <Button size="lg" onClick={handleStudy}>
+                      <PlayCircle className="w-4 h-4 mr-2" /> Start Speaking Practice
+                    </Button>
+                  ) : (
+                    <Button size="lg" asChild>
+                      <Link to={unlockHref}>
+                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="test">
+              <ComingSoonCard
+                icon={<GraduationCap className="w-6 h-6 text-primary" />}
+                title="Test Yourself"
+                description="A short multiple-choice quiz built from this unit's cards, with a final score."
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+        {/* TODO: aggregate progress across Learning / Listening / Speaking / Test once activated. */}
       </section>
     </Layout>
+  );
+}
+
+function ComingSoonCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <p className="text-sm text-muted-foreground max-w-md">{description}</p>
+        <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+          Coming Soon
+        </span>
+      </CardContent>
+    </Card>
   );
 }
