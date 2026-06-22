@@ -218,6 +218,7 @@ export default function DashboardProgress() {
             const totalUnits = fcSummary.units.length;
             return (
               <AccordionItem
+                id="flashcards-section"
                 value="flashcards"
                 className="border rounded-lg bg-card"
               >
