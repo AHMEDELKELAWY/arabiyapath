@@ -159,7 +159,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
                 capped
               />
               {current.audio_url && (
-                <span className="pointer-events-none absolute bottom-3 right-3 md:right-[calc(50%-320px)] bg-background/85 backdrop-blur rounded-full p-2 shadow-sm border border-border/60 transition-transform group-hover:scale-110">
+                <span className="pointer-events-none absolute bottom-3 right-3 bg-background/85 backdrop-blur rounded-full p-2 shadow-sm border border-border/60 transition-transform group-hover:scale-110">
                   <Volume2 className="w-4 h-4 text-primary" />
                 </span>
               )}
