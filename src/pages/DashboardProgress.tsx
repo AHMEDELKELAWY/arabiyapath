@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -110,6 +111,17 @@ export default function DashboardProgress() {
     ...(hasFlashcards ? ["flashcards"] : []),
   ];
 
+  useEffect(() => {
+    if (window.location.hash === '#flashcards-section') {
+      document
+        .getElementById('flashcards-section')
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+    }
+  }, []);
+
   return (
     <DashboardLayout>
       <SEOHead title="Progress" canonicalPath="/dashboard/progress" noindex />
@@ -218,6 +230,7 @@ export default function DashboardProgress() {
             const totalUnits = fcSummary.units.length;
             return (
               <AccordionItem
+                id="flashcards-section"
                 value="flashcards"
                 className="border rounded-lg bg-card"
               >
