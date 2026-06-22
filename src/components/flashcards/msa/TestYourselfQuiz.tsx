@@ -262,14 +262,9 @@ export function TestYourselfQuiz({ unitId }: Props) {
   };
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-5">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Question {i + 1} of {total}</span>
-          </div>
-          <Progress value={((i + (answered ? 1 : 0)) / total) * 100} />
-        </div>
+    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6 md:p-8 space-y-5">
+        <ActivityProgress current={i + 1} total={total} label="Question" />
 
         <QuestionView
           q={q}
@@ -278,14 +273,14 @@ export function TestYourselfQuiz({ unitId }: Props) {
         />
 
         {answered && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2">
             <span className={cn("flex items-center gap-2 font-semibold",
               wasCorrect ? "text-green-600" : "text-destructive"
             )}>
               {wasCorrect ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
               {wasCorrect ? "Correct" : "Incorrect"}
             </span>
-            <Button onClick={next}>{i + 1 >= total ? "See score" : "Next"}</Button>
+            <Button onClick={next} className="w-full sm:w-auto min-h-[44px]">{i + 1 >= total ? "See score" : "Next"}</Button>
           </div>
         )}
       </CardContent>
