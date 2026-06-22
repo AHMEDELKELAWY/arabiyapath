@@ -54,7 +54,7 @@ export default function FlashCardPack() {
       : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`
     : "/flashcards";
 
-  const freeStudyTarget = freeUnit ? `/flashcards/study/${freeUnit.slug}?from=home` : null;
+  const freeStudyTarget = freeUnit ? `/flashcards/unit/${freeUnit.slug}?from=home` : null;
   const freeHref = freeStudyTarget
     ? user
       ? freeStudyTarget
