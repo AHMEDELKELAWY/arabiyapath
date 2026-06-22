@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
+import { LearningBrowser } from "@/components/flashcards/msa/LearningBrowser";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
