@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearningBrowser } from "@/components/flashcards/msa/LearningBrowser";
 import { ListeningPlayer } from "@/components/flashcards/msa/ListeningPlayer";
+import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
@@ -185,27 +186,33 @@ export default function FlashCardUnit() {
             </TabsContent>
 
             <TabsContent value="speaking">
-              <Card>
-                <CardContent className="p-6 flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <p className="font-medium">{cardCount ?? "—"} cards</p>
-                    <p className="text-sm text-muted-foreground">
-                      {unit.is_free ? "Free unit — no purchase required." : "Premium unit."}
-                    </p>
-                  </div>
-                  {canStudy ? (
-                    <Button size="lg" onClick={handleStudy}>
-                      <PlayCircle className="w-4 h-4 mr-2" /> Start Speaking Practice
+              {canStudy ? (
+                <div className="space-y-3">
+                  <SpeakingPractice unitId={unit.id} />
+                  <div className="text-center">
+                    <Button variant="ghost" size="sm" onClick={handleStudy}>
+                      <PlayCircle className="w-4 h-4 mr-2" /> Or run a spaced-repetition session
                     </Button>
-                  ) : (
-                    <Button size="lg" asChild>
+                  </div>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Mic className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Speaking</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Record yourself saying each word and compare against the native audio with an AI pronunciation score.
+                    </p>
+                    <Button asChild className="mt-2">
                       <Link to={unlockHref}>
                         <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
                       </Link>
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="test">
