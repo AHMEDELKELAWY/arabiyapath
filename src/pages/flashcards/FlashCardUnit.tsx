@@ -10,6 +10,7 @@ import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } 
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearningBrowser } from "@/components/flashcards/msa/LearningBrowser";
+import { ListeningPlayer } from "@/components/flashcards/msa/ListeningPlayer";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
