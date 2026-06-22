@@ -150,7 +150,7 @@ export default function FlashCardUnit() {
               </TabsList>
             </div>
 
-            <TabsContent value="learn">
+            <TabsContent value="learn" className="mt-4">
               {canStudy ? (
                 <LearnVocabBrowser unitId={unit.id} />
               ) : (
@@ -173,7 +173,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="listening">
+            <TabsContent value="listening" className="mt-4">
               {canStudy ? (
                 <ListeningQuiz unitId={unit.id} />
               ) : (
@@ -196,7 +196,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="speaking">
+            <TabsContent value="speaking" className="mt-4">
               {canStudy ? (
                 <SpeakingPractice unitId={unit.id} />
               ) : (
@@ -219,7 +219,7 @@ export default function FlashCardUnit() {
               )}
             </TabsContent>
 
-            <TabsContent value="test">
+            <TabsContent value="test" className="mt-4">
               {canStudy ? (
                 <TestYourselfQuiz unitId={unit.id} />
               ) : (
