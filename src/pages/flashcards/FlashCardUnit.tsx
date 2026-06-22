@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock, PlayCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 
