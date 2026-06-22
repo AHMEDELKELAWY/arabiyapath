@@ -75,6 +75,7 @@ export function SpeakingPractice({ unitId }: Props) {
         .from("flashcards")
         .select("id,arabic_text,english_translation,transliteration,image_url,image_alt,audio_url")
         .eq("unit_id", unitId)
+        .eq("kind", "speaking")
         .eq("published", true)
         .order("order_index");
       if (error) throw error;

@@ -70,9 +70,13 @@ function parseCSV(text: string): Record<string, string>[] {
 
 type SortKey = "order" | "arabic" | "published" | "hasImage" | "hasAudio";
 
+type CardKind = "speaking" | "learn";
+
 export default function AdminFlashcardCards() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const unitId = params.get("unit") || "";
+  const kindParam = (params.get("kind") as CardKind) || "speaking";
+  const kind: CardKind = kindParam === "learn" ? "learn" : "speaking";
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -82,11 +86,20 @@ export default function AdminFlashcardCards() {
   const [jumpValue, setJumpValue] = useState("");
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copying, setCopying] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
     audio_url: "", audio_example_url: "", notes: "", published: false, order_index: 0,
   });
+
+  const setKind = (next: CardKind) => {
+    const p = new URLSearchParams(params);
+    p.set("kind", next);
+    setParams(p, { replace: true });
+    setSelected(new Set());
+  };
 
   const { data: units } = useQuery({
     queryKey: ["admin-fc-units-min"],
@@ -100,11 +113,15 @@ export default function AdminFlashcardCards() {
   });
 
   const { data: cards } = useQuery({
-    queryKey: ["admin-fc-cards", unitId],
+    queryKey: ["admin-fc-cards", unitId, kind],
     enabled: !!unitId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("flashcards").select("*").eq("unit_id", unitId).order("order_index");
+        .from("flashcards")
+        .select("*")
+        .eq("unit_id", unitId)
+        .eq("kind", kind)
+        .order("order_index");
       if (error) throw error;
       return data ?? [];
     },
@@ -117,6 +134,7 @@ export default function AdminFlashcardCards() {
   const hasSlug = !!unitSlug;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
+  
 
   const stats = useMemo(() => {
     const list = cards ?? [];
@@ -171,7 +189,7 @@ export default function AdminFlashcardCards() {
   const startEdit = (c: any) => { setEditing(c); setForm({ ...c }); };
 
   const save = async () => {
-    const payload = { ...form, unit_id: unitId };
+    const payload = { ...form, unit_id: unitId, kind };
     let error;
     if (editing?.id) {
       ({ error } = await (supabase as any).from("flashcards").update(payload).eq("id", editing.id));
@@ -231,6 +249,7 @@ export default function AdminFlashcardCards() {
         .filter((r) => r.arabic_text && r.english_translation)
         .map((r, i) => ({
           unit_id: unitId,
+          kind,
           arabic_text: String(r.arabic_text),
           english_translation: String(r.english_translation),
           transliteration: r.transliteration ?? null,
@@ -254,11 +273,13 @@ export default function AdminFlashcardCards() {
     }
   };
 
-  // ---- Bulk actions ----
+  // ---- Bulk actions (scoped to current kind) ----
   const bulkSetPublished = async (published: boolean) => {
-    if (!confirm(`${published ? "Publish" : "Unpublish"} all cards in this unit?`)) return;
+    if (!confirm(`${published ? "Publish" : "Unpublish"} all ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit?`)) return;
     setBulkBusy("publish");
-    const { error } = await (supabase as any).from("flashcards").update({ published }).eq("unit_id", unitId);
+    const { error } = await (supabase as any)
+      .from("flashcards").update({ published })
+      .eq("unit_id", unitId).eq("kind", kind);
     setBulkBusy(null);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: published ? "All cards published" : "All cards unpublished" });
@@ -267,43 +288,100 @@ export default function AdminFlashcardCards() {
 
   const bulkClear = async (column: "image_url" | "audio_url") => {
     const label = column === "image_url" ? "images" : "audio";
-    if (!confirm(`Remove ALL ${label} in this unit? This cannot be undone.`)) return;
+    if (!confirm(`Remove ALL ${label} for ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit? This cannot be undone.`)) return;
     setBulkBusy(column);
-    const { error } = await (supabase as any).from("flashcards").update({ [column]: null }).eq("unit_id", unitId);
+    const { error } = await (supabase as any)
+      .from("flashcards").update({ [column]: null })
+      .eq("unit_id", unitId).eq("kind", kind);
     setBulkBusy(null);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: `All ${label} removed` });
     invalidate();
   };
 
-  const bulkGenerateMissing = async (kind: "image" | "audio") => {
+  const bulkGenerateMissing = async (asset: "image" | "audio") => {
     const list = (cards ?? []).filter((c: any) =>
-      kind === "image" ? !c.image_url : !c.audio_url,
+      asset === "image" ? !c.image_url : !c.audio_url,
     );
-    if (!list.length) return toast({ title: `No cards missing ${kind}` });
-    if (!confirm(`Generate ${kind} for ${list.length} card${list.length === 1 ? "" : "s"}?`)) return;
-    setBulkBusy(`gen-${kind}`);
+    if (!list.length) return toast({ title: `No cards missing ${asset}` });
+    if (!confirm(`Generate ${asset} for ${list.length} card${list.length === 1 ? "" : "s"}?`)) return;
+    setBulkBusy(`gen-${asset}`);
     let ok = 0, fail = 0;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       try {
-        const fn = kind === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
-        const body = kind === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
+        const fn = asset === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
+        const body = asset === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
         const { error } = await supabase.functions.invoke(fn, { body });
         if (error) throw error;
         ok++;
       } catch {
         fail++;
       }
-      toast({ title: `Generating ${kind}…`, description: `${i + 1} / ${list.length}` });
+      toast({ title: `Generating ${asset}…`, description: `${i + 1} / ${list.length}` });
     }
     setBulkBusy(null);
     toast({
-      title: `Bulk ${kind} generation complete`,
+      title: `Bulk ${asset} generation complete`,
       description: `Success: ${ok} · Failed: ${fail}`,
       variant: fail ? "destructive" : "default",
     });
     invalidate();
+  };
+
+  // ---- Copy Selected To Learn ----
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const copySelectedToLearn = async () => {
+    if (kind !== "speaking") return;
+    if (!selected.size) return toast({ title: "Select at least one Speaking card first" });
+    if (!confirm(`Copy ${selected.size} card(s) to Learn?`)) return;
+    setCopying(true);
+    try {
+      const { data: existingLearn, error: lerr } = await (supabase as any)
+        .from("flashcards").select("order_index")
+        .eq("unit_id", unitId).eq("kind", "learn")
+        .order("order_index", { ascending: false }).limit(1);
+      if (lerr) throw lerr;
+      let nextOrder = ((existingLearn?.[0]?.order_index as number) ?? 0) + 1;
+
+      const sources = (cards ?? [])
+        .filter((c: any) => selected.has(c.id))
+        .sort((a: any, b: any) => a.order_index - b.order_index);
+
+      const payload = sources.map((c: any) => ({
+        unit_id: unitId,
+        kind: "learn" as const,
+        arabic_text: c.arabic_text,
+        english_translation: c.english_translation,
+        transliteration: c.transliteration ?? null,
+        example_arabic: c.example_arabic ?? null,
+        example_english: c.example_english ?? null,
+        image_url: c.image_url ?? null,
+        image_alt: c.image_alt ?? null,
+        audio_url: c.audio_url ?? null,
+        audio_example_url: c.audio_example_url ?? null,
+        notes: c.notes ?? null,
+        order_index: nextOrder++,
+        published: !!c.published,
+      }));
+
+      const { error } = await (supabase as any).from("flashcards").insert(payload);
+      if (error) throw error;
+      toast({ title: `Copied ${payload.length} card(s) to Learn` });
+      setSelected(new Set());
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Copy failed", description: e.message, variant: "destructive" });
+    } finally {
+      setCopying(false);
+    }
   };
 
   const renumberCards = async () => {
@@ -346,19 +424,37 @@ export default function AdminFlashcardCards() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Flash Cards</h1>
+          <h1 className="text-2xl font-bold">
+            {kind === "learn" ? "Learn Content" : "Speaking Content"}
+          </h1>
           <select
             className="border rounded px-2 py-1 bg-background"
             value={unitId}
-            onChange={(e) => { window.location.search = `?unit=${e.target.value}`; }}
+            onChange={(e) => {
+              const p = new URLSearchParams();
+              if (e.target.value) p.set("unit", e.target.value);
+              p.set("kind", kind);
+              setParams(p, { replace: true });
+              setSelected(new Set());
+            }}
           >
             <option value="">— select unit —</option>
             {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {kind === "speaking" && selected.size > 0 && (
+            <Button
+              variant="default"
+              onClick={copySelectedToLearn}
+              disabled={copying}
+            >
+              {copying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Copy {selected.size} to Learn
+            </Button>
+          )}
           <label>
             <input
               type="file"
@@ -392,6 +488,30 @@ export default function AdminFlashcardCards() {
           <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
         </div>
       </div>
+
+      {unitId && (
+        <div className="flex gap-1 mb-6 border-b">
+          {([
+            { v: "speaking", label: "Speaking Content" },
+            { v: "learn", label: "Learn Content" },
+          ] as { v: CardKind; label: string }[]).map((t) => (
+            <button
+              key={t.v}
+              type="button"
+              onClick={() => setKind(t.v)}
+              className={
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors " +
+                (kind === t.v
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
 
       {unitId && (
         <BulkImageUploadDialog
@@ -499,7 +619,11 @@ export default function AdminFlashcardCards() {
           {/* Cards */}
           <div className="grid gap-3">
             {visibleCards.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No cards match.</p>
+              <p className="text-sm text-muted-foreground">
+                {kind === "learn"
+                  ? "No Learn cards yet. Use New Card, Import CSV/JSON, or Copy from Speaking."
+                  : "No cards match."}
+              </p>
             ) : (
               visibleCards.map((c: any) => (
                 <CardRow
@@ -509,6 +633,9 @@ export default function AdminFlashcardCards() {
                   duplicate={duplicateOrders.has(c.order_index)}
                   highlighted={highlightId === c.id}
                   busy={busyId === c.id}
+                  selectable={kind === "speaking"}
+                  selected={selected.has(c.id)}
+                  onToggleSelect={() => toggleSelect(c.id)}
                   onBusyChange={setBusyId}
                   onMutated={invalidate}
                   onEdit={startEdit}

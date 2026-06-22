@@ -703,6 +703,7 @@ export type Database = {
           id: string
           image_alt: string | null
           image_url: string | null
+          kind: Database["public"]["Enums"]["flashcard_kind"]
           notes: string | null
           order_index: number
           published: boolean
@@ -721,6 +722,7 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_url?: string | null
+          kind?: Database["public"]["Enums"]["flashcard_kind"]
           notes?: string | null
           order_index?: number
           published?: boolean
@@ -739,6 +741,7 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_url?: string | null
+          kind?: Database["public"]["Enums"]["flashcard_kind"]
           notes?: string | null
           order_index?: number
           published?: boolean
@@ -1493,6 +1496,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
+      flashcard_kind: "learn" | "speaking"
       flashcard_purchase_status: "pending" | "active" | "refunded" | "failed"
       flashcard_rating: "again" | "hard" | "good" | "easy"
       flashcard_status: "new" | "learning" | "review" | "mastered"
@@ -1624,6 +1628,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "affiliate"],
+      flashcard_kind: ["learn", "speaking"],
       flashcard_purchase_status: ["pending", "active", "refunded", "failed"],
       flashcard_rating: ["again", "hard", "good", "easy"],
       flashcard_status: ["new", "learning", "review", "mastered"],

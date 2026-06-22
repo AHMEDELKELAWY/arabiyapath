@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Check, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isSentence, sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
+import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 
 interface CardRow {
   id: string;
@@ -51,8 +51,10 @@ export function ListeningQuiz({ unitId }: Props) {
   });
 
   const prompts: Prompt[] = useMemo(() => {
+    // Pool from BOTH kinds. Any card with an image and any usable audio
+    // (sentence audio if present, otherwise main audio) is a valid prompt.
     const pool = (cards ?? []).filter(
-      (c) => isSentence(c) && c.image_url && sentenceAudio(c)
+      (c) => c.image_url && sentenceAudio(c)
     );
     if (pool.length < 3) return [];
     const ordered = shuffle(pool);
@@ -107,7 +109,7 @@ export function ListeningQuiz({ unitId }: Props) {
     return (
       <Card>
         <CardContent className="p-8 text-center text-muted-foreground">
-          Not enough sentence cards with audio + images in this unit yet for a listening quiz.
+          Not enough cards with audio and images in this unit yet for a listening quiz.
         </CardContent>
       </Card>
     );
