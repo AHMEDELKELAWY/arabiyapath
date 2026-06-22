@@ -41,7 +41,7 @@ export function FlashcardsDashboardSection() {
               return (
                 <div key={u.unit_id}>
                   <div className="flex justify-between text-sm mb-1">
-                    <Link to={`/flashcards/study/${u.slug}?from=dashboard`} className="hover:underline">
+                    <Link to={`/flashcards/unit/${u.slug}?from=dashboard`} className="hover:underline">
                       {u.title}
                     </Link>
                     <span className="text-muted-foreground">{reviewed}/{u.total}</span>

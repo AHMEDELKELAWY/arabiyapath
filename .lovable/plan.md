@@ -1,20 +1,19 @@
-## Classroom Tabs لكل وحدة فلاش كاردز
+## المشكلة
 
-إضافة شريط تبويبات داخل صفحة الوحدة (`/flashcards/unit/:slug`) باسم "In the Classroom" يحتوي على 4 أقسام: **Learning** و **Listening** و **Speaking** و **Test Yourself**. حالياً يُبنى **Speaking** فعلياً (وهو تجربة الـ SRS الحالية)، والباقي placeholders بـ "Coming Soon".
+في لوحة التحكم (Dashboard)، قسم Flash Cards → "In The Classroom" والروابط الخاصة بكل وحدة تذهب مباشرة إلى `/flashcards/study/:slug` (وهي جلسة SRS / Speaking مباشرة)، فلا تظهر الـ 4 تابات الجديدة.
 
-### التغييرات
+التابات الـ 4 (Learning / Listening / Speaking / Test Yourself) موجودة فعلاً في صفحة الوحدة `/flashcards/unit/:slug` — لكن الـ Dashboard لا يوجّه إليها.
 
-1. **`src/pages/flashcards/FlashCardUnit.tsx`**
-   - إضافة قسم "In the Classroom" أعلى الصفحة باستخدام مكون `Tabs` من shadcn.
-   - 4 تبويبات بأيقونات: BookOpen (Learning), Headphones (Listening), Mic (Speaking), GraduationCap (Test Yourself).
-   - Learning / Listening / Test Yourself: بطاقة "Coming Soon" أنيقة مع وصف موجز للقسم.
-   - Speaking: زر "Start Speaking Practice" يفتح `/flashcards/study/:slug` (نفس التدفق الحالي) + يعرض شريط التقدم الحالي (reviewed/total).
+## الحل
 
-2. **العدّاد**  
-   حسب اختيارك "مجموع الإنجاز عبر الأقسام الأربعة": نضيف عمود مستقبلي في حساب التقدم، لكن بما أن 3 أقسام Coming Soon فقط، سنُبقي العدّاد الظاهر على Speaking حالياً ونضع تعليق `TODO` لجمع التقدم من الأقسام الجديدة عند تفعيلها (لا تعديل قاعدة بيانات الآن).
+تعديل ملف واحد فقط:
 
-### ملاحظات
+**`src/components/dashboard/FlashcardsDashboardSection.tsx`**
+- تغيير كل روابط الوحدات من `/flashcards/study/${u.slug}` إلى `/flashcards/unit/${u.slug}` بحيث يفتح Classroom بالـ 4 تابات بدلاً من بدء جلسة SRS مباشرة.
+- الإبقاء على باراميتر `?from=dashboard` كما هو.
 
-- لا تغييرات في قاعدة البيانات أو الـ RLS.
-- لا تأثير على صفحات لوحة التحكم أو الإدارة.
-- الـ routes كما هي: `/flashcards/study/:slug` يبقى للـ Speaking.
+## خارج النطاق
+
+- لا تعديل على صفحة `FlashCardUnit.tsx` (التابات تعمل بالفعل).
+- لا تعديل على `/flashcards/study/:slug` (تبقى متاحة كاختصار من داخل تاب Speaking).
+- لا تغييرات على قاعدة البيانات أو الـ RLS.
