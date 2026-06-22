@@ -220,8 +220,8 @@ export function TestYourselfQuiz({ unitId }: Props) {
     const pct = Math.round((score / total) * 100);
     const passed = pct >= PASS_PCT;
     return (
-      <Card>
-        <CardContent className="p-8 text-center space-y-4">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-6 md:p-8 text-center space-y-4">
           <h3 className="text-2xl font-bold">Quiz complete</h3>
           <p className="text-xl">Score: <strong>{score} / {total}</strong></p>
           <p className="text-lg">Percentage: <strong>{pct}%</strong></p>
@@ -231,7 +231,7 @@ export function TestYourselfQuiz({ unitId }: Props) {
             {passed ? "Passed" : "Try again"}
           </p>
           <div className="pt-2">
-            <Button onClick={() => setSeed((s) => s + 1)} className="gap-2">
+            <Button onClick={() => setSeed((s) => s + 1)} className="gap-2 min-h-[44px]">
               <RotateCcw className="w-4 h-4" /> Restart quiz
             </Button>
           </div>
