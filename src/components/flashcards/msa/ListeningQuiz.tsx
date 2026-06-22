@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Play, Check, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
+import { ActivityProgress } from "./ActivityProgress";
 
 interface CardRow {
   id: string;
