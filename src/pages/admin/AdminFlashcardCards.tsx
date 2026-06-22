@@ -249,6 +249,7 @@ export default function AdminFlashcardCards() {
         .filter((r) => r.arabic_text && r.english_translation)
         .map((r, i) => ({
           unit_id: unitId,
+          kind,
           arabic_text: String(r.arabic_text),
           english_translation: String(r.english_translation),
           transliteration: r.transliteration ?? null,
