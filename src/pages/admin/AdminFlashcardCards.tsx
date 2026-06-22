@@ -70,9 +70,13 @@ function parseCSV(text: string): Record<string, string>[] {
 
 type SortKey = "order" | "arabic" | "published" | "hasImage" | "hasAudio";
 
+type CardKind = "speaking" | "learn";
+
 export default function AdminFlashcardCards() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const unitId = params.get("unit") || "";
+  const kindParam = (params.get("kind") as CardKind) || "speaking";
+  const kind: CardKind = kindParam === "learn" ? "learn" : "speaking";
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -82,11 +86,20 @@ export default function AdminFlashcardCards() {
   const [jumpValue, setJumpValue] = useState("");
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copying, setCopying] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
     audio_url: "", audio_example_url: "", notes: "", published: false, order_index: 0,
   });
+
+  const setKind = (next: CardKind) => {
+    const p = new URLSearchParams(params);
+    p.set("kind", next);
+    setParams(p, { replace: true });
+    setSelected(new Set());
+  };
 
   const { data: units } = useQuery({
     queryKey: ["admin-fc-units-min"],
