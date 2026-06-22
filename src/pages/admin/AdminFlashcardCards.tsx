@@ -134,6 +134,7 @@ export default function AdminFlashcardCards() {
   const hasSlug = !!unitSlug;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
+  const invalidateBoth = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
 
   const stats = useMemo(() => {
     const list = cards ?? [];
