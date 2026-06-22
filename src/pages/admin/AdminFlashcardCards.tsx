@@ -189,7 +189,7 @@ export default function AdminFlashcardCards() {
   const startEdit = (c: any) => { setEditing(c); setForm({ ...c }); };
 
   const save = async () => {
-    const payload = { ...form, unit_id: unitId };
+    const payload = { ...form, unit_id: unitId, kind };
     let error;
     if (editing?.id) {
       ({ error } = await (supabase as any).from("flashcards").update(payload).eq("id", editing.id));
