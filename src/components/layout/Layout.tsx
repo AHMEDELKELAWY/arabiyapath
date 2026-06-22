@@ -1,15 +1,17 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
+import { MinimalFooter } from "./MinimalFooter";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatbaseInit, openChatbase } from "@/hooks/useChatbase";
 
 interface LayoutProps {
   children: ReactNode;
+  minimalFooter?: boolean;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, minimalFooter }: LayoutProps) {
   // Initialize Chatbase widget (lazy loaded after 4s or on click)
   useChatbaseInit();
 
@@ -17,7 +19,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 pt-16">{children}</main>
-      <Footer />
+      {minimalFooter ? <MinimalFooter /> : <Footer />}
       
       {/* Floating AI Advisor Button - Opens Chatbase Widget */}
       <Button
