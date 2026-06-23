@@ -264,27 +264,3 @@ export default function FlashCardUnit() {
   );
 }
 
-function ComingSoonCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-8 text-center flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          {icon}
-        </div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground max-w-md">{description}</p>
-        <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
-          Coming Soon
-        </span>
-      </CardContent>
-    </Card>
-  );
-}
