@@ -8,6 +8,7 @@ import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
 import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LEARN_KIND } from "./unitTemplate";
 
 interface CardRow {
   id: string;
@@ -43,7 +44,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
         .from("flashcards")
         .select("id,arabic_text,english_translation,transliteration,image_url,image_alt,audio_url")
         .eq("unit_id", unitId)
-        .eq("kind", "learn")
+        .eq("kind", LEARN_KIND)
         .eq("published", true)
         .order("order_index");
       if (error) throw error;
