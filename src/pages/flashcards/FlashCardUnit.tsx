@@ -1,3 +1,18 @@
+/**
+ * ArabiyaPath Unit Standard
+ *
+ * All units must render through this component.
+ * Do not create unit-specific renderers.
+ * Do not fork layouts per unit.
+ *
+ * Every unit inherits: Learn → Listening → Speaking → Test Yourself,
+ * compact header, Back To Units, sticky tabs, shared progress,
+ * capped hero images, click-image-to-play audio, completion screens,
+ * minimal footer, keyboard navigation, loading skeletons, safe-area support.
+ *
+ * See: src/components/flashcards/msa/unitTemplate.ts
+ *      docs/UNIT_STANDARD.md
+ */
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
