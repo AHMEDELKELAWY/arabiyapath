@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, PlayCircle, BookOpen, Headphones, Mic, GraduationCap, Sparkles, ArrowLeft } from "lucide-react";
+import { Lock, BookOpen, Headphones, Mic, GraduationCap, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
