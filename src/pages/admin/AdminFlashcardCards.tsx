@@ -75,8 +75,8 @@ type CardKind = "speaking" | "learn";
 export default function AdminFlashcardCards() {
   const [params, setParams] = useSearchParams();
   const unitId = params.get("unit") || "";
-  const kindParam = (params.get("kind") as CardKind) || "speaking";
-  const kind: CardKind = kindParam === "learn" ? "learn" : "speaking";
+  const kindParam = (params.get("kind") as CardKind) || "learn";
+  const kind: CardKind = kindParam === "speaking" ? "speaking" : "learn";
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -490,10 +490,10 @@ export default function AdminFlashcardCards() {
       </div>
 
       {unitId && (
-        <div className="flex gap-1 mb-6 border-b">
+        <div className="flex gap-1 mb-3 border-b">
           {([
-            { v: "speaking", label: "Speaking Content" },
             { v: "learn", label: "Learn Content" },
+            { v: "speaking", label: "Speaking Content" },
           ] as { v: CardKind; label: string }[]).map((t) => (
             <button
               key={t.v}
@@ -509,6 +509,14 @@ export default function AdminFlashcardCards() {
               {t.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {unitId && (
+        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+          <p><strong className="text-foreground">Learn:</strong> Single concept, real image, full tashkeel, final sukoon style.</p>
+          <p><strong className="text-foreground">Speaking:</strong> Meaningful phrase or sentence, full tashkeel, image matches the full expression.</p>
+          <p className="italic">Listening and Test Yourself are generated automatically from Learn + Speaking cards — no separate authoring.</p>
         </div>
       )}
 
