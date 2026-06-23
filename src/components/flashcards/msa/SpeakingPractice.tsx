@@ -8,6 +8,7 @@ import { ActivityProgress } from "./ActivityProgress";
 import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { SPEAKING_KIND } from "./unitTemplate";
 
 interface CardRow {
   id: string;
