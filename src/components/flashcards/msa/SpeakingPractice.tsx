@@ -8,6 +8,7 @@ import { ActivityProgress } from "./ActivityProgress";
 import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { SPEAKING_KIND } from "./unitTemplate";
 
 interface CardRow {
   id: string;
@@ -76,7 +77,7 @@ export function SpeakingPractice({ unitId }: Props) {
         .from("flashcards")
         .select("id,arabic_text,english_translation,transliteration,image_url,image_alt,audio_url")
         .eq("unit_id", unitId)
-        .eq("kind", "speaking")
+        .eq("kind", SPEAKING_KIND)
         .eq("published", true)
         .order("order_index");
       if (error) throw error;

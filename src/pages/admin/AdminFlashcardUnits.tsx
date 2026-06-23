@@ -62,9 +62,14 @@ export default function AdminFlashcardUnits() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Flash Card Units</h1>
         <Button onClick={startNew}><Plus className="w-4 h-4 mr-2" /> New Unit</Button>
+      </div>
+
+      <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+        <p className="text-foreground font-medium">Every unit automatically includes: Learn, Listening, Speaking, and Test Yourself.</p>
+        <p>Admins only need to create <strong className="text-foreground">Learn</strong> and <strong className="text-foreground">Speaking</strong> content. Listening and Test Yourself are generated automatically.</p>
       </div>
 
       <div className="grid gap-3">

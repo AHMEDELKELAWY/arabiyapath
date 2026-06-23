@@ -7,6 +7,7 @@ import { Play, Check, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
+import { LISTENING_SOURCE_KINDS } from "./unitTemplate";
 
 interface CardRow {
   id: string;
@@ -44,6 +45,7 @@ export function ListeningQuiz({ unitId }: Props) {
           "id,arabic_text,english_translation,example_arabic,example_english,image_url,image_alt,audio_url,audio_example_url"
         )
         .eq("unit_id", unitId)
+        .in("kind", LISTENING_SOURCE_KINDS as unknown as string[])
         .eq("published", true)
         .order("order_index");
       if (error) throw error;
