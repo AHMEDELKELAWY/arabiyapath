@@ -138,7 +138,17 @@ export function CardRow({
           </div>
         )}
         <div className="w-32 shrink-0 space-y-1">
-          <FlashCardImage src={c.image_url} alt={c.image_alt || c.english_translation} />
+          {c.thumbnail_url ? (
+            <img
+              src={c.thumbnail_url}
+              alt={c.image_alt || c.english_translation}
+              loading="lazy"
+              decoding="async"
+              className="w-full max-w-[200px] max-h-[150px] object-cover rounded-md border bg-muted"
+            />
+          ) : (
+            <FlashCardImage src={c.image_url} alt={c.image_alt || c.english_translation} />
+          )}
           {filename && (
             <p className="text-[10px] font-mono text-muted-foreground break-all" title={filename}>
               {filename}
@@ -187,6 +197,14 @@ export function CardRow({
             <Button size="sm" variant="outline" onClick={() => onGenAudio(c, "main")} disabled={busy}>
               <Volume2 className="w-3 h-3 mr-1" /> Generate Audio
             </Button>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button size="sm" variant="outline" onClick={() => onGenImage(c)} disabled={busy}>
+              {busy ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <ImageIcon className="w-3 h-3 mr-1" />}
+              Generate Image
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onGenAudio(c, "main")} disabled={busy}>
+              <Volume2 className="w-3 h-3 mr-1" /> Generate Audio
+            </Button>
             <input
               ref={replaceInputRef}
               type="file"
@@ -203,17 +221,20 @@ export function CardRow({
                 <Trash2 className="w-3 h-3 mr-1" /> Remove Image
               </Button>
             )}
-            {c.audio_url && (
-              <Button size="sm" variant="outline" onClick={removeAudio}>
-                <Trash2 className="w-3 h-3 mr-1" /> Remove Audio
-              </Button>
-            )}
             <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
               <Pencil className="w-4 h-4" />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)}>
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
+          </div>
+
+          <div className="pt-1">
+            <AudioRecorder
+              cardId={c.id}
+              audioUrl={c.audio_url}
+              onChanged={() => onMutated()}
+            />
           </div>
         </div>
       </CardContent>
