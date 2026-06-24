@@ -552,9 +552,15 @@ export default function AdminFlashcardCards() {
       )}
 
       {unitId && (
-        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-          <p><strong className="text-foreground">Learn:</strong> Single concept, real image, full tashkeel, final sukoon style.</p>
-          <p><strong className="text-foreground">Speaking:</strong> Meaningful phrase or sentence, full tashkeel, image matches the full expression.</p>
+        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-2">
+          <div>
+            <p className="text-foreground font-medium">Learn — vocabulary only</p>
+            <p>Single concept, full tashkeel, final sukoon style. Examples: <span dir="rtl" className="text-foreground">قَلَمْ · حَقِيبَةْ · كُرَّاسَةْ</span></p>
+          </div>
+          <div>
+            <p className="text-foreground font-medium">Speaking — complete meaningful sentences</p>
+            <p>Full tashkeel, image matches the full sentence.</p>
+          </div>
           <p className="italic">Listening and Test Yourself are generated automatically from Learn + Speaking cards — no separate authoring.</p>
         </div>
       )}
