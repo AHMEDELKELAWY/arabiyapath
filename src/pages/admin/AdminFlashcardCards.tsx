@@ -334,7 +334,7 @@ export default function AdminFlashcardCards() {
   };
 
   const bulkGenerateMissing = async (asset: "image" | "audio") => {
-    const list = (cards ?? []).filter((c: any) =>
+    const list = (summary ?? []).filter((c: any) =>
       asset === "image" ? !c.image_url : !c.audio_url,
     );
     if (!list.length) return toast({ title: `No cards missing ${asset}` });
@@ -385,11 +385,13 @@ export default function AdminFlashcardCards() {
       if (lerr) throw lerr;
       let nextOrder = ((existingLearn?.[0]?.order_index as number) ?? 0) + 1;
 
-      const sources = (cards ?? [])
-        .filter((c: any) => selected.has(c.id))
-        .sort((a: any, b: any) => a.order_index - b.order_index);
+      // Fetch full rows for selected ids (may span pages).
+      const ids = Array.from(selected);
+      const { data: sources, error: srcErr } = await (supabase as any)
+        .from("flashcards").select("*").in("id", ids).order("order_index");
+      if (srcErr) throw srcErr;
 
-      const payload = sources.map((c: any) => ({
+      const payload = (sources ?? []).map((c: any) => ({
         unit_id: unitId,
         kind: "learn" as const,
         arabic_text: c.arabic_text,
@@ -421,7 +423,7 @@ export default function AdminFlashcardCards() {
   const renumberCards = async () => {
     if (!confirm("Recalculate card numbers? This will renumber every card 1..N in the current order.")) return;
     setBulkBusy("renumber");
-    const ordered = [...(cards ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+    const ordered = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
     let fail = 0;
     for (let i = 0; i < ordered.length; i++) {
       const newOrder = i + 1;
@@ -442,18 +444,21 @@ export default function AdminFlashcardCards() {
   const handleJump = () => {
     const n = Number(jumpValue);
     if (!Number.isFinite(n)) return;
-    const target = (cards ?? []).find((c: any) => c.order_index === n);
-    if (!target) {
+    const list = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+    const idx = list.findIndex((c: any) => c.order_index === n);
+    if (idx < 0) {
       toast({ title: `No card #${n} in this unit` });
       return;
     }
+    const target = list[idx];
     setSearch("");
+    setPage(Math.floor(idx / PAGE_SIZE));
     setTimeout(() => {
       const el = document.getElementById(`card-${target.id}`);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       setHighlightId(target.id);
       setTimeout(() => setHighlightId(null), 3000);
-    }, 50);
+    }, 200);
   };
 
   return (
