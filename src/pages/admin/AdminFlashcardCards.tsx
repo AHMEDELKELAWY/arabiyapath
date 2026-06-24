@@ -22,6 +22,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
+import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
+
+const PAGE_SIZE = 20;
 
 type ImportRow = {
   arabic_text: string;
@@ -88,6 +91,7 @@ export default function AdminFlashcardCards() {
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copying, setCopying] = useState(false);
+  const [page, setPage] = useState(0);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
@@ -112,13 +116,15 @@ export default function AdminFlashcardCards() {
     },
   });
 
-  const { data: cards } = useQuery({
-    queryKey: ["admin-fc-cards", unitId, kind],
+  // Lightweight whole-unit summary (id + small flag columns only) — used for
+  // stats, duplicate detection, renumbering, copy-to-learn, and pagination total.
+  const { data: summary } = useQuery({
+    queryKey: ["admin-fc-cards-summary", unitId, kind],
     enabled: !!unitId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
-        .select("*")
+        .select("id,order_index,published,image_url,audio_url")
         .eq("unit_id", unitId)
         .eq("kind", kind)
         .order("order_index");
@@ -126,6 +132,37 @@ export default function AdminFlashcardCards() {
       return data ?? [];
     },
   });
+
+  const totalCards = summary?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCards / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+
+  // Paged fetch of full card rows for the visible page.
+  const { data: pageCards } = useQuery({
+    queryKey: ["admin-fc-cards", unitId, kind, safePage, sortKey],
+    enabled: !!unitId,
+    queryFn: async () => {
+      const from = safePage * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const ascending = true;
+      const column =
+        sortKey === "arabic" ? "arabic_text" :
+        sortKey === "published" ? "published" :
+        "order_index";
+      const { data, error } = await (supabase as any)
+        .from("flashcards")
+        .select("*")
+        .eq("unit_id", unitId)
+        .eq("kind", kind)
+        .order(column, { ascending: column !== "published" })
+        .range(from, to);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Compat alias for existing references in this file.
+  const cards = pageCards;
 
   const unitSlug = useMemo(
     () => (units ?? []).find((u: any) => u.id === unitId)?.slug || "",
