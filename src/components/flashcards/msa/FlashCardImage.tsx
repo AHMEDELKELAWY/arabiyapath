@@ -27,6 +27,7 @@ export function FlashCardImage({ src, alt, className, capped }: Props) {
             src={src}
             alt={alt}
             loading="lazy"
+            decoding="async"
             className="block w-full max-h-[250px] md:max-h-[500px] object-contain mx-auto"
           />
         ) : (
@@ -46,6 +47,7 @@ export function FlashCardImage({ src, alt, className, capped }: Props) {
           src={src}
           alt={alt}
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (

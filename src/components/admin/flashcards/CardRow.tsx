@@ -8,6 +8,8 @@ import {
   Upload, X, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
+import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
+import { compressFlashcardImage } from "@/lib/flashcards/imageCompress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -58,7 +60,7 @@ export function CardRow({
   const removeImage = async () => {
     if (!confirm("Remove this card's image?")) return;
     const { error } = await (supabase as any)
-      .from("flashcards").update({ image_url: null }).eq("id", c.id);
+      .from("flashcards").update({ image_url: null, thumbnail_url: null, image_width: null, image_height: null, image_size_kb: null }).eq("id", c.id);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: "Image removed" });
     onMutated();
@@ -85,16 +87,28 @@ export function CardRow({
     }
     setReplacing(true);
     try {
-      const path = `flashcards/images/${unitFolder}/${f.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("content")
-        .upload(path, f, { upsert: true, contentType: f.type || undefined });
+      const compressed = await compressFlashcardImage(f);
+      const base = f.name.replace(/\.[^.]+$/, "");
+      const origPath = `flashcards/images/${unitFolder}/${base}.webp`;
+      const thumbPath = `flashcards/thumbnails/${unitFolder}/${base}.webp`;
+      const [{ error: upErr }, { error: thErr }] = await Promise.all([
+        supabase.storage.from("content").upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
+        supabase.storage.from("content").upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
+      ]);
       if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("content").getPublicUrl(path);
+      if (thErr) throw thErr;
+      const origUrl = supabase.storage.from("content").getPublicUrl(origPath).data.publicUrl;
+      const thumbUrl = supabase.storage.from("content").getPublicUrl(thumbPath).data.publicUrl;
       const { error: updErr } = await (supabase as any)
-        .from("flashcards").update({ image_url: urlData.publicUrl }).eq("id", c.id);
+        .from("flashcards").update({
+          image_url: origUrl,
+          thumbnail_url: thumbUrl,
+          image_width: compressed.original.width,
+          image_height: compressed.original.height,
+          image_size_kb: compressed.original.sizeKb,
+        }).eq("id", c.id);
       if (updErr) throw updErr;
-      toast({ title: "Image replaced" });
+      toast({ title: "Image replaced", description: `${compressed.original.sizeKb} KB · thumb ${compressed.thumbnail.sizeKb} KB` });
       onMutated();
     } catch (err: any) {
       toast({ title: "Replace failed", description: err.message, variant: "destructive" });
@@ -124,7 +138,17 @@ export function CardRow({
           </div>
         )}
         <div className="w-32 shrink-0 space-y-1">
-          <FlashCardImage src={c.image_url} alt={c.image_alt || c.english_translation} />
+          {c.thumbnail_url ? (
+            <img
+              src={c.thumbnail_url}
+              alt={c.image_alt || c.english_translation}
+              loading="lazy"
+              decoding="async"
+              className="w-full max-w-[200px] max-h-[150px] object-cover rounded-md border bg-muted"
+            />
+          ) : (
+            <FlashCardImage src={c.image_url} alt={c.image_alt || c.english_translation} />
+          )}
           {filename && (
             <p className="text-[10px] font-mono text-muted-foreground break-all" title={filename}>
               {filename}
@@ -189,17 +213,20 @@ export function CardRow({
                 <Trash2 className="w-3 h-3 mr-1" /> Remove Image
               </Button>
             )}
-            {c.audio_url && (
-              <Button size="sm" variant="outline" onClick={removeAudio}>
-                <Trash2 className="w-3 h-3 mr-1" /> Remove Audio
-              </Button>
-            )}
             <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
               <Pencil className="w-4 h-4" />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)}>
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
+          </div>
+
+          <div className="pt-1">
+            <AudioRecorder
+              cardId={c.id}
+              audioUrl={c.audio_url}
+              onChanged={() => onMutated()}
+            />
           </div>
         </div>
       </CardContent>

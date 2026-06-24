@@ -266,7 +266,7 @@ export function SpeakingPractice({ unitId }: Props) {
                   <p className="text-base">{current.english_translation}</p>
                 </div>
 
-                <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="auto" />
+                <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="none" />
                 <div className="flex justify-center">
                   <Button variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2 min-h-[44px]">
                     <Play className="w-4 h-4" /> Listen to native
@@ -294,7 +294,7 @@ export function SpeakingPractice({ unitId }: Props) {
                 {userBlobUrl && (
                   <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
                     <p className="text-sm font-medium text-center">Compare</p>
-                    <audio ref={userAudioRef} src={userBlobUrl} preload="auto" />
+                    <audio ref={userAudioRef} src={userBlobUrl} preload="none" />
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" variant="outline" onClick={playReference} disabled={!current.audio_url} className="gap-2">
                         <Play className="w-4 h-4" /> Native

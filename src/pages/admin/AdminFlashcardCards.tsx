@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
+import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
+
+const PAGE_SIZE = 20;
 
 type ImportRow = {
   arabic_text: string;
@@ -88,6 +91,7 @@ export default function AdminFlashcardCards() {
   const [bulkBusy, setBulkBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copying, setCopying] = useState(false);
+  const [page, setPage] = useState(0);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
@@ -112,13 +116,15 @@ export default function AdminFlashcardCards() {
     },
   });
 
-  const { data: cards } = useQuery({
-    queryKey: ["admin-fc-cards", unitId, kind],
+  // Lightweight whole-unit summary (id + small flag columns only) — used for
+  // stats, duplicate detection, renumbering, copy-to-learn, and pagination total.
+  const { data: summary } = useQuery({
+    queryKey: ["admin-fc-cards-summary", unitId, kind],
     enabled: !!unitId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
-        .select("*")
+        .select("id,order_index,published,image_url,audio_url")
         .eq("unit_id", unitId)
         .eq("kind", kind)
         .order("order_index");
@@ -127,17 +133,53 @@ export default function AdminFlashcardCards() {
     },
   });
 
+  const totalCards = summary?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCards / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+
+  // Paged fetch of full card rows for the visible page.
+  const { data: pageCards } = useQuery({
+    queryKey: ["admin-fc-cards", unitId, kind, safePage, sortKey],
+    enabled: !!unitId,
+    queryFn: async () => {
+      const from = safePage * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const ascending = true;
+      const column =
+        sortKey === "arabic" ? "arabic_text" :
+        sortKey === "published" ? "published" :
+        "order_index";
+      const { data, error } = await (supabase as any)
+        .from("flashcards")
+        .select("*")
+        .eq("unit_id", unitId)
+        .eq("kind", kind)
+        .order(column, { ascending: column !== "published" })
+        .range(from, to);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Compat alias for existing references in this file.
+  const cards = pageCards;
+
   const unitSlug = useMemo(
     () => (units ?? []).find((u: any) => u.id === unitId)?.slug || "",
     [units, unitId],
   );
   const hasSlug = !!unitSlug;
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
-  
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
+    qc.invalidateQueries({ queryKey: ["admin-fc-cards-summary", unitId] });
+  };
+
+  // Reset page when filters change.
+  useEffect(() => { setPage(0); }, [unitId, kind, search]);
 
   const stats = useMemo(() => {
-    const list = cards ?? [];
+    const list = summary ?? [];
     return {
       total: list.length,
       published: list.filter((c: any) => c.published).length,
@@ -145,13 +187,13 @@ export default function AdminFlashcardCards() {
       images: list.filter((c: any) => c.image_url).length,
       audio: list.filter((c: any) => c.audio_url).length,
     };
-  }, [cards]);
+  }, [summary]);
 
   const duplicateOrders = useMemo(() => {
     const counts = new Map<number, number>();
-    (cards ?? []).forEach((c: any) => counts.set(c.order_index, (counts.get(c.order_index) ?? 0) + 1));
+    (summary ?? []).forEach((c: any) => counts.set(c.order_index, (counts.get(c.order_index) ?? 0) + 1));
     return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([k]) => k));
-  }, [cards]);
+  }, [summary]);
 
   const visibleCards = useMemo(() => {
     let list = [...(cards ?? [])];
@@ -164,16 +206,8 @@ export default function AdminFlashcardCards() {
         (Number.isFinite(asNum) && c.order_index === asNum)
       );
     }
-    const cmp: Record<SortKey, (a: any, b: any) => number> = {
-      order: (a, b) => a.order_index - b.order_index,
-      arabic: (a, b) => (a.arabic_text || "").localeCompare(b.arabic_text || ""),
-      published: (a, b) => Number(!!b.published) - Number(!!a.published),
-      hasImage: (a, b) => Number(!!b.image_url) - Number(!!a.image_url),
-      hasAudio: (a, b) => Number(!!b.audio_url) - Number(!!a.audio_url),
-    };
-    list.sort(cmp[sortKey]);
     return list;
-  }, [cards, search, sortKey]);
+  }, [cards, search]);
 
   const startNew = () => {
     if (!unitId) return toast({ title: "Pick a unit first" });
@@ -182,7 +216,7 @@ export default function AdminFlashcardCards() {
       arabic_text: "", english_translation: "", transliteration: "",
       example_arabic: "", example_english: "", image_url: "", image_alt: "",
       audio_url: "", audio_example_url: "", notes: "", published: false,
-      order_index: (cards?.length ?? 0) + 1,
+      order_index: totalCards + 1,
     });
   };
 
@@ -300,7 +334,7 @@ export default function AdminFlashcardCards() {
   };
 
   const bulkGenerateMissing = async (asset: "image" | "audio") => {
-    const list = (cards ?? []).filter((c: any) =>
+    const list = (summary ?? []).filter((c: any) =>
       asset === "image" ? !c.image_url : !c.audio_url,
     );
     if (!list.length) return toast({ title: `No cards missing ${asset}` });
@@ -351,11 +385,13 @@ export default function AdminFlashcardCards() {
       if (lerr) throw lerr;
       let nextOrder = ((existingLearn?.[0]?.order_index as number) ?? 0) + 1;
 
-      const sources = (cards ?? [])
-        .filter((c: any) => selected.has(c.id))
-        .sort((a: any, b: any) => a.order_index - b.order_index);
+      // Fetch full rows for selected ids (may span pages).
+      const ids = Array.from(selected);
+      const { data: sources, error: srcErr } = await (supabase as any)
+        .from("flashcards").select("*").in("id", ids).order("order_index");
+      if (srcErr) throw srcErr;
 
-      const payload = sources.map((c: any) => ({
+      const payload = (sources ?? []).map((c: any) => ({
         unit_id: unitId,
         kind: "learn" as const,
         arabic_text: c.arabic_text,
@@ -387,7 +423,7 @@ export default function AdminFlashcardCards() {
   const renumberCards = async () => {
     if (!confirm("Recalculate card numbers? This will renumber every card 1..N in the current order.")) return;
     setBulkBusy("renumber");
-    const ordered = [...(cards ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+    const ordered = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
     let fail = 0;
     for (let i = 0; i < ordered.length; i++) {
       const newOrder = i + 1;
@@ -408,18 +444,21 @@ export default function AdminFlashcardCards() {
   const handleJump = () => {
     const n = Number(jumpValue);
     if (!Number.isFinite(n)) return;
-    const target = (cards ?? []).find((c: any) => c.order_index === n);
-    if (!target) {
+    const list = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+    const idx = list.findIndex((c: any) => c.order_index === n);
+    if (idx < 0) {
       toast({ title: `No card #${n} in this unit` });
       return;
     }
+    const target = list[idx];
     setSearch("");
+    setPage(Math.floor(idx / PAGE_SIZE));
     setTimeout(() => {
       const el = document.getElementById(`card-${target.id}`);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       setHighlightId(target.id);
       setTimeout(() => setHighlightId(null), 3000);
-    }, 50);
+    }, 200);
   };
 
   return (
@@ -513,9 +552,15 @@ export default function AdminFlashcardCards() {
       )}
 
       {unitId && (
-        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-          <p><strong className="text-foreground">Learn:</strong> Single concept, real image, full tashkeel, final sukoon style.</p>
-          <p><strong className="text-foreground">Speaking:</strong> Meaningful phrase or sentence, full tashkeel, image matches the full expression.</p>
+        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-2">
+          <div>
+            <p className="text-foreground font-medium">Learn — vocabulary only</p>
+            <p>Single concept, full tashkeel, final sukoon style. Examples: <span dir="rtl" className="text-foreground">قَلَمْ · حَقِيبَةْ · كُرَّاسَةْ</span></p>
+          </div>
+          <div>
+            <p className="text-foreground font-medium">Speaking — complete meaningful sentences</p>
+            <p>Full tashkeel, image matches the full sentence.</p>
+          </div>
           <p className="italic">Listening and Test Yourself are generated automatically from Learn + Speaking cards — no separate authoring.</p>
         </div>
       )}
@@ -654,6 +699,24 @@ export default function AdminFlashcardCards() {
               ))
             )}
           </div>
+
+          {/* Pagination */}
+          {totalCards > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-3 mt-4 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                Total: <strong className="text-foreground">{totalCards}</strong> · Showing {safePage * PAGE_SIZE + 1}–{Math.min(totalCards, (safePage + 1) * PAGE_SIZE)}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0}>
+                  Previous
+                </Button>
+                <span className="text-sm">Page {safePage + 1} of {totalPages}</span>
+                <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -686,6 +749,20 @@ export default function AdminFlashcardCards() {
             <div className="space-y-1"><Label>Card number (order)</Label>
               <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} /></div>
             <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} /> <span>Published</span></div>
+
+            {editing?.id && (
+              <div className="space-y-1 pt-2 border-t">
+                <Label>Recorded audio</Label>
+                <AudioRecorder
+                  cardId={editing.id}
+                  audioUrl={form.audio_url}
+                  onChanged={(url) => { setForm((f: any) => ({ ...f, audio_url: url ?? "" })); invalidate(); }}
+                />
+                <p className="text-xs text-muted-foreground pt-1">
+                  Recording uploads directly as audio/webm to flashcards/audio/{editing.id}.webm and replaces any existing audio.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>

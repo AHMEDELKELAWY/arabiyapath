@@ -12,6 +12,7 @@ import {
   LogOut,
   DollarSign,
   Layers,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +40,7 @@ const sidebarLinks = [
   { href: "/admin/flashcards/cards", label: "Speaking Content", icon: Layers },
   { href: "/admin/flashcards/packs", label: "Flashcard Packs", icon: Layers },
   { href: "/admin/flashcards/purchases", label: "Flashcard Sales", icon: ShoppingCart },
+  { href: "/admin/flashcards/diagnostics", label: "Flashcard Diagnostics", icon: Activity },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

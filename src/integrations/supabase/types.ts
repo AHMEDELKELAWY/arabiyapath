@@ -702,11 +702,15 @@ export type Database = {
           example_english: string | null
           id: string
           image_alt: string | null
+          image_height: number | null
+          image_size_kb: number | null
           image_url: string | null
+          image_width: number | null
           kind: Database["public"]["Enums"]["flashcard_kind"]
           notes: string | null
           order_index: number
           published: boolean
+          thumbnail_url: string | null
           transliteration: string | null
           unit_id: string
           updated_at: string
@@ -721,11 +725,15 @@ export type Database = {
           example_english?: string | null
           id?: string
           image_alt?: string | null
+          image_height?: number | null
+          image_size_kb?: number | null
           image_url?: string | null
+          image_width?: number | null
           kind?: Database["public"]["Enums"]["flashcard_kind"]
           notes?: string | null
           order_index?: number
           published?: boolean
+          thumbnail_url?: string | null
           transliteration?: string | null
           unit_id: string
           updated_at?: string
@@ -740,11 +748,15 @@ export type Database = {
           example_english?: string | null
           id?: string
           image_alt?: string | null
+          image_height?: number | null
+          image_size_kb?: number | null
           image_url?: string | null
+          image_width?: number | null
           kind?: Database["public"]["Enums"]["flashcard_kind"]
           notes?: string | null
           order_index?: number
           published?: boolean
+          thumbnail_url?: string | null
           transliteration?: string | null
           unit_id?: string
           updated_at?: string
