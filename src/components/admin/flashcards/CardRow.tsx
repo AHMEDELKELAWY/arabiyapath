@@ -197,14 +197,6 @@ export function CardRow({
             <Button size="sm" variant="outline" onClick={() => onGenAudio(c, "main")} disabled={busy}>
               <Volume2 className="w-3 h-3 mr-1" /> Generate Audio
             </Button>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button size="sm" variant="outline" onClick={() => onGenImage(c)} disabled={busy}>
-              {busy ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <ImageIcon className="w-3 h-3 mr-1" />}
-              Generate Image
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onGenAudio(c, "main")} disabled={busy}>
-              <Volume2 className="w-3 h-3 mr-1" /> Generate Audio
-            </Button>
             <input
               ref={replaceInputRef}
               type="file"
