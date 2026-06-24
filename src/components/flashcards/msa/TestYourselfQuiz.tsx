@@ -313,7 +313,7 @@ function QuestionView({
       <div className="space-y-4">
         {q.kind === "listen_image" ? (
           <div className="flex justify-center">
-            <audio ref={audioRef} src={q.audio} preload="auto" />
+            <audio ref={audioRef} src={q.audio} preload="none" />
             <Button
               onClick={() => { audioRef.current && (audioRef.current.currentTime = 0, audioRef.current.play().catch(()=>{})); }}
               className="gap-2"

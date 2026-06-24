@@ -167,7 +167,7 @@ export function ListeningQuiz({ unitId }: Props) {
           <p className="text-xs text-muted-foreground text-right">Score: {score}</p>
         </div>
 
-        <audio ref={audioRef} src={q.audio} preload="auto" />
+        <audio ref={audioRef} src={q.audio} preload="none" />
 
         <div className="flex justify-center">
           <Button size="lg" onClick={replay} className="gap-2 min-h-[44px]">

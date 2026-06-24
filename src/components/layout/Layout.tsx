@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { useChatbaseInit, openChatbase } from "@/hooks/useChatbase";
 
 const HIDDEN_CHATBASE_PREFIXES = [
+  "/admin",
   "/dashboard",
   "/flashcards",
   "/courses",
   "/lesson",
   "/learn",
+  "/study",
 ];
 
 function shouldHideChatbase(pathname: string): boolean {

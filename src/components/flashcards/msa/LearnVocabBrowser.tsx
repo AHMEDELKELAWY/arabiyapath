@@ -184,7 +184,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
               )}
             </div>
 
-            <audio ref={audioRef} src={current.audio_url ?? undefined} preload="auto" />
+            <audio ref={audioRef} src={current.audio_url ?? undefined} preload="none" />
 
             <div className="flex justify-center">
               <Button

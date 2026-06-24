@@ -131,7 +131,7 @@ export function ListeningPlayer({ unitId }: Props) {
         <audio
           ref={audioRef}
           src={current?.audio_url ?? undefined}
-          preload="auto"
+          preload="none"
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onEnded={handleEnded}

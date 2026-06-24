@@ -46,7 +46,7 @@ export function FlashCardAudio({ src, autoPlay = false, label = "Replay", classN
       <audio
         ref={ref}
         src={src ?? undefined}
-        preload="auto"
+        preload="none"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
