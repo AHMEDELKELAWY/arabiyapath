@@ -693,6 +693,24 @@ export default function AdminFlashcardCards() {
               ))
             )}
           </div>
+
+          {/* Pagination */}
+          {totalCards > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-3 mt-4 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                Total: <strong className="text-foreground">{totalCards}</strong> · Showing {safePage * PAGE_SIZE + 1}–{Math.min(totalCards, (safePage + 1) * PAGE_SIZE)}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0}>
+                  Previous
+                </Button>
+                <span className="text-sm">Page {safePage + 1} of {totalPages}</span>
+                <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -725,6 +743,20 @@ export default function AdminFlashcardCards() {
             <div className="space-y-1"><Label>Card number (order)</Label>
               <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} /></div>
             <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} /> <span>Published</span></div>
+
+            {editing?.id && (
+              <div className="space-y-1 pt-2 border-t">
+                <Label>Recorded audio</Label>
+                <AudioRecorder
+                  cardId={editing.id}
+                  audioUrl={form.audio_url}
+                  onChanged={(url) => { setForm((f: any) => ({ ...f, audio_url: url ?? "" })); invalidate(); }}
+                />
+                <p className="text-xs text-muted-foreground pt-1">
+                  Recording uploads directly as audio/webm to flashcards/audio/{editing.id}.webm and replaces any existing audio.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
