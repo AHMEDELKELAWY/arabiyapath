@@ -72,6 +72,7 @@ const AdminFlashcardUnits = lazy(() => import("./pages/admin/AdminFlashcardUnits
 const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards"));
 const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
+const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
 
 // Flash Cards (MSA) pages
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="/admin/flashcards/cards" element={<AdminRoute><AdminFlashcardCards /></AdminRoute>} />
               <Route path="/admin/flashcards/packs" element={<AdminRoute><AdminFlashcardPacks /></AdminRoute>} />
               <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
+              <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
               {/* Flash Cards (MSA) public routes */}
               <Route path="/flashcards" element={<FlashCardsHome />} />
               <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />

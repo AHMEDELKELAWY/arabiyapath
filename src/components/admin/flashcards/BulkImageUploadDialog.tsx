@@ -21,6 +21,7 @@ import {
   type MatcherFile,
   type Match,
 } from "@/lib/flashcards/bulkImageMatcher";
+import { compressFlashcardImage } from "@/lib/flashcards/imageCompress";
 
 interface Props {
   open: boolean;
@@ -34,7 +35,7 @@ interface Props {
 type Stage = "select" | "preview" | "uploading" | "results";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB per image
-const UPLOAD_CONCURRENCY = 8;
+const UPLOAD_CONCURRENCY = 10;
 const BUCKET = "content";
 
 interface UploadResult {
@@ -137,25 +138,37 @@ export function BulkImageUploadDialog({
       while (cursor < matches.length) {
         const i = cursor++;
         const m: Match = matches[i];
-        const path = `flashcards/images/${folder}/${m.file.name}`;
+        const base = m.file.name.replace(/\.[^.]+$/, "");
+        const origPath = `flashcards/images/${folder}/${base}.webp`;
+        const thumbPath = `flashcards/thumbnails/${folder}/${base}.webp`;
         try {
-          const { error: upErr } = await supabase.storage
-            .from(BUCKET)
-            .upload(path, m.file.blob, { upsert: true, contentType: m.file.blob.type || undefined });
+          const compressed = await compressFlashcardImage(m.file.blob);
+          const [{ error: upErr }, { error: thErr }] = await Promise.all([
+            supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
+            supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
+          ]);
           if (upErr) throw upErr;
-          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-          const publicUrl = urlData.publicUrl;
+          if (thErr) throw thErr;
+          const publicUrl = supabase.storage.from(BUCKET).getPublicUrl(origPath).data.publicUrl;
+          const thumbUrl = supabase.storage.from(BUCKET).getPublicUrl(thumbPath).data.publicUrl;
           const { error: updErr } = await (supabase as any)
             .from("flashcards")
-            .update({ image_url: publicUrl })
+            .update({
+              image_url: publicUrl,
+              thumbnail_url: thumbUrl,
+              image_width: compressed.original.width,
+              image_height: compressed.original.height,
+              image_size_kb: compressed.original.sizeKb,
+            })
             .eq("id", m.card.id);
           if (updErr) throw updErr;
           out.push({ cardId: m.card.id, filename: m.file.name, status: "ok", overwrote: m.overwrites });
         } catch (e: any) {
           out.push({ cardId: m.card.id, filename: m.file.name, status: "failed", overwrote: m.overwrites, error: e.message });
-
         } finally {
           setProgress((p) => ({ ...p, done: p.done + 1 }));
+          // Yield to keep the UI responsive between batches.
+          await new Promise((r) => setTimeout(r, 0));
         }
       }
     };
