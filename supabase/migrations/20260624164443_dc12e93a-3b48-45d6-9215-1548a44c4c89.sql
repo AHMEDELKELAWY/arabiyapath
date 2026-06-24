@@ -1,0 +1,1 @@
+UPDATE public.flashcard_units SET title_en='Verbs', title_ar='الأَفْعَال', slug='verbs', updated_at=now() WHERE id='a8f61700-4bce-45b8-98f2-56544493db17';
