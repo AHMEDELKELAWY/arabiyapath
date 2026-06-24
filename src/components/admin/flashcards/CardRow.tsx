@@ -116,22 +116,6 @@ export function CardRow({
       setReplacing(false);
     }
   };
-      const { error: upErr } = await supabase.storage
-        .from("content")
-        .upload(path, f, { upsert: true, contentType: f.type || undefined });
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("content").getPublicUrl(path);
-      const { error: updErr } = await (supabase as any)
-        .from("flashcards").update({ image_url: urlData.publicUrl }).eq("id", c.id);
-      if (updErr) throw updErr;
-      toast({ title: "Image replaced" });
-      onMutated();
-    } catch (err: any) {
-      toast({ title: "Replace failed", description: err.message, variant: "destructive" });
-    } finally {
-      setReplacing(false);
-    }
-  };
 
   return (
     <Card
