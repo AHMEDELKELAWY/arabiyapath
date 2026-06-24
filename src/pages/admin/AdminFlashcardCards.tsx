@@ -170,11 +170,16 @@ export default function AdminFlashcardCards() {
   );
   const hasSlug = !!unitSlug;
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
-  
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["admin-fc-cards", unitId] });
+    qc.invalidateQueries({ queryKey: ["admin-fc-cards-summary", unitId] });
+  };
+
+  // Reset page when filters change.
+  useEffect(() => { setPage(0); }, [unitId, kind, search]);
 
   const stats = useMemo(() => {
-    const list = cards ?? [];
+    const list = summary ?? [];
     return {
       total: list.length,
       published: list.filter((c: any) => c.published).length,
@@ -182,13 +187,13 @@ export default function AdminFlashcardCards() {
       images: list.filter((c: any) => c.image_url).length,
       audio: list.filter((c: any) => c.audio_url).length,
     };
-  }, [cards]);
+  }, [summary]);
 
   const duplicateOrders = useMemo(() => {
     const counts = new Map<number, number>();
-    (cards ?? []).forEach((c: any) => counts.set(c.order_index, (counts.get(c.order_index) ?? 0) + 1));
+    (summary ?? []).forEach((c: any) => counts.set(c.order_index, (counts.get(c.order_index) ?? 0) + 1));
     return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([k]) => k));
-  }, [cards]);
+  }, [summary]);
 
   const visibleCards = useMemo(() => {
     let list = [...(cards ?? [])];
@@ -201,16 +206,8 @@ export default function AdminFlashcardCards() {
         (Number.isFinite(asNum) && c.order_index === asNum)
       );
     }
-    const cmp: Record<SortKey, (a: any, b: any) => number> = {
-      order: (a, b) => a.order_index - b.order_index,
-      arabic: (a, b) => (a.arabic_text || "").localeCompare(b.arabic_text || ""),
-      published: (a, b) => Number(!!b.published) - Number(!!a.published),
-      hasImage: (a, b) => Number(!!b.image_url) - Number(!!a.image_url),
-      hasAudio: (a, b) => Number(!!b.audio_url) - Number(!!a.audio_url),
-    };
-    list.sort(cmp[sortKey]);
     return list;
-  }, [cards, search, sortKey]);
+  }, [cards, search]);
 
   const startNew = () => {
     if (!unitId) return toast({ title: "Pick a unit first" });
@@ -219,7 +216,7 @@ export default function AdminFlashcardCards() {
       arabic_text: "", english_translation: "", transliteration: "",
       example_arabic: "", example_english: "", image_url: "", image_alt: "",
       audio_url: "", audio_example_url: "", notes: "", published: false,
-      order_index: (cards?.length ?? 0) + 1,
+      order_index: totalCards + 1,
     });
   };
 
