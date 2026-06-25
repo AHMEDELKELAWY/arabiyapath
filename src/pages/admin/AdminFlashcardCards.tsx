@@ -131,7 +131,7 @@ export default function AdminFlashcardCards() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
-        .select("id,order_index,published,image_url,audio_url")
+        .select("id,order_index,published,image_url,audio_url,arabic_text,english_translation")
         .eq("unit_id", unitId)
         .eq("kind", kind)
         .order("order_index");
