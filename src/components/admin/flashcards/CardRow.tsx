@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Pencil, Trash2, Image as ImageIcon, Volume2, Loader2,
-  Upload, X, AlertTriangle, CheckCircle2,
+  Upload, X, AlertTriangle, CheckCircle2, Copy, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
