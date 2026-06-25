@@ -125,12 +125,22 @@ serve(async (req) => {
     let sentCount = 0;
     const errors: string[] = [];
 
+    const escapeHtml = (s: string): string =>
+      s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
     for (const subscriber of subscribers) {
       try {
-        // Personalize content
+        // Personalize content (escape user-controlled fields to prevent HTML injection)
+        const safeName = escapeHtml(subscriber.first_name || 'there');
+        const safeEmail = escapeHtml(subscriber.email);
         const personalizedContent = campaign.content
-          .replace(/\{\{first_name\}\}/g, subscriber.first_name || 'there')
-          .replace(/\{\{email\}\}/g, subscriber.email);
+          .replace(/\{\{first_name\}\}/g, safeName)
+          .replace(/\{\{email\}\}/g, safeEmail);
+
 
         const htmlContent = `
 <!DOCTYPE html>

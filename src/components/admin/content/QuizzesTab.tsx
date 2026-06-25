@@ -83,11 +83,9 @@ export function QuizzesTab() {
     queryKey: ["quiz-questions", expandedQuiz],
     queryFn: async () => {
       if (!expandedQuiz) return [];
+      // Use admin-only RPC so correct_answer is only returned to admins.
       const { data, error } = await supabase
-        .from("quiz_questions")
-        .select("*")
-        .eq("quiz_id", expandedQuiz)
-        .order("order_index");
+        .rpc("admin_get_quiz_questions", { _quiz_id: expandedQuiz });
       if (error) throw error;
       return data;
     },

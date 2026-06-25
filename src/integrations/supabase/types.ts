@@ -1445,6 +1445,26 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_quiz_questions: {
+        Args: { _quiz_id: string }
+        Returns: {
+          audio_url: string | null
+          correct_answer: string
+          created_at: string
+          id: string
+          options_json: Json
+          order_index: number
+          prompt: string
+          quiz_id: string
+          type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quiz_questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       fc_apply_review: {
         Args: {
           _card_id: string
