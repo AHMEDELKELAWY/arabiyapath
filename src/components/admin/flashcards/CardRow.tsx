@@ -27,6 +27,11 @@ interface Props {
   onMutated: () => void;
   onEdit: (c: any) => void;
   onDelete: (id: string) => void;
+  onDuplicate?: (c: any) => void;
+  onMoveUp?: (c: any) => void;
+  onMoveDown?: (c: any) => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
   onGenImage: (c: any) => void;
   onGenAudio: (c: any, kind?: "main" | "example") => void;
 }
