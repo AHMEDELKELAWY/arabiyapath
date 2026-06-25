@@ -98,6 +98,7 @@ export default function AdminFlashcardCards() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copying, setCopying] = useState(false);
   const [page, setPage] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
