@@ -220,10 +220,25 @@ export function CardRow({
                 <Trash2 className="w-3 h-3 mr-1" /> Remove Image
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
+            <Button size="sm" variant="ghost" onClick={() => onEdit(c)} title="Edit">
               <Pencil className="w-4 h-4" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)}>
+            {onDuplicate && (
+              <Button size="sm" variant="ghost" onClick={() => onDuplicate(c)} title="Duplicate">
+                <Copy className="w-4 h-4" />
+              </Button>
+            )}
+            {onMoveUp && (
+              <Button size="sm" variant="ghost" onClick={() => onMoveUp(c)} disabled={!canMoveUp} title="Move up">
+                <ArrowUp className="w-4 h-4" />
+              </Button>
+            )}
+            {onMoveDown && (
+              <Button size="sm" variant="ghost" onClick={() => onMoveDown(c)} disabled={!canMoveDown} title="Move down">
+                <ArrowDown className="w-4 h-4" />
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)} title="Delete">
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
           </div>
