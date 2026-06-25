@@ -16,13 +16,19 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus, Loader2, Upload, Images, Search, ListOrdered,
   CheckCircle2, EyeOff, Eye, ImageIcon, Volume2, Trash2, Sparkles,
+  Download, FileJson, ChevronDown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
+import { ImportCardsDialog } from "@/components/admin/flashcards/ImportCardsDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
+import { toCsv, downloadCsv, downloadJson, CARD_CSV_COLUMNS } from "@/lib/flashcards/cardsCsv";
 
 const PAGE_SIZE = 20;
 
