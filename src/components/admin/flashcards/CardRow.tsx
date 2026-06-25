@@ -49,7 +49,9 @@ function filenameFromUrl(url?: string | null): string | null {
 export function CardRow({
   card: c, unitFolder, duplicate, highlighted, busy,
   selectable, selected, onToggleSelect,
-  onBusyChange, onMutated, onEdit, onDelete, onGenImage, onGenAudio,
+  onBusyChange, onMutated, onEdit, onDelete, onDuplicate,
+  onMoveUp, onMoveDown, canMoveUp, canMoveDown,
+  onGenImage, onGenAudio,
 }: Props) {
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const [replacing, setReplacing] = useState(false);
