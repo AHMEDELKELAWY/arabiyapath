@@ -611,32 +611,33 @@ export default function AdminFlashcardCards() {
           </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {kind === "speaking" && selected.size > 0 && (
-            <Button
-              variant="default"
-              onClick={copySelectedToLearn}
-              disabled={copying}
-            >
-              {copying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Copy {selected.size} to Learn
-            </Button>
-          )}
-          <label>
-            <input
-              type="file"
-              accept=".csv,.json,text/csv,application/json"
-              className="hidden"
-              disabled={!unitId}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImport(f);
-                e.currentTarget.value = "";
-              }}
-            />
-            <Button asChild variant="outline" disabled={!unitId}>
-              <span className="cursor-pointer"><Upload className="w-4 h-4 mr-2" /> Import CSV/JSON</span>
-            </Button>
-          </label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" /> Import CSV
+          </Button>
           <Button
             variant="outline"
             onClick={() => {
@@ -654,6 +655,36 @@ export default function AdminFlashcardCards() {
           <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
         </div>
       </div>
+
+      {unitId && (
+        <ImportCardsDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          unitId={unitId}
+          unitSlug={unitSlug}
+          kind={kind}
+          onComplete={invalidate}
+        />
+      )}
+
+      {unitId && selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2">
+          <span className="text-sm font-medium px-2">{selected.size} selected</span>
+          <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={bulkBusy === "delete"}>
+            {bulkBusy === "delete" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+            Delete Selected
+          </Button>
+          {kind === "speaking" && (
+            <Button size="sm" onClick={copySelectedToLearn} disabled={copying}>
+              {copying ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+              Copy to Learn
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={selectAllOnPage}>Select page</Button>
+          <Button size="sm" variant="outline" onClick={selectAllInFilter}>Select all in filter ({filteredSummary.length})</Button>
+          <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+        </div>
+      )}
 
       {unitId && (
         <div className="flex gap-1 mb-3 border-b">
