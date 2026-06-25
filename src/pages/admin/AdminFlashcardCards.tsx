@@ -836,25 +836,34 @@ export default function AdminFlashcardCards() {
                   : "No cards match."}
               </p>
             ) : (
-              visibleCards.map((c: any) => (
-                <CardRow
-                  key={c.id}
-                  card={c}
-                  unitFolder={unitSlug}
-                  duplicate={duplicateOrders.has(c.order_index)}
-                  highlighted={highlightId === c.id}
-                  busy={busyId === c.id}
-                  selectable={kind === "speaking"}
-                  selected={selected.has(c.id)}
-                  onToggleSelect={() => toggleSelect(c.id)}
-                  onBusyChange={setBusyId}
-                  onMutated={invalidate}
-                  onEdit={startEdit}
-                  onDelete={del}
-                  onGenImage={genImage}
-                  onGenAudio={genAudio}
-                />
-              ))
+              visibleCards.map((c: any, idx: number) => {
+                const sortedSummary = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+                const summaryIdx = sortedSummary.findIndex((x: any) => x.id === c.id);
+                return (
+                  <CardRow
+                    key={c.id}
+                    card={c}
+                    unitFolder={unitSlug}
+                    duplicate={duplicateOrders.has(c.order_index)}
+                    highlighted={highlightId === c.id}
+                    busy={busyId === c.id}
+                    selectable
+                    selected={selected.has(c.id)}
+                    onToggleSelect={() => toggleSelect(c.id)}
+                    onBusyChange={setBusyId}
+                    onMutated={invalidate}
+                    onEdit={startEdit}
+                    onDelete={del}
+                    onDuplicate={duplicateCard}
+                    onMoveUp={(card) => moveCard(card, -1)}
+                    onMoveDown={(card) => moveCard(card, 1)}
+                    canMoveUp={summaryIdx > 0}
+                    canMoveDown={summaryIdx >= 0 && summaryIdx < sortedSummary.length - 1}
+                    onGenImage={genImage}
+                    onGenAudio={genAudio}
+                  />
+                );
+              })
             )}
           </div>
 
