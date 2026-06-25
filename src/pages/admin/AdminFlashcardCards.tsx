@@ -16,13 +16,19 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus, Loader2, Upload, Images, Search, ListOrdered,
   CheckCircle2, EyeOff, Eye, ImageIcon, Volume2, Trash2, Sparkles,
+  Download, FileJson, ChevronDown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUploadDialog";
+import { ImportCardsDialog } from "@/components/admin/flashcards/ImportCardsDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
+import { toCsv, downloadCsv, downloadJson, CARD_CSV_COLUMNS } from "@/lib/flashcards/cardsCsv";
 
 const PAGE_SIZE = 20;
 
@@ -92,6 +98,7 @@ export default function AdminFlashcardCards() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copying, setCopying] = useState(false);
   const [page, setPage] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
@@ -124,7 +131,7 @@ export default function AdminFlashcardCards() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
-        .select("id,order_index,published,image_url,audio_url")
+        .select("id,order_index,published,image_url,audio_url,arabic_text,english_translation")
         .eq("unit_id", unitId)
         .eq("kind", kind)
         .order("order_index");
@@ -461,6 +468,126 @@ export default function AdminFlashcardCards() {
     }, 200);
   };
 
+  // ---- Per-card duplicate ----
+  const duplicateCard = async (c: any) => {
+    const maxOrder = (summary ?? []).reduce(
+      (m: number, x: any) => Math.max(m, Number(x.order_index) || 0),
+      0,
+    );
+    const payload = {
+      unit_id: unitId,
+      kind,
+      arabic_text: `${c.arabic_text} - Copy`,
+      english_translation: `${c.english_translation} - Copy`,
+      transliteration: c.transliteration ?? null,
+      example_arabic: c.example_arabic ?? null,
+      example_english: c.example_english ?? null,
+      image_url: null,
+      audio_url: null,
+      audio_example_url: null,
+      image_alt: c.image_alt ?? null,
+      notes: c.notes ?? null,
+      published: false,
+      order_index: maxOrder + 1,
+    };
+    const { error } = await (supabase as any).from("flashcards").insert(payload);
+    if (error) return toast({ title: "Duplicate failed", description: error.message, variant: "destructive" });
+    toast({ title: "Card duplicated" });
+    invalidate();
+  };
+
+  // ---- Move up / down ----
+  const moveCard = async (c: any, direction: -1 | 1) => {
+    const ordered = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+    const idx = ordered.findIndex((x: any) => x.id === c.id);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+    const other = ordered[swapIdx];
+    // Swap order_index values. Use a temporary high value to avoid unique conflicts if any.
+    const tmp = 1_000_000 + Math.floor(Math.random() * 1000);
+    const { error: e1 } = await (supabase as any).from("flashcards").update({ order_index: tmp }).eq("id", c.id);
+    if (e1) return toast({ title: "Move failed", description: e1.message, variant: "destructive" });
+    const { error: e2 } = await (supabase as any).from("flashcards").update({ order_index: c.order_index }).eq("id", other.id);
+    if (e2) return toast({ title: "Move failed", description: e2.message, variant: "destructive" });
+    const { error: e3 } = await (supabase as any).from("flashcards").update({ order_index: other.order_index }).eq("id", c.id);
+    if (e3) return toast({ title: "Move failed", description: e3.message, variant: "destructive" });
+    invalidate();
+  };
+
+  // ---- Selection helpers ----
+  const filteredSummary = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = summary ?? [];
+    if (!q) return list;
+    const asNum = Number(q);
+    return list.filter((c: any) =>
+      (c.arabic_text || "").toLowerCase().includes(q) ||
+      (c.english_translation || "").toLowerCase().includes(q) ||
+      (Number.isFinite(asNum) && c.order_index === asNum),
+    );
+  }, [summary, search]);
+
+  const selectAllOnPage = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      (visibleCards ?? []).forEach((c: any) => next.add(c.id));
+      return next;
+    });
+  };
+  const selectAllInFilter = () => {
+    setSelected(new Set(filteredSummary.map((c: any) => c.id)));
+  };
+  const clearSelection = () => setSelected(new Set());
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} card${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setBulkBusy("delete");
+    const { error } = await (supabase as any).from("flashcards").delete().in("id", ids);
+    setBulkBusy(null);
+    if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    toast({ title: `Deleted ${ids.length} card${ids.length === 1 ? "" : "s"}` });
+    clearSelection();
+    invalidate();
+  };
+
+  // ---- Export / Backup ----
+  const fetchUnitCards = async (forKind?: "learn" | "speaking") => {
+    let q = (supabase as any).from("flashcards").select("*").eq("unit_id", unitId);
+    if (forKind) q = q.eq("kind", forKind);
+    const { data, error } = await q.order("kind").order("order_index");
+    if (error) throw error;
+    return data ?? [];
+  };
+
+  const exportCsv = async (scope: "learn" | "speaking" | "all") => {
+    try {
+      const rows = await fetchUnitCards(scope === "all" ? undefined : scope);
+      const csv = toCsv(rows, CARD_CSV_COLUMNS as unknown as string[]);
+      const name = `${unitSlug || "unit"}-${scope}-cards.csv`;
+      downloadCsv(name, csv);
+      toast({ title: `Exported ${rows.length} card${rows.length === 1 ? "" : "s"}` });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const exportBackup = async (scope: "learn" | "speaking" | "all") => {
+    try {
+      const { data: unit, error: uerr } = await (supabase as any)
+        .from("flashcard_units").select("*").eq("id", unitId).single();
+      if (uerr) throw uerr;
+      const cards = await fetchUnitCards(scope === "all" ? undefined : scope);
+      const suffix = scope === "all" ? "backup" : `${scope}-backup`;
+      downloadJson(`${unitSlug || "unit"}-${suffix}.json`, { unit, cards });
+      toast({ title: `Backup ready (${cards.length} card${cards.length === 1 ? "" : "s"})` });
+    } catch (e: any) {
+      toast({ title: "Backup failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
@@ -484,32 +611,33 @@ export default function AdminFlashcardCards() {
           </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {kind === "speaking" && selected.size > 0 && (
-            <Button
-              variant="default"
-              onClick={copySelectedToLearn}
-              disabled={copying}
-            >
-              {copying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Copy {selected.size} to Learn
-            </Button>
-          )}
-          <label>
-            <input
-              type="file"
-              accept=".csv,.json,text/csv,application/json"
-              className="hidden"
-              disabled={!unitId}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImport(f);
-                e.currentTarget.value = "";
-              }}
-            />
-            <Button asChild variant="outline" disabled={!unitId}>
-              <span className="cursor-pointer"><Upload className="w-4 h-4 mr-2" /> Import CSV/JSON</span>
-            </Button>
-          </label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" /> Import CSV
+          </Button>
           <Button
             variant="outline"
             onClick={() => {
@@ -527,6 +655,36 @@ export default function AdminFlashcardCards() {
           <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
         </div>
       </div>
+
+      {unitId && (
+        <ImportCardsDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          unitId={unitId}
+          unitSlug={unitSlug}
+          kind={kind}
+          onComplete={invalidate}
+        />
+      )}
+
+      {unitId && selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2">
+          <span className="text-sm font-medium px-2">{selected.size} selected</span>
+          <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={bulkBusy === "delete"}>
+            {bulkBusy === "delete" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+            Delete Selected
+          </Button>
+          {kind === "speaking" && (
+            <Button size="sm" onClick={copySelectedToLearn} disabled={copying}>
+              {copying ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+              Copy to Learn
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={selectAllOnPage}>Select page</Button>
+          <Button size="sm" variant="outline" onClick={selectAllInFilter}>Select all in filter ({filteredSummary.length})</Button>
+          <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+        </div>
+      )}
 
       {unitId && (
         <div className="flex gap-1 mb-3 border-b">
@@ -678,25 +836,34 @@ export default function AdminFlashcardCards() {
                   : "No cards match."}
               </p>
             ) : (
-              visibleCards.map((c: any) => (
-                <CardRow
-                  key={c.id}
-                  card={c}
-                  unitFolder={unitSlug}
-                  duplicate={duplicateOrders.has(c.order_index)}
-                  highlighted={highlightId === c.id}
-                  busy={busyId === c.id}
-                  selectable={kind === "speaking"}
-                  selected={selected.has(c.id)}
-                  onToggleSelect={() => toggleSelect(c.id)}
-                  onBusyChange={setBusyId}
-                  onMutated={invalidate}
-                  onEdit={startEdit}
-                  onDelete={del}
-                  onGenImage={genImage}
-                  onGenAudio={genAudio}
-                />
-              ))
+              visibleCards.map((c: any, idx: number) => {
+                const sortedSummary = [...(summary ?? [])].sort((a: any, b: any) => a.order_index - b.order_index);
+                const summaryIdx = sortedSummary.findIndex((x: any) => x.id === c.id);
+                return (
+                  <CardRow
+                    key={c.id}
+                    card={c}
+                    unitFolder={unitSlug}
+                    duplicate={duplicateOrders.has(c.order_index)}
+                    highlighted={highlightId === c.id}
+                    busy={busyId === c.id}
+                    selectable
+                    selected={selected.has(c.id)}
+                    onToggleSelect={() => toggleSelect(c.id)}
+                    onBusyChange={setBusyId}
+                    onMutated={invalidate}
+                    onEdit={startEdit}
+                    onDelete={del}
+                    onDuplicate={duplicateCard}
+                    onMoveUp={(card) => moveCard(card, -1)}
+                    onMoveDown={(card) => moveCard(card, 1)}
+                    canMoveUp={summaryIdx > 0}
+                    canMoveDown={summaryIdx >= 0 && summaryIdx < sortedSummary.length - 1}
+                    onGenImage={genImage}
+                    onGenAudio={genAudio}
+                  />
+                );
+              })
             )}
           </div>
 

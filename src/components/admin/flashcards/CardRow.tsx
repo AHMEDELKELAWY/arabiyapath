@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Pencil, Trash2, Image as ImageIcon, Volume2, Loader2,
-  Upload, X, AlertTriangle, CheckCircle2,
+  Upload, X, AlertTriangle, CheckCircle2, Copy, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
@@ -27,6 +27,11 @@ interface Props {
   onMutated: () => void;
   onEdit: (c: any) => void;
   onDelete: (id: string) => void;
+  onDuplicate?: (c: any) => void;
+  onMoveUp?: (c: any) => void;
+  onMoveDown?: (c: any) => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
   onGenImage: (c: any) => void;
   onGenAudio: (c: any, kind?: "main" | "example") => void;
 }
@@ -44,7 +49,9 @@ function filenameFromUrl(url?: string | null): string | null {
 export function CardRow({
   card: c, unitFolder, duplicate, highlighted, busy,
   selectable, selected, onToggleSelect,
-  onBusyChange, onMutated, onEdit, onDelete, onGenImage, onGenAudio,
+  onBusyChange, onMutated, onEdit, onDelete, onDuplicate,
+  onMoveUp, onMoveDown, canMoveUp, canMoveDown,
+  onGenImage, onGenAudio,
 }: Props) {
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const [replacing, setReplacing] = useState(false);
@@ -213,10 +220,25 @@ export function CardRow({
                 <Trash2 className="w-3 h-3 mr-1" /> Remove Image
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
+            <Button size="sm" variant="ghost" onClick={() => onEdit(c)} title="Edit">
               <Pencil className="w-4 h-4" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)}>
+            {onDuplicate && (
+              <Button size="sm" variant="ghost" onClick={() => onDuplicate(c)} title="Duplicate">
+                <Copy className="w-4 h-4" />
+              </Button>
+            )}
+            {onMoveUp && (
+              <Button size="sm" variant="ghost" onClick={() => onMoveUp(c)} disabled={!canMoveUp} title="Move up">
+                <ArrowUp className="w-4 h-4" />
+              </Button>
+            )}
+            {onMoveDown && (
+              <Button size="sm" variant="ghost" onClick={() => onMoveDown(c)} disabled={!canMoveDown} title="Move down">
+                <ArrowDown className="w-4 h-4" />
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => onDelete(c.id)} title="Delete">
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
           </div>
