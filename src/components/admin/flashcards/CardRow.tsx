@@ -97,7 +97,7 @@ export function CardRow({
       const res = await uploadAndWriteCardImage({
         cardId: c.id,
         unitSlug: unitFolder,
-        baseName: f.name,
+        orderIndex: c.order_index,
         source: f,
       });
       toast({ title: "Image replaced", description: `${res.image_size_kb} KB` });

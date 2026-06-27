@@ -175,12 +175,11 @@ export function BulkImageUploadDialog({
       while (cursor < matches.length) {
         const i = cursor++;
         const m: Match = matches[i];
-        const base = m.file.name.replace(/\.[^.]+$/, "");
         try {
           await uploadAndWriteCardImage({
             cardId: m.card.id,
             unitSlug,
-            baseName: base,
+            orderIndex: m.card.order_index,
             source: m.file.blob,
           });
           out.push({ cardId: m.card.id, filename: m.file.name, status: "ok", overwrote: m.overwrites });
