@@ -139,8 +139,8 @@ export default function FlashCardUnit() {
           inLanguage: "ar",
         }}
       />
-      <section className="container max-w-3xl py-6 md:py-8 px-4">
-        <div className="mb-3">
+      <section className="container max-w-3xl py-4 md:py-8 px-4">
+        <div className="mb-2 md:mb-3">
           <Button variant="ghost" size="sm" className="-ml-2" onClick={() => {
             if (window.history.length > 1) {
               navigate(-1);
@@ -153,7 +153,7 @@ export default function FlashCardUnit() {
         </div>
         <h1 className="text-2xl md:text-3xl font-bold mb-1">{unit.title_en}</h1>
         {unit.title_ar && (
-          <p className="text-lg md:text-xl text-muted-foreground mb-1" dir="rtl" lang="ar">{unit.title_ar}</p>
+          <p className="text-base md:text-xl text-muted-foreground mb-1" dir="rtl" lang="ar">{unit.title_ar}</p>
         )}
         {typeof cardCount === "number" && cardCount > 0 && (
           <span className="inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
@@ -161,9 +161,9 @@ export default function FlashCardUnit() {
           </span>
         )}
 
-        <div className="mt-4">
-          <Tabs defaultValue="learn" className="w-full">
-            <div className="sticky top-16 z-30 -mx-4 px-4 py-2 bg-background/85 backdrop-blur border-b border-border/40">
+        <div ref={lessonTopRef} className="mt-3 md:mt-4 scroll-mt-20">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
+            <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
                 <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <BookOpen className="w-4 h-4" /> Learn
@@ -180,9 +180,10 @@ export default function FlashCardUnit() {
               </TabsList>
             </div>
 
-            <TabsContent value="learn" className="mt-4">
+            <TabsContent value="learn" className="mt-3 md:mt-4">
               {canStudy ? (
-                <LearnVocabBrowser unitId={unit.id} />
+                <LearnVocabBrowser unitId={unit.id} onComplete={() => goToTab("speaking")} />
+
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center flex flex-col items-center gap-3">
