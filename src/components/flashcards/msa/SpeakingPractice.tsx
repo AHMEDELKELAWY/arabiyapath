@@ -209,6 +209,31 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
   }
   if (!current) return null;
 
+  if (completed) {
+    return (
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-5 md:p-8 text-center space-y-4">
+          <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
+            <Check className="w-7 h-7" />
+          </div>
+          <h3 className="text-2xl font-bold">Speaking Complete</h3>
+          <p className="text-muted-foreground">Great work practicing your pronunciation.</p>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-2">
+            <Button variant="outline" onClick={() => { setCompleted(false); setIdx(0); }} className="gap-2">
+              <RotateCcw className="w-4 h-4" /> Practice Again
+            </Button>
+            <Button
+              onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
+              className="gap-2"
+            >
+              <Headphones className="w-4 h-4" /> Continue to Listening
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const scorePct = score !== null ? Math.round(score * 100) : null;
   const scoreColor =
     scorePct === null ? "" :
@@ -216,9 +241,13 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
     scorePct >= 50 ? "text-amber-600" :
     "text-destructive";
 
+  const isFirst = safeIdx === 0;
+  const isLast = safeIdx === total - 1;
+
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6 md:p-8 space-y-5">
+      <CardContent className="p-4 md:p-8 space-y-4">
+
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
