@@ -57,9 +57,11 @@ function similarity(a: string, b: string): number {
   return Math.max(0, 1 - dist / Math.max(m, n));
 }
 
-export function SpeakingPractice({ unitId }: Props) {
+export function SpeakingPractice({ unitId, onComplete }: Props) {
   const [idx, setIdx] = useState(0);
+  const [completed, setCompleted] = useState(false);
   const [flipped, setFlipped] = useState(false);
+
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [userBlobUrl, setUserBlobUrl] = useState<string | null>(null);
