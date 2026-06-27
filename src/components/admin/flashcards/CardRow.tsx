@@ -97,6 +97,7 @@ export function CardRow({
       const res = await uploadAndWriteCardImage({
         cardId: c.id,
         unitSlug: unitFolder,
+        kind: c.kind,
         orderIndex: c.order_index,
         source: f,
       });
