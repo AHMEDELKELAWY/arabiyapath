@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X } from "lucide-react";
+import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { SPEAKING_KIND } from "./unitTemplate";
+
 
 interface CardRow {
   id: string;
@@ -22,7 +23,9 @@ interface CardRow {
 
 interface Props {
   unitId: string;
+  onComplete?: () => void;
 }
+
 
 // Normalize Arabic for comparison: strip tashkeel/punctuation/spaces.
 function normalizeArabic(s: string): string {
@@ -54,9 +57,11 @@ function similarity(a: string, b: string): number {
   return Math.max(0, 1 - dist / Math.max(m, n));
 }
 
-export function SpeakingPractice({ unitId }: Props) {
+export function SpeakingPractice({ unitId, onComplete }: Props) {
   const [idx, setIdx] = useState(0);
+  const [completed, setCompleted] = useState(false);
   const [flipped, setFlipped] = useState(false);
+
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [userBlobUrl, setUserBlobUrl] = useState<string | null>(null);
@@ -204,6 +209,31 @@ export function SpeakingPractice({ unitId }: Props) {
   }
   if (!current) return null;
 
+  if (completed) {
+    return (
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-5 md:p-8 text-center space-y-4">
+          <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
+            <Check className="w-7 h-7" />
+          </div>
+          <h3 className="text-2xl font-bold">Speaking Complete</h3>
+          <p className="text-muted-foreground">Great work practicing your pronunciation.</p>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-2">
+            <Button variant="outline" onClick={() => { setCompleted(false); setIdx(0); }} className="gap-2">
+              <RotateCcw className="w-4 h-4" /> Practice Again
+            </Button>
+            <Button
+              onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
+              className="gap-2"
+            >
+              <Headphones className="w-4 h-4" /> Continue to Listening
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const scorePct = score !== null ? Math.round(score * 100) : null;
   const scoreColor =
     scorePct === null ? "" :
@@ -211,9 +241,13 @@ export function SpeakingPractice({ unitId }: Props) {
     scorePct >= 50 ? "text-amber-600" :
     "text-destructive";
 
+  const isFirst = safeIdx === 0;
+  const isLast = safeIdx === total - 1;
+
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6 md:p-8 space-y-5">
+      <CardContent className="p-4 md:p-8 space-y-4">
+
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
@@ -257,14 +291,15 @@ export function SpeakingPractice({ unitId }: Props) {
             <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-y-auto">
               <div className="space-y-4">
                 <div className="text-center space-y-1">
-                  <p className="text-3xl md:text-4xl font-bold leading-loose break-words" dir="rtl" lang="ar">
+                  <p className="text-2xl md:text-4xl font-bold leading-snug md:leading-loose break-words" dir="rtl" lang="ar">
                     {current.arabic_text}
                   </p>
                   {current.transliteration && (
-                    <p className="text-base text-muted-foreground italic">{current.transliteration}</p>
+                    <p className="text-sm md:text-base text-muted-foreground italic">{current.transliteration}</p>
                   )}
-                  <p className="text-base">{current.english_translation}</p>
+                  <p className="text-sm md:text-base">{current.english_translation}</p>
                 </div>
+
 
                 <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="none" />
                 <div className="flex justify-center">
@@ -332,27 +367,33 @@ export function SpeakingPractice({ unitId }: Props) {
           </div>
         </div>
 
-        {/* Navigation — mobile-first */}
+        {/* Navigation — same row on all sizes */}
         <div
-          className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2"
+          className="flex flex-row justify-between gap-2 pt-2"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
-            disabled={safeIdx === 0 || recording}
-            className="gap-1 sm:w-auto min-h-[44px]"
+            disabled={recording}
+            className={cn("gap-1 flex-1 min-h-[44px]", isFirst && "invisible")}
+            aria-hidden={isFirst}
+            tabIndex={isFirst ? -1 : 0}
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </Button>
           <Button
-            onClick={() => setIdx((i) => Math.min(total - 1, i + 1))}
-            disabled={safeIdx === total - 1 || recording}
-            className="gap-1 w-full sm:w-auto min-h-[44px]"
+            onClick={() => {
+              if (isLast) setCompleted(true);
+              else setIdx((i) => Math.min(total - 1, i + 1));
+            }}
+            disabled={recording}
+            className="gap-1 flex-1 min-h-[44px]"
           >
-            Next <ChevronRight className="w-4 h-4" />
+            {isLast ? "Finish" : "Next"} <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+
       </CardContent>
     </Card>
   );

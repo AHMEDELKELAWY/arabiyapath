@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Play, Check, X, RotateCcw } from "lucide-react";
+import { Play, Check, X, RotateCcw, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
@@ -32,9 +32,11 @@ interface Prompt {
 
 interface Props {
   unitId: string;
+  onComplete?: () => void;
 }
 
-export function ListeningQuiz({ unitId }: Props) {
+export function ListeningQuiz({ unitId, onComplete }: Props) {
+
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-listening-quiz", unitId],
     enabled: !!unitId,
@@ -124,16 +126,25 @@ export function ListeningQuiz({ unitId }: Props) {
     const pct = Math.round((score / total) * 100);
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
-        <CardContent className="p-6 md:p-8 text-center space-y-4">
-          <h3 className="text-2xl font-bold">Listening complete</h3>
+        <CardContent className="p-5 md:p-8 text-center space-y-4">
+          <h3 className="text-2xl font-bold">Listening Complete</h3>
           <p className="text-lg">Score: {score} / {total} ({pct}%)</p>
-          <Button onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2 min-h-[44px]">
-            <RotateCcw className="w-4 h-4" /> Restart
-          </Button>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-2">
+            <Button variant="outline" onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); }} className="gap-2 min-h-[44px]">
+              <RotateCcw className="w-4 h-4" /> Restart
+            </Button>
+            <Button
+              onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); onComplete?.(); }}
+              className="gap-2 min-h-[44px]"
+            >
+              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
   }
+
 
   const q = prompts[i];
 
