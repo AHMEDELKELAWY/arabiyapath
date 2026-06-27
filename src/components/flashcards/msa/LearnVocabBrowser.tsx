@@ -176,21 +176,21 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
               )}
             </button>
 
-            <div className="text-center space-y-1 md:space-y-2">
+            <div className="text-center space-y-1">
               <p
-                className="text-3xl md:text-5xl font-bold leading-snug md:leading-loose break-words"
+                className="text-3xl md:text-4xl font-bold leading-snug md:leading-snug break-words"
                 dir="rtl"
                 lang="ar"
               >
                 {current.arabic_text}
               </p>
               {current.transliteration && (
-                <p className="text-sm md:text-lg italic text-muted-foreground">
+                <p className="text-sm md:text-base italic text-muted-foreground">
                   {current.transliteration}
                 </p>
               )}
               {current.english_translation && (
-                <p className="text-sm md:text-lg">{current.english_translation}</p>
+                <p className="text-sm md:text-base">{current.english_translation}</p>
               )}
             </div>
 
