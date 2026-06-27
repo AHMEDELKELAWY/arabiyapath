@@ -137,7 +137,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
               onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); onComplete?.(); }}
               className="gap-2 min-h-[44px]"
             >
-              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
+              <Mic className="w-4 h-4" /> Continue to Speaking
             </Button>
           </div>
         </CardContent>
