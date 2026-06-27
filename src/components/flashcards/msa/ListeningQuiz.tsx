@@ -32,9 +32,11 @@ interface Prompt {
 
 interface Props {
   unitId: string;
+  onComplete?: () => void;
 }
 
-export function ListeningQuiz({ unitId }: Props) {
+export function ListeningQuiz({ unitId, onComplete }: Props) {
+
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-listening-quiz", unitId],
     enabled: !!unitId,
