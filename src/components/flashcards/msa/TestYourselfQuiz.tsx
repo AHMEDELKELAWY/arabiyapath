@@ -265,7 +265,7 @@ export function TestYourselfQuiz({ unitId }: Props) {
 
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6 md:p-8 space-y-5">
+      <CardContent className="p-4 md:p-5 space-y-4 md:space-y-5">
         <ActivityProgress current={i + 1} total={total} label="Question" />
 
         <QuestionView

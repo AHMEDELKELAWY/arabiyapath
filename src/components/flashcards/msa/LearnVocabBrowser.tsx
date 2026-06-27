@@ -152,11 +152,11 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
 
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-5 md:p-8 space-y-3 md:space-y-4">
+      <CardContent className="p-4 md:p-5 space-y-3">
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
         {current && (
-          <div key={fadeKey} className="space-y-3 md:space-y-4 animate-in fade-in duration-200">
+          <div key={fadeKey} className="space-y-3 animate-in fade-in duration-200">
             <button
               type="button"
               onClick={playAudio}
@@ -176,21 +176,21 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
               )}
             </button>
 
-            <div className="text-center space-y-1 md:space-y-2">
+            <div className="text-center space-y-1">
               <p
-                className="text-3xl md:text-5xl font-bold leading-snug md:leading-loose break-words"
+                className="text-3xl md:text-4xl font-bold leading-snug md:leading-snug break-words"
                 dir="rtl"
                 lang="ar"
               >
                 {current.arabic_text}
               </p>
               {current.transliteration && (
-                <p className="text-sm md:text-lg italic text-muted-foreground">
+                <p className="text-sm md:text-base italic text-muted-foreground">
                   {current.transliteration}
                 </p>
               )}
               {current.english_translation && (
-                <p className="text-sm md:text-lg">{current.english_translation}</p>
+                <p className="text-sm md:text-base">{current.english_translation}</p>
               )}
             </div>
 
