@@ -182,7 +182,7 @@ export default function FlashCardUnit() {
 
             <TabsContent value="learn" className="mt-3 md:mt-4">
               {canStudy ? (
-                <LearnVocabBrowser unitId={unit.id} onComplete={() => goToTab("speaking")} />
+                <LearnVocabBrowser unitId={unit.id} onComplete={() => goToTab("listening")} />
 
               ) : (
                 <Card>
