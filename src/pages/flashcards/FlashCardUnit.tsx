@@ -14,6 +14,7 @@
  *      docs/UNIT_STANDARD.md
  */
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery } from "@tanstack/react-query";
@@ -33,6 +34,20 @@ export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"learn" | "speaking" | "listening" | "test">("learn");
+  const lessonTopRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToLessonTop = () => {
+    requestAnimationFrame(() => {
+      lessonTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const goToTab = (tab: "learn" | "speaking" | "listening" | "test") => {
+    setActiveTab(tab);
+    scrollToLessonTop();
+  };
+
 
   const { data: unit, isLoading } = useQuery({
     queryKey: ["fc-unit", slug],
