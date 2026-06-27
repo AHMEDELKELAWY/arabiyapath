@@ -367,27 +367,33 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
           </div>
         </div>
 
-        {/* Navigation — mobile-first */}
+        {/* Navigation — same row on all sizes */}
         <div
-          className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2"
+          className="flex flex-row justify-between gap-2 pt-2"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
-            disabled={safeIdx === 0 || recording}
-            className="gap-1 sm:w-auto min-h-[44px]"
+            disabled={recording}
+            className={cn("gap-1 flex-1 min-h-[44px]", isFirst && "invisible")}
+            aria-hidden={isFirst}
+            tabIndex={isFirst ? -1 : 0}
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </Button>
           <Button
-            onClick={() => setIdx((i) => Math.min(total - 1, i + 1))}
-            disabled={safeIdx === total - 1 || recording}
-            className="gap-1 w-full sm:w-auto min-h-[44px]"
+            onClick={() => {
+              if (isLast) setCompleted(true);
+              else setIdx((i) => Math.min(total - 1, i + 1));
+            }}
+            disabled={recording}
+            className="gap-1 flex-1 min-h-[44px]"
           >
-            Next <ChevronRight className="w-4 h-4" />
+            {isLast ? "Finish" : "Next"} <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+
       </CardContent>
     </Card>
   );
