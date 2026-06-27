@@ -156,7 +156,7 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
         {current && (
-          <div key={fadeKey} className="space-y-3 md:space-y-4 animate-in fade-in duration-200">
+          <div key={fadeKey} className="space-y-3 animate-in fade-in duration-200">
             <button
               type="button"
               onClick={playAudio}
