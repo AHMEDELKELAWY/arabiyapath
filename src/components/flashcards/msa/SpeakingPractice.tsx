@@ -23,7 +23,9 @@ interface CardRow {
 
 interface Props {
   unitId: string;
+  onComplete?: () => void;
 }
+
 
 // Normalize Arabic for comparison: strip tashkeel/punctuation/spaces.
 function normalizeArabic(s: string): string {
