@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Headphones } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 
@@ -22,13 +22,14 @@ interface CardRow {
 
 interface Props {
   unitId: string;
+  onComplete?: () => void;
 }
 
 /**
  * Learn tab — pure manually authored vocabulary browser.
  * Reads only flashcards where kind = 'learn'.
  */
-export function LearnVocabBrowser({ unitId }: Props) {
+export function LearnVocabBrowser({ unitId, onComplete }: Props) {
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [fadeKey, setFadeKey] = useState(0);
@@ -94,7 +95,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
   if (isLoading) {
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
-        <CardContent className="p-6 md:p-8 space-y-4">
+        <CardContent className="p-5 md:p-8 space-y-4">
           <div className="h-2 w-full rounded bg-muted animate-pulse" />
           <div className="aspect-[4/3] w-full max-w-[333px] md:max-w-[667px] mx-auto rounded-2xl bg-muted animate-pulse" />
           <div className="h-8 w-1/2 mx-auto rounded bg-muted animate-pulse" />
@@ -107,7 +108,7 @@ export function LearnVocabBrowser({ unitId }: Props) {
   if (!cards?.length) {
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
-        <CardContent className="p-6 md:p-8 text-center text-muted-foreground">
+        <CardContent className="p-5 md:p-8 text-center text-muted-foreground">
           No Learn cards yet.
         </CardContent>
       </Card>
@@ -117,36 +118,45 @@ export function LearnVocabBrowser({ unitId }: Props) {
   if (completed) {
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
-        <CardContent className="p-6 md:p-8 text-center space-y-4">
+        <CardContent className="p-5 md:p-8 text-center space-y-4">
           <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
             <Check className="w-7 h-7" />
           </div>
-          <h3 className="text-2xl font-bold">Unit Completed</h3>
+          <h3 className="text-2xl font-bold">Learn Complete</h3>
           <p className="text-muted-foreground">You finished all cards in this lesson.</p>
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-2">
-            <Button variant="ghost" onClick={() => navigate(slug ? `/flashcards` : "/flashcards")} className="gap-2">
+            <Button variant="ghost" onClick={() => navigate('/flashcards')} className="gap-2">
               <ArrowLeft className="w-4 h-4" /> Back To Units
             </Button>
             <Button variant="outline" onClick={() => { setCompleted(false); setIdx(0); }} className="gap-2">
               <RotateCcw className="w-4 h-4" /> Review Again
             </Button>
-            <Button onClick={() => { setCompleted(false); setIdx(0); /* tab switch hint */ }} className="gap-2">
-              <Headphones className="w-4 h-4" /> Go To Listening
+            <Button
+              onClick={() => {
+                setCompleted(false);
+                setIdx(0);
+                onComplete?.();
+              }}
+              className="gap-2"
+            >
+              <Mic className="w-4 h-4" /> Continue to Speaking
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground pt-1">Tip: tap the Listening tab above to continue.</p>
         </CardContent>
       </Card>
     );
   }
 
+  const isFirst = safeIdx === 0;
+  const isLast = safeIdx === total - 1;
+
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6 md:p-8 space-y-4">
+      <CardContent className="p-5 md:p-8 space-y-3 md:space-y-4">
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
         {current && (
-          <div key={fadeKey} className="space-y-4 animate-in fade-in duration-200">
+          <div key={fadeKey} className="space-y-3 md:space-y-4 animate-in fade-in duration-200">
             <button
               type="button"
               onClick={playAudio}
@@ -166,21 +176,21 @@ export function LearnVocabBrowser({ unitId }: Props) {
               )}
             </button>
 
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-1 md:space-y-2">
               <p
-                className="text-4xl md:text-5xl font-bold leading-loose break-words"
+                className="text-3xl md:text-5xl font-bold leading-snug md:leading-loose break-words"
                 dir="rtl"
                 lang="ar"
               >
                 {current.arabic_text}
               </p>
               {current.transliteration && (
-                <p className="text-base md:text-lg italic text-muted-foreground">
+                <p className="text-sm md:text-lg italic text-muted-foreground">
                   {current.transliteration}
                 </p>
               )}
               {current.english_translation && (
-                <p className="text-base md:text-lg">{current.english_translation}</p>
+                <p className="text-sm md:text-lg">{current.english_translation}</p>
               )}
             </div>
 
@@ -200,22 +210,26 @@ export function LearnVocabBrowser({ unitId }: Props) {
             </div>
 
             <div
-              className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2"
+              className="flex flex-row justify-between gap-2 pt-2"
               style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
             >
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={goPrev}
-                disabled={safeIdx === 0}
-                className="gap-1 sm:w-auto min-h-[44px]"
+                className={cn(
+                  "gap-1 flex-1 min-h-[44px]",
+                  isFirst && "invisible"
+                )}
+                aria-hidden={isFirst}
+                tabIndex={isFirst ? -1 : 0}
               >
                 <ChevronLeft className="w-4 h-4" /> Previous
               </Button>
               <Button
                 onClick={goNext}
-                className={cn("gap-1 w-full sm:w-auto min-h-[44px]")}
+                className="gap-1 flex-1 min-h-[44px]"
               >
-                {safeIdx === total - 1 ? "Finish" : "Next"} <ChevronRight className="w-4 h-4" />
+                {isLast ? "Finish" : "Next"} <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
