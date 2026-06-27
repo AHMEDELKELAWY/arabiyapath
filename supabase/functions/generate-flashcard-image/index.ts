@@ -1,11 +1,48 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { decode as b64decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+/**
+ * Build a 300x225 cover-cropped thumbnail (PNG) from the AI-generated image.
+ * Returns { bytes, width, height } for the original too so we never write
+ * partial image metadata to the DB.
+ */
+async function processImage(pngBytes: Uint8Array): Promise<{
+  originalBytes: Uint8Array;
+  originalWidth: number;
+  originalHeight: number;
+  originalSizeKb: number;
+  thumbBytes: Uint8Array;
+}> {
+  const img = await Image.decode(pngBytes);
+  const ow = img.width;
+  const oh = img.height;
+
+  // Cover-fit to 300x225.
+  const targetW = 300, targetH = 225;
+  const scale = Math.max(targetW / ow, targetH / oh);
+  const resizedW = Math.max(targetW, Math.round(ow * scale));
+  const resizedH = Math.max(targetH, Math.round(oh * scale));
+  const resized = img.clone().resize(resizedW, resizedH);
+  const cx = Math.max(0, Math.floor((resizedW - targetW) / 2));
+  const cy = Math.max(0, Math.floor((resizedH - targetH) / 2));
+  const cropped = resized.crop(cx, cy, targetW, targetH);
+  const thumbBytes = await cropped.encode();
+
+  return {
+    originalBytes: pngBytes,
+    originalWidth: ow,
+    originalHeight: oh,
+    originalSizeKb: Math.round(pngBytes.byteLength / 1024),
+    thumbBytes,
+  };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -20,7 +57,6 @@ serve(async (req) => {
     if (!claims?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    // Admin check
     const userId = claims.claims.sub;
     const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
     if (!roleRow) {
@@ -30,7 +66,8 @@ serve(async (req) => {
     const { cardId } = await req.json();
     if (!cardId) throw new Error("cardId required");
 
-    const { data: card, error: cardErr } = await supabase.from("flashcards").select("id, english_translation, arabic_text, image_alt").eq("id", cardId).single();
+    const { data: card, error: cardErr } = await supabase.from("flashcards")
+      .select("id, english_translation, arabic_text, image_alt").eq("id", cardId).single();
     if (cardErr || !card) throw new Error("card not found");
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -52,14 +89,50 @@ serve(async (req) => {
     if (!b64) throw new Error("No image returned");
     const bytes = b64decode(b64);
 
-    const path = `flashcards/${cardId}.png`;
-    const { error: upErr } = await supabase.storage.from("lesson-images").upload(path, bytes, { contentType: "image/png", upsert: true });
+    // Decode + build thumbnail + dimensions BEFORE any DB write so any failure
+    // short-circuits and we never store a partial image record.
+    const processed = await processImage(bytes);
+
+    const origPath = `flashcards/${cardId}.png`;
+    const thumbPath = `flashcards/${cardId}-thumb.png`;
+    const [{ error: upErr }, { error: thErr }] = await Promise.all([
+      supabase.storage.from("lesson-images").upload(origPath, processed.originalBytes, { contentType: "image/png", upsert: true }),
+      supabase.storage.from("lesson-images").upload(thumbPath, processed.thumbBytes, { contentType: "image/png", upsert: true }),
+    ]);
     if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from("lesson-images").getPublicUrl(path);
+    if (thErr) throw thErr;
 
-    await supabase.from("flashcards").update({ image_url: pub.publicUrl, image_alt: card.image_alt || card.english_translation }).eq("id", cardId);
+    const image_url = supabase.storage.from("lesson-images").getPublicUrl(origPath).data.publicUrl;
+    const thumbnail_url = supabase.storage.from("lesson-images").getPublicUrl(thumbPath).data.publicUrl;
 
-    return new Response(JSON.stringify({ success: true, url: pub.publicUrl }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { error: updErr } = await supabase.from("flashcards").update({
+      image_url,
+      thumbnail_url,
+      image_width: processed.originalWidth,
+      image_height: processed.originalHeight,
+      image_size_kb: processed.originalSizeKb,
+      image_alt: card.image_alt || card.english_translation,
+    }).eq("id", cardId);
+    if (updErr) throw updErr;
+
+    // Re-fetch and verify — never silently succeed with a partial row.
+    const { data: verify, error: vErr } = await supabase.from("flashcards")
+      .select("image_url,thumbnail_url,image_width,image_height,image_size_kb")
+      .eq("id", cardId).single();
+    if (vErr) throw vErr;
+    const missing: string[] = [];
+    if (!verify?.image_url) missing.push("image_url");
+    if (!verify?.thumbnail_url) missing.push("thumbnail_url");
+    if (!verify?.image_width) missing.push("image_width");
+    if (!verify?.image_height) missing.push("image_height");
+    if (verify?.image_size_kb == null) missing.push("image_size_kb");
+    if (missing.length) {
+      throw new Error(`Verification failed — missing: ${missing.join(", ")}`);
+    }
+
+    return new Response(JSON.stringify({ success: true, url: image_url, thumbnail_url }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("generate-flashcard-image error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
