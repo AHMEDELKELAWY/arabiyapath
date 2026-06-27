@@ -230,7 +230,7 @@ export default function FlashCardUnit() {
 
             <TabsContent value="speaking" className="mt-3 md:mt-4">
               {canStudy ? (
-                <SpeakingPractice unitId={unit.id} onComplete={() => goToTab("listening")} />
+                <SpeakingPractice unitId={unit.id} onComplete={() => goToTab("test")} />
 
               ) : (
                 <Card>
