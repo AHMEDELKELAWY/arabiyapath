@@ -16,6 +16,7 @@ import {
   runRepair, runIntegrityScan,
   type RepairSummary, type IntegrityReport,
 } from "@/lib/flashcards/repairImages";
+import { migrateVerbsUnit, type VerbsMigrationReport } from "@/lib/flashcards/migrateVerbs";
 
 async function countCards(filter?: (q: any) => any) {
   let q = (supabase as any).from("flashcards").select("id", { count: "exact", head: true });
@@ -71,6 +72,27 @@ export default function AdminFlashcardDiagnostics() {
   const [scanning, setScanning] = useState(false);
   const [verifyUrls, setVerifyUrls] = useState(false);
   const [scan, setScan] = useState<IntegrityReport | null>(null);
+
+  const [verbsBusy, setVerbsBusy] = useState(false);
+  const [verbsProgress, setVerbsProgress] = useState({ done: 0, total: 0, current: 0 });
+  const [verbsReport, setVerbsReport] = useState<VerbsMigrationReport | null>(null);
+
+  const onMigrateVerbs = async () => {
+    if (!confirm("Normalize the entire Verbs unit to the frozen WEBP standard? This re-encodes and renames every Verbs image.")) return;
+    setVerbsBusy(true);
+    setVerbsReport(null);
+    setVerbsProgress({ done: 0, total: 0, current: 0 });
+    try {
+      const r = await migrateVerbsUnit((done, total, current) => setVerbsProgress({ done, total, current }));
+      setVerbsReport(r);
+      toast({ title: "Verbs migration complete", description: `Migrated ${r.migrated} · Failed ${r.failed}` });
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Verbs migration failed", description: e.message, variant: "destructive" });
+    } finally {
+      setVerbsBusy(false);
+    }
+  };
 
   const refresh = () => {
     metrics.refetch();
