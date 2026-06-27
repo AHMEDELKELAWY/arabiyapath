@@ -226,7 +226,7 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
               onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
               className="gap-2"
             >
-              <Headphones className="w-4 h-4" /> Continue to Listening
+              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
             </Button>
           </div>
         </CardContent>
