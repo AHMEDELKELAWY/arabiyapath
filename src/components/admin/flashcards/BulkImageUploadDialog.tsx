@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import JSZip from "jszip";
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Loader2, FileArchive, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, FileArchive, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -21,22 +21,21 @@ import {
   type MatcherFile,
   type Match,
 } from "@/lib/flashcards/bulkImageMatcher";
-import { compressFlashcardImage } from "@/lib/flashcards/imageCompress";
+import { uploadAndWriteCardImage } from "@/lib/flashcards/imageWrite";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   unitId: string;
   unitSlug: string;
-  cards: MatcherCard[];
+  kind: "learn" | "speaking";
   onComplete?: () => void;
 }
 
-type Stage = "select" | "preview" | "uploading" | "results";
+type Stage = "loading" | "select" | "preview" | "uploading" | "results";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB per image
-const UPLOAD_CONCURRENCY = 10;
-const BUCKET = "content";
+const UPLOAD_CONCURRENCY = 6;
 
 interface UploadResult {
   cardId: string;
@@ -46,28 +45,65 @@ interface UploadResult {
   error?: string;
 }
 
-
 export function BulkImageUploadDialog({
   open,
   onOpenChange,
   unitId,
   unitSlug,
-  cards,
+  kind,
   onComplete,
 }: Props) {
-  const [stage, setStage] = useState<Stage>("select");
+  const [stage, setStage] = useState<Stage>("loading");
   const [parsing, setParsing] = useState(false);
+  const [allCards, setAllCards] = useState<MatcherCard[]>([]);
   const [files, setFiles] = useState<MatcherFile[]>([]);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<UploadResult[]>([]);
 
+  // Always fetch the FULL filtered unit when the dialog opens — never rely on
+  // the currently paginated page. This guarantees every card in the unit is
+  // considered when matching filenames.
+  useEffect(() => {
+    if (!open || !unitId) return;
+    let cancelled = false;
+    setStage("loading");
+    setFiles([]);
+    setResults([]);
+    setProgress({ done: 0, total: 0 });
+    (async () => {
+      const PAGE = 1000;
+      const all: any[] = [];
+      try {
+        for (let from = 0; ; from += PAGE) {
+          const { data, error } = await (supabase as any)
+            .from("flashcards")
+            .select("id,order_index,arabic_text,english_translation,image_url,image_key")
+            .eq("unit_id", unitId)
+            .eq("kind", kind)
+            .order("order_index")
+            .range(from, from + PAGE - 1);
+          if (error) throw error;
+          if (!data?.length) break;
+          all.push(...data);
+          if (data.length < PAGE) break;
+        }
+        if (cancelled) return;
+        setAllCards(all as MatcherCard[]);
+        setStage("select");
+      } catch (e: any) {
+        toast({ title: "Could not load cards", description: e.message, variant: "destructive" });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, unitId, kind]);
+
   const match = useMemo(
-    () => (files.length ? matchFilesToCards(files, cards, "order") : null),
-    [files, cards],
+    () => (files.length && allCards.length ? matchFilesToCards(files, allCards, "order") : null),
+    [files, allCards],
   );
 
   const reset = () => {
-    setStage("select");
+    setStage(allCards.length ? "select" : "loading");
     setFiles([]);
     setProgress({ done: 0, total: 0 });
     setResults([]);
@@ -76,8 +112,8 @@ export function BulkImageUploadDialog({
 
   const handleClose = (v: boolean) => {
     if (!v) {
-      reset();
       if (stage === "results") onComplete?.();
+      reset();
     }
     onOpenChange(v);
   };
@@ -123,10 +159,11 @@ export function BulkImageUploadDialog({
     if (e.dataTransfer.files?.length) ingestFileList(e.dataTransfer.files);
   };
 
-  const folder = unitSlug;
-
   const runUploads = async () => {
     if (!match) return;
+    if (!unitSlug) {
+      return toast({ title: "Unit has no slug — set one before uploading.", variant: "destructive" });
+    }
     setStage("uploading");
     setProgress({ done: 0, total: match.matches.length });
     const out: UploadResult[] = [];
@@ -139,35 +176,18 @@ export function BulkImageUploadDialog({
         const i = cursor++;
         const m: Match = matches[i];
         const base = m.file.name.replace(/\.[^.]+$/, "");
-        const origPath = `flashcards/images/${folder}/${base}.webp`;
-        const thumbPath = `flashcards/thumbnails/${folder}/${base}.webp`;
         try {
-          const compressed = await compressFlashcardImage(m.file.blob);
-          const [{ error: upErr }, { error: thErr }] = await Promise.all([
-            supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
-            supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
-          ]);
-          if (upErr) throw upErr;
-          if (thErr) throw thErr;
-          const publicUrl = supabase.storage.from(BUCKET).getPublicUrl(origPath).data.publicUrl;
-          const thumbUrl = supabase.storage.from(BUCKET).getPublicUrl(thumbPath).data.publicUrl;
-          const { error: updErr } = await (supabase as any)
-            .from("flashcards")
-            .update({
-              image_url: publicUrl,
-              thumbnail_url: thumbUrl,
-              image_width: compressed.original.width,
-              image_height: compressed.original.height,
-              image_size_kb: compressed.original.sizeKb,
-            })
-            .eq("id", m.card.id);
-          if (updErr) throw updErr;
+          await uploadAndWriteCardImage({
+            cardId: m.card.id,
+            unitSlug,
+            baseName: base,
+            source: m.file.blob,
+          });
           out.push({ cardId: m.card.id, filename: m.file.name, status: "ok", overwrote: m.overwrites });
         } catch (e: any) {
           out.push({ cardId: m.card.id, filename: m.file.name, status: "failed", overwrote: m.overwrites, error: e.message });
         } finally {
           setProgress((p) => ({ ...p, done: p.done + 1 }));
-          // Yield to keep the UI responsive between batches.
           await new Promise((r) => setTimeout(r, 0));
         }
       }
@@ -187,10 +207,17 @@ export function BulkImageUploadDialog({
         <DialogHeader>
           <DialogTitle>Bulk Image Upload</DialogTitle>
           <DialogDescription>
-            Upload a ZIP or multiple images. Files are matched to cards by the number in the filename
+            Operates on every {kind === "learn" ? "Learn" : "Speaking"} card in this unit
+            ({allCards.length} total). Files match by the last number in the filename
             (e.g. <code>msa-u01-001.jpg</code> → card #1).
           </DialogDescription>
         </DialogHeader>
+
+        {stage === "loading" && (
+          <div className="flex items-center justify-center py-10 gap-2 text-sm text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading every card in this unit…
+          </div>
+        )}
 
         {stage === "select" && (
           <div
@@ -234,7 +261,7 @@ export function BulkImageUploadDialog({
                 Will Replace Existing Images: {match.matches.filter((m) => m.overwrites).length}
               </Badge>
               <Badge variant="secondary">Unmatched Files: {match.unmatchedFiles.length}</Badge>
-              <Badge variant="outline">Missing Cards: {cards.length - match.matches.length}</Badge>
+              <Badge variant="outline">Cards without a file in this run: {allCards.length - match.matches.length}</Badge>
             </div>
 
             <div className="border rounded-md max-h-72 overflow-y-auto">
@@ -301,7 +328,6 @@ export function BulkImageUploadDialog({
           </div>
         )}
 
-
         {stage === "uploading" && (
           <div className="space-y-3 py-4">
             <p className="text-sm text-muted-foreground">
@@ -319,15 +345,15 @@ export function BulkImageUploadDialog({
               </Badge>
               <Badge variant="default" className="justify-between gap-2">
                 <CheckCircle2 className="w-3 h-3" />
-                <span>Updated</span><span>{okCount}</span>
+                <span>Verified</span><span>{okCount}</span>
               </Badge>
               <Badge variant="secondary" className="justify-between gap-2">
                 <span>Replaced Existing Images</span>
                 <span>{results.filter((r) => r.status === "ok" && r.overwrote).length}</span>
               </Badge>
               <Badge variant="outline" className="justify-between gap-2">
-                <span>Missing Cards</span>
-                <span>{Math.max(0, cards.length - (match?.matches.length ?? 0))}</span>
+                <span>Cards without a file</span>
+                <span>{Math.max(0, allCards.length - (match?.matches.length ?? 0))}</span>
               </Badge>
               <Badge variant="secondary" className="justify-between gap-2">
                 <span>Unmatched Files</span><span>{match?.unmatchedFiles.length ?? 0}</span>
@@ -339,7 +365,6 @@ export function BulkImageUploadDialog({
                 </Badge>
               )}
             </div>
-
 
             {failCount > 0 && (
               <details className="text-sm" open>

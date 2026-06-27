@@ -730,14 +730,7 @@ export default function AdminFlashcardCards() {
           onOpenChange={setBulkOpen}
           unitId={unitId}
           unitSlug={unitSlug}
-          cards={(cards ?? []).map((c: any) => ({
-            id: c.id,
-            order_index: c.order_index,
-            arabic_text: c.arabic_text,
-            english_translation: c.english_translation,
-            image_url: c.image_url,
-            image_key: c.image_key,
-          }))}
+          kind={kind}
           onComplete={invalidate}
         />
       )}
