@@ -94,28 +94,13 @@ export function CardRow({
     }
     setReplacing(true);
     try {
-      const compressed = await compressFlashcardImage(f);
-      const base = f.name.replace(/\.[^.]+$/, "");
-      const origPath = `flashcards/images/${unitFolder}/${base}.webp`;
-      const thumbPath = `flashcards/thumbnails/${unitFolder}/${base}.webp`;
-      const [{ error: upErr }, { error: thErr }] = await Promise.all([
-        supabase.storage.from("content").upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
-        supabase.storage.from("content").upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
-      ]);
-      if (upErr) throw upErr;
-      if (thErr) throw thErr;
-      const origUrl = supabase.storage.from("content").getPublicUrl(origPath).data.publicUrl;
-      const thumbUrl = supabase.storage.from("content").getPublicUrl(thumbPath).data.publicUrl;
-      const { error: updErr } = await (supabase as any)
-        .from("flashcards").update({
-          image_url: origUrl,
-          thumbnail_url: thumbUrl,
-          image_width: compressed.original.width,
-          image_height: compressed.original.height,
-          image_size_kb: compressed.original.sizeKb,
-        }).eq("id", c.id);
-      if (updErr) throw updErr;
-      toast({ title: "Image replaced", description: `${compressed.original.sizeKb} KB · thumb ${compressed.thumbnail.sizeKb} KB` });
+      const res = await uploadAndWriteCardImage({
+        cardId: c.id,
+        unitSlug: unitFolder,
+        baseName: f.name,
+        source: f,
+      });
+      toast({ title: "Image replaced", description: `${res.image_size_kb} KB` });
       onMutated();
     } catch (err: any) {
       toast({ title: "Replace failed", description: err.message, variant: "destructive" });
