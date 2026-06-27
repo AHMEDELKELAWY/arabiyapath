@@ -1,7 +1,12 @@
 /**
  * Client-side image compression for flashcards.
- * Produces a WEBP "original" (≤1200x900, ≤200KB target) and a
- * WEBP "thumbnail" (300x225, ≤50KB target) plus dimensions.
+ *
+ * FROZEN STANDARD:
+ *   - Format: WEBP only
+ *   - Original quality: 0.82 (fixed)
+ *   - Original max width: 1024px (aspect ratio preserved; no upscale)
+ *   - Thumbnail width: 300px (aspect ratio preserved)
+ *   - Thumbnail quality: 0.82
  */
 
 export interface CompressedImage {
@@ -16,6 +21,11 @@ export interface CompressionResult {
   thumbnail: CompressedImage;
 }
 
+const ORIGINAL_QUALITY = 0.82;
+const ORIGINAL_MAX_WIDTH = 1024;
+const THUMBNAIL_WIDTH = 300;
+const THUMBNAIL_QUALITY = 0.82;
+
 async function loadImage(file: Blob): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
   try {
@@ -28,25 +38,8 @@ async function loadImage(file: Blob): Promise<HTMLImageElement> {
     });
     return img;
   } finally {
-    // Revoke after load so HTMLImageElement keeps its bitmap.
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
-}
-
-function fitInside(srcW: number, srcH: number, maxW: number, maxH: number) {
-  const ratio = Math.min(maxW / srcW, maxH / srcH, 1);
-  return { w: Math.max(1, Math.round(srcW * ratio)), h: Math.max(1, Math.round(srcH * ratio)) };
-}
-
-function fitCover(srcW: number, srcH: number, targetW: number, targetH: number) {
-  const ratio = Math.max(targetW / srcW, targetH / srcH);
-  const w = srcW * ratio;
-  const h = srcH * ratio;
-  const sx = (w - targetW) / 2 / ratio;
-  const sy = (h - targetH) / 2 / ratio;
-  const sw = targetW / ratio;
-  const sh = targetH / ratio;
-  return { sx, sy, sw, sh };
 }
 
 function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
@@ -59,53 +52,44 @@ function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
   });
 }
 
-async function encodeIterative(
-  canvas: HTMLCanvasElement,
-  targetBytes: number,
-  startQuality = 0.85,
-): Promise<Blob> {
-  let quality = startQuality;
-  let blob = await canvasToWebp(canvas, quality);
-  // Iteratively lower quality until under target or quality floor reached.
-  while (blob.size > targetBytes && quality > 0.4) {
-    quality -= 0.1;
-    blob = await canvasToWebp(canvas, quality);
-  }
-  return blob;
-}
-
 export async function compressFlashcardImage(file: Blob): Promise<CompressionResult> {
   const img = await loadImage(file);
+  const srcW = img.naturalWidth;
+  const srcH = img.naturalHeight;
 
-  // ---- Original: fit inside 1200x900, ≤200KB ----
-  const fit = fitInside(img.naturalWidth, img.naturalHeight, 1200, 900);
+  // ---- Original: cap width at 1024, preserve aspect ratio, no upscale ----
+  const origScale = Math.min(1, ORIGINAL_MAX_WIDTH / srcW);
+  const origW = Math.max(1, Math.round(srcW * origScale));
+  const origH = Math.max(1, Math.round(srcH * origScale));
   const origCanvas = document.createElement("canvas");
-  origCanvas.width = fit.w;
-  origCanvas.height = fit.h;
+  origCanvas.width = origW;
+  origCanvas.height = origH;
   const octx = origCanvas.getContext("2d")!;
-  octx.drawImage(img, 0, 0, fit.w, fit.h);
-  const originalBlob = await encodeIterative(origCanvas, 200 * 1024, 0.85);
+  octx.drawImage(img, 0, 0, origW, origH);
+  const originalBlob = await canvasToWebp(origCanvas, ORIGINAL_QUALITY);
 
-  // ---- Thumbnail: cropped cover to 300x225, ≤50KB ----
+  // ---- Thumbnail: width 300, preserve aspect ratio, no upscale ----
+  const thumbScale = Math.min(1, THUMBNAIL_WIDTH / srcW);
+  const thumbW = Math.max(1, Math.round(srcW * thumbScale));
+  const thumbH = Math.max(1, Math.round(srcH * thumbScale));
   const thumbCanvas = document.createElement("canvas");
-  thumbCanvas.width = 300;
-  thumbCanvas.height = 225;
+  thumbCanvas.width = thumbW;
+  thumbCanvas.height = thumbH;
   const tctx = thumbCanvas.getContext("2d")!;
-  const c = fitCover(img.naturalWidth, img.naturalHeight, 300, 225);
-  tctx.drawImage(img, c.sx, c.sy, c.sw, c.sh, 0, 0, 300, 225);
-  const thumbBlob = await encodeIterative(thumbCanvas, 50 * 1024, 0.8);
+  tctx.drawImage(img, 0, 0, thumbW, thumbH);
+  const thumbBlob = await canvasToWebp(thumbCanvas, THUMBNAIL_QUALITY);
 
   return {
     original: {
       blob: originalBlob,
-      width: fit.w,
-      height: fit.h,
+      width: origW,
+      height: origH,
       sizeKb: Math.round(originalBlob.size / 1024),
     },
     thumbnail: {
       blob: thumbBlob,
-      width: 300,
-      height: 225,
+      width: thumbW,
+      height: thumbH,
       sizeKb: Math.round(thumbBlob.size / 1024),
     },
   };
