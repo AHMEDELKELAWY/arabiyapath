@@ -67,8 +67,12 @@ serve(async (req) => {
     if (!cardId) throw new Error("cardId required");
 
     const { data: card, error: cardErr } = await supabase.from("flashcards")
-      .select("id, english_translation, arabic_text, image_alt").eq("id", cardId).single();
+      .select("id, english_translation, arabic_text, image_alt, order_index, unit_id").eq("id", cardId).single();
     if (cardErr || !card) throw new Error("card not found");
+
+    const { data: unit, error: unitErr } = await supabase.from("flashcard_units")
+      .select("slug").eq("id", card.unit_id).single();
+    if (unitErr || !unit?.slug) throw new Error("unit slug not found");
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
@@ -93,17 +97,20 @@ serve(async (req) => {
     // short-circuits and we never store a partial image record.
     const processed = await processImage(bytes);
 
-    const origPath = `flashcards/${cardId}.png`;
-    const thumbPath = `flashcards/${cardId}-thumb.png`;
+    // Use the same bucket + path layout as uploadAndWriteCardImage so every
+    // path (Bulk Upload, Replace Image, Generate, Repair) writes to one place.
+    const base = `ai-${cardId}`;
+    const origPath = `flashcards/images/${unit.slug}/${base}.png`;
+    const thumbPath = `flashcards/thumbnails/${unit.slug}/${base}.png`;
     const [{ error: upErr }, { error: thErr }] = await Promise.all([
-      supabase.storage.from("lesson-images").upload(origPath, processed.originalBytes, { contentType: "image/png", upsert: true }),
-      supabase.storage.from("lesson-images").upload(thumbPath, processed.thumbBytes, { contentType: "image/png", upsert: true }),
+      supabase.storage.from("content").upload(origPath, processed.originalBytes, { contentType: "image/png", upsert: true }),
+      supabase.storage.from("content").upload(thumbPath, processed.thumbBytes, { contentType: "image/png", upsert: true }),
     ]);
     if (upErr) throw upErr;
     if (thErr) throw thErr;
 
-    const image_url = supabase.storage.from("lesson-images").getPublicUrl(origPath).data.publicUrl;
-    const thumbnail_url = supabase.storage.from("lesson-images").getPublicUrl(thumbPath).data.publicUrl;
+    const image_url = supabase.storage.from("content").getPublicUrl(origPath).data.publicUrl;
+    const thumbnail_url = supabase.storage.from("content").getPublicUrl(thumbPath).data.publicUrl;
 
     const { error: updErr } = await supabase.from("flashcards").update({
       image_url,

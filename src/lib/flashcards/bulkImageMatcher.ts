@@ -1,4 +1,4 @@
-export type MatchStrategy = "order" | "image_key";
+export type MatchStrategy = "order";
 
 export interface MatcherCard {
   id: string;
@@ -6,7 +6,6 @@ export interface MatcherCard {
   arabic_text: string;
   english_translation: string;
   image_url?: string | null;
-  image_key?: string | null;
 }
 
 export interface MatcherFile {
@@ -43,46 +42,33 @@ export function extractOrderFromFilename(name: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Match incoming files to cards purely by the last numeric token in the
+ * filename (which maps to order_index). This is the only supported strategy.
+ */
 export function matchFilesToCards(
   files: MatcherFile[],
   cards: MatcherCard[],
-  strategy: MatchStrategy = "order",
+  _strategy: MatchStrategy = "order",
 ): MatchResult {
   const matches: Match[] = [];
   const unmatchedFiles: MatcherFile[] = [];
   const usedCardIds = new Set<string>();
 
-  if (strategy === "image_key") {
-    const byKey = new Map<string, MatcherCard>();
-    cards.forEach((c) => {
-      if (c.image_key) byKey.set(c.image_key.toLowerCase(), c);
-    });
-    for (const f of files) {
-      const stem = f.name.split("/").pop()!.replace(IMAGE_EXT, "").toLowerCase();
-      const card = byKey.get(stem);
-      if (card && !usedCardIds.has(card.id)) {
-        usedCardIds.add(card.id);
-        matches.push({ card, file: f, overwrites: !!card.image_url });
-      } else {
-        unmatchedFiles.push(f);
-      }
+  const byOrder = new Map<number, MatcherCard>();
+  cards.forEach((c) => byOrder.set(c.order_index, c));
+  for (const f of files) {
+    const n = extractOrderFromFilename(f.name);
+    if (n == null) {
+      unmatchedFiles.push(f);
+      continue;
     }
-  } else {
-    const byOrder = new Map<number, MatcherCard>();
-    cards.forEach((c) => byOrder.set(c.order_index, c));
-    for (const f of files) {
-      const n = extractOrderFromFilename(f.name);
-      if (n == null) {
-        unmatchedFiles.push(f);
-        continue;
-      }
-      const card = byOrder.get(n);
-      if (card && !usedCardIds.has(card.id)) {
-        usedCardIds.add(card.id);
-        matches.push({ card, file: f, overwrites: !!card.image_url });
-      } else {
-        unmatchedFiles.push(f);
-      }
+    const card = byOrder.get(n);
+    if (card && !usedCardIds.has(card.id)) {
+      usedCardIds.add(card.id);
+      matches.push({ card, file: f, overwrites: !!card.image_url });
+    } else {
+      unmatchedFiles.push(f);
     }
   }
 

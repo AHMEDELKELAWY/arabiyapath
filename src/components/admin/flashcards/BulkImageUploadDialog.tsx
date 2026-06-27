@@ -77,7 +77,7 @@ export function BulkImageUploadDialog({
         for (let from = 0; ; from += PAGE) {
           const { data, error } = await (supabase as any)
             .from("flashcards")
-            .select("id,order_index,arabic_text,english_translation,image_url,image_key")
+            .select("id,order_index,arabic_text,english_translation,image_url,thumbnail_url")
             .eq("unit_id", unitId)
             .eq("kind", kind)
             .order("order_index")
