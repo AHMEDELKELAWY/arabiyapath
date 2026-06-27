@@ -246,7 +246,7 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
 
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4 md:p-8 space-y-4">
+      <CardContent className="p-4 md:p-5 space-y-3 md:space-y-4">
 
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
