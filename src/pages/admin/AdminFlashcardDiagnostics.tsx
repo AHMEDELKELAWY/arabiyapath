@@ -16,7 +16,7 @@ import {
   runRepair, runIntegrityScan,
   type RepairSummary, type IntegrityReport,
 } from "@/lib/flashcards/repairImages";
-import { migrateVerbsUnit, type VerbsMigrationReport } from "@/lib/flashcards/migrateVerbs";
+import { resetVerbsImages, type VerbsResetReport } from "@/lib/flashcards/migrateVerbs";
 
 async function countCards(filter?: (q: any) => any) {
   let q = (supabase as any).from("flashcards").select("id", { count: "exact", head: true });
@@ -74,21 +74,25 @@ export default function AdminFlashcardDiagnostics() {
   const [scan, setScan] = useState<IntegrityReport | null>(null);
 
   const [verbsBusy, setVerbsBusy] = useState(false);
-  const [verbsProgress, setVerbsProgress] = useState({ done: 0, total: 0, current: 0 });
-  const [verbsReport, setVerbsReport] = useState<VerbsMigrationReport | null>(null);
+  const [verbsProgress, setVerbsProgress] = useState({ done: 0, total: 0 });
+  const [verbsReport, setVerbsReport] = useState<VerbsResetReport | null>(null);
 
-  const onMigrateVerbs = async () => {
-    if (!confirm("Normalize the entire Verbs unit to the frozen WEBP standard? This re-encodes and renames every Verbs image.")) return;
+  const onResetVerbs = async () => {
+    if (!confirm(
+      "Clear ALL image fields on every Verbs card (both Learn and Speaking)?\n\n" +
+      "This wipes image_url, thumbnail_url, and image metadata so you can re-upload " +
+      "fresh per-kind image sets via Bulk Upload. Card text, audio, and order are not touched."
+    )) return;
     setVerbsBusy(true);
     setVerbsReport(null);
-    setVerbsProgress({ done: 0, total: 0, current: 0 });
+    setVerbsProgress({ done: 0, total: 0 });
     try {
-      const r = await migrateVerbsUnit((done, total, current) => setVerbsProgress({ done, total, current }));
+      const r = await resetVerbsImages((done, total) => setVerbsProgress({ done, total }));
       setVerbsReport(r);
-      toast({ title: "Verbs migration complete", description: `Migrated ${r.migrated} · Failed ${r.failed}` });
+      toast({ title: "Verbs images cleared", description: `Cleared ${r.cleared} · Failed ${r.failed}` });
       refresh();
     } catch (e: any) {
-      toast({ title: "Verbs migration failed", description: e.message, variant: "destructive" });
+      toast({ title: "Verbs reset failed", description: e.message, variant: "destructive" });
     } finally {
       setVerbsBusy(false);
     }
@@ -215,28 +219,31 @@ export default function AdminFlashcardDiagnostics() {
         </CardContent>
       </Card>
 
-      {/* Verbs One-Off Migration */}
+      {/* Verbs Image Reset (clean rebuild) */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="w-4 h-4" /> Normalize Verbs Unit (One-Off)
+            <Wrench className="w-4 h-4" /> Reset Verbs Images (Clean Rebuild)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p className="text-muted-foreground">
-            Re-encodes every Verbs image to WEBP (q=0.82, max width 1024) with a
-            300px WEBP thumbnail, and renames to <code>verbs-NNN.webp</code> /
-            <code>verbs-NNN-thumb.webp</code>. Card IDs, order, and learner
-            content are not modified.
+            Clears <code>image_url</code>, <code>thumbnail_url</code>, and image
+            metadata for every Verbs card — both Learn and Speaking. After
+            running this, re-upload the original Verbs images via{" "}
+            <strong>Bulk Image Upload</strong> on each tab separately. Learn
+            and Speaking each get their own kind-specific image set under{" "}
+            <code>content/flashcards/images/verbs/&lt;kind&gt;/</code>.
+            Card text, audio, order, and learner progress are not touched.
           </p>
-          <Button onClick={onMigrateVerbs} disabled={verbsBusy} variant="secondary">
+          <Button onClick={onResetVerbs} disabled={verbsBusy} variant="destructive">
             {verbsBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wrench className="w-4 h-4 mr-2" />}
-            {verbsBusy ? "Migrating…" : "Migrate Verbs Unit"}
+            {verbsBusy ? "Clearing…" : "Reset Verbs Images"}
           </Button>
           {verbsBusy && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                Processing order #{verbsProgress.current > 0 ? verbsProgress.current : "—"} — {verbsProgress.done} / {verbsProgress.total}
+                {verbsProgress.done} / {verbsProgress.total}
               </p>
               <Progress value={verbsProgress.total ? (verbsProgress.done / verbsProgress.total) * 100 : 0} />
             </div>
@@ -244,47 +251,27 @@ export default function AdminFlashcardDiagnostics() {
           {verbsReport && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
-                <Badge variant="default" className="justify-between">Migrated images<span>{verbsReport.migrated}</span></Badge>
-                <Badge variant="secondary" className="justify-between">From JPG<span>{verbsReport.convertedFromJpg}</span></Badge>
-                <Badge variant="secondary" className="justify-between">From PNG<span>{verbsReport.convertedFromPng}</span></Badge>
-                <Badge variant="secondary" className="justify-between">Already WEBP<span>{verbsReport.alreadyWebp}</span></Badge>
-                <Badge variant="default" className="justify-between">Cards updated<span>{verbsReport.cardsTouched}</span></Badge>
+                <Badge variant="default" className="justify-between">Total cards<span>{verbsReport.totalCards}</span></Badge>
+                <Badge variant="default" className="justify-between">Cleared<span>{verbsReport.cleared}</span></Badge>
+                <Badge variant="secondary" className="justify-between">Learn cleared<span>{verbsReport.byKind.learn}</span></Badge>
+                <Badge variant="secondary" className="justify-between">Speaking cleared<span>{verbsReport.byKind.speaking}</span></Badge>
                 <Badge variant="destructive" className="justify-between">Failed<span>{verbsReport.failed}</span></Badge>
               </div>
-              <details className="text-xs" open>
-                <summary className="cursor-pointer font-medium">Per-order details ({verbsReport.items.length})</summary>
-                <div className="border rounded-md mt-2 max-h-72 overflow-y-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted sticky top-0"><tr><th className="text-left p-2">Order</th><th className="text-left p-2">Status</th><th className="text-left p-2">Source ext</th><th className="text-left p-2">Cards</th><th className="text-left p-2">Notes</th></tr></thead>
-                    <tbody>
-                      {verbsReport.items.map((it) => (
-                        <tr key={it.order_index} className="border-t">
-                          <td className="p-2">#{it.order_index}</td>
-                          <td className="p-2">{it.status}</td>
-                          <td className="p-2">{it.sourceExt ?? "—"}</td>
-                          <td className="p-2">{it.cardsUpdated ?? 0}</td>
-                          <td className="p-2 text-muted-foreground">{it.message ?? ""}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </details>
-              <details className="text-xs">
-                <summary className="cursor-pointer font-medium">
-                  Final storage tree ({verbsReport.storageTree.images.length} images · {verbsReport.storageTree.thumbnails.length} thumbnails)
-                </summary>
-                <pre className="border rounded-md mt-2 p-3 bg-muted/40 overflow-x-auto whitespace-pre">{`content/
-  flashcards/
-    images/verbs/
-${verbsReport.storageTree.images.map((n) => "      " + n).join("\n")}
-    thumbnails/verbs/
-${verbsReport.storageTree.thumbnails.map((n) => "      " + n).join("\n")}`}</pre>
-              </details>
+              {verbsReport.failed > 0 && (
+                <details className="text-xs" open>
+                  <summary className="cursor-pointer font-medium">Failures</summary>
+                  <ul className="mt-1 pl-4 list-disc text-destructive">
+                    {verbsReport.items.filter((it) => it.status === "failed").map((it) => (
+                      <li key={it.cardId}>#{it.order_index} ({it.kind}): {it.message}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
 
       {/* Integrity Scan */}
       <Card className="mb-6">

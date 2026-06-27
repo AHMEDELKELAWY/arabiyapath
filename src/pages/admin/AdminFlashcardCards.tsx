@@ -265,6 +265,7 @@ export default function AdminFlashcardCards() {
       await uploadAndWriteCardImage({
         cardId: c.id,
         unitSlug,
+        kind: c.kind ?? kind,
         orderIndex: c.order_index,
         source: blob,
         imageAlt: c.image_alt || c.english_translation,

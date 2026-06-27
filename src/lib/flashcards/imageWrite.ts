@@ -1,21 +1,29 @@
 /**
  * Single source of truth for writing flashcard image data.
  *
- * Every upload path (Bulk Upload, Replace Image, AI Generate, Repair tool)
- * MUST go through uploadAndWriteCardImage() so the DB stays consistent.
+ * Every upload path (Bulk Upload, Replace Image, AI Generate, Repair tool,
+ * Migration) MUST go through uploadAndWriteCardImage() so the DB stays
+ * consistent.
  *
- * FROZEN STORAGE STRUCTURE:
- *   content/flashcards/images/<unit-slug>/<unit-slug>-NNN.webp
- *   content/flashcards/thumbnails/<unit-slug>/<unit-slug>-NNN-thumb.webp
+ * FROZEN STORAGE STRUCTURE — per-kind identity:
+ *   content/flashcards/images/<unit-slug>/<kind>/<unit-slug>-NNN.webp
+ *   content/flashcards/thumbnails/<unit-slug>/<kind>/<unit-slug>-NNN-thumb.webp
  *
- * Filenames are derived from the unit slug + the card's order_index (1-based,
- * zero-padded to 3 digits). UUIDs are NEVER used as filenames for new images.
+ * Canonical identity = (unit_slug + kind + order_index).
+ *
+ * Learn and Speaking cards NEVER share the same image file. Listening and
+ * Test consume both — but they read each row's own image_url independently.
+ *
+ * Filenames are derived from unit slug + 1-based, zero-padded order_index.
+ * UUIDs are NEVER used as filenames for new images.
  */
 
 import { supabase } from "@/integrations/supabase/client";
 import { compressFlashcardImage, type CompressionResult } from "./imageCompress";
 
 const BUCKET = "content";
+
+export type CardKind = "learn" | "speaking";
 
 export interface CardImageFields {
   image_url: string;
@@ -29,6 +37,8 @@ export interface CardImageFields {
 export interface UploadInputs {
   cardId: string;
   unitSlug: string;
+  /** Card kind — required. Determines the storage sub-folder. */
+  kind: CardKind;
   /** Card's 1-based order_index. Used to build the canonical filename. */
   orderIndex: number;
   /** Source file/blob — will be compressed client-side. */
@@ -48,23 +58,35 @@ export function cardImageBaseName(unitSlug: string, orderIndex: number): string 
   return `${unitSlug}-${padded}`;
 }
 
+/** Canonical storage paths for a card (per-kind). */
+export function cardImagePaths(
+  unitSlug: string,
+  kind: CardKind,
+  orderIndex: number,
+): { origPath: string; thumbPath: string } {
+  const base = cardImageBaseName(unitSlug, orderIndex);
+  return {
+    origPath: `flashcards/images/${unitSlug}/${kind}/${base}.webp`,
+    thumbPath: `flashcards/thumbnails/${unitSlug}/${kind}/${base}-thumb.webp`,
+  };
+}
+
 /**
- * Upload an image + thumbnail to Storage using the frozen naming convention,
- * write all image fields on the flashcard row, then re-fetch and verify.
- * Throws on any partial state.
+ * Upload image + thumbnail using the per-kind frozen naming, write all image
+ * fields on the flashcard row, then re-fetch and verify. Throws on partial state.
  */
 export async function uploadAndWriteCardImage(
   inputs: UploadInputs,
 ): Promise<UploadResult> {
-  const { cardId, unitSlug, orderIndex, source, imageAlt } = inputs;
+  const { cardId, unitSlug, kind, orderIndex, source, imageAlt } = inputs;
   if (!unitSlug) throw new Error("Unit slug required to build storage path");
+  if (kind !== "learn" && kind !== "speaking") {
+    throw new Error(`kind must be 'learn' or 'speaking' (got: ${String(kind)})`);
+  }
   if (!Number.isFinite(orderIndex)) throw new Error("orderIndex required");
 
   const compressed: CompressionResult = await compressFlashcardImage(source);
-
-  const base = cardImageBaseName(unitSlug, orderIndex);
-  const origPath = `flashcards/images/${unitSlug}/${base}.webp`;
-  const thumbPath = `flashcards/thumbnails/${unitSlug}/${base}-thumb.webp`;
+  const { origPath, thumbPath } = cardImagePaths(unitSlug, kind, orderIndex);
 
   const [{ error: upErr }, { error: thErr }] = await Promise.all([
     supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, {

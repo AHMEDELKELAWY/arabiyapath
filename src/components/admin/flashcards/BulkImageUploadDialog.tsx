@@ -179,6 +179,7 @@ export function BulkImageUploadDialog({
           await uploadAndWriteCardImage({
             cardId: m.card.id,
             unitSlug,
+            kind,
             orderIndex: m.card.order_index,
             source: m.file.blob,
           });

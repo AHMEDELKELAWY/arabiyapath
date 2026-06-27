@@ -12,7 +12,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { compressFlashcardImage } from "./imageCompress";
-import { writeAndVerify, cardImageBaseName } from "./imageWrite";
+import { writeAndVerify, cardImagePaths, type CardKind } from "./imageWrite";
 
 const BUCKET = "content";
 
@@ -101,9 +101,7 @@ async function repairMissingThumbnails(
     try {
       const blob = await blobFromUrl(c.image_url!);
       const compressed = await compressFlashcardImage(blob);
-      const base = cardImageBaseName(slug, c.order_index);
-      const origPath = `flashcards/images/${slug}/${base}.webp`;
-      const thumbPath = `flashcards/thumbnails/${slug}/${base}-thumb.webp`;
+      const { origPath, thumbPath } = cardImagePaths(slug, c.kind as CardKind, c.order_index);
       const [{ error: upErr }, { error: thErr }] = await Promise.all([
         supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
         supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
@@ -128,9 +126,9 @@ async function repairMissingThumbnails(
   return out;
 }
 
-/** Try to find an existing storage file for a card with no image_url. */
-async function findStorageMatch(slug: string, order: number): Promise<{ path: string } | null> {
-  const prefix = `flashcards/images/${slug}`;
+/** Try to find an existing storage file for a card with no image_url (per-kind). */
+async function findStorageMatch(slug: string, kind: string, order: number): Promise<{ path: string } | null> {
+  const prefix = `flashcards/images/${slug}/${kind}`;
   const { data, error } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1000 });
   if (error || !data) return null;
   // Accept files whose LAST run of digits equals the card's order_index.
@@ -166,7 +164,7 @@ async function recoverMissingOriginals(
       continue;
     }
     try {
-      const found = await findStorageMatch(slug, c.order_index);
+      const found = await findStorageMatch(slug, c.kind, c.order_index);
       if (!found) {
         out.push({ cardId: c.id, unitSlug: slug, order_index: c.order_index, kind: c.kind, status: "skipped", message: "No matching storage file — manual upload required" });
         onProgress?.(i + 1, targets.length);
@@ -175,9 +173,7 @@ async function recoverMissingOriginals(
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(found.path);
       const blob = await blobFromUrl(pub.publicUrl);
       const compressed = await compressFlashcardImage(blob);
-      const base = cardImageBaseName(slug, c.order_index);
-      const origPath = `flashcards/images/${slug}/${base}.webp`;
-      const thumbPath = `flashcards/thumbnails/${slug}/${base}-thumb.webp`;
+      const { origPath, thumbPath } = cardImagePaths(slug, c.kind as CardKind, c.order_index);
       const [{ error: upErr }, { error: thErr }] = await Promise.all([
         supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
         supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
