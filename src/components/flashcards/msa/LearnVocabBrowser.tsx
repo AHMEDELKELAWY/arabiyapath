@@ -152,7 +152,7 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
 
   return (
     <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-5 md:p-8 space-y-3 md:space-y-4">
+      <CardContent className="p-4 md:p-5 space-y-3">
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
         {current && (
