@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Play, Check, X, RotateCcw, GraduationCap } from "lucide-react";
+import { Play, Check, X, RotateCcw, GraduationCap, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
@@ -137,7 +137,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
               onClick={() => { setI(0); setScore(0); setPicked(null); setDone(false); onComplete?.(); }}
               className="gap-2 min-h-[44px]"
             >
-              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
+              <Mic className="w-4 h-4" /> Continue to Speaking
             </Button>
           </div>
         </CardContent>

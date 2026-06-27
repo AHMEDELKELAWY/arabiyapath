@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 
@@ -139,7 +139,7 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
               }}
               className="gap-2"
             >
-              <Mic className="w-4 h-4" /> Continue to Speaking
+              <Headphones className="w-4 h-4" /> Continue to Listening
             </Button>
           </div>
         </CardContent>

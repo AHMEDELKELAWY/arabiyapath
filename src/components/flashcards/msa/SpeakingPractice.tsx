@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X, Headphones } from "lucide-react";
+import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X, Headphones, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { SPEAKING_KIND } from "./unitTemplate";
@@ -226,7 +226,7 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
               onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
               className="gap-2"
             >
-              <Headphones className="w-4 h-4" /> Continue to Listening
+              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
             </Button>
           </div>
         </CardContent>
