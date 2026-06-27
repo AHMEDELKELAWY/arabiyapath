@@ -139,7 +139,7 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
               }}
               className="gap-2"
             >
-              <Mic className="w-4 h-4" /> Continue to Speaking
+              <Headphones className="w-4 h-4" /> Continue to Listening
             </Button>
           </div>
         </CardContent>
