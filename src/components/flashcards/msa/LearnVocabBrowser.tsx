@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 
