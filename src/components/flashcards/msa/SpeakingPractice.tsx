@@ -291,14 +291,15 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
             <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-y-auto">
               <div className="space-y-4">
                 <div className="text-center space-y-1">
-                  <p className="text-3xl md:text-4xl font-bold leading-loose break-words" dir="rtl" lang="ar">
+                  <p className="text-2xl md:text-4xl font-bold leading-snug md:leading-loose break-words" dir="rtl" lang="ar">
                     {current.arabic_text}
                   </p>
                   {current.transliteration && (
-                    <p className="text-base text-muted-foreground italic">{current.transliteration}</p>
+                    <p className="text-sm md:text-base text-muted-foreground italic">{current.transliteration}</p>
                   )}
-                  <p className="text-base">{current.english_translation}</p>
+                  <p className="text-sm md:text-base">{current.english_translation}</p>
                 </div>
+
 
                 <audio ref={refAudioRef} src={current.audio_url ?? undefined} preload="none" />
                 <div className="flex justify-center">
