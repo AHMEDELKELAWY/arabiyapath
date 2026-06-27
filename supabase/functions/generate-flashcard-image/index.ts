@@ -9,9 +9,8 @@ const corsHeaders = {
 };
 
 /**
- * Build a 300x225 cover-cropped thumbnail (PNG) from the AI-generated image.
- * Returns { bytes, width, height } for the original too so we never write
- * partial image metadata to the DB.
+ * Build a WEBP "original" (max width 1024, quality 0.82) and a WEBP "thumbnail"
+ * (width 300, quality 0.82) from the AI-generated PNG. Aspect ratio preserved.
  */
 async function processImage(pngBytes: Uint8Array): Promise<{
   originalBytes: Uint8Array;
@@ -19,28 +18,37 @@ async function processImage(pngBytes: Uint8Array): Promise<{
   originalHeight: number;
   originalSizeKb: number;
   thumbBytes: Uint8Array;
+  thumbWidth: number;
+  thumbHeight: number;
 }> {
   const img = await Image.decode(pngBytes);
-  const ow = img.width;
-  const oh = img.height;
+  const srcW = img.width;
+  const srcH = img.height;
 
-  // Cover-fit to 300x225.
-  const targetW = 300, targetH = 225;
-  const scale = Math.max(targetW / ow, targetH / oh);
-  const resizedW = Math.max(targetW, Math.round(ow * scale));
-  const resizedH = Math.max(targetH, Math.round(oh * scale));
-  const resized = img.clone().resize(resizedW, resizedH);
-  const cx = Math.max(0, Math.floor((resizedW - targetW) / 2));
-  const cy = Math.max(0, Math.floor((resizedH - targetH) / 2));
-  const cropped = resized.crop(cx, cy, targetW, targetH);
-  const thumbBytes = await cropped.encode();
+  // Original — cap width 1024, no upscale.
+  const origScale = Math.min(1, 1024 / srcW);
+  const origW = Math.max(1, Math.round(srcW * origScale));
+  const origH = Math.max(1, Math.round(srcH * origScale));
+  const orig = origScale < 1 ? img.clone().resize(origW, origH) : img.clone();
+  const originalBytes = await orig.encode(undefined, { format: "webp", quality: 82 } as any)
+    .catch(async () => await orig.encodeWEBP(82));
+
+  // Thumbnail — width 300, aspect ratio preserved, no upscale.
+  const thumbScale = Math.min(1, 300 / srcW);
+  const thumbW = Math.max(1, Math.round(srcW * thumbScale));
+  const thumbH = Math.max(1, Math.round(srcH * thumbScale));
+  const thumb = img.clone().resize(thumbW, thumbH);
+  const thumbBytes = await thumb.encode(undefined, { format: "webp", quality: 82 } as any)
+    .catch(async () => await thumb.encodeWEBP(82));
 
   return {
-    originalBytes: pngBytes,
-    originalWidth: ow,
-    originalHeight: oh,
-    originalSizeKb: Math.round(pngBytes.byteLength / 1024),
+    originalBytes,
+    originalWidth: origW,
+    originalHeight: origH,
+    originalSizeKb: Math.round(originalBytes.byteLength / 1024),
     thumbBytes,
+    thumbWidth: thumbW,
+    thumbHeight: thumbH,
   };
 }
 
