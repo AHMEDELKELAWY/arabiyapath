@@ -12,7 +12,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { compressFlashcardImage } from "./imageCompress";
-import { writeAndVerify } from "./imageWrite";
+import { writeAndVerify, cardImageBaseName } from "./imageWrite";
 
 const BUCKET = "content";
 
@@ -101,9 +101,9 @@ async function repairMissingThumbnails(
     try {
       const blob = await blobFromUrl(c.image_url!);
       const compressed = await compressFlashcardImage(blob);
-      const base = `repaired-${c.id}`;
+      const base = cardImageBaseName(slug, c.order_index);
       const origPath = `flashcards/images/${slug}/${base}.webp`;
-      const thumbPath = `flashcards/thumbnails/${slug}/${base}.webp`;
+      const thumbPath = `flashcards/thumbnails/${slug}/${base}-thumb.webp`;
       const [{ error: upErr }, { error: thErr }] = await Promise.all([
         supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
         supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),
@@ -175,9 +175,9 @@ async function recoverMissingOriginals(
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(found.path);
       const blob = await blobFromUrl(pub.publicUrl);
       const compressed = await compressFlashcardImage(blob);
-      const base = `recovered-${c.id}`;
+      const base = cardImageBaseName(slug, c.order_index);
       const origPath = `flashcards/images/${slug}/${base}.webp`;
-      const thumbPath = `flashcards/thumbnails/${slug}/${base}.webp`;
+      const thumbPath = `flashcards/thumbnails/${slug}/${base}-thumb.webp`;
       const [{ error: upErr }, { error: thErr }] = await Promise.all([
         supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, { upsert: true, contentType: "image/webp" }),
         supabase.storage.from(BUCKET).upload(thumbPath, compressed.thumbnail.blob, { upsert: true, contentType: "image/webp" }),

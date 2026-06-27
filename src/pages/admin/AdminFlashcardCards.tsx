@@ -252,8 +252,23 @@ export default function AdminFlashcardCards() {
   const genImage = async (c: any) => {
     setBusyId(c.id);
     try {
-      const { error } = await supabase.functions.invoke("generate-flashcard-image", { body: { cardId: c.id } });
+      if (!unitSlug) throw new Error("Unit has no slug");
+      const { data, error } = await supabase.functions.invoke("generate-flashcard-image", { body: { cardId: c.id } });
       if (error) throw error;
+      const b64 = (data as any)?.pngBase64;
+      if (!b64) throw new Error("No image returned from generator");
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "image/png" });
+      const { uploadAndWriteCardImage } = await import("@/lib/flashcards/imageWrite");
+      await uploadAndWriteCardImage({
+        cardId: c.id,
+        unitSlug,
+        orderIndex: c.order_index,
+        source: blob,
+        imageAlt: c.image_alt || c.english_translation,
+      });
       toast({ title: "Image generated" });
       invalidate();
     } catch (e: any) {
@@ -351,10 +366,12 @@ export default function AdminFlashcardCards() {
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       try {
-        const fn = asset === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
-        const body = asset === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
-        const { error } = await supabase.functions.invoke(fn, { body });
-        if (error) throw error;
+        if (asset === "image") {
+          await genImage(c);
+        } else {
+          const { error } = await supabase.functions.invoke("generate-flashcard-audio", { body: { cardId: c.id, kind: "main" } });
+          if (error) throw error;
+        }
         ok++;
       } catch {
         fail++;

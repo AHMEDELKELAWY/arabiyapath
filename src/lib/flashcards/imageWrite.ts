@@ -2,13 +2,14 @@
  * Single source of truth for writing flashcard image data.
  *
  * Every upload path (Bulk Upload, Replace Image, AI Generate, Repair tool)
- * MUST go through writeCardImage() so the DB stays consistent.
+ * MUST go through uploadAndWriteCardImage() so the DB stays consistent.
  *
- * Rules:
- *  - image_url is the canonical image (business logic source of truth).
- *  - thumbnail_url is required and only an optimization for previews.
- *  - image_width, image_height, image_size_kb MUST be populated.
- *  - After UPDATE the row is re-fetched and verified; partial writes throw.
+ * FROZEN STORAGE STRUCTURE:
+ *   content/flashcards/images/<unit-slug>/<unit-slug>-NNN.webp
+ *   content/flashcards/thumbnails/<unit-slug>/<unit-slug>-NNN-thumb.webp
+ *
+ * Filenames are derived from the unit slug + the card's order_index (1-based,
+ * zero-padded to 3 digits). UUIDs are NEVER used as filenames for new images.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +29,8 @@ export interface CardImageFields {
 export interface UploadInputs {
   cardId: string;
   unitSlug: string;
-  /** Filename stem used to build storage paths (no extension). */
-  baseName: string;
+  /** Card's 1-based order_index. Used to build the canonical filename. */
+  orderIndex: number;
   /** Source file/blob — will be compressed client-side. */
   source: Blob;
   /** Optional alt text override. */
@@ -41,22 +42,29 @@ export interface UploadResult extends CardImageFields {
   thumbPath: string;
 }
 
+/** Canonical base name for a card image: `<slug>-NNN`. */
+export function cardImageBaseName(unitSlug: string, orderIndex: number): string {
+  const padded = String(orderIndex).padStart(3, "0");
+  return `${unitSlug}-${padded}`;
+}
+
 /**
- * Upload an image + thumbnail to Storage, write all image fields on the
- * flashcard row, then re-fetch and verify. Throws on any partial state.
+ * Upload an image + thumbnail to Storage using the frozen naming convention,
+ * write all image fields on the flashcard row, then re-fetch and verify.
+ * Throws on any partial state.
  */
 export async function uploadAndWriteCardImage(
   inputs: UploadInputs,
 ): Promise<UploadResult> {
-  const { cardId, unitSlug, baseName, source, imageAlt } = inputs;
+  const { cardId, unitSlug, orderIndex, source, imageAlt } = inputs;
   if (!unitSlug) throw new Error("Unit slug required to build storage path");
-  if (!baseName) throw new Error("baseName required");
+  if (!Number.isFinite(orderIndex)) throw new Error("orderIndex required");
 
   const compressed: CompressionResult = await compressFlashcardImage(source);
 
-  const safeBase = baseName.replace(/\.[^.]+$/, "");
-  const origPath = `flashcards/images/${unitSlug}/${safeBase}.webp`;
-  const thumbPath = `flashcards/thumbnails/${unitSlug}/${safeBase}.webp`;
+  const base = cardImageBaseName(unitSlug, orderIndex);
+  const origPath = `flashcards/images/${unitSlug}/${base}.webp`;
+  const thumbPath = `flashcards/thumbnails/${unitSlug}/${base}-thumb.webp`;
 
   const [{ error: upErr }, { error: thErr }] = await Promise.all([
     supabase.storage.from(BUCKET).upload(origPath, compressed.original.blob, {

@@ -16,6 +16,7 @@ import {
   runRepair, runIntegrityScan,
   type RepairSummary, type IntegrityReport,
 } from "@/lib/flashcards/repairImages";
+import { migrateVerbsUnit, type VerbsMigrationReport } from "@/lib/flashcards/migrateVerbs";
 
 async function countCards(filter?: (q: any) => any) {
   let q = (supabase as any).from("flashcards").select("id", { count: "exact", head: true });
@@ -71,6 +72,27 @@ export default function AdminFlashcardDiagnostics() {
   const [scanning, setScanning] = useState(false);
   const [verifyUrls, setVerifyUrls] = useState(false);
   const [scan, setScan] = useState<IntegrityReport | null>(null);
+
+  const [verbsBusy, setVerbsBusy] = useState(false);
+  const [verbsProgress, setVerbsProgress] = useState({ done: 0, total: 0, current: 0 });
+  const [verbsReport, setVerbsReport] = useState<VerbsMigrationReport | null>(null);
+
+  const onMigrateVerbs = async () => {
+    if (!confirm("Normalize the entire Verbs unit to the frozen WEBP standard? This re-encodes and renames every Verbs image.")) return;
+    setVerbsBusy(true);
+    setVerbsReport(null);
+    setVerbsProgress({ done: 0, total: 0, current: 0 });
+    try {
+      const r = await migrateVerbsUnit((done, total, current) => setVerbsProgress({ done, total, current }));
+      setVerbsReport(r);
+      toast({ title: "Verbs migration complete", description: `Migrated ${r.migrated} · Failed ${r.failed}` });
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Verbs migration failed", description: e.message, variant: "destructive" });
+    } finally {
+      setVerbsBusy(false);
+    }
+  };
 
   const refresh = () => {
     metrics.refetch();
@@ -189,6 +211,77 @@ export default function AdminFlashcardDiagnostics() {
                 </table>
               </div>
             </details>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Verbs One-Off Migration */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wrench className="w-4 h-4" /> Normalize Verbs Unit (One-Off)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Re-encodes every Verbs image to WEBP (q=0.82, max width 1024) with a
+            300px WEBP thumbnail, and renames to <code>verbs-NNN.webp</code> /
+            <code>verbs-NNN-thumb.webp</code>. Card IDs, order, and learner
+            content are not modified.
+          </p>
+          <Button onClick={onMigrateVerbs} disabled={verbsBusy} variant="secondary">
+            {verbsBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wrench className="w-4 h-4 mr-2" />}
+            {verbsBusy ? "Migrating…" : "Migrate Verbs Unit"}
+          </Button>
+          {verbsBusy && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Processing order #{verbsProgress.current > 0 ? verbsProgress.current : "—"} — {verbsProgress.done} / {verbsProgress.total}
+              </p>
+              <Progress value={verbsProgress.total ? (verbsProgress.done / verbsProgress.total) * 100 : 0} />
+            </div>
+          )}
+          {verbsReport && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                <Badge variant="default" className="justify-between">Migrated images<span>{verbsReport.migrated}</span></Badge>
+                <Badge variant="secondary" className="justify-between">From JPG<span>{verbsReport.convertedFromJpg}</span></Badge>
+                <Badge variant="secondary" className="justify-between">From PNG<span>{verbsReport.convertedFromPng}</span></Badge>
+                <Badge variant="secondary" className="justify-between">Already WEBP<span>{verbsReport.alreadyWebp}</span></Badge>
+                <Badge variant="default" className="justify-between">Cards updated<span>{verbsReport.cardsTouched}</span></Badge>
+                <Badge variant="destructive" className="justify-between">Failed<span>{verbsReport.failed}</span></Badge>
+              </div>
+              <details className="text-xs" open>
+                <summary className="cursor-pointer font-medium">Per-order details ({verbsReport.items.length})</summary>
+                <div className="border rounded-md mt-2 max-h-72 overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted sticky top-0"><tr><th className="text-left p-2">Order</th><th className="text-left p-2">Status</th><th className="text-left p-2">Source ext</th><th className="text-left p-2">Cards</th><th className="text-left p-2">Notes</th></tr></thead>
+                    <tbody>
+                      {verbsReport.items.map((it) => (
+                        <tr key={it.order_index} className="border-t">
+                          <td className="p-2">#{it.order_index}</td>
+                          <td className="p-2">{it.status}</td>
+                          <td className="p-2">{it.sourceExt ?? "—"}</td>
+                          <td className="p-2">{it.cardsUpdated ?? 0}</td>
+                          <td className="p-2 text-muted-foreground">{it.message ?? ""}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              <details className="text-xs">
+                <summary className="cursor-pointer font-medium">
+                  Final storage tree ({verbsReport.storageTree.images.length} images · {verbsReport.storageTree.thumbnails.length} thumbnails)
+                </summary>
+                <pre className="border rounded-md mt-2 p-3 bg-muted/40 overflow-x-auto whitespace-pre">{`content/
+  flashcards/
+    images/verbs/
+${verbsReport.storageTree.images.map((n) => "      " + n).join("\n")}
+    thumbnails/verbs/
+${verbsReport.storageTree.thumbnails.map((n) => "      " + n).join("\n")}`}</pre>
+              </details>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decode as b64decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,41 +7,12 @@ const corsHeaders = {
 };
 
 /**
- * Build a 300x225 cover-cropped thumbnail (PNG) from the AI-generated image.
- * Returns { bytes, width, height } for the original too so we never write
- * partial image metadata to the DB.
+ * Generates an image via the Lovable AI Gateway and returns the raw PNG bytes
+ * as base64. WEBP compression, thumbnail generation, storage upload, and DB
+ * writes happen client-side via uploadAndWriteCardImage() so that AI Generate,
+ * Bulk Upload, Replace Image, and Repair all share ONE pipeline producing
+ * identical output (WEBP, q=0.82, max width 1024, 300px thumbnail).
  */
-async function processImage(pngBytes: Uint8Array): Promise<{
-  originalBytes: Uint8Array;
-  originalWidth: number;
-  originalHeight: number;
-  originalSizeKb: number;
-  thumbBytes: Uint8Array;
-}> {
-  const img = await Image.decode(pngBytes);
-  const ow = img.width;
-  const oh = img.height;
-
-  // Cover-fit to 300x225.
-  const targetW = 300, targetH = 225;
-  const scale = Math.max(targetW / ow, targetH / oh);
-  const resizedW = Math.max(targetW, Math.round(ow * scale));
-  const resizedH = Math.max(targetH, Math.round(oh * scale));
-  const resized = img.clone().resize(resizedW, resizedH);
-  const cx = Math.max(0, Math.floor((resizedW - targetW) / 2));
-  const cy = Math.max(0, Math.floor((resizedH - targetH) / 2));
-  const cropped = resized.crop(cx, cy, targetW, targetH);
-  const thumbBytes = await cropped.encode();
-
-  return {
-    originalBytes: pngBytes,
-    originalWidth: ow,
-    originalHeight: oh,
-    originalSizeKb: Math.round(pngBytes.byteLength / 1024),
-    thumbBytes,
-  };
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -67,12 +36,8 @@ serve(async (req) => {
     if (!cardId) throw new Error("cardId required");
 
     const { data: card, error: cardErr } = await supabase.from("flashcards")
-      .select("id, english_translation, arabic_text, image_alt, order_index, unit_id").eq("id", cardId).single();
+      .select("id, english_translation").eq("id", cardId).single();
     if (cardErr || !card) throw new Error("card not found");
-
-    const { data: unit, error: unitErr } = await supabase.from("flashcard_units")
-      .select("slug").eq("id", card.unit_id).single();
-    if (unitErr || !unit?.slug) throw new Error("unit slug not found");
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
@@ -91,53 +56,8 @@ serve(async (req) => {
     const aiJson = await aiRes.json();
     const b64 = aiJson?.data?.[0]?.b64_json;
     if (!b64) throw new Error("No image returned");
-    const bytes = b64decode(b64);
 
-    // Decode + build thumbnail + dimensions BEFORE any DB write so any failure
-    // short-circuits and we never store a partial image record.
-    const processed = await processImage(bytes);
-
-    // Use the same bucket + path layout as uploadAndWriteCardImage so every
-    // path (Bulk Upload, Replace Image, Generate, Repair) writes to one place.
-    const base = `ai-${cardId}`;
-    const origPath = `flashcards/images/${unit.slug}/${base}.png`;
-    const thumbPath = `flashcards/thumbnails/${unit.slug}/${base}.png`;
-    const [{ error: upErr }, { error: thErr }] = await Promise.all([
-      supabase.storage.from("content").upload(origPath, processed.originalBytes, { contentType: "image/png", upsert: true }),
-      supabase.storage.from("content").upload(thumbPath, processed.thumbBytes, { contentType: "image/png", upsert: true }),
-    ]);
-    if (upErr) throw upErr;
-    if (thErr) throw thErr;
-
-    const image_url = supabase.storage.from("content").getPublicUrl(origPath).data.publicUrl;
-    const thumbnail_url = supabase.storage.from("content").getPublicUrl(thumbPath).data.publicUrl;
-
-    const { error: updErr } = await supabase.from("flashcards").update({
-      image_url,
-      thumbnail_url,
-      image_width: processed.originalWidth,
-      image_height: processed.originalHeight,
-      image_size_kb: processed.originalSizeKb,
-      image_alt: card.image_alt || card.english_translation,
-    }).eq("id", cardId);
-    if (updErr) throw updErr;
-
-    // Re-fetch and verify — never silently succeed with a partial row.
-    const { data: verify, error: vErr } = await supabase.from("flashcards")
-      .select("image_url,thumbnail_url,image_width,image_height,image_size_kb")
-      .eq("id", cardId).single();
-    if (vErr) throw vErr;
-    const missing: string[] = [];
-    if (!verify?.image_url) missing.push("image_url");
-    if (!verify?.thumbnail_url) missing.push("thumbnail_url");
-    if (!verify?.image_width) missing.push("image_width");
-    if (!verify?.image_height) missing.push("image_height");
-    if (verify?.image_size_kb == null) missing.push("image_size_kb");
-    if (missing.length) {
-      throw new Error(`Verification failed — missing: ${missing.join(", ")}`);
-    }
-
-    return new Response(JSON.stringify({ success: true, url: image_url, thumbnail_url }), {
+    return new Response(JSON.stringify({ pngBase64: b64 }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
