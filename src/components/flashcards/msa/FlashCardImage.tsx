@@ -28,7 +28,7 @@ export function FlashCardImage({ src, alt, className, capped }: Props) {
             alt={alt}
             loading="lazy"
             decoding="async"
-            className="block w-full max-h-[250px] md:max-h-[500px] object-contain mx-auto"
+            className="block w-full max-h-[200px] md:max-h-[500px] object-contain mx-auto"
           />
         ) : (
           <div className="flex aspect-[4/3] items-center justify-center text-muted-foreground text-sm">
@@ -39,6 +39,7 @@ export function FlashCardImage({ src, alt, className, capped }: Props) {
       </div>
     );
   }
+
 
   return (
     <div className={cn("relative overflow-hidden rounded-2xl bg-muted aspect-[4/3]", className)}>
