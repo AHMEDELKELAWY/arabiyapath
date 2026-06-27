@@ -9,10 +9,6 @@ import {
 } from "lucide-react";
 import { FlashCardImage } from "@/components/flashcards/msa/FlashCardImage";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
-import { compressFlashcardImage } from "@/lib/flashcards/imageCompress";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { compressFlashcardImage } from "@/lib/flashcards/imageCompress";
 import { uploadAndWriteCardImage } from "@/lib/flashcards/imageWrite";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
