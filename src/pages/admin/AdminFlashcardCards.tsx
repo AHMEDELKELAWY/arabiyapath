@@ -366,10 +366,12 @@ export default function AdminFlashcardCards() {
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       try {
-        const fn = asset === "image" ? "generate-flashcard-image" : "generate-flashcard-audio";
-        const body = asset === "image" ? { cardId: c.id } : { cardId: c.id, kind: "main" };
-        const { error } = await supabase.functions.invoke(fn, { body });
-        if (error) throw error;
+        if (asset === "image") {
+          await genImage(c);
+        } else {
+          const { error } = await supabase.functions.invoke("generate-flashcard-audio", { body: { cardId: c.id, kind: "main" } });
+          if (error) throw error;
+        }
         ok++;
       } catch {
         fail++;
