@@ -139,8 +139,13 @@ export default function AdminAffiliateApplications() {
   };
 
   const openApproveDialog = (app: any) => {
+    const code = generateAffiliateCode(app.full_name);
     setSelectedApp(app);
-    setAffiliateCode(generateAffiliateCode(app.full_name));
+    setAffiliateCode(code);
+    setCouponMode("create");
+    setCouponCode(code);
+    setCouponPercent("10");
+    setExistingCouponId("");
     setApproveDialogOpen(true);
   };
 
