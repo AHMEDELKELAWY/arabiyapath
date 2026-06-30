@@ -1,155 +1,129 @@
-import { Volume2, Check, X, Trophy, TrendingUp, BookOpen } from "lucide-react";
+import { CheckCircle2, Headphones, Image as ImageIcon, Languages, Mic, Sparkles } from "lucide-react";
+import type { PartnerFeatureItem } from "@/lib/partnerConfig";
+import learnAsset from "@/assets/partner/partner-learn.png.asset.json";
+import listeningAsset from "@/assets/partner/partner-listening.png.asset.json";
+import speakingAsset from "@/assets/partner/partner-speaking.png.asset.json";
+import quizAsset from "@/assets/partner/partner-quiz.png.asset.json";
 
-interface ShotProps {
-  side: "left" | "right";
-  eyebrow: string;
-  title: string;
+interface ShowcaseRowProps {
+  id: string;
+  badge: string;
+  title: React.ReactNode;
   description: string;
-  children: React.ReactNode;
+  imageUrl: string;
+  imageAlt: string;
+  features: PartnerFeatureItem[];
+  reverse?: boolean;
+  dark?: boolean;
 }
 
-function Showcase({ side, eyebrow, title, description, children }: ShotProps) {
+const ICONS = [ImageIcon, Headphones, Languages, Sparkles, Mic, CheckCircle2];
+
+function ShowcaseRow({ id, badge, title, description, imageUrl, imageAlt, features, reverse, dark }: ShowcaseRowProps) {
   return (
-    <div
-      className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center ${
-        side === "right" ? "lg:[&>*:first-child]:order-2" : ""
+    <section
+      id={id}
+      className={`px-4 py-14 sm:px-6 lg:px-8 lg:py-18 ${
+        dark
+          ? "bg-[radial-gradient(circle_at_top_right,hsl(var(--secondary)/0.14),transparent_18%),linear-gradient(135deg,hsl(165_84%_10%)_0%,hsl(164_76%_12%)_50%,hsl(160_66%_10%)_100%)]"
+          : ""
       }`}
     >
-      <div className="rounded-3xl bg-gradient-to-br from-primary/10 via-card to-secondary/10 border border-border p-6 md:p-8 shadow-xl">
-        {children}
-      </div>
-      <div>
-        <div className="text-xs font-bold uppercase tracking-wider text-primary mb-3">{eyebrow}</div>
-        <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{title}</h3>
-        <p className="mt-3 text-lg text-muted-foreground leading-relaxed">{description}</p>
-      </div>
-    </div>
-  );
-}
+      <div className="container mx-auto max-w-7xl" data-reveal>
+        <div
+          className={`grid items-center gap-8 lg:grid-cols-2 lg:gap-12 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}
+        >
+          <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-3 shadow-[0_28px_80px_hsl(var(--foreground)/0.08)] backdrop-blur-md">
+            <img src={imageUrl} alt={imageAlt} className="w-full rounded-[1.5rem] object-cover" loading="lazy" />
+          </div>
 
-export function PlatformShowcase() {
-  return (
-    <section className="py-20 md:py-28">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Inside the course</div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            See exactly what you're getting
-          </h2>
-        </div>
-
-        <div className="space-y-20 md:space-y-28">
-          {/* Flashcard study */}
-          <Showcase
-            side="left"
-            eyebrow="Flashcard study"
-            title="Beautiful, fully-vowelized cards"
-            description="Every card pairs realistic imagery with native audio so meaning lands the first time. Spaced repetition keeps it locked in."
-          >
-            <div className="rounded-2xl bg-background border border-border p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-semibold text-primary uppercase tracking-wider">Card 14 / 30</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= 3 ? "bg-primary" : "bg-muted"}`} />
-                  ))}
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl p-8 text-center">
-                <div className="text-5xl md:text-6xl font-bold text-foreground mb-3" lang="ar" dir="rtl">
-                  كِتَاب
-                </div>
-                <div className="text-base text-muted-foreground mb-2">kitāb</div>
-                <div className="text-sm font-medium text-foreground">book</div>
-                <button className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                  <Volume2 className="w-4 h-4" /> Listen
-                </button>
-              </div>
+          <div className={dark ? "text-primary-foreground" : "text-foreground"}>
+            <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${dark ? "bg-background/10 text-secondary border border-primary-foreground/10" : "bg-accent text-primary"}`}>
+              {badge}
             </div>
-          </Showcase>
-
-          {/* Quiz */}
-          <Showcase
-            side="right"
-            eyebrow="Interactive quizzes"
-            title="Test yourself the moment you're ready"
-            description="Short quizzes after each unit reinforce what you've just learned, so progress actually compounds."
-          >
-            <div className="rounded-2xl bg-background border border-border p-6">
-              <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Question 3 / 10</div>
-              <div className="text-base font-semibold text-foreground mb-4">
-                What does <span className="text-primary" lang="ar" dir="rtl">شُكْرًا</span> mean?
-              </div>
-              <div className="space-y-2">
-                {[
-                  { t: "Thank you", correct: true },
-                  { t: "Hello", correct: false },
-                  { t: "Goodbye", correct: false },
-                  { t: "Please", correct: false },
-                ].map((o, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
-                      o.correct
-                        ? "border-emerald-500/40 bg-emerald-500/10"
-                        : "border-border bg-muted/30"
+            <h2 className="mt-5 text-4xl font-semibold leading-[1.02] tracking-tight sm:text-5xl">{title}</h2>
+            <p className={`mt-5 max-w-xl text-lg leading-8 ${dark ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
+              {description}
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {features.map((feature, index) => {
+                const Icon = ICONS[index] ?? Sparkles;
+                return (
+                  <article
+                    key={feature.title}
+                    className={`rounded-[1.5rem] border p-5 shadow-[0_16px_40px_hsl(var(--foreground)/0.05)] backdrop-blur-md transition-transform duration-300 hover:-translate-y-1 ${
+                      dark
+                        ? "border-primary-foreground/12 bg-background/8"
+                        : "border-border/60 bg-card/90"
                     }`}
                   >
-                    <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                        o.correct ? "bg-emerald-500 text-white" : "bg-muted"
-                      }`}
-                    >
-                      {o.correct ? <Check className="w-3 h-3" /> : <X className="w-3 h-3 text-muted-foreground/0" />}
-                    </div>
-                    <span className="text-sm">{o.t}</span>
-                  </div>
-                ))}
-              </div>
+                    <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${dark ? "bg-background/14 text-secondary" : "bg-accent text-primary"}`}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+                    <p className={`mt-2 text-sm leading-7 ${dark ? "text-primary-foreground/72" : "text-muted-foreground"}`}>
+                      {feature.description}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
-          </Showcase>
-
-          {/* Dashboard */}
-          <Showcase
-            side="left"
-            eyebrow="Your dashboard"
-            title="Daily progress at a glance"
-            description="Streaks, reviews due, and what to study next — everything you need to keep going, nothing you don't."
-          >
-            <div className="rounded-2xl bg-background border border-border p-6">
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="rounded-xl bg-primary/10 p-3 text-center">
-                  <Trophy className="w-4 h-4 text-primary mx-auto mb-1" />
-                  <div className="text-lg font-bold text-foreground">87%</div>
-                  <div className="text-[10px] text-muted-foreground">Mastery</div>
-                </div>
-                <div className="rounded-xl bg-secondary/10 p-3 text-center">
-                  <TrendingUp className="w-4 h-4 text-secondary mx-auto mb-1" />
-                  <div className="text-lg font-bold text-foreground">12</div>
-                  <div className="text-[10px] text-muted-foreground">Day streak</div>
-                </div>
-                <div className="rounded-xl bg-emerald-500/10 p-3 text-center">
-                  <BookOpen className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-foreground">340</div>
-                  <div className="text-[10px] text-muted-foreground">Words known</div>
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">This week</div>
-                <div className="flex items-end gap-1.5 h-20">
-                  {[40, 65, 50, 80, 70, 90, 60].map((h, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-t bg-gradient-to-t from-primary/80 to-primary/40"
-                      style={{ height: `${h}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Showcase>
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+interface Props {
+  learnFeatures: PartnerFeatureItem[];
+  listeningFeatures: PartnerFeatureItem[];
+  speakingFeatures: PartnerFeatureItem[];
+  quizFeatures: PartnerFeatureItem[];
+}
+
+export function PlatformShowcase({ learnFeatures, listeningFeatures, speakingFeatures, quizFeatures }: Props) {
+  return (
+    <>
+      <ShowcaseRow
+        id="learn-mode"
+        badge="01 · Learn Mode"
+        title={<>Learn Arabic Vocabulary with <span className="text-primary">Real Images</span></>}
+        description="Build vocabulary naturally using high-quality visuals, clear Arabic, native pronunciation, and interactive flashcards that feel premium on every device."
+        imageUrl={learnAsset.url}
+        imageAlt="Learn mode screenshot showing real-image flashcards with native audio"
+        features={learnFeatures}
+      />
+      <ShowcaseRow
+        id="listening-mode"
+        badge="04 · Listening Mode"
+        title={<>Train Your Ear. Understand <span className="text-primary">Real Arabic.</span></>}
+        description="Audio-first practice helps you connect real Arabic sounds to meaning quickly, with image choices, instant feedback, and natural ear training."
+        imageUrl={listeningAsset.url}
+        imageAlt="Listening mode screenshot showing audio-based multiple choice practice"
+        features={listeningFeatures}
+        reverse
+      />
+      <ShowcaseRow
+        id="speaking-mode"
+        badge="05 · Speaking Mode"
+        title={<>Speak Arabic with <span className="text-secondary">Confidence.</span></>}
+        description="Practice pronunciation with native models, record your voice, compare clearly, and build momentum through short daily speaking sessions."
+        imageUrl={speakingAsset.url}
+        imageAlt="Speaking mode screenshot showing pronunciation and voice recording"
+        features={speakingFeatures}
+        dark
+      />
+      <ShowcaseRow
+        id="quiz-mode"
+        badge="06 · Quiz Mode"
+        title={<>Test Your Knowledge. <span className="text-primary">Track Your Progress.</span></>}
+        description="Smart quizzes reinforce what you learned, explain correct answers instantly, and turn review into visible progress instead of passive scrolling."
+        imageUrl={quizAsset.url}
+        imageAlt="Quiz mode screenshot showing instant feedback and score tracking"
+        features={quizFeatures}
+        reverse
+      />
+    </>
   );
 }

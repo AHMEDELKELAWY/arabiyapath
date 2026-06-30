@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,14 +9,16 @@ import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig } from "@/lib/partnerConfig";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { PartnerHero } from "@/components/partner/PartnerHero";
-import { VideoSection } from "@/components/partner/VideoSection";
 import { StatsSection } from "@/components/partner/StatsSection";
+import { VideoSection } from "@/components/partner/VideoSection";
 import { BenefitsSection } from "@/components/partner/BenefitsSection";
 import { PlatformShowcase } from "@/components/partner/PlatformShowcase";
 import { HowItWorks } from "@/components/partner/HowItWorks";
+import { PartnerCertificate } from "@/components/partner/PartnerCertificate";
 import { PricingSection } from "@/components/partner/PricingSection";
 import { PartnerFAQ } from "@/components/partner/PartnerFAQ";
 import { FinalCTA } from "@/components/partner/FinalCTA";
+import { BackToTopButton } from "@/components/partner/BackToTopButton";
 
 const PACK_SLUG = "msa-flashcards-pack";
 
@@ -75,18 +77,42 @@ export default function PartnerLanding() {
     return buildPartnerConfig(partner, basePrice);
   }, [partner, pack]);
 
-  // Persist coupon for the existing checkout auto-apply flow.
   useEffect(() => {
     if (config?.couponCode) setPartnerCoupon(config.couponCode);
   }, [config?.couponCode]);
 
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    if (!elements.length) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      elements.forEach((element) => element.classList.add("revealed"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.16, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [config]);
+
   if (isLoading) {
     return (
       <PartnerShell>
-        <div className="container mx-auto px-4 py-16 space-y-6">
-          <Skeleton className="h-12 w-2/3 mx-auto" />
-          <Skeleton className="h-6 w-1/2 mx-auto" />
-          <Skeleton className="h-64 w-full max-w-3xl mx-auto rounded-2xl" />
+        <div className="container mx-auto space-y-6 px-4 py-16">
+          <Skeleton className="mx-auto h-12 w-2/3" />
+          <Skeleton className="mx-auto h-6 w-1/2" />
+          <Skeleton className="mx-auto h-64 w-full max-w-4xl rounded-3xl" />
         </div>
       </PartnerShell>
     );
@@ -96,29 +122,36 @@ export default function PartnerLanding() {
     return <Navigate to="/" replace />;
   }
 
-  const checkoutTarget = pack?.product_id
-    ? `/checkout?productId=${pack.product_id}`
-    : "/flashcards-pack";
-  const ctaHref = user
-    ? checkoutTarget
-    : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
+  const checkoutTarget = pack?.product_id ? `/checkout?productId=${pack.product_id}` : "/flashcards-pack";
+  const ctaHref = user ? checkoutTarget : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
 
   return (
     <PartnerShell>
       <SEOHead
-        title={`${config.headline} — ArabiyaPath`}
+        title={`Exclusive Arabic Flashcards Offer for ${config.partnerName}`}
         description={config.subheadline}
         canonicalPath={`/partner/${config.slug}`}
       />
-      <PartnerHero config={config} ctaHref={ctaHref} />
-      <VideoSection videoUrl={config.videoUrl} ctaLabel={config.ctaLabel} ctaHref={ctaHref} />
-      <StatsSection stats={config.stats} />
-      <BenefitsSection benefits={config.benefits} />
-      <PlatformShowcase />
-      <HowItWorks />
-      <PricingSection config={config} ctaHref={ctaHref} />
-      <PartnerFAQ items={config.faq} />
-      <FinalCTA config={config} ctaHref={ctaHref} />
+
+      <div className="partner-page pb-8">
+        <PartnerHero config={config} ctaHref={ctaHref} />
+        <StatsSection stats={config.stats} />
+        <VideoSection videoUrl={config.videoUrl} ctaLabel={config.ctaLabel} ctaHref={ctaHref} />
+        <BenefitsSection modeCards={config.modeCards} />
+        <PlatformShowcase
+          learnFeatures={config.learnFeatures}
+          listeningFeatures={config.listeningFeatures}
+          speakingFeatures={config.speakingFeatures}
+          quizFeatures={config.quizFeatures}
+        />
+        <HowItWorks highlights={config.dashboardHighlights} />
+        <PartnerCertificate />
+        <PricingSection config={config} ctaHref={ctaHref} />
+        <PartnerFAQ items={config.faq} />
+        <FinalCTA config={config} ctaHref={ctaHref} />
+      </div>
+
+      <BackToTopButton />
     </PartnerShell>
   );
 }
