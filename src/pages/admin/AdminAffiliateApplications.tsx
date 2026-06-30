@@ -43,6 +43,7 @@ export default function AdminAffiliateApplications() {
   const { data: applications, isLoading } = useAdminAffiliateApplications();
   const approveMutation = useApproveAffiliateApplication();
   const rejectMutation = useRejectAffiliateApplication();
+  const { data: unlinkedCoupons = [] } = useUnlinkedCoupons();
 
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -51,6 +52,14 @@ export default function AdminAffiliateApplications() {
   const [affiliateCode, setAffiliateCode] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
   const [rejectNotes, setRejectNotes] = useState("");
+
+  // Coupon options
+  const [couponMode, setCouponMode] = useState<"create" | "link" | "skip">(
+    "create",
+  );
+  const [couponCode, setCouponCode] = useState("");
+  const [couponPercent, setCouponPercent] = useState("10");
+  const [existingCouponId, setExistingCouponId] = useState<string>("");
 
   const generateAffiliateCode = (name: string) => {
     const cleanName = name
@@ -67,6 +76,27 @@ export default function AdminAffiliateApplications() {
       return;
     }
 
+    let coupon: CouponOption = { mode: "skip" };
+    if (couponMode === "create") {
+      const code = couponCode.trim().toUpperCase();
+      if (!code) {
+        toast.error("Please enter a coupon code or choose Skip");
+        return;
+      }
+      const pct = parseInt(couponPercent, 10);
+      if (!pct || pct < 1 || pct > 100) {
+        toast.error("Coupon percent must be between 1 and 100");
+        return;
+      }
+      coupon = { mode: "create", code, percentOff: pct };
+    } else if (couponMode === "link") {
+      if (!existingCouponId) {
+        toast.error("Please select a coupon to link");
+        return;
+      }
+      coupon = { mode: "link", couponId: existingCouponId };
+    }
+
     try {
       await approveMutation.mutateAsync({
         applicationId: selectedApp.id,
@@ -75,12 +105,17 @@ export default function AdminAffiliateApplications() {
         commissionRate: parseFloat(commissionRate) || 10,
         email: selectedApp.email,
         fullName: selectedApp.full_name,
+        coupon,
       });
       toast.success("Application approved! Welcome email sent.");
       setApproveDialogOpen(false);
       setSelectedApp(null);
       setAffiliateCode("");
       setCommissionRate("10");
+      setCouponMode("create");
+      setCouponCode("");
+      setCouponPercent("10");
+      setExistingCouponId("");
     } catch (error: any) {
       toast.error(error.message || "Failed to approve application");
     }
