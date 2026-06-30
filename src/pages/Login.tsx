@@ -48,6 +48,13 @@ export default function Login() {
           title: "Confirm your email",
           description: "We sent a fresh confirmation link to your inbox.",
         });
+      } else if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+        toast({
+          title: "We couldn't sign you in",
+          description:
+            "Please check your email and password. If you originally signed up with Google, use the Google button above — or reset your password.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Login Failed",
