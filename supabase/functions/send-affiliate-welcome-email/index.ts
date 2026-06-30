@@ -12,6 +12,8 @@ interface AffiliateWelcomeRequest {
   fullName: string;
   affiliateCode: string;
   commissionRate: number;
+  couponCode?: string;
+  couponPercentOff?: number;
 }
 
 function escapeHtml(s: unknown): string {
