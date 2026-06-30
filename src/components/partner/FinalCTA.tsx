@@ -37,24 +37,30 @@ export function FinalCTA({ config, ctaHref }: Props) {
             </div>
 
             <h2 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary-foreground leading-[1.05]">
-              Ready to start your Arabic journey?
+              Ready to speak Arabic with confidence?
             </h2>
 
             <p className="mt-5 text-lg text-primary-foreground/85 max-w-xl mx-auto lg:mx-0">
-              Join {config.partnerName}'s students and unlock lifetime access for just{" "}
-              <span className="font-bold text-primary-foreground">{formatPrice(config.newPrice)}</span>.
+              Join {config.partnerName}'s students and unlock your exclusive {config.discountLabel || "discount"}.
             </p>
+
+            <div className="mt-7 flex items-end gap-5 justify-center lg:justify-start">
+              <div className="text-2xl text-primary-foreground/70 line-through font-medium">
+                {formatPrice(config.oldPrice)}
+              </div>
+              <div className="text-6xl md:text-7xl font-bold text-primary-foreground leading-none">
+                {formatPrice(config.newPrice)}
+              </div>
+            </div>
 
             <div className="mt-9">
               <Button
-                size="lg"
-                variant="secondary"
-                className="h-14 px-8 text-base font-semibold shadow-2xl hover:scale-[1.03] transition-transform"
                 asChild
+                className="group h-[60px] sm:h-[64px] px-10 rounded-[18px] text-[20px] sm:text-[22px] font-bold bg-white text-primary hover:bg-white shadow-2xl hover:scale-[1.04] active:scale-[0.98] transition-all duration-300"
               >
                 <Link to={ctaHref}>
                   {config.ctaLabel}
-                  <ArrowRight className="w-5 h-5 ml-1" />
+                  <ArrowRight className="w-6 h-6 ml-1 transition-transform duration-300 group-hover:translate-x-1.5" />
                 </Link>
               </Button>
               <p className="text-xs text-primary-foreground/70 mt-4">
