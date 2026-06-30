@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { Loader2, Tag, CheckCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CardCheckout } from "./CardCheckout";
+import { getPartnerCoupon } from "@/lib/partnerCoupon";
 
 interface PayPalCheckoutProps {
   productType: string;
