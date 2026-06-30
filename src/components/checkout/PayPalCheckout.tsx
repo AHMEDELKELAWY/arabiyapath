@@ -39,15 +39,25 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
   useEffect(() => {
     const fetchClientToken = async () => {
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) {
+          console.error("No active session for PayPal client token");
+          setIsLoadingToken(false);
+          return;
+        }
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-client-token`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
           }
         );
+
 
         const data = await response.json();
 
