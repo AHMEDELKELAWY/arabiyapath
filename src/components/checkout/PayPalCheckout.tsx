@@ -184,7 +184,7 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
         await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
         await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
-        navigate(data.productType === "flashcard_pack" ? "/flashcards" : successRedirectPath ?? "/dashboard");
+        navigate(successRedirectPath ?? "/dashboard");
         return;
       }
 
@@ -243,7 +243,7 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
         await queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] });
         await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
         onSuccess?.();
-        navigate(data.productType === "flashcard_pack" ? "/flashcards" : successRedirectPath ?? "/dashboard");
+        navigate(successRedirectPath ?? "/dashboard");
       }
     } catch (error) {
       console.error("Free access error:", error);
