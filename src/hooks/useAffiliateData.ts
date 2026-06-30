@@ -164,9 +164,17 @@ export function useAffiliateCoupon() {
         .eq("affiliate_id", affiliate.id)
         .maybeSingle();
 
+      // Get partner landing (if any) linked to this affiliate
+      const { data: partner } = await (supabase as any)
+        .from("partners")
+        .select("slug, display_name, landing_enabled")
+        .eq("affiliate_id", affiliate.id)
+        .maybeSingle();
+
       return {
         affiliateCode: affiliate.affiliate_code,
         coupon,
+        partner: partner as { slug: string; display_name: string; landing_enabled: boolean } | null,
       };
     },
     enabled: !!user,
