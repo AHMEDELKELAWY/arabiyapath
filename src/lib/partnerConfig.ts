@@ -58,9 +58,11 @@ interface PartnerRowLike {
 
 const DEFAULT_STATS: PartnerStat[] = [
   { value: "3,000+", label: "Vocabulary cards" },
-  { value: "100%", label: "Native audio" },
   { value: "60+", label: "Learning units" },
-  { value: "∞", label: "Lifetime access" },
+  { value: "100%", label: "Native audio" },
+  { value: "Lifetime", label: "Access" },
+  { value: "Spaced", label: "Repetition" },
+  { value: "Daily", label: "Practice" },
 ];
 
 const DEFAULT_BENEFITS: PartnerBenefit[] = [
