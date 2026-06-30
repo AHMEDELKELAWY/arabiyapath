@@ -1373,6 +1373,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_free: boolean
           level_id: string
           order_index: number
           title: string
@@ -1381,6 +1382,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_free?: boolean
           level_id: string
           order_index?: number
           title: string
@@ -1389,6 +1391,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_free?: boolean
           level_id?: string
           order_index?: number
           title?: string
