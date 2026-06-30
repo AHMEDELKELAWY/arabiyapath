@@ -228,6 +228,22 @@ export default function Pricing() {
     },
   });
 
+  const { data: flashcardPack } = useQuery({
+    queryKey: ["pricing-flashcard-pack"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("flashcard_packs")
+        .select("price_cents,currency,slug")
+        .eq("published", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return data as { price_cents: number; currency: string; slug: string } | null;
+    },
+  });
+  const flashcardPrice = flashcardPack ? (flashcardPack.price_cents / 100).toFixed(2) : null;
+
+
   const { dialectGroups } = useMemo(() => {
     if (!dbProducts) return { dialectGroups: {} as Record<string, { beginner: Plan | null; bundle: Plan | null }> };
 
