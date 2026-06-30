@@ -1,5 +1,6 @@
 import { Award, BriefcaseBusiness, CheckCircle2, Sparkles } from "lucide-react";
-import certificateAsset from "@/assets/partner/partner-certificate.png.asset.json";
+
+const certificateImageUrl = "/partner/certificate.png";
 
 export function PartnerCertificate() {
   return (
@@ -35,7 +36,7 @@ export function PartnerCertificate() {
               </div>
             </div>
             <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-3 shadow-[0_28px_80px_hsl(var(--foreground)/0.08)]">
-              <img src={certificateAsset.url} alt="ArabiyaPath certificate preview" className="w-full rounded-[1.5rem] object-cover" loading="lazy" />
+              <img src={certificateImageUrl} alt="ArabiyaPath certificate preview" className="w-full rounded-[1.5rem] object-cover" loading="lazy" />
             </div>
           </div>
         </div>

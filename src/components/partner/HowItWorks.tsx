@@ -1,5 +1,6 @@
 import { BarChart3, BookCheck, Flame, GraduationCap, LayoutGrid, Sparkles } from "lucide-react";
-import dashboardAsset from "@/assets/partner/partner-dashboard.png.asset.json";
+
+const dashboardImageUrl = "/partner/dashboard.png";
 
 interface Props {
   highlights: string[];
@@ -46,7 +47,7 @@ export function HowItWorks({ highlights }: Props) {
 
           <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-3 shadow-[0_28px_80px_hsl(var(--foreground)/0.08)]">
             <img
-              src={dashboardAsset.url}
+              src={dashboardImageUrl}
               alt="Progress dashboard showing mastery, streak, analytics, and study activity"
               className="w-full rounded-[1.5rem] object-cover"
               loading="lazy"

@@ -3,7 +3,8 @@ import { ArrowRight, Award, Headphones, Infinity, ShieldCheck, Sparkles } from "
 import { Button } from "@/components/ui/button";
 import type { PartnerLandingConfig } from "@/lib/partnerConfig";
 import { formatPrice } from "@/lib/partnerConfig";
-import heroAsset from "@/assets/partner/partner-hero.png.asset.json";
+
+const heroImageUrl = "/partner/hero.png";
 
 interface Props {
   config: PartnerLandingConfig;
@@ -57,7 +58,7 @@ export function FinalCTA({ config, ctaHref }: Props) {
 
             <div className="overflow-hidden rounded-[2rem] border border-primary-foreground/10 bg-background/8 p-3 backdrop-blur-md">
               <img
-                src={heroAsset.url}
+                src={heroImageUrl}
                 alt="Premium ArabiyaPath partner artwork reused in the final call to action"
                 className="w-full rounded-[1.5rem] object-cover"
                 loading="lazy"

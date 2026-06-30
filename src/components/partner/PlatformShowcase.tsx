@@ -1,9 +1,10 @@
 import { CheckCircle2, Headphones, Image as ImageIcon, Languages, Mic, Sparkles } from "lucide-react";
 import type { PartnerFeatureItem } from "@/lib/partnerConfig";
-import learnAsset from "@/assets/partner/partner-learn.png.asset.json";
-import listeningAsset from "@/assets/partner/partner-listening.png.asset.json";
-import speakingAsset from "@/assets/partner/partner-speaking.png.asset.json";
-import quizAsset from "@/assets/partner/partner-quiz.png.asset.json";
+
+const learnImageUrl = "/partner/learn.png";
+const listeningImageUrl = "/partner/listening.png";
+const speakingImageUrl = "/partner/speaking.png";
+const quizImageUrl = "/partner/quiz.png";
 
 interface ShowcaseRowProps {
   id: string;
@@ -90,7 +91,7 @@ export function PlatformShowcase({ learnFeatures, listeningFeatures, speakingFea
         badge="01 · Learn Mode"
         title={<>Learn Arabic Vocabulary with <span className="text-primary">Real Images</span></>}
         description="Build vocabulary naturally using high-quality visuals, clear Arabic, native pronunciation, and interactive flashcards that feel premium on every device."
-        imageUrl={learnAsset.url}
+        imageUrl={learnImageUrl}
         imageAlt="Learn mode screenshot showing real-image flashcards with native audio"
         features={learnFeatures}
       />
@@ -99,7 +100,7 @@ export function PlatformShowcase({ learnFeatures, listeningFeatures, speakingFea
         badge="04 · Listening Mode"
         title={<>Train Your Ear. Understand <span className="text-primary">Real Arabic.</span></>}
         description="Audio-first practice helps you connect real Arabic sounds to meaning quickly, with image choices, instant feedback, and natural ear training."
-        imageUrl={listeningAsset.url}
+        imageUrl={listeningImageUrl}
         imageAlt="Listening mode screenshot showing audio-based multiple choice practice"
         features={listeningFeatures}
         reverse
@@ -109,7 +110,7 @@ export function PlatformShowcase({ learnFeatures, listeningFeatures, speakingFea
         badge="05 · Speaking Mode"
         title={<>Speak Arabic with <span className="text-secondary">Confidence.</span></>}
         description="Practice pronunciation with native models, record your voice, compare clearly, and build momentum through short daily speaking sessions."
-        imageUrl={speakingAsset.url}
+        imageUrl={speakingImageUrl}
         imageAlt="Speaking mode screenshot showing pronunciation and voice recording"
         features={speakingFeatures}
         dark
@@ -119,7 +120,7 @@ export function PlatformShowcase({ learnFeatures, listeningFeatures, speakingFea
         badge="06 · Quiz Mode"
         title={<>Test Your Knowledge. <span className="text-primary">Track Your Progress.</span></>}
         description="Smart quizzes reinforce what you learned, explain correct answers instantly, and turn review into visible progress instead of passive scrolling."
-        imageUrl={quizAsset.url}
+        imageUrl={quizImageUrl}
         imageAlt="Quiz mode screenshot showing instant feedback and score tracking"
         features={quizFeatures}
         reverse
