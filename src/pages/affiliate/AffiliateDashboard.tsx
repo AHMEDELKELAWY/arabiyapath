@@ -24,6 +24,8 @@ import {
   Share2,
   Clock,
   CheckCircle,
+  ExternalLink,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -136,6 +138,74 @@ export default function AffiliateDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Partner Landing Page */}
+        {couponData?.partner?.slug && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Your Partner Landing Page
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const partnerUrl = `${window.location.origin}/partner/${couponData.partner.slug}`;
+                const enabled = couponData.partner.landing_enabled;
+                return (
+                  <>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-muted rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Permanent landing URL
+                        </p>
+                        <p className="font-mono text-sm break-all">{partnerUrl}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(partnerUrl);
+                            toast.success("Partner URL copied!");
+                          }}
+                        >
+                          <Copy className="h-4 w-4" /> Copy
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2" asChild>
+                          <a href={partnerUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" /> Open
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                      <div className="p-3 rounded-lg border border-border">
+                        <p className="text-muted-foreground text-xs mb-1">Current Coupon</p>
+                        <p className="font-mono font-bold">
+                          {couponData.coupon?.code || "—"}
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg border border-border">
+                        <p className="text-muted-foreground text-xs mb-1">Discount</p>
+                        <p className="font-bold">
+                          {couponData.coupon?.percent_off ?? 0}% off
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg border border-border">
+                        <p className="text-muted-foreground text-xs mb-1">Landing Status</p>
+                        <Badge variant={enabled ? "default" : "outline"}>
+                          {enabled ? "Live" : "Disabled"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Share Section */}
         <Card>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { Loader2, Tag, CheckCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CardCheckout } from "./CardCheckout";
+import { getPartnerCoupon } from "@/lib/partnerCoupon";
 
 interface PayPalCheckoutProps {
   productType: string;
@@ -75,6 +76,35 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
 
     fetchClientToken();
   }, []);
+
+  // Auto-apply a coupon stored from a Partner landing page (sessionStorage).
+  // Re-uses the existing coupon attribution flow — no new tracking system.
+  const autoAppliedRef = useRef(false);
+  useEffect(() => {
+    if (autoAppliedRef.current || appliedCoupon) return;
+    const stored = getPartnerCoupon();
+    if (!stored) return;
+    autoAppliedRef.current = true;
+    (async () => {
+      setIsApplyingCoupon(true);
+      try {
+        const { data: coupons } = await supabase.rpc("lookup_coupon", { _code: stored });
+        const coupon = Array.isArray(coupons) ? coupons[0] : coupons;
+        if (!coupon) return;
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return;
+        setCouponCode(coupon.code);
+        setAppliedCoupon({
+          code: coupon.code,
+          discount: coupon.percent_off || coupon.discount_percent || 0,
+        });
+        toast.success(`Partner discount applied: ${coupon.code}`);
+      } catch {
+        /* silent — user can apply manually */
+      } finally {
+        setIsApplyingCoupon(false);
+      }
+    })();
+  }, [appliedCoupon]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
