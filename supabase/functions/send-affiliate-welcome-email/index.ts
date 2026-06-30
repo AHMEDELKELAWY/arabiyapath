@@ -49,7 +49,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { email, fullName, affiliateCode, commissionRate }: AffiliateWelcomeRequest = await req.json();
+    const { email, fullName, affiliateCode, commissionRate, couponCode, couponPercentOff }: AffiliateWelcomeRequest = await req.json();
 
     if (!email || !fullName || !affiliateCode) {
       return new Response(
@@ -62,6 +62,8 @@ serve(async (req) => {
     const safeFullName = escapeHtml(fullName);
     const safeAffiliateCode = escapeHtml(affiliateCode);
     const safeCommissionRate = escapeHtml(commissionRate);
+    const safeCouponCode = couponCode ? escapeHtml(couponCode) : "";
+    const safeCouponPercent = couponPercentOff != null ? escapeHtml(couponPercentOff) : "";
 
     console.log(`Sending affiliate welcome email to ${email}`);
 
