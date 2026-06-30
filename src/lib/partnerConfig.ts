@@ -102,15 +102,15 @@ export function buildPartnerConfig(
   return {
     partnerName: row.display_name,
     slug: row.slug,
-    badge: discount > 0 ? `${discount}% OFF · Exclusive` : "Exclusive",
+    badge: discount > 0 ? `${discount}% OFF • Exclusive` : "Exclusive",
     headline:
       row.hero_title ||
       row.campaign_title ||
       `Exclusive Offer for ${row.display_name}'s Students`,
     subheadline:
       row.hero_subtitle ||
-      `A private invitation to continue your Arabic journey. Your discount is already reserved — no coupon code required.`,
-    ctaLabel: row.cta_text || "Claim My 50% Discount",
+      `Learn real Gulf Arabic through interactive flashcards, native audio, speaking practice and smart review.`,
+    ctaLabel: row.cta_text || "Unlock My Discount",
     ctaNote: "No coupon code required. Your exclusive discount will be applied automatically.",
     oldPrice,
     newPrice,
