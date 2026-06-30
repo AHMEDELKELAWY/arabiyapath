@@ -232,6 +232,10 @@ export default function PartnerLanding() {
       </Reveal>
 
       <Reveal>
+        <TestimonialsSection />
+      </Reveal>
+
+      <Reveal>
         <PricingSection config={config} ctaHref={ctaHref} />
       </Reveal>
 
