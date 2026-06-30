@@ -415,9 +415,10 @@ export default function Pricing() {
                   </div>
 
                   <div className="text-center mb-6">
-                    <span className="text-4xl font-bold text-foreground">$19.99</span>
+                    <span className="text-4xl font-bold text-foreground">${flashcardPrice ?? "—"}</span>
                     <span className="text-muted-foreground text-sm"> /one-time</span>
                   </div>
+
 
                   <ul className="space-y-3 mb-6 flex-1">
                     {[
