@@ -44,7 +44,7 @@ export function PartnerHero({ config, ctaHref }: Props) {
       <div className="absolute left-1/2 top-[18%] -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.28),transparent_62%)] blur-3xl" />
 
       <div className="container mx-auto max-w-7xl">
-        <div className="grid gap-8 rounded-[2rem] border border-border/20 bg-background/0 pb-10 pt-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center lg:gap-10 lg:px-2 lg:pb-12 lg:pt-12">
+        <div className="grid gap-8 rounded-[2rem] border border-border/20 bg-background/0 pb-6 pt-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center lg:gap-10 lg:px-2 lg:pb-8 lg:pt-8">
           <div className="relative z-10 max-w-xl text-primary-foreground" data-reveal>
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-background/5 px-4 py-2 text-sm font-semibold backdrop-blur-md">
               <BadgeCheck className="h-4 w-4 text-secondary" />
