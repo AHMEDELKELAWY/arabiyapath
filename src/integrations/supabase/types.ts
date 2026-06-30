@@ -880,6 +880,82 @@ export type Database = {
           },
         ]
       }
+      partners: {
+        Row: {
+          affiliate_id: string | null
+          campaign_title: string | null
+          coupon_id: string | null
+          created_at: string
+          cta_text: string | null
+          display_name: string
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          landing_enabled: boolean
+          notes: string | null
+          old_price: number | null
+          price_override: number | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id?: string | null
+          campaign_title?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          cta_text?: string | null
+          display_name: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          landing_enabled?: boolean
+          notes?: string | null
+          old_price?: number | null
+          price_override?: number | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string | null
+          campaign_title?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          cta_text?: string | null
+          display_name?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          landing_enabled?: boolean
+          notes?: string | null
+          old_price?: number | null
+          price_override?: number | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_providers: {
         Row: {
           code: string
