@@ -1,74 +1,45 @@
-# Affiliate Flow Improvements
+## Goal
+Replace the current `/partner/:slug` landing page with the uploaded HTML design (cream + forest + gold, Fraunces/Work Sans/Reem Kufi). Replace the hero flashcard illustration with the YouTube Short `https://youtube.com/shorts/BHeV5AZcb7k`. Keep all backend logic (coupons, partner attribution, PayPal, auth, redirects) untouched.
 
-## Your questions answered first
+## Approach
+Rewrite `src/pages/PartnerLanding.tsx` as a single self-contained page that mirrors the uploaded HTML structure 1:1, while pulling dynamic values from the existing `buildPartnerConfig` (partner name, coupon %, prices, CTA href).
 
-**س: هل المستخدم يقدر يسجل كافيليت بنفس الإيميل اللي مسجل دخول بيه؟**
-نعم، ومفيش أي تضارب. النظام الحالي بالفعل بيستخدم الـ `user_id` الخاص بالمستخدم المسجل دخوله. كل مستخدم يقدر يقدّم طلب أفيليت واحد فقط (في `unique constraint` على `user_id` في جدول `affiliate_applications` و `affiliates`). يعني نفس الحساب = نفس الإيميل، بدون أي ازدواج.
+### Sections (in order, matching the HTML)
+1. Urgency strip — "exclusive to {partnerName}'s students … {percent}% Off Flashcards"
+2. Sticky header — logo + "Private invitation" pill (reuses `PartnerShell`)
+3. Hero (2-col): left = eyebrow badge, H1 with gold italic accent, lead, old/new price, CTA → `ctaHref`, trust row (lifetime, audio, certificate, guarantee). Right = **YouTube Short embed** in a rounded card (replacing the flip-card + floating chips). Embed via `https://www.youtube.com/embed/BHeV5AZcb7k?rel=0` in a 9:16 responsive iframe wrapper so the Short displays natively, with a subtle gold glow frame.
+4. Stats bar — 4 numbers from `config.stats`
+5. Modes grid (4 cards) — driven by `config.modeCards`
+6. "Why students keep coming back" — 3 cards (forest-deep bg)
+7. Testimonials — 3 cards
+8. Offer recap box (id="offer") — left bullets, middle price, right dashed seal, CTA → `ctaHref`
+9. FAQ accordion — `config.faq` (vanilla details/summary or a small useState toggle)
+10. Final gold CTA banner → `ctaHref`
+11. Minimal footer
+12. Mobile sticky bottom CTA (price + button → `ctaHref`)
 
-**س: لما الطالب يسجل عن طريق رابط الأفيليت، تظهر بياناته ونسبة الخصم اللي خدها؟**
-ده اللي هنضيفه في الجزء الثالث.
+### Styling
+- Inline the uploaded CSS inside a single `<style>` block scoped via a wrapper class `partner-houria` to avoid global bleed (e.g. all selectors prefixed). Fonts loaded via `@fontsource` packages: `@fontsource/fraunces`, `@fontsource/work-sans`, `@fontsource/reem-kufi`, imported in `src/main.tsx`. No Tailwind theme changes.
+- Keep `prefers-reduced-motion` rules from the HTML.
 
----
+### Dynamic substitutions
+| HTML literal | Dynamic source |
+|---|---|
+| "Houria's students" | `config.partnerName` |
+| "50% Off" | `config.discountPercent` |
+| `$14.99` / `$29.99` | `formatPrice(config.newPrice/oldPrice)` |
+| All `href="#offer"` for primary CTAs that aren't on-page anchors | `ctaHref` (existing signup→checkout flow) |
+| "3,000+ cards", testimonials, FAQ text | kept verbatim from HTML (static copy) |
 
-## What I'll build
+The in-page `#offer` anchor link inside the hero stays as `#offer` (jumps to recap), but every actual purchase button uses `ctaHref` (`<Link to={ctaHref}>`).
 
-### 1) Admin notification on new affiliate application
+### Files
+- **Rewrite** `src/pages/PartnerLanding.tsx` — single file containing the new markup, scoped `<style>` block, FAQ toggle state, YouTube iframe.
+- **Edit** `src/main.tsx` — add three `@fontsource` imports.
+- **Install** `@fontsource/fraunces @fontsource/work-sans @fontsource/reem-kufi` via `bun add`.
+- **Delete** unused partner components (`PartnerHero`, `StatsSection`, `VideoSection`, `BenefitsSection`, `PlatformShowcase`, `HowItWorks`, `PartnerCertificate`, `PricingSection`, `PartnerFAQ`, `FinalCTA`, `BackToTopButton`, `ProductMockup`) and their `/public/partner/*.png` assets — no longer referenced.
+- **Keep untouched**: `PartnerShell`, `partnerConfig.ts`, `partnerCoupon.ts`, `PayPalCheckout`, `Checkout`, `PaymentSuccess`, all DB/RPC code.
 
-- **Email للأدمن**: عند تقديم أي طلب أفيليت جديد، يتبعت إيميل لـ `admin@arabiyapath.com` فيه: الاسم، الإيميل، التليفون، طريقة الترويج، ورابط مباشر لصفحة الطلبات في الأدمن.
-- **شارة (badge) داخل الأدمن**: يظهر عدّاد بعدد الطلبات "pending" جنب لينك "Affiliate Applications" في الـ AdminLayout sidebar، عشان تشوف فوراً لما يجي طلب جديد.
-
-### 2) Auto-create or link a coupon on approval
-
-في صفحة `AdminAffiliateApplications` لما تضغط Approve، الـ dialog هيتعدّل عشان يخليك تختار:
-- **Create new coupon**: تدخل code (افتراضي = نفس الـ affiliate_code)، نسبة الخصم (افتراضي 10%)، ومدة الصلاحية اختيارية. هيتعمل insert في `coupons` مع ربط `affiliate_id`.
-- **Link existing coupon**: dropdown بكل الكوبونات اللي مش مربوطة بأفيليت، تختار واحد وهيتعمل update لـ `coupons.affiliate_id`.
-- **Skip**: لو مش عايز كوبون دلوقتي.
-
-كل ده يتم في نفس الـ mutation اللي بيوافق على الطلب (داخل `useApproveAffiliateApplication`)، فيتم الموافقة + إنشاء/ربط الكوبون + إرسال إيميل الترحيب (موجود فعلاً) في خطوة واحدة. إيميل الترحيب هيتعدّل ليحتوي على كود الخصم لو موجود.
-
-### 3) Referral details on the affiliate dashboard
-
-صفحة `AffiliateReferrals.tsx` حالياً بتعرض اسم المنتج والمبلغ بس. هنوسّعها لتعرض جدول بالأعمدة:
-- اسم الطالب (من `profiles.first_name + last_name`)
-- إيميل الطالب (من `profiles.email`)
-- المنتج
-- المبلغ الأصلي
-- كود الخصم المستخدم (من `purchases.coupon_id → coupons.code`)
-- نسبة الخصم (`coupons.percent_off`)
-- المبلغ بعد الخصم (المدفوع فعلاً)
-- العمولة (من `affiliate_commissions.commission_amount`)
-- التاريخ
-
-التعديلات في `useAffiliateReferrals` hook: يضم join مع `profiles` و `coupons` و `affiliate_commissions`.
-
-**ملاحظة خصوصية**: عرض إيميل الطالب الكامل قد يكون مبالغ فيه. لو حابب نخفي الإيميل (مثلاً `j***@gmail.com`) قولي.
-
----
-
-## Technical details
-
-**Files to edit:**
-- `src/hooks/useAffiliateApplications.ts` — extend `useSubmitAffiliateApplication` to invoke a new edge function for admin notification; extend `useApproveAffiliateApplication` to accept coupon options and create/link the coupon.
-- `src/pages/admin/AdminAffiliateApplications.tsx` — add coupon section in the approval dialog (create new / link existing / skip).
-- `src/components/admin/AdminLayout.tsx` — show pending applications count badge on the sidebar link.
-- `src/hooks/useAffiliateData.ts` — extend `useAffiliateReferrals` to join profiles, coupons, and commissions.
-- `src/pages/affiliate/AffiliateReferrals.tsx` — render the new columns.
-- `supabase/functions/send-affiliate-welcome-email/index.ts` — include coupon code in welcome email if provided.
-
-**New files:**
-- `supabase/functions/notify-admin-affiliate-application/index.ts` — sends email to `admin@arabiyapath.com` via Zoho SMTP (already configured) when a new application is submitted.
-- `supabase/config.toml` entry with `verify_jwt = false` for the new function (called right after applicant signs in, but doesn't need full auth verification).
-
-**Migration:**
-- Add RPC `admin_pending_applications_count()` (SECURITY DEFINER, admin-only) to feed the sidebar badge without exposing the table to non-admins.
-- Add SELECT policy on `profiles` and `coupons` filtered through affiliate ownership? Actually, simpler: create a SECURITY DEFINER function `affiliate_referrals(_user uuid)` that returns the enriched rows for the calling affiliate only. This avoids opening RLS on `profiles` to affiliates.
-
-**No changes to:** payments, RLS for non-affiliate tables, existing pricing, or the public coupon API.
-
----
-
-## Out of scope (tell me if you want them)
-
-- Push/in-app notifications (we're doing email + sidebar badge only).
-- Auto-creating a unique coupon at signup time (we only create on approval).
-- Hiding the student's email behind a mask.
+### Verification
+- `tsgo` typecheck
+- Visit `/partner/houria` via Playwright, screenshot desktop (1280) and mobile (390) — confirm YouTube iframe loads, CTAs route to `ctaHref`, urgency strip shows partner name + percent.
