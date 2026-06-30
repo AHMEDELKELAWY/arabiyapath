@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Award, BadgeCheck, Headphones, Infinity, Mic, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export function PartnerHero({ config, ctaHref }: Props) {
   );
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const handleMove = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleMove = (event: MouseEvent<HTMLDivElement>) => {
     if (reducedMotion) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width - 0.5) * 18;
