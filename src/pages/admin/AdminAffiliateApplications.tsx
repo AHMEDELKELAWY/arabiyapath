@@ -348,7 +348,7 @@ export default function AdminAffiliateApplications() {
 
       {/* Approve Dialog */}
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Approve Application</DialogTitle>
             <DialogDescription>
@@ -361,7 +361,11 @@ export default function AdminAffiliateApplications() {
               <Input
                 id="affiliateCode"
                 value={affiliateCode}
-                onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase();
+                  setAffiliateCode(v);
+                  if (couponMode === "create") setCouponCode(v);
+                }}
                 placeholder="EXAMPLE123"
               />
               <p className="text-xs text-muted-foreground">
@@ -379,6 +383,82 @@ export default function AdminAffiliateApplications() {
                 onChange={(e) => setCommissionRate(e.target.value)}
               />
             </div>
+
+            <div className="space-y-2 border-t pt-4">
+              <Label>Discount Coupon</Label>
+              <Select
+                value={couponMode}
+                onValueChange={(v) => setCouponMode(v as typeof couponMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="create">Create new coupon</SelectItem>
+                  <SelectItem value="link">Link existing coupon</SelectItem>
+                  <SelectItem value="skip">Skip for now</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {couponMode === "create" && (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="couponCode" className="text-xs">
+                      Code
+                    </Label>
+                    <Input
+                      id="couponCode"
+                      value={couponCode}
+                      onChange={(e) =>
+                        setCouponCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="SAVE10"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="couponPercent" className="text-xs">
+                      Discount %
+                    </Label>
+                    <Input
+                      id="couponPercent"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={couponPercent}
+                      onChange={(e) => setCouponPercent(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {couponMode === "link" && (
+                <div className="pt-2">
+                  {unlinkedCoupons.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No unlinked active coupons available. Create a new one
+                      instead.
+                    </p>
+                  ) : (
+                    <Select
+                      value={existingCouponId}
+                      onValueChange={setExistingCouponId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a coupon" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unlinkedCoupons.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.code} — {c.percent_off}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
