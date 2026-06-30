@@ -1,4 +1,4 @@
-import { BarChart3, BookCheck, Flame, GraduationCap, LayoutGrid, Sparkles } from "lucide-react";
+import { BarChart3, Flame, Trophy, Calendar, TrendingUp, Sparkles } from "lucide-react";
 
 const dashboardImageUrl = "/partner/dashboard.png";
 
@@ -6,54 +6,64 @@ interface Props {
   highlights: string[];
 }
 
-const ICONS = [BarChart3, LayoutGrid, BookCheck, Sparkles, Flame, GraduationCap];
+const METRICS = [
+  { icon: Flame, label: "Streak", value: "14 days", tone: "from-orange-500/15 to-amber-400/10", iconClass: "text-orange-500" },
+  { icon: Trophy, label: "Mastered", value: "327 cards", tone: "from-emerald-500/15 to-emerald-400/10", iconClass: "text-emerald-600" },
+  { icon: TrendingUp, label: "This week", value: "+18%", tone: "from-primary/15 to-primary/5", iconClass: "text-primary" },
+  { icon: Calendar, label: "Daily review", value: "12 due", tone: "from-secondary/20 to-secondary/5", iconClass: "text-secondary" },
+];
 
-export function HowItWorks({ highlights }: Props) {
+export function HowItWorks({ highlights: _highlights }: Props) {
   return (
-    <section className="px-4 py-14 sm:px-6 lg:px-8 lg:py-18">
-      <div className="container mx-auto max-w-7xl" data-reveal>
-        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-10">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-primary">
-              07 · Your Progress
-            </div>
-            <h2 className="mt-5 text-4xl font-semibold leading-[1.02] tracking-tight text-foreground sm:text-5xl">
-              Your journey. <span className="text-primary">Your progress.</span>
-            </h2>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">
-              Track what you learned, celebrate wins, and stay motivated with a dashboard that makes progress visible from day one.
-            </p>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {highlights.map((item, index) => {
-                const Icon = ICONS[index] ?? Sparkles;
-                return (
-                  <article
-                    key={item}
-                    className="rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-[0_16px_40px_hsl(var(--foreground)/0.05)]"
-                  >
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-primary">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <h3 className="mt-4 text-lg font-semibold text-foreground">{item}</h3>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                      Clean analytics and daily visibility help students keep going without friction.
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
+    <section className="relative px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,hsl(var(--accent))_0%,transparent_28%),linear-gradient(180deg,hsl(var(--background))_0%,hsl(152_44%_97%)_100%)]" />
+      <div className="container mx-auto max-w-6xl" data-reveal>
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Your dashboard
           </div>
+          <h2 className="mt-5 text-3xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-4xl lg:text-[2.6rem]">
+            Progress you can <span className="text-primary">actually see.</span>
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
+            Daily reviews, mastered cards, and weekly streaks — a calm, honest view of how fast your Arabic is compounding.
+          </p>
+        </div>
 
-          <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-3 shadow-[0_28px_80px_hsl(var(--foreground)/0.08)]">
+        <div className="relative mt-12">
+          <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.14),transparent_65%)] blur-3xl" />
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/95 p-3 shadow-[0_30px_80px_hsl(var(--foreground)/0.1)] backdrop-blur-md">
             <img
               src={dashboardImageUrl}
-              alt="Progress dashboard showing mastery, streak, analytics, and study activity"
-              className="w-full rounded-[1.5rem] object-cover"
+              alt="ArabiyaPath progress dashboard"
+              className="w-full rounded-[1.4rem] object-cover"
               loading="lazy"
             />
           </div>
+
+          {/* Floating metric cards */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:absolute lg:-bottom-8 lg:left-1/2 lg:mt-0 lg:w-[88%] lg:-translate-x-1/2 lg:grid-cols-4">
+            {METRICS.map(({ icon: Icon, label, value, tone, iconClass }, i) => (
+              <div
+                key={label}
+                className={`group rounded-2xl border border-border/60 bg-background/95 p-4 shadow-[0_18px_46px_hsl(var(--foreground)/0.1)] backdrop-blur-md transition-transform duration-300 hover:-translate-y-1`}
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${tone}`}>
+                    <Icon className={`h-4 w-4 ${iconClass}`} />
+                  </span>
+                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground/50" />
+                </div>
+                <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+                <div className="mt-1 text-lg font-semibold text-foreground">{value}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        <div className="h-0 lg:h-16" />
       </div>
     </section>
   );

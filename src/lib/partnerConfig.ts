@@ -132,10 +132,10 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
     partnerName: row.display_name,
     slug: row.slug,
     badge: discount > 0 ? `${discount}% OFF · Exclusive for ${row.display_name}'s Students` : `Exclusive for ${row.display_name}'s Students`,
-    headline: row.hero_title || "Your Journey to Fluent Arabic Starts Here",
+    headline: row.hero_title || "Arabic that finally sticks.",
     subheadline:
       row.hero_subtitle ||
-      "Interactive flashcards. Native audio. Speaking practice. Smart quizzes. Everything you need in one premium learning experience.",
+      "A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.",
     ctaLabel: row.cta_text || "Unlock My Discount",
     ctaNote: "No coupon code required. Discount applied automatically.",
     oldPrice,

@@ -37,14 +37,14 @@ export function PartnerHero({ config, ctaHref }: Props) {
   const handleLeave = () => setOffset({ x: 0, y: 0 });
 
   return (
-    <section className="relative overflow-hidden px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+    <section className="relative overflow-hidden px-4 pt-6 pb-2 sm:px-6 lg:px-8 lg:pt-10 lg:pb-4">
       <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_20%_10%,hsl(var(--secondary)/0.18),transparent_18%),radial-gradient(circle_at_80%_20%,hsl(var(--secondary)/0.12),transparent_14%),linear-gradient(135deg,hsl(165_88%_9%)_0%,hsl(162_80%_11%)_35%,hsl(152_66%_14%)_66%,hsl(152_52%_11%)_100%)]" />
       <div className="absolute inset-0 -z-10 opacity-20 [background-image:linear-gradient(hsl(var(--border)/0.24)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border)/0.24)_1px,transparent_1px)] [background-size:42px_42px]" />
       <div className="absolute inset-x-0 top-0 -z-10 h-64 bg-[radial-gradient(circle_at_center,hsl(var(--secondary)/0.24),transparent_60%)] blur-2xl" />
       <div className="absolute left-1/2 top-[18%] -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.28),transparent_62%)] blur-3xl" />
 
       <div className="container mx-auto max-w-7xl">
-        <div className="grid gap-8 rounded-[2rem] border border-border/20 bg-background/0 pb-10 pt-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center lg:gap-10 lg:px-2 lg:pb-12 lg:pt-12">
+        <div className="grid gap-8 rounded-[2rem] border border-border/20 bg-background/0 pb-6 pt-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center lg:gap-10 lg:px-2 lg:pb-8 lg:pt-8">
           <div className="relative z-10 max-w-xl text-primary-foreground" data-reveal>
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-background/5 px-4 py-2 text-sm font-semibold backdrop-blur-md">
               <BadgeCheck className="h-4 w-4 text-secondary" />
