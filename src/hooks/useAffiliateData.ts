@@ -132,28 +132,7 @@ export function useAffiliateReferrals() {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get affiliate ID first
-      const { data: affiliate } = await supabase
-        .from("affiliates")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!affiliate) return [];
-
-      const { data, error } = await supabase
-        .from("purchases")
-        .select(`
-          id,
-          product_name,
-          amount,
-          created_at,
-          user_id,
-          products (name)
-        `)
-        .eq("affiliate_id", affiliate.id)
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.rpc("affiliate_my_referrals");
       if (error) throw error;
       return data || [];
     },

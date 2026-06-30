@@ -15,7 +15,9 @@ import {
   Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePendingApplicationsCount } from "@/hooks/useAffiliateApplications";
 import logoImage from "@/assets/logo.png";
 
 interface AdminLayoutProps {
@@ -47,6 +49,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+  const { data: pendingCount = 0 } = usePendingApplicationsCount();
 
   const handleSignOut = async () => {
     await signOut();
@@ -89,7 +92,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 )}
               >
                 <Icon className="h-5 w-5" />
-                {link.label}
+                <span className="flex-1">{link.label}</span>
+                {link.href === "/admin/affiliate-applications" && pendingCount > 0 && (
+                  <Badge className="bg-yellow-500 text-white hover:bg-yellow-500">
+                    {pendingCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}

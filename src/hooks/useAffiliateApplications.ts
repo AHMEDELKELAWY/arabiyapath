@@ -53,14 +53,30 @@ export function useSubmitAffiliateApplication() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("affiliate_applications").insert({
-        user_id: user.id,
-        full_name: data.full_name,
-        phone: data.phone || null,
-        how_will_promote: data.how_will_promote,
-      });
+      const { data: inserted, error } = await supabase
+        .from("affiliate_applications")
+        .insert({
+          user_id: user.id,
+          full_name: data.full_name,
+          phone: data.phone || null,
+          how_will_promote: data.how_will_promote,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
+
+      // Fire-and-forget admin notification email
+      if (inserted?.id) {
+        try {
+          await supabase.functions.invoke(
+            "notify-admin-affiliate-application",
+            { body: { applicationId: inserted.id } },
+          );
+        } catch (notifyErr) {
+          console.error("Failed to notify admin:", notifyErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-affiliate-application"] });
@@ -102,6 +118,16 @@ export function useAdminAffiliateApplications() {
   });
 }
 
+export type CouponOption =
+  | { mode: "skip" }
+  | {
+      mode: "create";
+      code: string;
+      percentOff: number;
+      expiresAt?: string | null;
+    }
+  | { mode: "link"; couponId: string };
+
 // Admin hook to approve an application
 export function useApproveAffiliateApplication() {
   const queryClient = useQueryClient();
@@ -114,6 +140,7 @@ export function useApproveAffiliateApplication() {
       commissionRate = 10,
       email,
       fullName,
+      coupon = { mode: "skip" },
     }: {
       applicationId: string;
       userId: string;
@@ -121,6 +148,7 @@ export function useApproveAffiliateApplication() {
       commissionRate?: number;
       email?: string;
       fullName: string;
+      coupon?: CouponOption;
     }) => {
       // 1. Update application status
       const { error: updateError } = await supabase
@@ -131,14 +159,16 @@ export function useApproveAffiliateApplication() {
       if (updateError) throw updateError;
 
       // 2. Create affiliate record
-      const { error: affiliateError } = await supabase
+      const { data: affiliateRow, error: affiliateError } = await supabase
         .from("affiliates")
         .insert({
           user_id: userId,
           affiliate_code: affiliateCode,
           commission_rate: commissionRate,
           status: "active",
-        });
+        })
+        .select("id")
+        .single();
 
       if (affiliateError) throw affiliateError;
 
@@ -150,7 +180,41 @@ export function useApproveAffiliateApplication() {
 
       if (roleError) throw roleError;
 
-      // 4. Send welcome email (non-blocking)
+      // 4. Coupon: create new or link existing
+      let attachedCouponCode: string | undefined;
+      let attachedCouponPercent: number | undefined;
+
+      if (coupon.mode === "create" && affiliateRow?.id) {
+        const code = coupon.code.trim().toUpperCase();
+        const { data: createdCoupon, error: couponErr } = await supabase
+          .from("coupons")
+          .insert({
+            code,
+            percent_off: coupon.percentOff,
+            discount_percent: coupon.percentOff,
+            affiliate_id: affiliateRow.id,
+            expires_at: coupon.expiresAt || null,
+            active: true,
+            applies_to: "all",
+          })
+          .select("code, percent_off")
+          .single();
+        if (couponErr) throw couponErr;
+        attachedCouponCode = createdCoupon.code;
+        attachedCouponPercent = createdCoupon.percent_off;
+      } else if (coupon.mode === "link" && affiliateRow?.id) {
+        const { data: linkedCoupon, error: linkErr } = await supabase
+          .from("coupons")
+          .update({ affiliate_id: affiliateRow.id })
+          .eq("id", coupon.couponId)
+          .select("code, percent_off")
+          .single();
+        if (linkErr) throw linkErr;
+        attachedCouponCode = linkedCoupon.code;
+        attachedCouponPercent = linkedCoupon.percent_off;
+      }
+
+      // 5. Send welcome email (non-blocking)
       if (email) {
         try {
           await supabase.functions.invoke("send-affiliate-welcome-email", {
@@ -159,12 +223,12 @@ export function useApproveAffiliateApplication() {
               fullName,
               affiliateCode,
               commissionRate,
+              couponCode: attachedCouponCode,
+              couponPercentOff: attachedCouponPercent,
             },
           });
-          console.log("Affiliate welcome email sent to", email);
         } catch (emailError) {
           console.error("Failed to send welcome email:", emailError);
-          // Don't throw - email is not critical
         }
       }
     },
@@ -173,7 +237,43 @@ export function useApproveAffiliateApplication() {
         queryKey: ["admin-affiliate-applications"],
       });
       queryClient.invalidateQueries({ queryKey: ["admin-affiliates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-unlinked-coupons"] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-pending-applications-count"],
+      });
     },
+  });
+}
+
+// Hook for admins to fetch coupons not yet linked to any affiliate
+export function useUnlinkedCoupons() {
+  return useQuery({
+    queryKey: ["admin-unlinked-coupons"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("id, code, percent_off, active")
+        .is("affiliate_id", null)
+        .eq("active", true)
+        .order("code");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+// Hook for sidebar badge: pending application count
+export function usePendingApplicationsCount() {
+  return useQuery({
+    queryKey: ["admin-pending-applications-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "admin_pending_applications_count",
+      );
+      if (error) throw error;
+      return (data as number) || 0;
+    },
+    refetchInterval: 60_000,
   });
 }
 

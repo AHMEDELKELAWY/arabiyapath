@@ -12,6 +12,8 @@ interface AffiliateWelcomeRequest {
   fullName: string;
   affiliateCode: string;
   commissionRate: number;
+  couponCode?: string;
+  couponPercentOff?: number;
 }
 
 function escapeHtml(s: unknown): string {
@@ -47,7 +49,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { email, fullName, affiliateCode, commissionRate }: AffiliateWelcomeRequest = await req.json();
+    const { email, fullName, affiliateCode, commissionRate, couponCode, couponPercentOff }: AffiliateWelcomeRequest = await req.json();
 
     if (!email || !fullName || !affiliateCode) {
       return new Response(
@@ -60,6 +62,8 @@ serve(async (req) => {
     const safeFullName = escapeHtml(fullName);
     const safeAffiliateCode = escapeHtml(affiliateCode);
     const safeCommissionRate = escapeHtml(commissionRate);
+    const safeCouponCode = couponCode ? escapeHtml(couponCode) : "";
+    const safeCouponPercent = couponPercentOff != null ? escapeHtml(couponPercentOff) : "";
 
     console.log(`Sending affiliate welcome email to ${email}`);
 
@@ -124,6 +128,20 @@ serve(async (req) => {
                   ${safeAffiliateCode}
                 </div>
               </div>
+
+              ${safeCouponCode ? `
+              <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:12px;padding:24px;margin-bottom:24px;">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:#92400e;margin-bottom:12px;font-weight:600;">
+                  YOUR DISCOUNT COUPON${safeCouponPercent ? ` — ${safeCouponPercent}% OFF` : ""}
+                </div>
+                <div style="font-size:28px;font-weight:700;letter-spacing:3px;color:#92400e;text-align:center;background:#fff;padding:16px;border-radius:8px;border:2px dashed #fbbf24;">
+                  ${safeCouponCode}
+                </div>
+                <div style="font-size:12px;color:#78350f;margin-top:10px;text-align:center;">
+                  Share this code with your audience to give them a discount.
+                </div>
+              </div>` : ""}
+
 
               <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:24px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">

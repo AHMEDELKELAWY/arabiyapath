@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.send-funnel-emails]
 verify_jwt = false
+
+[functions.notify-admin-affiliate-application]
+verify_jwt = false

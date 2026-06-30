@@ -4,6 +4,8 @@ import {
   useAdminAffiliateApplications,
   useApproveAffiliateApplication,
   useRejectAffiliateApplication,
+  useUnlinkedCoupons,
+  type CouponOption,
 } from "@/hooks/useAffiliateApplications";
 import {
   Table,
@@ -29,11 +31,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Check, X, Clock, Eye, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminAffiliateApplications() {
   const { data: applications, isLoading } = useAdminAffiliateApplications();
   const approveMutation = useApproveAffiliateApplication();
   const rejectMutation = useRejectAffiliateApplication();
+  const { data: unlinkedCoupons = [] } = useUnlinkedCoupons();
 
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -42,6 +52,14 @@ export default function AdminAffiliateApplications() {
   const [affiliateCode, setAffiliateCode] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
   const [rejectNotes, setRejectNotes] = useState("");
+
+  // Coupon options
+  const [couponMode, setCouponMode] = useState<"create" | "link" | "skip">(
+    "create",
+  );
+  const [couponCode, setCouponCode] = useState("");
+  const [couponPercent, setCouponPercent] = useState("10");
+  const [existingCouponId, setExistingCouponId] = useState<string>("");
 
   const generateAffiliateCode = (name: string) => {
     const cleanName = name
@@ -58,6 +76,27 @@ export default function AdminAffiliateApplications() {
       return;
     }
 
+    let coupon: CouponOption = { mode: "skip" };
+    if (couponMode === "create") {
+      const code = couponCode.trim().toUpperCase();
+      if (!code) {
+        toast.error("Please enter a coupon code or choose Skip");
+        return;
+      }
+      const pct = parseInt(couponPercent, 10);
+      if (!pct || pct < 1 || pct > 100) {
+        toast.error("Coupon percent must be between 1 and 100");
+        return;
+      }
+      coupon = { mode: "create", code, percentOff: pct };
+    } else if (couponMode === "link") {
+      if (!existingCouponId) {
+        toast.error("Please select a coupon to link");
+        return;
+      }
+      coupon = { mode: "link", couponId: existingCouponId };
+    }
+
     try {
       await approveMutation.mutateAsync({
         applicationId: selectedApp.id,
@@ -66,12 +105,17 @@ export default function AdminAffiliateApplications() {
         commissionRate: parseFloat(commissionRate) || 10,
         email: selectedApp.email,
         fullName: selectedApp.full_name,
+        coupon,
       });
       toast.success("Application approved! Welcome email sent.");
       setApproveDialogOpen(false);
       setSelectedApp(null);
       setAffiliateCode("");
       setCommissionRate("10");
+      setCouponMode("create");
+      setCouponCode("");
+      setCouponPercent("10");
+      setExistingCouponId("");
     } catch (error: any) {
       toast.error(error.message || "Failed to approve application");
     }
@@ -95,8 +139,13 @@ export default function AdminAffiliateApplications() {
   };
 
   const openApproveDialog = (app: any) => {
+    const code = generateAffiliateCode(app.full_name);
     setSelectedApp(app);
-    setAffiliateCode(generateAffiliateCode(app.full_name));
+    setAffiliateCode(code);
+    setCouponMode("create");
+    setCouponCode(code);
+    setCouponPercent("10");
+    setExistingCouponId("");
     setApproveDialogOpen(true);
   };
 
@@ -299,7 +348,7 @@ export default function AdminAffiliateApplications() {
 
       {/* Approve Dialog */}
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Approve Application</DialogTitle>
             <DialogDescription>
@@ -312,7 +361,11 @@ export default function AdminAffiliateApplications() {
               <Input
                 id="affiliateCode"
                 value={affiliateCode}
-                onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase();
+                  setAffiliateCode(v);
+                  if (couponMode === "create") setCouponCode(v);
+                }}
                 placeholder="EXAMPLE123"
               />
               <p className="text-xs text-muted-foreground">
@@ -330,6 +383,82 @@ export default function AdminAffiliateApplications() {
                 onChange={(e) => setCommissionRate(e.target.value)}
               />
             </div>
+
+            <div className="space-y-2 border-t pt-4">
+              <Label>Discount Coupon</Label>
+              <Select
+                value={couponMode}
+                onValueChange={(v) => setCouponMode(v as typeof couponMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="create">Create new coupon</SelectItem>
+                  <SelectItem value="link">Link existing coupon</SelectItem>
+                  <SelectItem value="skip">Skip for now</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {couponMode === "create" && (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="couponCode" className="text-xs">
+                      Code
+                    </Label>
+                    <Input
+                      id="couponCode"
+                      value={couponCode}
+                      onChange={(e) =>
+                        setCouponCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="SAVE10"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="couponPercent" className="text-xs">
+                      Discount %
+                    </Label>
+                    <Input
+                      id="couponPercent"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={couponPercent}
+                      onChange={(e) => setCouponPercent(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {couponMode === "link" && (
+                <div className="pt-2">
+                  {unlinkedCoupons.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No unlinked active coupons available. Create a new one
+                      instead.
+                    </p>
+                  ) : (
+                    <Select
+                      value={existingCouponId}
+                      onValueChange={setExistingCouponId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a coupon" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unlinkedCoupons.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.code} — {c.percent_off}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"

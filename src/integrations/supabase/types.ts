@@ -1465,6 +1465,24 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_pending_applications_count: { Args: never; Returns: number }
+      affiliate_my_referrals: {
+        Args: never
+        Returns: {
+          amount: number
+          commission_amount: number
+          commission_status: string
+          coupon_code: string
+          coupon_percent_off: number
+          created_at: string
+          product_name: string
+          purchase_id: string
+          student_email: string
+          student_first_name: string
+          student_last_name: string
+          student_user_id: string
+        }[]
+      }
       fc_apply_review: {
         Args: {
           _card_id: string
