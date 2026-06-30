@@ -32,8 +32,10 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
   const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [activeTab, setActiveTab] = useState("card");
 
-  const finalPrice = appliedCoupon 
-    ? Math.round(price * (1 - appliedCoupon.discount / 100) * 100) / 100
+  // Floor (not round) to 2 decimals so 29.99 * 0.5 = 14.995 displays as $14.99,
+  // never as $15.00. Server-side computes the authoritative charge amount.
+  const finalPrice = appliedCoupon
+    ? Math.floor(price * (1 - appliedCoupon.discount / 100) * 100) / 100
     : price;
 
   // Fetch client token for card payments
