@@ -105,7 +105,18 @@ export default function AdminProducts() {
         })
         .eq("id", id);
       if (error) throw error;
+
+      // Keep linked flashcard_packs price in sync with the product price
+      if (isFlashcard) {
+        const cents = Math.round((Number(data.price) || 0) * 100);
+        const { error: packErr } = await (supabase as any)
+          .from("flashcard_packs")
+          .update({ price_cents: cents })
+          .eq("product_id", id);
+        if (packErr) throw packErr;
+      }
     },
+
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
