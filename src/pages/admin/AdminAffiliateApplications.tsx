@@ -4,6 +4,8 @@ import {
   useAdminAffiliateApplications,
   useApproveAffiliateApplication,
   useRejectAffiliateApplication,
+  useUnlinkedCoupons,
+  type CouponOption,
 } from "@/hooks/useAffiliateApplications";
 import {
   Table,
