@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import videoAsset from "@/assets/partner/partner-video.png.asset.json";
+const videoImageUrl = "/partner/video.png";
 
 interface Props {
   videoUrl: string | null;
@@ -74,7 +74,7 @@ export function VideoSection({ videoUrl, ctaLabel, ctaHref }: Props) {
               ) : (
                 <div className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-2xl">
                   <img
-                    src={videoAsset.url}
+                    src={videoImageUrl}
                     alt="ArabiyaPath video demo preview"
                     className="w-full object-cover"
                     loading="lazy"

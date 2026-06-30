@@ -1,6 +1,6 @@
 import { BookOpen, Headphones, Mic, Sparkles } from "lucide-react";
 import type { PartnerModeCard } from "@/lib/partnerConfig";
-import heroAsset from "@/assets/partner/partner-hero.png.asset.json";
+const modesOverviewImageUrl = "/partner/hero.png";
 
 interface Props {
   modeCards: PartnerModeCard[];
@@ -20,7 +20,7 @@ export function BenefitsSection({ modeCards }: Props) {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-8">
           <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-[radial-gradient(circle_at_top_left,hsl(var(--accent))_0%,transparent_28%),linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.35)_100%)] p-3 shadow-[0_24px_70px_hsl(var(--foreground)/0.08)]">
             <img
-              src={heroAsset.url}
+              src={modesOverviewImageUrl}
               alt="ArabiyaPath learning modes overview"
               className="w-full rounded-[1.5rem] object-cover"
               loading="lazy"

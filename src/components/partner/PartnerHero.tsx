@@ -4,7 +4,7 @@ import { ArrowRight, Award, BadgeCheck, Headphones, Infinity, Mic, ShieldCheck }
 import { Button } from "@/components/ui/button";
 import type { PartnerLandingConfig } from "@/lib/partnerConfig";
 import { formatPrice } from "@/lib/partnerConfig";
-import heroAsset from "@/assets/partner/partner-hero.png.asset.json";
+const heroImageUrl = "/partner/hero.png";
 
 interface Props {
   config: PartnerLandingConfig;
@@ -113,7 +113,7 @@ export function PartnerHero({ config, ctaHref }: Props) {
             >
               <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,hsl(var(--background)/0.02)_100%)]" />
               <img
-                src={heroAsset.url}
+                src={heroImageUrl}
                 alt="Premium Houria partner offer preview showing flashcards, listening, speaking, quiz, and dashboard experiences"
                 className="h-full w-full object-cover object-right-top"
                 loading="eager"
