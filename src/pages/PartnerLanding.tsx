@@ -20,11 +20,14 @@ import { PartnerFAQ } from "@/components/partner/PartnerFAQ";
 import { FinalCTA } from "@/components/partner/FinalCTA";
 import { Reveal } from "@/components/partner/Reveal";
 import { BackToTop } from "@/components/partner/BackToTop";
+import { TrustStrip } from "@/components/partner/TrustStrip";
+import { TestimonialsSection } from "@/components/partner/TestimonialsSection";
 
 import learnAsset from "@/assets/partner/learn-bus.jpg.asset.json";
 import speakingAsset from "@/assets/partner/speaking.jpg.asset.json";
 import quizAsset from "@/assets/partner/quiz-traffic.jpg.asset.json";
 import dashboardAsset from "@/assets/partner/dashboard.png.asset.json";
+import listeningAsset from "@/assets/partner/listening.png.asset.json";
 
 const PACK_SLUG = "msa-flashcards-pack";
 
