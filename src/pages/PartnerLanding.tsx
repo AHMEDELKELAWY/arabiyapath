@@ -12,22 +12,11 @@ import { PartnerHero } from "@/components/partner/PartnerHero";
 import { VideoSection } from "@/components/partner/VideoSection";
 import { StatsSection } from "@/components/partner/StatsSection";
 import { BenefitsSection } from "@/components/partner/BenefitsSection";
-import { ProductExperienceSection } from "@/components/partner/ProductExperienceSection";
-import { ProductFeatureSection } from "@/components/partner/ProductFeatureSection";
-import { CertificateSection } from "@/components/partner/CertificateSection";
+import { PlatformShowcase } from "@/components/partner/PlatformShowcase";
+import { HowItWorks } from "@/components/partner/HowItWorks";
 import { PricingSection } from "@/components/partner/PricingSection";
 import { PartnerFAQ } from "@/components/partner/PartnerFAQ";
 import { FinalCTA } from "@/components/partner/FinalCTA";
-import { Reveal } from "@/components/partner/Reveal";
-import { BackToTop } from "@/components/partner/BackToTop";
-import { TrustStrip } from "@/components/partner/TrustStrip";
-import { TestimonialsSection } from "@/components/partner/TestimonialsSection";
-
-import learnAsset from "@/assets/partner/learn-bus.jpg.asset.json";
-import speakingAsset from "@/assets/partner/speaking.jpg.asset.json";
-import quizAsset from "@/assets/partner/quiz-traffic.jpg.asset.json";
-import dashboardAsset from "@/assets/partner/dashboard.png.asset.json";
-import listeningAsset from "@/assets/partner/listening.png.asset.json";
 
 const PACK_SLUG = "msa-flashcards-pack";
 
@@ -121,133 +110,15 @@ export default function PartnerLanding() {
         description={config.subheadline}
         canonicalPath={`/partner/${config.slug}`}
       />
-
       <PartnerHero config={config} ctaHref={ctaHref} />
-
-      <TrustStrip />
-
-      <Reveal>
-        <VideoSection videoUrl={config.videoUrl} ctaLabel={config.ctaLabel} ctaHref={ctaHref} />
-      </Reveal>
-
-      <Reveal>
-        <StatsSection stats={config.stats} />
-      </Reveal>
-
-      <Reveal>
-        <BenefitsSection benefits={config.benefits} />
-      </Reveal>
-
-      <Reveal>
-        <ProductExperienceSection />
-      </Reveal>
-
-      <Reveal>
-        <ProductFeatureSection
-          eyebrow="Learn mode"
-          title="Learn vocabulary using beautiful real-life images"
-          description="Every flashcard pairs a real photo with fully-vowelized Arabic and one-tap native pronunciation. Meaning lands on the first look."
-          bullets={[
-            "Native pronunciation",
-            "Arabic + English + transliteration",
-            "Realistic images, not illustrations",
-            "One-tap audio",
-          ]}
-          image={learnAsset}
-          alt="Learn mode flashcard showing a bus with Arabic word, transliteration and audio"
-          side="left"
-        />
-      </Reveal>
-
-      <Reveal>
-        <ProductFeatureSection
-          eyebrow="Listening mode"
-          title="Train your ear with native audio"
-          description="Hear authentic pronunciation exactly as native speakers use it — at any pace, as many times as you need."
-          bullets={[
-            "Real native speakers",
-            "Unlimited replay",
-            "Natural pronunciation",
-            "Daily listening practice",
-          ]}
-          image={listeningAsset}
-          alt="Listening mode with native audio playback"
-          side="right"
-        />
-      </Reveal>
-
-      <Reveal>
-        <ProductFeatureSection
-          eyebrow="Speaking mode"
-          title="Speak Arabic with confidence"
-          description="Listen to a native speaker, then record yourself and compare. Build real speaking confidence — not just recognition."
-          bullets={[
-            "Record yourself in one tap",
-            "Compare pronunciation",
-            "Practice naturally, sentence by sentence",
-            "Unlimited speaking practice",
-          ]}
-          image={speakingAsset}
-          alt="Speaking mode with listen to native and record yourself buttons"
-          side="left"
-        />
-      </Reveal>
-
-      <Reveal>
-        <ProductFeatureSection
-          eyebrow="Test Yourself"
-          title="Remember faster with interactive quizzes"
-          description="Lock in what you've learned with quick, focused quizzes. Correct answers light up instantly so progress feels obvious."
-          bullets={[
-            "Instant feedback",
-            "Correct answer highlighting",
-            "Smart review",
-            "Progress tracking",
-          ]}
-          image={quizAsset}
-          alt="Quiz question with Traffic Light highlighted as the correct answer"
-          side="right"
-        />
-      </Reveal>
-
-      <Reveal>
-        <ProductFeatureSection
-          eyebrow="Your dashboard"
-          title="Track streaks, mastery and what's due today"
-          description="Every session counts. The dashboard shows your streak, what's due, and how many cards you've mastered — so it's easy to keep going."
-          bullets={[
-            "Daily streak that rewards consistency",
-            "See exactly what's due today",
-            "Track mastered cards across units",
-            "Pick up where you left off in one tap",
-          ]}
-          image={dashboardAsset}
-          alt="Dashboard showing Mastered, Due today, and Streak for Flash Cards"
-          side="right"
-        />
-      </Reveal>
-
-      <Reveal>
-        <CertificateSection />
-      </Reveal>
-
-      <Reveal>
-        <TestimonialsSection />
-      </Reveal>
-
-      <Reveal>
-        <PricingSection config={config} ctaHref={ctaHref} />
-      </Reveal>
-
-      <Reveal>
-        <PartnerFAQ items={config.faq} />
-      </Reveal>
-
-      <Reveal>
-        <FinalCTA config={config} ctaHref={ctaHref} />
-      </Reveal>
-
-      <BackToTop />
+      <VideoSection videoUrl={config.videoUrl} ctaLabel={config.ctaLabel} ctaHref={ctaHref} />
+      <StatsSection stats={config.stats} />
+      <BenefitsSection benefits={config.benefits} />
+      <PlatformShowcase />
+      <HowItWorks />
+      <PricingSection config={config} ctaHref={ctaHref} />
+      <PartnerFAQ items={config.faq} />
+      <FinalCTA config={config} ctaHref={ctaHref} />
     </PartnerShell>
   );
 }
