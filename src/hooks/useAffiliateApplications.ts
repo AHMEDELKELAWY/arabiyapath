@@ -53,14 +53,30 @@ export function useSubmitAffiliateApplication() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("affiliate_applications").insert({
-        user_id: user.id,
-        full_name: data.full_name,
-        phone: data.phone || null,
-        how_will_promote: data.how_will_promote,
-      });
+      const { data: inserted, error } = await supabase
+        .from("affiliate_applications")
+        .insert({
+          user_id: user.id,
+          full_name: data.full_name,
+          phone: data.phone || null,
+          how_will_promote: data.how_will_promote,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
+
+      // Fire-and-forget admin notification email
+      if (inserted?.id) {
+        try {
+          await supabase.functions.invoke(
+            "notify-admin-affiliate-application",
+            { body: { applicationId: inserted.id } },
+          );
+        } catch (notifyErr) {
+          console.error("Failed to notify admin:", notifyErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-affiliate-application"] });
