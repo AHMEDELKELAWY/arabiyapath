@@ -228,6 +228,22 @@ export default function Pricing() {
     },
   });
 
+  const { data: flashcardPack } = useQuery({
+    queryKey: ["pricing-flashcard-pack"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("flashcard_packs")
+        .select("price_cents,currency,slug")
+        .eq("published", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return data as { price_cents: number; currency: string; slug: string } | null;
+    },
+  });
+  const flashcardPrice = flashcardPack ? (flashcardPack.price_cents / 100).toFixed(2) : null;
+
+
   const { dialectGroups } = useMemo(() => {
     if (!dbProducts) return { dialectGroups: {} as Record<string, { beginner: Plan | null; bundle: Plan | null }> };
 
@@ -399,9 +415,10 @@ export default function Pricing() {
                   </div>
 
                   <div className="text-center mb-6">
-                    <span className="text-4xl font-bold text-foreground">$19.99</span>
+                    <span className="text-4xl font-bold text-foreground">${flashcardPrice ?? "—"}</span>
                     <span className="text-muted-foreground text-sm"> /one-time</span>
                   </div>
+
 
                   <ul className="space-y-3 mb-6 flex-1">
                     {[
