@@ -49,6 +49,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+  const { data: pendingCount = 0 } = usePendingApplicationsCount();
 
   const handleSignOut = async () => {
     await signOut();
