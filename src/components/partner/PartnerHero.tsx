@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { Sparkles, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ProductMockup } from "./ProductMockup";
+import { HeroCollage } from "./HeroCollage";
 import type { PartnerLandingConfig } from "@/lib/partnerConfig";
 import { formatPrice } from "@/lib/partnerConfig";
 
@@ -10,16 +10,22 @@ interface Props {
   ctaHref: string;
 }
 
+const TRUST = [
+  "Coupon already reserved",
+  "Lifetime access",
+  "Native audio included",
+  "Trusted by learners worldwide",
+];
+
 export function PartnerHero({ config, ctaHref }: Props) {
   return (
     <section className="relative overflow-hidden">
-      {/* Background */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-background to-background" />
       <div className="absolute -top-20 right-0 -z-10 w-[600px] h-[600px] rounded-full bg-primary/10 blur-3xl" />
       <div className="absolute -bottom-32 -left-20 -z-10 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 md:pt-16 md:pb-24">
-        <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-12 items-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20 md:pt-16 md:pb-28">
+        <div className="grid lg:grid-cols-[1fr_1.05fr] gap-12 lg:gap-16 items-center">
           {/* Left */}
           <div className="animate-fade-in">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary-foreground/90 text-xs font-bold tracking-wide">
@@ -35,25 +41,23 @@ export function PartnerHero({ config, ctaHref }: Props) {
               {config.subheadline}
             </p>
 
-            {/* Price stack */}
-            <div className="mt-7 inline-flex items-end gap-4">
+            <div className="mt-7 flex items-end gap-5">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Regular</div>
-                <div className="text-xl text-muted-foreground line-through">{formatPrice(config.oldPrice)}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Regular
+                </div>
+                <div className="text-xl text-muted-foreground line-through">
+                  {formatPrice(config.oldPrice)}
+                </div>
               </div>
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Your price today</div>
-                <div className="text-5xl font-bold text-primary leading-none">{formatPrice(config.newPrice)}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  Your price today
+                </div>
+                <div className="text-5xl sm:text-6xl font-bold text-primary leading-none">
+                  {formatPrice(config.newPrice)}
+                </div>
               </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" /> Lifetime access
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" /> Coupon already reserved
-              </span>
             </div>
 
             <div className="mt-7">
@@ -67,13 +71,23 @@ export function PartnerHero({ config, ctaHref }: Props) {
                   <ArrowRight className="w-5 h-5 ml-1" />
                 </Link>
               </Button>
-              <p className="text-xs text-muted-foreground mt-3 max-w-sm">{config.ctaNote}</p>
             </div>
+
+            <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2 max-w-md">
+              {TRUST.map((t) => (
+                <li key={t} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                  </span>
+                  {t}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Right */}
+          {/* Right — real product collage */}
           <div className="animate-scale-in">
-            <ProductMockup />
+            <HeroCollage />
           </div>
         </div>
       </div>
