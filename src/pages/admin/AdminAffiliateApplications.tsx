@@ -31,6 +31,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Check, X, Clock, Eye, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminAffiliateApplications() {
   const { data: applications, isLoading } = useAdminAffiliateApplications();
