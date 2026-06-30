@@ -124,6 +124,8 @@ export default function PartnerLanding() {
 
       <PartnerHero config={config} ctaHref={ctaHref} />
 
+      <TrustStrip />
+
       <Reveal>
         <VideoSection videoUrl={config.videoUrl} ctaLabel={config.ctaLabel} ctaHref={ctaHref} />
       </Reveal>
@@ -143,13 +145,13 @@ export default function PartnerLanding() {
       <Reveal>
         <ProductFeatureSection
           eyebrow="Learn mode"
-          title="Learn with realistic images and native audio"
+          title="Learn vocabulary using beautiful real-life images"
           description="Every flashcard pairs a real photo with fully-vowelized Arabic and one-tap native pronunciation. Meaning lands on the first look."
           bullets={[
+            "Native pronunciation",
+            "Arabic + English + transliteration",
             "Realistic images, not illustrations",
-            "Fully vowelized Arabic + transliteration",
-            "One-tap native pronunciation",
-            "Daily review queue powered by SRS",
+            "One-tap audio",
           ]}
           image={learnAsset}
           alt="Learn mode flashcard showing a bus with Arabic word, transliteration and audio"
@@ -159,35 +161,52 @@ export default function PartnerLanding() {
 
       <Reveal>
         <ProductFeatureSection
-          eyebrow="Speaking mode"
-          title="Speak like a native, sentence by sentence"
-          description="Listen to a native speaker, then record yourself and compare. Build real speaking confidence — not just recognition."
+          eyebrow="Listening mode"
+          title="Train your ear with native audio"
+          description="Hear authentic pronunciation exactly as native speakers use it — at any pace, as many times as you need."
           bullets={[
-            "Listen to native pronunciation",
-            "Record yourself in one tap",
-            "Practice full sentences, not isolated words",
-            "Flip back any time to review meaning",
+            "Real native speakers",
+            "Unlimited replay",
+            "Natural pronunciation",
+            "Daily listening practice",
           ]}
-          image={speakingAsset}
-          alt="Speaking mode with listen to native and record yourself buttons"
+          image={listeningAsset}
+          alt="Listening mode with native audio playback"
           side="right"
         />
       </Reveal>
 
       <Reveal>
         <ProductFeatureSection
+          eyebrow="Speaking mode"
+          title="Speak Arabic with confidence"
+          description="Listen to a native speaker, then record yourself and compare. Build real speaking confidence — not just recognition."
+          bullets={[
+            "Record yourself in one tap",
+            "Compare pronunciation",
+            "Practice naturally, sentence by sentence",
+            "Unlimited speaking practice",
+          ]}
+          image={speakingAsset}
+          alt="Speaking mode with listen to native and record yourself buttons"
+          side="left"
+        />
+      </Reveal>
+
+      <Reveal>
+        <ProductFeatureSection
           eyebrow="Test Yourself"
-          title="Interactive quizzes with instant feedback"
+          title="Remember faster with interactive quizzes"
           description="Lock in what you've learned with quick, focused quizzes. Correct answers light up instantly so progress feels obvious."
           bullets={[
-            "10-question quizzes after every unit",
-            "Instant green-highlight feedback",
-            "Mixes audio, words, and images",
-            "Tracks your mastery automatically",
+            "Instant feedback",
+            "Correct answer highlighting",
+            "Smart review",
+            "Progress tracking",
           ]}
           image={quizAsset}
           alt="Quiz question with Traffic Light highlighted as the correct answer"
-          side="left"
+          side="right"
         />
       </Reveal>
 
