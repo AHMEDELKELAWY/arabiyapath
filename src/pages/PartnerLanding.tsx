@@ -10,7 +10,8 @@ import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
 import logoImage from "@/assets/logo.png";
 
 const PACK_SLUG = "msa-flashcards-pack";
-const YT_EMBED = "https://www.youtube.com/embed/BHeV5AZcb7k?rel=0&modestbranding=1&playsinline=1";
+const YT_VIDEO_ID = "BHeV5AZcb7k";
+const YT_EMBED = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
 
 interface PartnerRow {
   id: string;
