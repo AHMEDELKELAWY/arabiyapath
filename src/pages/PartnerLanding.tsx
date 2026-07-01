@@ -156,15 +156,39 @@ const STYLES = `
 .ph-final-cta .ph-cta-btn{background:#082E22;color:#fff;box-shadow:0 14px 30px -8px rgba(8,46,34,0.4);}
 .ph-final-cta .ph-cta-btn:hover{background:#142A20;}
 
-.ph-footer{padding:50px 24px 30px;text-align:center;}
+.ph-footer{padding:36px 24px 24px;text-align:center;}
 .ph-footer .ph-brand{justify-content:center;margin-bottom:14px;display:inline-flex;}
 .ph-footer p{font-size:0.78rem;color:#3F5046;margin:0;}
 
-.ph-sticky-cta{position:fixed;bottom:0;left:0;right:0;z-index:60;background:#fff;border-top:1px solid #E4DDCB;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -10px 30px -10px rgba(0,0,0,0.15);}
-.ph-sticky-cta .price{font-family:'Fraunces';font-weight:600;font-size:1.1rem;color:#0E4D38;}
-.ph-sticky-cta .price small{font-size:0.7rem;color:#3F5046;text-decoration:line-through;margin-left:6px;}
-.ph-sticky-cta .ph-cta-btn{padding:11px 20px;font-size:0.88rem;}
-@media (max-width:760px){.ph-sticky-cta{display:flex;}.ph-scope{padding-bottom:64px;}}
+.ph-sticky-cta{position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(255,255,255,0.98);backdrop-filter:blur(10px);border-top:1px solid #E4DDCB;padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -10px 30px -10px rgba(0,0,0,0.15);}
+.ph-sticky-cta .price{font-family:'Fraunces';font-weight:600;font-size:1.15rem;color:#0E4D38;line-height:1;}
+.ph-sticky-cta .price small{font-size:0.72rem;color:#3F5046;text-decoration:line-through;margin-left:6px;font-family:'Work Sans';}
+.ph-sticky-cta .ph-cta-btn{padding:12px 18px;font-size:0.9rem;white-space:nowrap;}
+
+@media (max-width:760px){
+  .ph-sticky-cta{display:flex;}
+  .ph-scope{padding-bottom:calc(72px + env(safe-area-inset-bottom));}
+  .ph-hero{padding:36px 0 48px;}
+  .ph-hero-grid{gap:32px;}
+  .ph-video-frame{max-width:280px;}
+  .ph-section{padding:56px 0;}
+  .ph-sec-head{margin-bottom:32px;}
+  .ph-offer-section{padding:0 0 56px;}
+  .ph-offer-box{padding:32px 22px;border-radius:22px;gap:22px;}
+  .ph-offer-left h3{font-size:1.4rem;}
+  .ph-offer-mid .new{font-size:2.2rem;}
+  .ph-seal{width:100px;height:100px;font-size:0.85rem;}
+  .ph-final-cta{padding:44px 22px;margin:0 16px;border-radius:22px;}
+  .ph-footer{padding:28px 20px 20px;}
+  .ph-hero h1{font-size:2rem;}
+  .ph-lead{font-size:1rem;}
+  .ph-price-new{font-size:2.2rem;}
+  .ph-cta-btn{width:auto;}
+  .ph-trust-row{gap:12px 18px;margin-top:24px;}
+}
+@media (max-width:760px){
+  section[style*="0 0 60px"]{padding:0 0 40px !important;}
+}
 `;
 
 const TESTIMONIALS = [
