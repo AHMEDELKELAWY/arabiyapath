@@ -28,15 +28,17 @@ interface PartnerRow {
 }
 
 const STYLES = `
-.ph-scope{font-family:'Work Sans',sans-serif;background:#FBF8F1;color:#142A20;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+.ph-scope{font-family:'Work Sans','Inter',system-ui,sans-serif;background:#FBF8F1;color:#142A20;line-height:1.65;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;}
 .ph-scope *{box-sizing:border-box;}
 .ph-scope img{max-width:100%;display:block;}
-.ph-scope .display{font-family:'Fraunces',serif;}
+.ph-scope .display{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;}
 .ph-scope .arabic{font-family:'Reem Kufi',sans-serif;}
 .ph-scope a{color:inherit;text-decoration:none;}
 .ph-scope ul{list-style:none;margin:0;padding:0;}
 .ph-scope .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
 .ph-scope :focus-visible{outline:3px solid #E8A33D;outline-offset:3px;}
+.ph-scope p{font-weight:400;}
+.ph-scope h1,.ph-scope h2,.ph-scope h3{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;letter-spacing:-0.015em;}
 @media (prefers-reduced-motion:reduce){.ph-scope *{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}}
 
 .ph-header{position:sticky;top:0;z-index:50;background:rgba(251,248,241,0.92);backdrop-filter:blur(10px);border-bottom:1px solid #E4DDCB;}
