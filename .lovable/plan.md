@@ -1,73 +1,76 @@
-# Phase 1 — Membership Rebrand (Frontend Only)
+## Goal
 
-Goal: present ArabiyaPath as a subscription-based Arabic learning membership. No backend, PayPal, Supabase, auth, coupons, affiliates, webhooks, or checkout wiring changes. Existing purchase records and access logic remain intact.
+Never ask the user to pick the same plan twice. The plan they click on the landing page must survive Signup and land them exactly where they intended — with no return trip to /pricing.
 
-## Scope Guardrails
+Frontend-only. No changes to Supabase, edge functions, PayPal, Checkout logic, product IDs, coupons, affiliates, or access control.
 
-Do NOT touch:
-- `supabase/**`, edge functions, RLS, DB schema
-- `src/integrations/supabase/**`
-- `src/components/checkout/**`, `src/lib/payments/**`, `src/pages/Checkout.tsx`, PayPal flows, `paypal-*` functions
-- Affiliate/partner logic, `src/lib/partnerConfig.ts`, `PartnerLanding.tsx`, coupon logic
-- Auth, `AuthContext`, redirect flows
-- Access control (`src/lib/accessControl.ts`, `src/lib/flashcardAccess.ts`, `useFlashcardUnitAccess`) — messaging around locked state only
-- All admin pages (`src/pages/admin/**`) — internal naming stays
-- Internal routes and technical component names (`/flashcards`, `FlashCardUnit`, `flashcard_packs`, etc.)
+## Target funnels
 
-## New Pricing Model (display only)
+```
+Free       → Landing → Start Free → Signup → Auto-login → /dashboard/progress#flashcards-section
+Monthly    → Landing → Monthly    → Signup → Auto-login → Membership pending page (Phase 2 checkout)
+6 Months   → Landing → 6 Months   → Signup → Auto-login → Membership pending page (Phase 2 checkout)
+Yearly     → Landing → Yearly     → Signup → Auto-login → Membership pending page (Phase 2 checkout)
+```
 
-Static data in a new `src/lib/membershipPlans.ts`:
+Rule: after signup the user must never be sent back to Home, Pricing, or the Membership section.
 
-| Plan | Price | Badge | Notes |
-|---|---|---|---|
-| Free | $0 | — | Unit 1 + all learn modes, requires signup |
-| Monthly | $30/mo | — | Full access |
-| 6 Months | $150 | Save $30 | Full access |
-| Yearly | $270 | ⭐ Best Value (highlighted) | Save $90, recommended |
+## What changes
 
-All paid CTAs point to `/pricing` (or `/signup?redirect=/pricing` if logged out). No new checkout wiring; the existing `/checkout?productId=…` link continues to work for the current product until Phase 2 replaces it. Lifetime language is removed from public surfaces.
+### 1. `src/lib/membershipPlans.ts`
+- Each plan gets a stable `slug` (`free`, `monthly`, `six_months`, `yearly`).
+- `resolveMembershipHref(plan, isLoggedIn)` becomes the single source of truth for CTA destinations:
+  - `free` → logged-in: `/dashboard/progress#flashcards-section`; logged-out: `/signup?plan=free`
+  - `monthly` / `six_months` / `yearly` → logged-in: `/membership/continue?plan=<slug>`; logged-out: `/signup?plan=<slug>`
+- Keeps all existing display copy and pricing intact.
 
-## Files to change
+### 2. New page `src/pages/MembershipContinue.tsx` (route `/membership/continue`)
+- Read `?plan=` from URL.
+- If not signed in → redirect to `/signup?plan=<slug>` (preserves intent).
+- If signed in → show a clean "Your <Plan name> membership — checkout opens soon" screen with:
+  - Selected plan summary (name, price, cadence, savings).
+  - Explanation that subscription billing is being finalized and they'll get an email the moment it goes live.
+  - Buttons: "Go to Dashboard" and "Change plan" (only Change plan links back to `/pricing`).
+- This is the "stop cleanly before payment" landing so no user is ever misrepresented on price/billing. Phase 2 will replace the body of this page with the real subscription checkout — the URL and funnel stay identical.
 
-### 1. New file
-- `src/lib/membershipPlans.ts` — exported `MEMBERSHIP_PLANS` array + copy tokens (`PRODUCT_NAME = "ArabiyaPath Membership"`, feature bullets, CTA labels).
+### 3. `src/pages/Signup.tsx`
+- Read `?plan=<slug>` in addition to the existing `?redirect=`.
+- Compute post-signup destination:
+  - `plan=free` → `/dashboard/progress#flashcards-section`
+  - `plan=monthly|six_months|yearly` → `/membership/continue?plan=<slug>`
+  - No plan param → keep existing `redirect` behavior (fully backwards compatible for Checkout, partners, coupons, affiliate links).
+- Pass the computed destination as `redirectPath` to `signUp()` (email confirmation link) AND to the "already-signed-in" auto-navigate effect AND to `<OAuthButtons redirectUrl={...} />` AND to the "Log in" link at the bottom.
+- Selected-plan indicator at the top of the form ("Continuing with the Yearly plan") so the user visually confirms nothing was lost.
 
-### 2. New component
-- `src/components/pricing/MembershipPricingSection.tsx` — responsive 4-card SaaS pricing grid (Free / Monthly / 6mo / Yearly), Yearly highlighted with "Best Value" ribbon, per-card feature list, CTAs: Free → `/signup`; paid → `/signup?redirect=/pricing` or `/pricing` if logged in. Uses existing shadcn `Card`/`Button` + design tokens (teal/gold). No hardcoded colors.
+### 4. `src/pages/Login.tsx` (light touch)
+- Same `?plan=` handling as Signup so users who click a paid plan and choose "Log in" instead still land on `/membership/continue?plan=<slug>`. No auth logic changes.
 
-### 3. Rewritten marketing pages
-- `src/pages/Index.tsx` — homepage hero, features, pricing teaser, CTA rewritten around Membership. Replace "Buy/Explore" CTAs with "Start Free" + "Join Membership". Feature grid: Native Audio, Real Images, Speaking, Listening, Smart Quizzes, Progress Dashboard, Spaced Repetition, Certificate, Continuous Updates. SEO title/description updated.
-- `src/pages/Pricing.tsx` — replace body with `<MembershipPricingSection/>` + FAQ/trust signals. Remove Lifetime option and any "one-time" language from public copy.
-- `src/pages/FlashCardsSalesPage.tsx` — rebrand to Membership sales page (or thin wrapper that renders the new pricing section + platform features). Route `/flashcards-pack` keeps working.
-- `src/pages/flashcards/FlashCardsHome.tsx` and `FlashCardPack.tsx` — swap "Flashcards Pack" wording → "ArabiyaPath Membership"; replace "Get Lifetime Access" CTAs with "Join Membership" / "Start Free"; keep the underlying links/routes unchanged.
+### 5. `src/pages/AuthCallback.tsx`
+- Verify the existing `?redirect=` handling forwards the computed destination unchanged. No new params introduced — Signup already encodes the final destination into `emailRedirectTo`.
 
-### 4. Navigation & shell
-- `src/components/layout/Navbar.tsx` — visible label "Flashcards" → "Membership" (route unchanged). Add/keep "Pricing" link. No other structural changes.
-- `src/components/layout/Layout.tsx` — footer/link labels updated in the same way if they reference Flashcards as a product.
+### 6. `src/components/pricing/MembershipPricingSection.tsx`
+- No structural changes. It already renders CTAs via `resolveMembershipHref`, so updating that helper propagates the new hrefs to every place the section is used (Home, Pricing, Sales page).
 
-### 5. Dashboard user-facing copy
-- `src/pages/Dashboard.tsx`, `src/pages/DashboardProgress.tsx`, `src/components/dashboard/FlashcardsDashboardSection.tsx`, `src/components/dashboard/ProductCard.tsx` — label swaps only: "Purchased" → "Membership Active", section titles → "Your Membership", add placeholder chips "Current Plan", "Renewal —", buttons "Upgrade Plan" / "Manage Membership" that link to `/pricing`. No logic changes; still driven by existing `usePurchases`.
+### 7. `src/App.tsx`
+- Add the new `/membership/continue` route.
 
-### 6. Locked content messaging
-- Wherever locked-unit UI is rendered inside the flashcards study flow (`src/pages/flashcards/FlashCardUnit.tsx`, `FlashCardStudy.tsx`, and dashboard locked cards), replace "Unlock Flashcards / Buy Pack" copy with "Upgrade to Access All Units" and "Join Membership" CTAs linking to `/pricing`. Access checks (`useFlashcardUnitAccess`, `hasAccessToLevel`) are untouched.
+## What we do NOT touch
 
-### 7. Checkout / post-purchase copy (display only)
-- `src/pages/PaymentSuccess.tsx`, `src/pages/ThankYouPurchase.tsx`, `src/pages/Checkout.tsx` — rename user-visible strings "Flashcards Pack" → "ArabiyaPath Membership" in headings/confirmations. Do not modify any logic, product IDs, PayPal calls, or query params.
+- `src/pages/Checkout.tsx`, `src/components/checkout/*`, `src/lib/payments/*`
+- PayPal edge functions, webhooks, product IDs, coupon RPCs, affiliate attribution
+- Supabase schema, RLS, or any database function
+- Partner coupon auto-apply (`getPartnerCoupon`) — remains active on Checkout for one-time products
+- Existing `redirect=` funnels used by partner landing pages and level/bundle CTAs — unchanged
 
-### 8. Free tier framing
-- Homepage + Pricing page + Free plan card clearly state: Unit 1 unlocked (Learn, Listening, Speaking, Quiz) + progress; signup required. Links go to `/signup?redirect=/flashcards` (existing free unit route) — no access logic added, since Unit 1 is already free per current `is_free` flag.
+## Preserved query params
 
-## Explicitly out of scope
-- Renaming routes, DB tables, product rows, admin pages
-- Real subscription billing, plan selection persistence, renewal dates
-- Partner landing page (`/partner/:slug`) — untouched
-- Any change under `supabase/`, `src/integrations/`, `src/components/checkout/`, `src/lib/payments/`, `src/lib/partner*`
+Signup already forwards the entire `redirect` URL. When a user lands on Signup via a partner link like `/signup?redirect=/checkout?productId=xxx&coupon=YYY`, that flow keeps working untouched. `plan=` is additive — it's only used when set and only for the four membership CTAs.
 
-## Verification
-- `tsgo` typecheck
-- Playwright screenshots (desktop 1280, mobile 390) of `/`, `/pricing`, `/flashcards-pack`, `/dashboard` confirming: Membership branding, 4-card pricing with Yearly highlighted, no "Lifetime" copy, existing checkout link on the current product still resolves.
+## Verification (Playwright, live preview)
 
-## Technical notes
-- Copy tokens centralized in `src/lib/membershipPlans.ts` so Phase 2 can swap CTAs to real subscription checkout by editing one file.
-- All new UI uses semantic tokens from `index.css` (teal primary, gold secondary). No hardcoded colors.
-- No new dependencies.
+1. Logged-out `/pricing` → click **Start Free** → Signup shows "Continuing with Free" → submit → lands on `/dashboard/progress#flashcards-section`.
+2. Logged-out `/pricing` → click **Monthly** → Signup shows "Continuing with Monthly" → submit → lands on `/membership/continue?plan=monthly` with the Monthly summary.
+3. Repeat for **6 Months** and **Yearly**.
+4. Logged-in user clicks **Yearly** on Home → lands directly on `/membership/continue?plan=yearly` (no Signup).
+5. Existing partner funnel `/signup?redirect=/checkout?productId=...` still routes to Checkout unchanged.
+6. `tsgo` typecheck passes.
