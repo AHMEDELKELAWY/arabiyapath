@@ -10,8 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { destinationForPlan, getPlanById } from "@/lib/membershipPlans";
 
 const benefits = ["Access free trial lessons", "Track your progress", "Earn certificates", "Join the community"];
 
@@ -29,7 +30,15 @@ export default function Signup() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
+  // Plan-aware destination: if a membership plan was selected on the landing
+  // page it takes precedence over any `redirect` param so the user is never
+  // asked to pick the same plan twice.
+  const selectedPlan = getPlanById(searchParams.get("plan"));
+  const redirectParam = searchParams.get("redirect");
+  const redirectUrl = selectedPlan
+    ? destinationForPlan(selectedPlan.id)
+    : (redirectParam || "/dashboard");
 
   const breadcrumbSchema = generateBreadcrumbListSchema([
     { name: "Home", path: "/" },
@@ -38,7 +47,7 @@ export default function Signup() {
 
   useEffect(() => {
     if (user) {
-      navigate(redirectUrl);
+      navigate(redirectUrl, { replace: true });
     }
   }, [user, navigate, redirectUrl]);
 
@@ -150,6 +159,17 @@ export default function Signup() {
                 </div>
 
                 <div className="bg-card rounded-2xl border border-border p-8">
+                  {selectedPlan && (
+                    <div className="mb-5 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm">
+                      <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-foreground">
+                        Continuing with the <span className="font-semibold">{selectedPlan.name}</span> plan
+                        {selectedPlan.id !== "free" && (
+                          <> · {selectedPlan.priceLabel} <span className="text-muted-foreground">{selectedPlan.cadenceLabel}</span></>
+                        )}
+                      </span>
+                    </div>
+                  )}
                   <OAuthButtons redirectUrl={redirectUrl} />
                   <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                     <div className="grid sm:grid-cols-2 gap-4">
