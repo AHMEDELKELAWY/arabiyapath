@@ -42,7 +42,7 @@ export default function ThankYouPurchase() {
               <Link to="/dashboard/progress#flashcards-section">
                 <Button size="lg" variant="outline" className="w-full gap-2">
                   <ArrowRight className="h-5 w-5" />
-                  Open Flashcards Progress
+                  Go to Membership Progress
                 </Button>
               </Link>
             </div>

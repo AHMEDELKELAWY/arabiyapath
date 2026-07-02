@@ -195,8 +195,8 @@ export default function FlashCardUnit() {
                       Browse each card with its Arabic word, transliteration, English meaning, image, and native audio — at your own pace.
                     </p>
                     <Button asChild className="mt-2">
-                      <Link to={unlockHref}>
-                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      <Link to="/pricing">
+                        <Lock className="w-4 h-4 mr-2" /> Join Membership
                       </Link>
                     </Button>
                   </CardContent>
@@ -219,8 +219,8 @@ export default function FlashCardUnit() {
                       Play the unit's audio and follow along as each card highlights in turn.
                     </p>
                     <Button asChild className="mt-2">
-                      <Link to={unlockHref}>
-                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      <Link to="/pricing">
+                        <Lock className="w-4 h-4 mr-2" /> Join Membership
                       </Link>
                     </Button>
                   </CardContent>
@@ -243,8 +243,8 @@ export default function FlashCardUnit() {
                       Record yourself saying each word and compare against the native audio with an AI pronunciation score.
                     </p>
                     <Button asChild className="mt-2">
-                      <Link to={unlockHref}>
-                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      <Link to="/pricing">
+                        <Lock className="w-4 h-4 mr-2" /> Join Membership
                       </Link>
                     </Button>
                   </CardContent>
@@ -266,8 +266,8 @@ export default function FlashCardUnit() {
                       A 10-question mixed quiz built from this unit's cards, with a final score.
                     </p>
                     <Button asChild className="mt-2">
-                      <Link to={unlockHref}>
-                        <Lock className="w-4 h-4 mr-2" /> Unlock Full Pack
+                      <Link to="/pricing">
+                        <Lock className="w-4 h-4 mr-2" /> Join Membership
                       </Link>
                     </Button>
                   </CardContent>
