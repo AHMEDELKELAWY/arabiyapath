@@ -201,12 +201,14 @@ export default function FlashCardsHome() {
 
   function lessonHrefForUnit(slug: string): string {
     const target = `/flashcards/unit/${slug}?from=home`;
-    return user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
+    // Logged-out visitors go through the /start-free lead-capture funnel
+    // (email → full signup → straight into Unit 1) instead of jumping to Signup.
+    return user ? target : "/start-free";
   }
 
   const heroFreeHref = firstFreeUnit
     ? lessonHrefForUnit(firstFreeUnit.slug)
-    : "/flashcards";
+    : (user ? "/flashcards" : "/start-free");
 
   const heroPackHref =
     firstPack?.product_id && !hasAnyPackAccess

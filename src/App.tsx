@@ -45,6 +45,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const ThankYouPurchase = lazy(() => import("./pages/ThankYouPurchase"));
 const MembershipContinue = lazy(() => import("./pages/MembershipContinue"));
+const StartFree = lazy(() => import("./pages/StartFree"));
 const CertificateView = lazy(() => import("./pages/CertificateView"));
 
 // Learning pages
@@ -120,6 +121,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/start-free" element={<StartFree />} />
               <Route path="/become-affiliate" element={<BecomeAffiliate />} />
               <Route path="/partner/:slug" element={<PartnerLanding />} />
               <Route path="/terms" element={<Terms />} />
