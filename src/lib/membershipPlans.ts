@@ -2,7 +2,8 @@
  * ArabiyaPath Membership — public plan catalog (display only).
  *
  * Phase 1: pure UI/copy. No billing, no backend, no subscription wiring.
- * Phase 2 will replace ctaHref values with real subscription checkout links.
+ * Phase 2 will replace the /membership/continue landing with the real
+ * subscription checkout — the funnel URLs stay identical.
  */
 
 export const PRODUCT_NAME = "ArabiyaPath Membership";
@@ -20,8 +21,10 @@ export const MEMBERSHIP_FEATURES = [
   "Continuous updates — new content added regularly",
 ] as const;
 
+export type MembershipPlanId = "free" | "monthly" | "six_months" | "yearly";
+
 export interface MembershipPlan {
-  id: "free" | "monthly" | "six_months" | "yearly";
+  id: MembershipPlanId;
   name: string;
   price: number;
   currency: string;
@@ -30,14 +33,14 @@ export interface MembershipPlan {
   badge?: string;
   savingsLabel?: string;
   ctaLabel: string;
-  ctaHref: string;
   highlighted?: boolean;
   features: readonly string[];
   footnote?: string;
 }
 
-const FREE_UNIT_HREF = "/flashcards";
-const PAID_HREF = "/pricing";
+/** Where a user lands after signup/login when this plan was selected. */
+export const FREE_DESTINATION = "/dashboard/progress#flashcards-section";
+export const PAID_DESTINATION_BASE = "/membership/continue";
 
 export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
@@ -48,7 +51,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     priceLabel: "$0",
     cadenceLabel: "forever",
     ctaLabel: "Start Free",
-    ctaHref: FREE_UNIT_HREF,
     features: [
       "Unit 1 unlocked",
       "Learn, Listening, Speaking & Quiz modes",
@@ -65,7 +67,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     priceLabel: "$30",
     cadenceLabel: "per month",
     ctaLabel: "Join Membership",
-    ctaHref: PAID_HREF,
     features: MEMBERSHIP_FEATURES.slice(),
     footnote: "Cancel anytime.",
   },
@@ -78,7 +79,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     cadenceLabel: "every 6 months",
     savingsLabel: "Save $30",
     ctaLabel: "Join Membership",
-    ctaHref: PAID_HREF,
     features: MEMBERSHIP_FEATURES.slice(),
     footnote: "Billed every 6 months.",
   },
@@ -92,20 +92,28 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: "⭐ Best Value",
     savingsLabel: "Save $90",
     ctaLabel: "Join Membership",
-    ctaHref: PAID_HREF,
     highlighted: true,
     features: MEMBERSHIP_FEATURES.slice(),
     footnote: "Best value — billed yearly.",
   },
 ];
 
+export function getPlanById(id: string | null | undefined): MembershipPlan | undefined {
+  if (!id) return undefined;
+  return MEMBERSHIP_PLANS.find((p) => p.id === id);
+}
+
+/** Final destination for a given plan after auth is complete. */
+export function destinationForPlan(planId: MembershipPlanId): string {
+  return planId === "free" ? FREE_DESTINATION : `${PAID_DESTINATION_BASE}?plan=${planId}`;
+}
+
 /**
- * Wrap paid plan CTAs so logged-out visitors go through signup first.
- * Free plan target is signup itself (with redirect to first free unit).
+ * CTA href for a plan card.
+ * - Logged in → jump straight to the final destination.
+ * - Logged out → route through Signup, preserving the selected plan.
  */
 export function resolveMembershipHref(plan: MembershipPlan, isLoggedIn: boolean): string {
-  if (plan.id === "free") {
-    return isLoggedIn ? plan.ctaHref : `/signup?redirect=${encodeURIComponent(plan.ctaHref)}`;
-  }
-  return isLoggedIn ? plan.ctaHref : `/signup?redirect=${encodeURIComponent(plan.ctaHref)}`;
+  if (isLoggedIn) return destinationForPlan(plan.id);
+  return `/signup?plan=${plan.id}`;
 }
