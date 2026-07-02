@@ -229,32 +229,29 @@ export default function FlashCardsHome() {
   return (
     <Layout>
       <SEOHead
-        title="MSA Arabic Flash Cards — Learn Vocabulary with SRS"
-        description="Master Modern Standard Arabic vocabulary with realistic photo flash cards, native audio, and spaced repetition. Unit 1 free."
+        title="ArabiyaPath Membership — Learn Arabic Every Day"
+        description="Join the premium ArabiyaPath Membership. Fully vowelized Modern Standard Arabic with native audio, real images, speaking, listening, and quizzes. Unit 1 free."
         canonicalPath="/flashcards"
         jsonLd={itemList}
       />
       <section className="py-16 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-5xl text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            MSA Arabic Flash Cards
+            ArabiyaPath Membership
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Learn fully vowelized Modern Standard Arabic through realistic images, native
-            audio, and a proven spaced repetition system.
+            Learn fully vowelized Modern Standard Arabic with native audio, real images, speaking practice, listening drills, and smart quizzes — all included.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Button size="lg" asChild>
               <Link to={heroFreeHref}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                {firstFreeUnit ? `Try ${firstFreeUnit.title_en} Free` : "Start Free"}
+                {firstFreeUnit ? `Start Free — ${firstFreeUnit.title_en}` : "Start Free"}
               </Link>
             </Button>
-            {firstPack && heroPackHref && (
+            {!hasAnyPackAccess && (
               <Button size="lg" variant="outline" asChild>
-                <Link to={heroPackHref}>
-                  Get Full Pack — ${(firstPack.price_cents / 100).toFixed(2)}
-                </Link>
+                <Link to="/pricing">Join Membership</Link>
               </Button>
             )}
           </div>
@@ -279,12 +276,7 @@ export default function FlashCardsHome() {
                 } else if (unlocked) {
                   href = lessonHrefForUnit(u.slug);
                 } else {
-                  const match = packUnits?.find((pu) => pu.unit_id === u.id);
-                  const pack =
-                    (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
-                  const target = pack?.product_id
-                    ? `/checkout?productId=${pack.product_id}`
-                    : "/flashcards";
+                  const target = "/pricing";
                   href = user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
                 }
                 return (
@@ -320,7 +312,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack"}
+                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Upgrade to Access"}
                         </div>
                       </CardContent>
                     </Card>

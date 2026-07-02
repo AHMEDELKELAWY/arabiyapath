@@ -195,7 +195,7 @@ export default function Checkout() {
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3 text-center">
                   <Clock className="mx-auto mb-2 h-6 w-6 text-primary" />
-                  <p className="text-xs font-medium">Lifetime Access</p>
+                  <p className="text-xs font-medium">Full Access</p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3 text-center">
                   <Award className="mx-auto mb-2 h-6 w-6 text-primary" />
@@ -208,7 +208,7 @@ export default function Checkout() {
               <Card className="border-2 border-primary/20 lg:sticky lg:top-8">
                 <CardHeader className="border-b bg-primary/5 p-4 sm:p-6">
                   <CardTitle className="text-lg sm:text-xl">Complete Your Purchase</CardTitle>
-                  <CardDescription className="text-sm">One-time payment • Instant access</CardDescription>
+                  <CardDescription className="text-sm">Instant access</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-4 sm:p-6 sm:pt-6">
                   <PayPalCheckout

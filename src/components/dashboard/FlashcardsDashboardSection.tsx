@@ -15,7 +15,7 @@ export function FlashcardsDashboardSection() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Flash Cards</h2>
+        <h2 className="text-xl font-semibold">Membership</h2>
         <Button variant="outline" size="sm" asChild>
           <Link to="/flashcards">Explore</Link>
         </Button>

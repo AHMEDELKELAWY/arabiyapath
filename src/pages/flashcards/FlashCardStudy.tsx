@@ -212,7 +212,7 @@ export default function FlashCardStudy() {
                 You completed the free flashcard unit.
               </p>
               <p className="font-semibold mb-3">
-                Unlock the complete Flash Cards Pack and get access to:
+                Join the ArabiyaPath Membership and get access to:
               </p>
               <ul className="text-left max-w-sm mx-auto space-y-2 mb-8 text-sm">
                 {benefits.map((b) => (
@@ -224,8 +224,8 @@ export default function FlashCardStudy() {
               </ul>
               <div className="flex flex-col gap-3">
                 <Button size="lg" className="w-full gap-2" asChild>
-                  <Link to={upgradeHref}>
-                    Unlock Full Pack
+                  <Link to="/pricing">
+                    Join Membership
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
