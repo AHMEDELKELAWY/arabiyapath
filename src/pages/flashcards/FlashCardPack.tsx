@@ -89,15 +89,18 @@ export default function FlashCardPack() {
 
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-5xl font-bold mb-2">${price}</p>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-secondary">
+              ArabiyaPath Membership
+            </div>
+            <p className="text-4xl font-bold mb-2">Unlimited access</p>
             <p className="text-sm text-muted-foreground mb-6">
-              {pack.access_type === "lifetime" ? "Lifetime access" : pack.access_type}
+              Full membership includes every unit and every learning mode.
             </p>
 
             <div className="flex flex-col gap-3 mb-8">
               <Button size="lg" className="w-full gap-2" asChild>
-                <Link to={checkoutHref}>
-                  Get Lifetime Access
+                <Link to="/pricing">
+                  Join Membership
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
@@ -105,21 +108,22 @@ export default function FlashCardPack() {
                 <Button size="lg" variant="outline" className="w-full gap-2" asChild>
                   <Link to={freeHref}>
                     <Sparkles className="w-4 h-4" />
-                    Try Free Unit
+                    Start Free
                   </Link>
                 </Button>
               )}
             </div>
 
             <ul className="text-left max-w-sm mx-auto space-y-2 mb-6 text-sm">
-              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> All units included</li>
-              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Realistic image flash cards</li>
+              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> All units and levels</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Native MSA audio with full tashkeel</li>
-              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Spaced repetition (SRS) engine</li>
+              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Speaking & listening practice</li>
+              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Smart quizzes with SRS</li>
               <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Progress + streak tracking</li>
+              <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5" /> Certificate on completion</li>
             </ul>
             <p className="text-xs text-muted-foreground">
-              Secure checkout with coupons, PayPal, and card payments.
+              Cancel anytime · 30-day money-back guarantee
             </p>
           </CardContent>
         </Card>
