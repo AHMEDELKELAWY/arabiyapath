@@ -312,7 +312,7 @@ export default function FlashCardsHome() {
                         </p>
                         <div className="inline-flex items-center text-sm font-medium text-primary">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack"}
+                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Upgrade to Access"}
                         </div>
                       </CardContent>
                     </Card>
