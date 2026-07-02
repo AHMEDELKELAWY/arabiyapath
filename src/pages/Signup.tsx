@@ -199,7 +199,7 @@ export default function Signup() {
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-5 h-5" /></>}
                     </Button>
                   </form>
-                  <div className="mt-6 text-center"><p className="text-muted-foreground text-sm">Already have an account? <Link to={`/login${redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : ""}`} className="text-primary font-medium hover:underline">Log in</Link></p></div>
+                  <div className="mt-6 text-center"><p className="text-muted-foreground text-sm">Already have an account? <Link to={selectedPlan ? `/login?plan=${selectedPlan.id}` : (redirectUrl !== "/dashboard" ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login")} className="text-primary font-medium hover:underline">Log in</Link></p></div>
                 </div>
               </div>
             </div>

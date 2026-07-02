@@ -44,6 +44,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const ThankYouPurchase = lazy(() => import("./pages/ThankYouPurchase"));
+const MembershipContinue = lazy(() => import("./pages/MembershipContinue"));
 const CertificateView = lazy(() => import("./pages/CertificateView"));
 
 // Learning pages
@@ -135,6 +136,7 @@ const App = () => (
               <Route path="/thank-you-purchase" element={<ThankYouPurchase />} />
               <Route path="/choose-plan/:dialectId" element={<ChoosePlan />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/membership/continue" element={<MembershipContinue />} />
               <Route path="/certificate/:certCode" element={<CertificateView />} />
               {/* Learning Routes */}
               <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />

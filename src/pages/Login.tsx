@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { destinationForPlan, getPlanById } from "@/lib/membershipPlans";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +23,11 @@ export default function Login() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromState = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-  const explicitRedirect = searchParams.get("redirect") || fromState || null;
+  // Plan selection from the landing/pricing CTAs wins over generic `redirect`
+  // so paid-plan users never bounce back to /pricing after login.
+  const selectedPlan = getPlanById(searchParams.get("plan"));
+  const planRedirect = selectedPlan ? destinationForPlan(selectedPlan.id) : null;
+  const explicitRedirect = planRedirect ?? searchParams.get("redirect") ?? fromState ?? null;
   // Admin users default to /admin when no explicit destination was requested.
   const redirectUrl =
     explicitRedirect ?? (isAdmin ? "/admin" : "/dashboard");
