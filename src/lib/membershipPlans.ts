@@ -39,7 +39,7 @@ export interface MembershipPlan {
 }
 
 /** Where a user lands after signup/login when this plan was selected. */
-export const FREE_DESTINATION = "/dashboard/progress#flashcards-section";
+export const FREE_DESTINATION = "/flashcards/unit/In-The-Classroom";
 export const PAID_DESTINATION_BASE = "/membership/continue";
 
 export const MEMBERSHIP_PLANS: MembershipPlan[] = [
@@ -111,9 +111,11 @@ export function destinationForPlan(planId: MembershipPlanId): string {
 /**
  * CTA href for a plan card.
  * - Logged in → jump straight to the final destination.
- * - Logged out → route through Signup, preserving the selected plan.
+ * - Logged out, Free → send through the /start-free lead-capture step first.
+ * - Logged out, Paid → route through Signup with the plan preserved.
  */
 export function resolveMembershipHref(plan: MembershipPlan, isLoggedIn: boolean): string {
   if (isLoggedIn) return destinationForPlan(plan.id);
+  if (plan.id === "free") return "/start-free";
   return `/signup?plan=${plan.id}`;
 }
