@@ -276,12 +276,7 @@ export default function FlashCardsHome() {
                 } else if (unlocked) {
                   href = lessonHrefForUnit(u.slug);
                 } else {
-                  const match = packUnits?.find((pu) => pu.unit_id === u.id);
-                  const pack =
-                    (match ? packs?.find((p) => p.id === match.pack_id) : null) ?? firstPack;
-                  const target = pack?.product_id
-                    ? `/checkout?productId=${pack.product_id}`
-                    : "/flashcards";
+                  const target = "/pricing";
                   href = user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
                 }
                 return (
