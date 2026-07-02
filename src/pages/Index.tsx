@@ -3,9 +3,24 @@ import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead, generateOrganizationSchema, generateWebSiteSchema } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Award, Clock, Users, BookOpen, MessageCircle, Infinity, Video } from "lucide-react";
-import { trackBookTrial } from "@/lib/analytics";
+import {
+  ArrowRight,
+  Award,
+  Clock,
+  Users,
+  BookOpen,
+  Mic,
+  Headphones,
+  Sparkles,
+  Repeat,
+  TrendingUp,
+  Image as ImageIcon,
+  Volume2,
+  RefreshCw,
+} from "lucide-react";
+import { MembershipPricingSection } from "@/components/pricing/MembershipPricingSection";
+import { PRODUCT_NAME } from "@/lib/membershipPlans";
+import { useAuth } from "@/contexts/AuthContext";
 
 const organizationSchema = generateOrganizationSchema();
 const websiteSchema = generateWebSiteSchema();
@@ -40,46 +55,60 @@ function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: stri
   return <span ref={ref}>{count}{suffix}</span>;
 }
 
+const platformFeatures = [
+  { icon: Volume2, title: "Native Audio", desc: "Every card and lesson recorded by a native Arabic speaker." },
+  { icon: ImageIcon, title: "Real Images", desc: "Learn vocabulary through realistic photos, not cartoons." },
+  { icon: Mic, title: "Speaking Practice", desc: "Record yourself and compare against native pronunciation." },
+  { icon: Headphones, title: "Listening Practice", desc: "Train your ear with immersive audio exercises." },
+  { icon: BookOpen, title: "Smart Quizzes", desc: "Adaptive quizzes that focus on what you struggle with." },
+  { icon: TrendingUp, title: "Progress Dashboard", desc: "Track mastery, streaks, and time to your certificate." },
+  { icon: Repeat, title: "Spaced Repetition", desc: "Review the right card at the right time — automatically." },
+  { icon: Award, title: "Certificate", desc: "Earn a completion certificate you can share." },
+  { icon: RefreshCw, title: "Continuous Updates", desc: "New units, cards, and lessons added every month." },
+];
+
 export default function Index() {
+  const { user } = useAuth();
+  const startFreeHref = user ? "/flashcards" : `/signup?redirect=${encodeURIComponent("/flashcards")}`;
+
   return (
     <>
       <SEOHead
         canonicalPath="/"
-        title=""
-        description="Speak Gulf or Modern Standard Arabic with confidence. Structured beginner-friendly courses by a certified Arabic instructor with 700+ teaching hours."
+        title="ArabiyaPath Membership — Learn Arabic Every Day"
+        description="Premium Arabic learning membership. Native audio, real images, speaking, listening, quizzes, and progress tracking. Start free — no credit card."
         jsonLd={[organizationSchema, websiteSchema]}
       />
       <Layout>
-        {/* Hero Section */}
+        {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-hero-gradient opacity-[0.03] pointer-events-none z-0" />
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
             <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/15 text-secondary text-xs font-semibold mb-5">
+                <Sparkles className="w-3.5 h-3.5" />
+                {PRODUCT_NAME}
+              </div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 animate-slide-up leading-tight">
-                Speak Gulf or Modern Standard Arabic with Confidence
-                <span className="text-gradient block mt-2">— Even as a Beginner</span>
+                Learn Arabic Every Day
+                <span className="text-gradient block mt-2">on a Premium Membership</span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-                Structured step-by-step courses designed by a certified Arabic instructor with 700+ teaching hours — trusted by 50+ active students worldwide.
+                Native audio, real images, speaking practice, listening drills, smart quizzes, and progress tracking — one membership, unlimited access.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.2s" }}>
-                <Button
-                  size="xl"
-                  variant="hero"
-                  asChild
-                  onClick={() => trackBookTrial("Start Free Gulf Lesson", "hero_section")}
-                >
-                  <Link to="/free-gulf-lesson">
-                    Start Free Gulf Lesson
+                <Button size="xl" variant="hero" asChild>
+                  <Link to={startFreeHref}>
+                    Start Free
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
                 <Button size="xl" variant="outline" asChild>
-                  <Link to="/pricing">Explore Beginner Course</Link>
+                  <Link to="/pricing">Join Membership</Link>
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground mt-6 animate-slide-up" style={{ animationDelay: "0.3s" }}>
-                700+ teaching hours · 50+ active students · Lifetime access
+                Free Unit 1 · No credit card · Cancel anytime
               </p>
             </div>
           </div>
@@ -87,20 +116,20 @@ export default function Index() {
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
         </section>
 
-        {/* Meet Your Instructor Section */}
-        <section className="py-20 bg-muted/50">
+        {/* Instructor / Trust */}
+        <section className="py-16 bg-muted/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto text-center mb-12">
+            <div className="max-w-4xl mx-auto text-center mb-10">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                Meet Your Instructor
+                Built by a Certified Arabic Instructor
               </h2>
               <p className="text-lg text-muted-foreground">
-                Learn Arabic with a certified instructor trusted by students worldwide.
+                Every unit is designed by a professional Arabic tutor with real classroom and online experience.
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
               {[
-                { icon: Award, label: "Certified Arabic Instructor on Preply", number: null },
+                { icon: Award, label: "Certified Arabic Instructor", number: null },
                 { icon: Clock, label: "Teaching Hours", number: 700 },
                 { icon: Users, label: "Active Students", number: 50 },
                 { icon: BookOpen, label: "Specialized in Non-Native Learners", number: null },
@@ -121,141 +150,61 @@ export default function Index() {
                 </div>
               ))}
             </div>
-            <p className="text-center text-muted-foreground max-w-2xl mx-auto text-base">
-              All ArabiyaPath courses are structured and designed by a professional Arabic tutor with real classroom and online teaching experience.
-            </p>
           </div>
         </section>
 
-        {/* Choose Your Path Section */}
+        {/* Platform Features */}
         <section className="py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
+            <div className="max-w-2xl mx-auto text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                Choose Your Path
+                Everything you need to actually speak Arabic
               </h2>
+              <p className="text-lg text-muted-foreground">
+                All included in your membership. Nothing to buy separately.
+              </p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Gulf Arabic Card */}
-              <div className="bg-card rounded-2xl border border-border p-8 flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="text-4xl mb-4">🏜️</div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">Gulf Arabic</h3>
-                <p className="text-muted-foreground text-sm mb-8">For daily life in the UAE &amp; GCC</p>
-                <div className="flex flex-col gap-3 w-full">
-                  <Button size="lg" asChild>
-                    <Link to="/pricing">Beginner Course</Link>
-                  </Button>
-                  <div className="relative">
-                    <Badge variant="secondary" className="absolute -top-3 right-2 z-10 text-xs shadow-gold">
-                      🔥 Most Popular
-                    </Badge>
-                    <Button size="lg" variant="secondary" className="w-full flex-col h-auto py-3" asChild>
-                      <Link to="/pricing">
-                        <span>Full Bundle</span>
-                        <span className="text-xs font-normal opacity-80">Includes 1 Private Evaluation Session</span>
-                      </Link>
-                    </Button>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+              {platformFeatures.map((f) => (
+                <div
+                  key={f.title}
+                  className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                    <f.icon className="w-5 h-5 text-primary" />
                   </div>
-                </div>
-              </div>
-
-              {/* MSA Card */}
-              <div className="bg-card rounded-2xl border border-border p-8 flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="text-4xl mb-4">📜</div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">Modern Standard Arabic</h3>
-                <p className="text-muted-foreground text-sm mb-8">For reading, formal Arabic &amp; wider understanding</p>
-                <div className="flex flex-col gap-3 w-full">
-                  <Button size="lg" asChild>
-                    <Link to="/pricing">Beginner Course</Link>
-                  </Button>
-                  <Button size="lg" variant="secondary" className="flex-col h-auto py-3" asChild>
-                    <Link to="/pricing">
-                      <span>Full Bundle</span>
-                      <span className="text-xs font-normal opacity-80">Includes 1 Private Evaluation Session</span>
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Flash Cards Card */}
-              <div className="bg-card rounded-2xl border border-border p-8 flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 md:col-span-2 lg:col-span-1">
-                <div className="text-4xl mb-4">🃏</div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">Flash Cards</h3>
-                <p className="text-muted-foreground text-sm mb-8">Memorize Arabic vocabulary with spaced repetition</p>
-                <div className="flex flex-col gap-3 w-full">
-                  <Button size="lg" asChild>
-                    <Link to="/flashcards">Beginner Pack</Link>
-                  </Button>
-                  <Button size="lg" variant="secondary" className="flex-col h-auto py-3" asChild>
-                    <Link to="/flashcards">
-                      <span>Full Pack</span>
-                      <span className="text-xs font-normal opacity-80">Lifetime access to all units</span>
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="py-20 bg-muted/50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              {[
-                {
-                  icon: MessageCircle,
-                  title: "Progress from Zero to Real Conversations",
-                  description: "Clear structured levels from Beginner to Advanced.",
-                },
-                {
-                  icon: Infinity,
-                  title: "Learn Once — Access Forever",
-                  description: "Lifetime access. No subscriptions.",
-                },
-                {
-                  icon: Video,
-                  title: "Get Personal Feedback from Your Instructor",
-                  description: "1 Private Evaluation Session included in every Full Bundle.",
-                },
-              ].map((benefit) => (
-                <div key={benefit.title} className="text-center p-6 rounded-2xl hover:bg-card hover:shadow-md transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
-                    <benefit.icon className="w-6 h-6 text-accent-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{benefit.title}</h3>
-                  <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                  <h3 className="font-bold text-foreground mb-1.5">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground">{f.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
+        {/* Pricing */}
+        <div className="bg-muted/30">
+          <MembershipPricingSection />
+        </div>
+
         {/* Final CTA */}
         <section className="py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto bg-card rounded-3xl p-8 md:p-12 border border-border shadow-xl text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Ready to Start?
+                Start Learning Arabic Today
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Try your first Gulf Arabic lesson for free — no account required.
+                Unit 1 is free. Explore the platform, then upgrade whenever you're ready.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  size="xl"
-                  variant="hero"
-                  asChild
-                  onClick={() => trackBookTrial("Start Free Gulf Lesson", "cta_section")}
-                >
-                  <Link to="/free-gulf-lesson">
-                    Start Free Gulf Lesson
+                <Button size="xl" variant="hero" asChild>
+                  <Link to={startFreeHref}>
+                    Start Free
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
                 <Button size="xl" variant="outline" asChild>
-                  <Link to="/pricing">View Pricing</Link>
+                  <Link to="/pricing">Upgrade to Membership</Link>
                 </Button>
               </div>
             </div>
