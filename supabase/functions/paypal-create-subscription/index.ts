@@ -8,10 +8,20 @@ const corsHeaders = {
 
 const PAYPAL_API_BASE = "https://api-m.paypal.com";
 
-const PLAN_MAP: Record<string, { paypalPlanId: string; label: string }> = {
-  monthly:    { paypalPlanId: "P-4TD79441C9251073ENJEEFAA", label: "ArabiyaPath Membership — Monthly" },
-  six_months: { paypalPlanId: "P-7273220749612745YNJEEKGQ", label: "ArabiyaPath Membership — 6 Months" },
-  yearly:     { paypalPlanId: "P-6PH57317JM699332JNJEEMVI", label: "ArabiyaPath Membership — Yearly" },
+interface PlanConfig {
+  paypalPlanId: string;
+  label: string;
+  /** Full plan price used to compute a discounted first cycle. */
+  fullPrice: number;
+  currency: string;
+  intervalUnit: "MONTH" | "YEAR";
+  intervalCount: number;
+}
+
+const PLAN_MAP: Record<string, PlanConfig> = {
+  monthly:    { paypalPlanId: "P-4TD79441C9251073ENJEEFAA", label: "ArabiyaPath Membership — Monthly",   fullPrice: 30,  currency: "USD", intervalUnit: "MONTH", intervalCount: 1 },
+  six_months: { paypalPlanId: "P-7273220749612745YNJEEKGQ", label: "ArabiyaPath Membership — 6 Months",  fullPrice: 150, currency: "USD", intervalUnit: "MONTH", intervalCount: 6 },
+  yearly:     { paypalPlanId: "P-6PH57317JM699332JNJEEMVI", label: "ArabiyaPath Membership — Yearly",    fullPrice: 270, currency: "USD", intervalUnit: "YEAR",  intervalCount: 1 },
 };
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -50,19 +60,27 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Resolve coupon → affiliate attribution (reuse existing coupon→affiliate linkage)
+    // Resolve coupon → affiliate attribution + first-payment discount
     let couponId: string | null = null;
     let affiliateId: string | null = null;
+    let percentOff = 0;
     if (couponCode) {
       const { data: coupon } = await supabase
         .from("coupons")
-        .select("id, affiliate_id, active, expires_at")
+        .select("id, affiliate_id, active, expires_at, percent_off, discount_percent, applies_to, max_redemptions, current_uses")
         .eq("code", String(couponCode).toUpperCase())
         .eq("active", true)
         .maybeSingle();
-      if (coupon && (!coupon.expires_at || new Date(coupon.expires_at) > new Date())) {
+      if (
+        coupon &&
+        (!coupon.expires_at || new Date(coupon.expires_at) > new Date()) &&
+        (coupon.max_redemptions == null || (coupon.current_uses ?? 0) < coupon.max_redemptions) &&
+        (coupon.applies_to == null || coupon.applies_to === "all" || coupon.applies_to === "membership")
+      ) {
         couponId = coupon.id;
         affiliateId = coupon.affiliate_id ?? null;
+        percentOff = Number(coupon.percent_off ?? coupon.discount_percent ?? 0) || 0;
+        percentOff = Math.max(0, Math.min(100, percentOff));
       }
     }
 
@@ -83,6 +101,53 @@ serve(async (req) => {
     const accessToken = await getPayPalAccessToken();
     const origin = returnOrigin || req.headers.get("origin") || "https://arabiyapath.com";
 
+    // First-payment-only coupon:
+    // Override the subscription's billing cycles: add a 1-cycle TRIAL at the
+    // discounted price at sequence 1, then the plan's REGULAR price at sequence 2.
+    // Renewals charge the full plan price (business rule).
+    const requestBody: Record<string, unknown> = {
+      plan_id: planConfig.paypalPlanId,
+      custom_id: userId,
+      application_context: {
+        brand_name: "ArabiyaPath",
+        locale: "en-US",
+        shipping_preference: "NO_SHIPPING",
+        user_action: "SUBSCRIBE_NOW",
+        return_url: `${origin}/membership/activate`,
+        cancel_url: `${origin}/membership/continue?plan=${plan}&cancelled=1`,
+      },
+    };
+
+    if (percentOff > 0) {
+      const discountedFirst = Math.max(
+        0.01,
+        Math.round(planConfig.fullPrice * (1 - percentOff / 100) * 100) / 100,
+      ).toFixed(2);
+      const regularFull = planConfig.fullPrice.toFixed(2);
+      requestBody.plan = {
+        billing_cycles: [
+          {
+            sequence: 1,
+            tenure_type: "TRIAL",
+            total_cycles: 1,
+            frequency: { interval_unit: planConfig.intervalUnit, interval_count: planConfig.intervalCount },
+            pricing_scheme: {
+              fixed_price: { value: discountedFirst, currency_code: planConfig.currency },
+            },
+          },
+          {
+            sequence: 2,
+            tenure_type: "REGULAR",
+            total_cycles: 0, // infinite renewals at full price
+            frequency: { interval_unit: planConfig.intervalUnit, interval_count: planConfig.intervalCount },
+            pricing_scheme: {
+              fixed_price: { value: regularFull, currency_code: planConfig.currency },
+            },
+          },
+        ],
+      };
+    }
+
     const subRes = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
       method: "POST",
       headers: {
@@ -91,18 +156,7 @@ serve(async (req) => {
         "PayPal-Request-Id": `${userId}-${plan}-${Date.now()}`,
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        plan_id: planConfig.paypalPlanId,
-        custom_id: userId,
-        application_context: {
-          brand_name: "ArabiyaPath",
-          locale: "en-US",
-          shipping_preference: "NO_SHIPPING",
-          user_action: "SUBSCRIBE_NOW",
-          return_url: `${origin}/membership/activate`,
-          cancel_url: `${origin}/membership/continue?plan=${plan}&cancelled=1`,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!subRes.ok) {
@@ -127,7 +181,7 @@ serve(async (req) => {
     if (insErr) console.error("membership_subscriptions insert error:", insErr);
 
     return new Response(
-      JSON.stringify({ subscriptionId: sub.id, approvalUrl }),
+      JSON.stringify({ subscriptionId: sub.id, approvalUrl, discountApplied: percentOff > 0 ? percentOff : null }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

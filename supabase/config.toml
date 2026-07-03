@@ -34,6 +34,9 @@ verify_jwt = true
 [functions.paypal-activate-subscription]
 verify_jwt = true
 
+[functions.paypal-manage-subscription]
+verify_jwt = true
+
 
 [functions.translate-lesson-titles]
 verify_jwt = false
