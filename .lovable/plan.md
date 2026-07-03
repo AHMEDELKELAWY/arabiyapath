@@ -1,56 +1,166 @@
-## Goal
+# Phase 2 — PayPal Membership Subscriptions
 
-When a visitor clicks **Start Free**, take them to a lightweight email-capture form first, then straight into Unit 1. Full signup still happens (per your answer) — the email step just prefills it so the visitor's email is already in your Zoho list even if they abandon at the password step.
+Build a real recurring-subscription system for **ArabiyaPath Membership** using LIVE PayPal Plan IDs, **completely separate** from the existing one-time course checkout, products, purchases, and course affiliate flow.
 
-Funnel:
+## Scope guarantee (untouched)
 
+- `paypal-create-order`, `paypal-capture-order`, `paypal-webhook` order paths
+- `purchases`, `pending_orders`, `products`, `coupons` (existing behavior)
+- Course checkout, Gulf sales page, flashcard packs
+- Course affiliate attribution and commissions
+- Auth, RLS on existing tables
+
+Everything below is **additive**.
+
+## Live PayPal Plan IDs
+
+| Plan     | PayPal Plan ID                     |
+|----------|-------------------------------------|
+| Monthly  | `P-4TD79441C9251073ENJEEFAA`        |
+| 6 Months | `P-7273220749612745YNJEEKGQ`        |
+| Yearly   | `P-6PH57317JM699332JNJEEMVI`        |
+
+Stored server-side only. `PAYPAL_API_BASE` already points to live (`https://api-m.paypal.com`). No sandbox references anywhere.
+
+## New database (single migration)
+
+New table `public.membership_subscriptions`:
+
+- `user_id` → `auth.users`
+- `plan` enum-like text: `monthly | six_months | yearly`
+- `paypal_plan_id` text
+- `paypal_subscription_id` text unique
+- `status` text: `APPROVAL_PENDING | ACTIVE | CANCELLED | SUSPENDED | EXPIRED`
+- `started_at`, `next_billing_at`, `cancelled_at`, `expires_at` timestamptz
+- `affiliate_id` uuid (nullable), `coupon_id` uuid (nullable)
+- `created_at`, `updated_at`
+
+RLS + GRANTs:
+
+- `authenticated` → SELECT own rows; INSERT/UPDATE done from edge functions with service role
+- `service_role` → ALL
+- Admin (`has_role(auth.uid(),'admin')`) → SELECT all
+- No `anon` grant
+
+Helper (SECURITY DEFINER):
+
+```sql
+public.user_has_active_membership(_uid uuid) returns boolean
+-- ACTIVE, OR CANCELLED but expires_at > now()
 ```
-Landing / Pricing / Membership
-   ↓ click "Start Free"
-/start-free           ← focused page, one field (email) + Zoho form (like /free-gulf-lesson)
-   ↓ submit email
-/signup?plan=free&email=<captured>   ← email prefilled, one-click password step
-   ↓ create account + auto-login
-/flashcards/unit/<Unit 1 slug>       ← Membership Unit 1 (Learn / Listening / Speaking / Quiz)
+
+## Edge functions (new)
+
+1. **`paypal-create-subscription`** (`verify_jwt = true`)
+   - Input: `{ plan: 'monthly'|'six_months'|'yearly', couponCode?, affiliateCode? }`
+   - Maps plan → live `paypal_plan_id`
+   - Calls `POST /v1/billing/subscriptions` with `application_context.return_url = <origin>/membership/activate` and `cancel_url = <origin>/membership/continue?cancelled=1`
+   - Insert `membership_subscriptions` row (`status='APPROVAL_PENDING'`, subscription id, affiliate/coupon resolved)
+   - Return `{ approvalUrl, subscriptionId }`
+
+2. **`paypal-activate-subscription`** (`verify_jwt = true`)
+   - Input: `{ subscriptionId }`
+   - Fetch `/v1/billing/subscriptions/{id}` — confirm it belongs to `auth.uid()`, update row (`status`, `started_at`, `next_billing_at`)
+   - Return `{ status }`
+
+3. **Extend `paypal-webhook`** — add cases (existing order cases untouched):
+   - `BILLING.SUBSCRIPTION.CREATED / ACTIVATED / CANCELLED / SUSPENDED / EXPIRED` → update `membership_subscriptions` (`status`, `next_billing_at`, `cancelled_at`, `expires_at`)
+   - `PAYMENT.SALE.COMPLETED` → look up subscription by `billing_agreement_id`; refresh `next_billing_at`; **on first sale only**, create affiliate commission (see below)
+   - `PAYMENT.SALE.DENIED` / `PAYMENT.SALE.REFUNDED` → status update, no commission
+
+All three functions registered in `supabase/config.toml` with `verify_jwt = false` for the webhook (existing pattern), `verify_jwt = true` for the two subscription endpoints.
+
+Reuses existing `getPayPalAccessToken()` and `PAYPAL_CLIENT_ID` / `PAYPAL_SECRET` / `PAYPAL_WEBHOOK_ID` secrets.
+
+## Affiliate + coupon rules (subscriptions only)
+
+- Affiliate: on `PAYMENT.SALE.COMPLETED`, if it's the **first** sale for that subscription and `affiliate_id` present → insert one row into `affiliate_commissions` (reuse existing table; `purchase_id` left null, add `subscription_id` column via same migration). Renewals: skip.
+- Coupon: applied only during the initial subscription creation (via PayPal's plan pricing override on `POST /billing/subscriptions`, `plan.billing_cycles[0].pricing_scheme` for a single cycle). If not straightforward, keep coupons out of Phase 2 (log as TODO). Existing coupon behavior for one-time products unchanged.
+
+Add nullable `subscription_id uuid references membership_subscriptions(id)` to `affiliate_commissions` in the same migration.
+
+## Frontend
+
+### `src/lib/payments/paypalSubscriptions.ts` (new)
+Small client wrapper calling the two edge functions via `supabase.functions.invoke`.
+
+### `src/pages/MembershipContinue.tsx`
+Replace the "opens soon" placeholder with a real **Continue to PayPal** button:
+
+- On click → `paypal-create-subscription` → `window.location.href = approvalUrl`
+- Loading + error states
+- Keep the plan summary card
+
+### `src/pages/MembershipActivate.tsx` (new, route `/membership/activate`)
+- Reads `?subscription_id=` from PayPal return
+- Calls `paypal-activate-subscription`
+- On `ACTIVE` → redirect to `/dashboard/progress#membership`
+- Otherwise → show pending state with retry
+
+### Dashboard — Membership section
+New `src/components/dashboard/MembershipSection.tsx` in `DashboardProgress`:
+
+- Current plan, status badge, next billing date, subscription id
+- Buttons:
+  - **Manage** → link to PayPal customer portal (`https://www.paypal.com/myaccount/autopay/`)
+  - **Upgrade** → `/pricing#membership`
+  - **Cancel** → placeholder confirm dialog + link to PayPal (real cancel API in Phase 3)
+
+### Access control
+New `src/lib/membershipAccess.ts` + `useMembershipAccess()` hook querying `membership_subscriptions` for `auth.uid()`. Used for future Membership-gated content. Does **not** touch existing course access.
+
+### Admin
+New page `src/pages/admin/AdminMembershipSubscriptions.tsx` (route `/admin/memberships`), linked from `AdminLayout`. Read-only list with filters: Active / Cancelled / Expired. Uses the admin SELECT policy.
+
+## Files touched
+
+**New**
+- `supabase/functions/paypal-create-subscription/index.ts`
+- `supabase/functions/paypal-activate-subscription/index.ts`
+- `src/pages/MembershipActivate.tsx`
+- `src/components/dashboard/MembershipSection.tsx`
+- `src/lib/payments/paypalSubscriptions.ts`
+- `src/lib/membershipAccess.ts`
+- `src/hooks/useMembership.ts`
+- `src/pages/admin/AdminMembershipSubscriptions.tsx`
+
+**Edited**
+- `supabase/functions/paypal-webhook/index.ts` (add subscription cases only)
+- `supabase/config.toml` (register 2 new functions)
+- `src/pages/MembershipContinue.tsx` (wire the real button)
+- `src/App.tsx` (routes: `/membership/activate`, `/admin/memberships`)
+- `src/pages/DashboardProgress.tsx` (mount `MembershipSection`)
+- `src/components/admin/AdminLayout.tsx` (nav link)
+
+**Migration**
+- `membership_subscriptions` table + grants + RLS + helper function
+- `affiliate_commissions.subscription_id` nullable FK
+
+## Flow summary
+
+```text
+/pricing → /signup?plan=<x> → auto-login → /membership/continue
+  → [Continue to PayPal] → paypal-create-subscription
+  → PayPal approval → /membership/activate?subscription_id=...
+  → paypal-activate-subscription → /dashboard/progress#membership
+Webhook keeps status, next_billing_at, cancelled_at, expires_at fresh.
 ```
-
-Logged-in visitors clicking Start Free skip everything and go straight to Unit 1.
-
-## Changes
-
-### 1. New page `src/pages/StartFree.tsx` (route `/start-free`)
-- `FocusLayout` (minimal header, no footer distractions) so the user stays focused.
-- Copy modeled on the ArabiyaPath Membership brand ("Start Unit 1 free — no credit card").
-- One field: email. `useZohoOptin` hook + hidden Zoho form (reuses the same `ZOHO_FORM_ID` / script currently used by `/free-gulf-lesson` so the same list catches the leads).
-- On submit → fire the Zoho optin exactly like `FreeGulfLesson.tsx` does → `navigate(`/signup?plan=free&email=<url-encoded email>`)`.
-- If the visitor is already signed in → immediate redirect to Unit 1 (no need to re-capture email).
-- Small "Continue with Google" shortcut linking to `/signup?plan=free` for people who don't want to type email twice.
-- `SEOHead` with `noindex` (funnel page, not a landing to rank).
-
-### 2. `src/pages/Signup.tsx`
-- Read `?email=` from URL. If present, seed the `email` state with it and keep the field editable.
-- Nothing else changes — password/name flow and plan-preservation logic already built stay identical.
-
-### 3. Free-plan CTA routing
-- `src/lib/membershipPlans.ts`: `resolveMembershipHref` for `plan.id === "free"` (logged-out) now returns `/start-free` instead of `/signup?plan=free`. Logged-in path unchanged.
-- Free plan post-signup destination changes from `/dashboard/progress#flashcards-section` to the MSA Membership Unit 1 URL. Implementation: dynamically resolve the first `is_free && published` flashcard unit slug (`/flashcards/unit/<slug>`) so it stays correct if the free unit changes. Fallback = `/flashcards` (which itself lands on Unit 1). Done via a tiny helper that reads from the existing `flashcard_units` query — no schema change, no new RPC.
-- `src/pages/flashcards/FlashCardsHome.tsx`: hero "Start Free" for logged-out visitors also routes to `/start-free` (instead of `/signup?redirect=...`) so the funnel is consistent everywhere.
-
-### 4. `src/App.tsx`
-- Register `/start-free` route (lazy-loaded like other pages).
-
-## What we do NOT touch
-
-- Signup password flow, auth, RLS, Supabase schema
-- PayPal, checkout, coupons, affiliates, partners
-- Existing `/free-gulf-lesson` funnel (kept as-is for the Gulf audience)
-- Paid plan funnel from the previous phase (`/signup?plan=<monthly|six_months|yearly>` → `/membership/continue`)
 
 ## Verification
 
-1. Logged-out visitor on `/` or `/pricing` clicks **Start Free** → lands on `/start-free`.
-2. Enters email → briefly sees "You're in!" → arrives on `/signup?plan=free&email=<their-email>` with email prefilled.
-3. Fills name + password → auto-login → lands directly on `/flashcards/unit/<Unit 1 slug>`.
-4. Logged-in visitor clicks **Start Free** → goes straight to Unit 1, skipping `/start-free` and Signup.
-5. Zoho list receives the email at step 2 (same list as `/free-gulf-lesson`).
-6. `tsgo` typecheck passes.
+1. `tsgo` typecheck passes.
+2. Each plan on `/pricing` → correct live plan id sent to PayPal (log check).
+3. Existing course checkout (Gulf, flashcard packs) unaffected — smoke test one order path.
+4. Webhook `BILLING.SUBSCRIPTION.ACTIVATED` → row moves to ACTIVE.
+5. Existing `purchases` rows untouched by any new code path (grep confirms no writes).
+6. Admin `/admin/memberships` lists subscriptions; non-admin blocked.
+
+## Not in Phase 2
+
+- Server-side PayPal cancel/upgrade API (buttons are placeholders + PayPal deep link).
+- Coupon override on subscriptions if PayPal pricing-scheme override is non-trivial — logged as TODO.
+- Migrating existing one-time Membership-like purchases into the new table.
+
+## Note on activation
+
+As you noted, keep the three PayPal plans **OFF** until this ships and one end-to-end test subscription is completed. Nothing here activates the plans on PayPal's side.
