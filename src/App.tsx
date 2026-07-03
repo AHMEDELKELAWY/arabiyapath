@@ -45,6 +45,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const ThankYouPurchase = lazy(() => import("./pages/ThankYouPurchase"));
 const MembershipContinue = lazy(() => import("./pages/MembershipContinue"));
+const MembershipActivate = lazy(() => import("./pages/MembershipActivate"));
 const StartFree = lazy(() => import("./pages/StartFree"));
 const CertificateView = lazy(() => import("./pages/CertificateView"));
 
@@ -76,6 +77,7 @@ const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards
 const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
+const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
 
 // Flash Cards (MSA) pages
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
@@ -139,6 +141,7 @@ const App = () => (
               <Route path="/choose-plan/:dialectId" element={<ChoosePlan />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/membership/continue" element={<MembershipContinue />} />
+              <Route path="/membership/activate" element={<MembershipActivate />} />
               <Route path="/certificate/:certCode" element={<CertificateView />} />
               {/* Learning Routes */}
               <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />
@@ -167,6 +170,7 @@ const App = () => (
               <Route path="/admin/flashcards/packs" element={<AdminRoute><AdminFlashcardPacks /></AdminRoute>} />
               <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
               <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
+              <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
               {/* Flash Cards (MSA) public routes */}
               <Route path="/flashcards" element={<FlashCardsHome />} />
               <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />

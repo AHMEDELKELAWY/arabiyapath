@@ -20,6 +20,7 @@ import {
 import { ArrowRight, BookOpen, Flame, Sparkles, Layers } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 import { SEOHead } from "@/components/seo/SEOHead";
+import { MembershipSection } from "@/components/dashboard/MembershipSection";
 
 const dialectEmojis: Record<string, string> = {
   "Gulf Arabic": "🏜️",
@@ -134,6 +135,7 @@ export default function DashboardProgress() {
             Your progress, grouped by product.
           </p>
         </div>
+        <MembershipSection />
 
         <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
           {ownedDialects.map((dg) => {

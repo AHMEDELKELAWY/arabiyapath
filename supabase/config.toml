@@ -28,6 +28,13 @@ verify_jwt = false
 [functions.send-marketing-email]
 verify_jwt = false
 
+[functions.paypal-create-subscription]
+verify_jwt = true
+
+[functions.paypal-activate-subscription]
+verify_jwt = true
+
+
 [functions.translate-lesson-titles]
 verify_jwt = false
 

@@ -59,6 +59,7 @@ export type Database = {
           paid_at: string | null
           purchase_id: string
           status: string | null
+          subscription_id: string | null
         }
         Insert: {
           affiliate_id: string
@@ -68,6 +69,7 @@ export type Database = {
           paid_at?: string | null
           purchase_id: string
           status?: string | null
+          subscription_id?: string | null
         }
         Update: {
           affiliate_id?: string
@@ -77,6 +79,7 @@ export type Database = {
           paid_at?: string | null
           purchase_id?: string
           status?: string | null
+          subscription_id?: string | null
         }
         Relationships: [
           {
@@ -91,6 +94,13 @@ export type Database = {
             columns: ["purchase_id"]
             isOneToOne: false
             referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "membership_subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -880,6 +890,79 @@ export type Database = {
           },
         ]
       }
+      membership_subscriptions: {
+        Row: {
+          affiliate_id: string | null
+          cancelled_at: string | null
+          coupon_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          next_billing_at: string | null
+          paypal_plan_id: string
+          paypal_subscription_id: string
+          plan: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_id?: string | null
+          cancelled_at?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          next_billing_at?: string | null
+          paypal_plan_id: string
+          paypal_subscription_id: string
+          plan: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_id?: string | null
+          cancelled_at?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          next_billing_at?: string | null
+          paypal_plan_id?: string
+          paypal_subscription_id?: string
+          plan?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_subscriptions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "public_coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           affiliate_id: string | null
@@ -1622,6 +1705,7 @@ export type Database = {
         }[]
       }
       user_can_access_unit: { Args: { _unit_id: string }; Returns: boolean }
+      user_has_active_membership: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
