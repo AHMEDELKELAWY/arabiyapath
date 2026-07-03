@@ -20,6 +20,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -29,7 +30,6 @@ export default function Signup() {
   const { user, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   // Plan-aware destination: if a membership plan was selected on the landing
   // page it takes precedence over any `redirect` param so the user is never
