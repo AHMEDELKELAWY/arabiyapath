@@ -45,6 +45,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const ThankYouPurchase = lazy(() => import("./pages/ThankYouPurchase"));
 const MembershipContinue = lazy(() => import("./pages/MembershipContinue"));
+const MembershipActivate = lazy(() => import("./pages/MembershipActivate"));
 const StartFree = lazy(() => import("./pages/StartFree"));
 const CertificateView = lazy(() => import("./pages/CertificateView"));
 
