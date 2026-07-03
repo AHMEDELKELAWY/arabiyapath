@@ -77,6 +77,7 @@ const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards
 const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
+const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
 
 // Flash Cards (MSA) pages
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
