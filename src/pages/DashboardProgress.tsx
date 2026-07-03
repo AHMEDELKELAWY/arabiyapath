@@ -135,6 +135,7 @@ export default function DashboardProgress() {
             Your progress, grouped by product.
           </p>
         </div>
+        <MembershipSection />
 
         <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
           {ownedDialects.map((dg) => {
