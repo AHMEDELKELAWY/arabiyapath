@@ -141,6 +141,7 @@ const App = () => (
               <Route path="/choose-plan/:dialectId" element={<ChoosePlan />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/membership/continue" element={<MembershipContinue />} />
+              <Route path="/membership/activate" element={<MembershipActivate />} />
               <Route path="/certificate/:certCode" element={<CertificateView />} />
               {/* Learning Routes */}
               <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />
