@@ -126,37 +126,65 @@ function PlanContinueCard({ plan }: { plan: MembershipPlan }) {
             ))}
           </ul>
 
-          <div className="rounded-lg border bg-muted/40 p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm">Subscription checkout opens soon</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  We're finalizing recurring billing for the {plan.name} plan.
-                  Your selection is saved — we'll email you the moment it's
-                  ready, and you'll continue right from here.
-                </p>
-              </div>
-            </div>
-          </div>
+          <ContinueToPayPalCTA plan={plan} />
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <Button asChild size="lg" variant="default" className="w-full">
-              <Link to="/dashboard/progress#flashcards-section">
-                Go to Dashboard
-              </Link>
-            </Button>
             <Button asChild size="lg" variant="outline" className="w-full">
               <Link to="/pricing">Change plan</Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost" className="w-full">
+              <Link to="/dashboard/progress">Go to Dashboard</Link>
             </Button>
           </div>
 
           <p className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
             <Mail className="w-3.5 h-3.5" />
-            You'll be notified at your account email as soon as billing is live.
+            Secure recurring billing by PayPal. Cancel anytime from your Membership dashboard.
           </p>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
+  const [searchParams] = useSearchParams();
+  const cancelled = searchParams.get("cancelled") === "1";
+  const [loading, setLoading] = useState(false);
+
+  async function onContinue() {
+    if (plan.id === "free") return;
+    setLoading(true);
+    try {
+      const { approvalUrl } = await createMembershipSubscription(
+        plan.id as "monthly" | "six_months" | "yearly",
+      );
+      window.location.href = approvalUrl;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not start PayPal checkout";
+      toast({ title: "PayPal error", description: msg, variant: "destructive" });
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {cancelled && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-sm px-3 py-2">
+          Checkout was cancelled. You can try again anytime — no charge was made.
+        </div>
+      )}
+      <Button size="lg" className="w-full" onClick={onContinue} disabled={loading}>
+        {loading ? (
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting to PayPal…</>
+        ) : (
+          <>Continue to PayPal · {plan.priceLabel} {plan.cadenceLabel}</>
+        )}
+      </Button>
+      <p className="text-xs text-muted-foreground text-center">
+        You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.
+      </p>
+    </div>
+  );
+}
+
