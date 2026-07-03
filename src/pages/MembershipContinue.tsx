@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FocusLayout } from "@/components/layout/FocusLayout";
 import { SEOHead } from "@/components/seo/SEOHead";
@@ -12,7 +12,10 @@ import {
   PRODUCT_NAME,
   type MembershipPlan,
 } from "@/lib/membershipPlans";
-import { CheckCircle2, Clock, Mail, Sparkles } from "lucide-react";
+import { createMembershipSubscription } from "@/lib/payments/paypalSubscriptions";
+import { toast } from "@/hooks/use-toast";
+import { CheckCircle2, Loader2, Mail, Sparkles } from "lucide-react";
+
 
 /**
  * Post-signup landing for paid Membership plans.
