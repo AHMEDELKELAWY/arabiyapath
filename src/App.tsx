@@ -170,6 +170,7 @@ const App = () => (
               <Route path="/admin/flashcards/packs" element={<AdminRoute><AdminFlashcardPacks /></AdminRoute>} />
               <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
               <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
+              <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
               {/* Flash Cards (MSA) public routes */}
               <Route path="/flashcards" element={<FlashCardsHome />} />
               <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />
