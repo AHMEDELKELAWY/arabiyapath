@@ -37,6 +37,7 @@ const sidebarLinks = [
   { href: "/admin/affiliate-applications", label: "Applications", icon: FileText },
   { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
+  { href: "/admin/memberships", label: "Memberships", icon: ShoppingCart },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
   { href: "/admin/flashcards/units", label: "Units", icon: Layers },
   { href: "/admin/flashcards/cards", label: "Speaking Content", icon: Layers },
