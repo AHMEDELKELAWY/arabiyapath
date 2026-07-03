@@ -1,9 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useMembership } from "@/hooks/useMembership";
-import { CreditCard, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import { manageMembershipSubscription, type ManageAction } from "@/lib/payments/paypalSubscriptions";
+import { toast } from "@/hooks/use-toast";
+import { Loader2, Pause, Play, Sparkles, X } from "lucide-react";
 
 const PLAN_LABEL: Record<string, string> = {
   monthly: "Monthly",
@@ -27,6 +35,40 @@ function formatDate(iso: string | null) {
 
 export function MembershipSection() {
   const { loading, subscription } = useMembership();
+  const [busy, setBusy] = useState<ManageAction | null>(null);
+
+  async function run(action: ManageAction, opts: { newPlan?: "monthly" | "six_months" | "yearly" } = {}) {
+    if (!subscription) return;
+    setBusy(action);
+    try {
+      const res = await manageMembershipSubscription({
+        subscriptionRowId: subscription.id,
+        action,
+        newPlan: opts.newPlan,
+      });
+      if (action === "revise" && res.approvalUrl) {
+        window.location.href = res.approvalUrl;
+        return;
+      }
+      toast({
+        title:
+          action === "cancel" ? "Membership cancelled" :
+          action === "suspend" ? "Membership paused" :
+          action === "reactivate" ? "Membership resumed" :
+          "Plan updated",
+        description:
+          action === "cancel" ? "Access remains until the end of your current billing period." :
+          undefined,
+      });
+      // Refresh from server
+      window.location.reload();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      toast({ title: "PayPal error", description: msg, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <section id="membership" className="scroll-mt-20">
@@ -81,21 +123,90 @@ export function MembershipSection() {
                 </p>
               )}
 
-              <div className="grid sm:grid-cols-3 gap-2 pt-2">
-                <Button asChild variant="outline">
-                  <a href="https://www.paypal.com/myaccount/autopay/" target="_blank" rel="noopener noreferrer">
-                    <CreditCard className="w-4 h-4 mr-2" /> Manage in PayPal <ExternalLink className="w-3 h-3 ml-1" />
-                  </a>
-                </Button>
-                <Button asChild variant="outline"><Link to="/pricing#membership">Upgrade plan</Link></Button>
-                <Button asChild variant="ghost">
-                  <a href="https://www.paypal.com/myaccount/autopay/" target="_blank" rel="noopener noreferrer">
-                    Cancel membership
-                  </a>
-                </Button>
+              {/* Change / upgrade plan */}
+              {subscription.status === "ACTIVE" && (
+                <div className="rounded-md border p-3 space-y-2">
+                  <div className="text-sm font-medium">Change plan</div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["monthly", "six_months", "yearly"] as const)
+                      .filter((p) => p !== subscription.plan)
+                      .map((p) => (
+                        <Button
+                          key={p}
+                          size="sm"
+                          variant="outline"
+                          disabled={busy !== null}
+                          onClick={() => run("revise", { newPlan: p })}
+                        >
+                          {busy === "revise" ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
+                          Switch to {PLAN_LABEL[p]}
+                        </Button>
+                      ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    PayPal may require you to re-approve the new billing amount.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                {subscription.status === "ACTIVE" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy !== null}
+                      onClick={() => run("suspend")}
+                    >
+                      {busy === "suspend" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pause className="w-4 h-4 mr-2" />}
+                      Pause
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" disabled={busy !== null}>
+                          <X className="w-4 h-4 mr-2" /> Cancel membership
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel your Membership?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You'll keep access until the end of the current billing period.
+                            You will not be charged again after cancellation.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep membership</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => run("cancel")}>
+                            Cancel subscription
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+
+                {subscription.status === "SUSPENDED" && (
+                  <Button
+                    size="sm"
+                    disabled={busy !== null}
+                    onClick={() => run("reactivate")}
+                  >
+                    {busy === "reactivate" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                    Resume membership
+                  </Button>
+                )}
+
+                {(subscription.status === "CANCELLED" || subscription.status === "EXPIRED") && (
+                  <Button asChild size="sm">
+                    <Link to="/pricing#membership">Start a new Membership</Link>
+                  </Button>
+                )}
               </div>
+
               <p className="text-xs text-muted-foreground">
-                Membership is managed by PayPal. Cancel or change your payment method directly in your PayPal account.
+                Manage your Membership directly here — no need to leave ArabiyaPath.
               </p>
             </>
           )}
