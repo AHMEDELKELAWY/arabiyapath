@@ -313,6 +313,120 @@ serve(async (req) => {
         console.log(`Webhook: updated purchase status to ${newStatus} for capture ${captureId}`);
         break;
       }
+
+      // ===== Membership subscriptions =====
+      case "BILLING.SUBSCRIPTION.CREATED":
+      case "BILLING.SUBSCRIPTION.ACTIVATED":
+      case "BILLING.SUBSCRIPTION.CANCELLED":
+      case "BILLING.SUBSCRIPTION.SUSPENDED":
+      case "BILLING.SUBSCRIPTION.EXPIRED": {
+        const sub = body.resource;
+        const subscriptionId = sub?.id;
+        if (!subscriptionId) break;
+        const statusMap: Record<string, string> = {
+          "BILLING.SUBSCRIPTION.CREATED": "APPROVAL_PENDING",
+          "BILLING.SUBSCRIPTION.ACTIVATED": "ACTIVE",
+          "BILLING.SUBSCRIPTION.CANCELLED": "CANCELLED",
+          "BILLING.SUBSCRIPTION.SUSPENDED": "SUSPENDED",
+          "BILLING.SUBSCRIPTION.EXPIRED": "EXPIRED",
+        };
+        const newStatus = statusMap[body.event_type];
+        const update: Record<string, unknown> = { status: newStatus };
+        if (sub.start_time) update.started_at = sub.start_time;
+        if (sub.billing_info?.next_billing_time) update.next_billing_at = sub.billing_info.next_billing_time;
+        if (body.event_type === "BILLING.SUBSCRIPTION.CANCELLED") {
+          update.cancelled_at = new Date().toISOString();
+          if (sub.billing_info?.next_billing_time) update.expires_at = sub.billing_info.next_billing_time;
+        }
+        if (body.event_type === "BILLING.SUBSCRIPTION.EXPIRED") {
+          update.expires_at = new Date().toISOString();
+        }
+        const { error } = await supabase
+          .from("membership_subscriptions")
+          .update(update)
+          .eq("paypal_subscription_id", subscriptionId);
+        if (error) console.error("Webhook subscription update error:", error);
+        else console.log(`Webhook: subscription ${subscriptionId} -> ${newStatus}`);
+        break;
+      }
+
+      case "PAYMENT.SALE.COMPLETED": {
+        const sale = body.resource;
+        const subscriptionId = sale?.billing_agreement_id;
+        if (!subscriptionId) {
+          console.log("PAYMENT.SALE.COMPLETED without billing_agreement_id, skipping");
+          break;
+        }
+        const { data: subRow } = await supabase
+          .from("membership_subscriptions")
+          .select("id, user_id, affiliate_id, plan")
+          .eq("paypal_subscription_id", subscriptionId)
+          .maybeSingle();
+        if (!subRow) {
+          console.log(`PAYMENT.SALE.COMPLETED: subscription ${subscriptionId} not found locally`);
+          break;
+        }
+
+        // Refresh next_billing_at from PayPal
+        try {
+          const accessToken = await getPayPalAccessToken();
+          const pRes = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (pRes.ok) {
+            const p = await pRes.json();
+            const patch: Record<string, unknown> = { status: "ACTIVE" };
+            if (p.billing_info?.next_billing_time) patch.next_billing_at = p.billing_info.next_billing_time;
+            if (p.start_time) patch.started_at = p.start_time;
+            await supabase.from("membership_subscriptions").update(patch).eq("id", subRow.id);
+          }
+        } catch (e) {
+          console.error("Failed to refresh subscription from PayPal:", e);
+        }
+
+        // Affiliate commission — first sale ONLY, renewals skipped
+        if (subRow.affiliate_id) {
+          const { count } = await supabase
+            .from("affiliate_commissions")
+            .select("id", { count: "exact", head: true })
+            .eq("subscription_id", subRow.id);
+          if ((count ?? 0) === 0) {
+            const amount = parseFloat(sale.amount?.total || "0");
+            const { data: affiliate } = await supabase
+              .from("affiliates")
+              .select("id, commission_rate, total_earnings")
+              .eq("id", subRow.affiliate_id)
+              .maybeSingle();
+            if (affiliate) {
+              const rate = affiliate.commission_rate || 10;
+              const commissionAmount = amount * (rate / 100);
+              await supabase.from("affiliate_commissions").insert({
+                affiliate_id: affiliate.id,
+                subscription_id: subRow.id,
+                commission_amount: commissionAmount,
+                status: "pending",
+              });
+              await supabase
+                .from("affiliates")
+                .update({ total_earnings: (affiliate.total_earnings || 0) + commissionAmount })
+                .eq("id", affiliate.id);
+              console.log(`Webhook: subscription commission ${commissionAmount} created`);
+            }
+          } else {
+            console.log(`Webhook: renewal sale for sub ${subRow.id}, no commission`);
+          }
+        }
+        break;
+      }
+
+      case "PAYMENT.SALE.DENIED":
+      case "PAYMENT.SALE.REFUNDED": {
+        const subscriptionId = body.resource?.billing_agreement_id;
+        if (subscriptionId) {
+          console.log(`Webhook: sale ${body.event_type} for subscription ${subscriptionId}`);
+        }
+        break;
+      }
     }
 
     return new Response(
