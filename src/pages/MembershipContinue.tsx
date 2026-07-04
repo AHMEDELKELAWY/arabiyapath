@@ -5,7 +5,10 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getPlanById,
   MEMBERSHIP_FEATURES,
@@ -14,7 +17,8 @@ import {
 } from "@/lib/membershipPlans";
 import { createMembershipSubscription } from "@/lib/payments/paypalSubscriptions";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, Loader2, Mail, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, Sparkles, Tag, X } from "lucide-react";
+
 
 
 /**
