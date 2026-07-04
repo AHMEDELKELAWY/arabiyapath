@@ -19,9 +19,9 @@ interface PlanConfig {
 }
 
 const PLAN_MAP: Record<string, PlanConfig> = {
-  monthly:    { paypalPlanId: "P-4TD79441C9251073ENJEEFAA", label: "ArabiyaPath Membership — Monthly",   fullPrice: 30,  currency: "USD", intervalUnit: "MONTH", intervalCount: 1 },
-  six_months: { paypalPlanId: "P-7273220749612745YNJEEKGQ", label: "ArabiyaPath Membership — 6 Months",  fullPrice: 150, currency: "USD", intervalUnit: "MONTH", intervalCount: 6 },
-  yearly:     { paypalPlanId: "P-6PH57317JM699332JNJEEMVI", label: "ArabiyaPath Membership — Yearly",    fullPrice: 270, currency: "USD", intervalUnit: "YEAR",  intervalCount: 1 },
+  monthly:    { paypalPlanId: "P-6G937167XK6712549NJEWG5I", label: "ArabiyaPath Membership — Monthly",   fullPrice: 30,  currency: "USD", intervalUnit: "MONTH", intervalCount: 1 },
+  six_months: { paypalPlanId: "P-8YP45029U5368604VNJEWG5I", label: "ArabiyaPath Membership — 6 Months",  fullPrice: 150, currency: "USD", intervalUnit: "MONTH", intervalCount: 6 },
+  yearly:     { paypalPlanId: "P-26E640386G512542KNJEWG5Q", label: "ArabiyaPath Membership — Yearly",    fullPrice: 270, currency: "USD", intervalUnit: "YEAR",  intervalCount: 1 },
 };
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -101,17 +101,12 @@ serve(async (req) => {
     const accessToken = await getPayPalAccessToken();
     const origin = returnOrigin || req.headers.get("origin") || "https://arabiyapath.com";
 
-    // First-payment-only coupon:
-    // Ideally we'd override the subscription's billing cycles with a TRIAL at
-    // sequence 1 + REGULAR at sequence 2. However, PayPal only allows
-    // subscription-time overrides to *replace existing cycles by sequence* — you
-    // cannot add a new sequence that isn't already defined on the underlying
-    // plan. Our current LIVE plans are created with a single REGULAR cycle
-    // (sequence 1) only, so any 2-cycle override is rejected with
-    // `INVALID_BILLING_CYCLE_SEQUENCE`. Until the plans are recreated in PayPal
-    // with an explicit TRIAL cycle, we send the subscription without any
-    // billing_cycles override, and record the coupon locally so an admin can
-    // credit the first-payment discount manually (or via webhook logic).
+    // First-payment-only coupon override.
+    // Our v2 plans define TRIAL(seq 1, total_cycles=1) + REGULAR(seq 2,
+    // total_cycles=0), both priced at full price. When a coupon is applied we
+    // override ONLY the TRIAL cycle's fixed_price at subscription creation.
+    // The REGULAR cycle is left untouched so every renewal after the first
+    // charge is billed at the full plan price.
     const requestBody: Record<string, unknown> = {
       plan_id: planConfig.paypalPlanId,
       custom_id: userId,
@@ -124,6 +119,24 @@ serve(async (req) => {
         cancel_url: `${origin}/membership/continue?plan=${plan}&cancelled=1`,
       },
     };
+
+    if (percentOff > 0) {
+      const discounted = Math.max(
+        0,
+        Math.round((planConfig.fullPrice - planConfig.fullPrice * (percentOff / 100)) * 100) / 100,
+      );
+      requestBody.plan = {
+        billing_cycles: [
+          {
+            sequence: 1,
+            pricing_scheme: {
+              fixed_price: { value: discounted.toFixed(2), currency_code: planConfig.currency },
+            },
+          },
+        ],
+      };
+    }
+
 
     const subRes = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
       method: "POST",
