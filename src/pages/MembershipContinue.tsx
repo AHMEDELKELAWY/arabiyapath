@@ -15,7 +15,7 @@ import {
   PRODUCT_NAME,
   type MembershipPlan,
 } from "@/lib/membershipPlans";
-import { createMembershipSubscription } from "@/lib/payments/paypalSubscriptions";
+import { createMembershipSubscription, redeemFreeMembership } from "@/lib/payments/paypalSubscriptions";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2, Mail, Sparkles, Tag, X } from "lucide-react";
 
@@ -237,6 +237,20 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
     if (plan.id === "free") return;
     setLoading(true);
     try {
+      // Zero-cost path: 100%-off coupon → activate immediately, no PayPal.
+      if (applied && firstPaymentTotal <= 0) {
+        const res = await redeemFreeMembership(
+          plan.id as "monthly" | "six_months" | "yearly",
+          applied.code,
+        );
+        toast({
+          title: "Membership activated",
+          description: `Your ${plan.name} membership is active. Enjoy full access!`,
+        });
+        window.location.href = res.redirect || "/dashboard/progress";
+        return;
+      }
+
       const { approvalUrl } = await createMembershipSubscription(
         plan.id as "monthly" | "six_months" | "yearly",
         applied ? { couponCode: applied.code } : {},
@@ -244,7 +258,7 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
       window.location.href = approvalUrl;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not start PayPal checkout";
-      toast({ title: "PayPal error", description: msg, variant: "destructive" });
+      toast({ title: "Checkout error", description: msg, variant: "destructive" });
       setLoading(false);
     }
   }
@@ -342,14 +356,17 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
 
       <Button size="lg" className="w-full" onClick={onContinue} disabled={loading}>
         {loading ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting to PayPal…</>
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {firstPaymentTotal <= 0 && applied ? "Activating membership…" : "Redirecting to PayPal…"}</>
+        ) : firstPaymentTotal <= 0 && applied ? (
+          <>Activate Membership · Free</>
         ) : (
           <>Continue to PayPal · {formatPrice(firstPaymentTotal, plan.currency)}</>
         )}
       </Button>
       <p className="text-xs text-muted-foreground text-center">
-        You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.
-        {applied && " The discount applies to your first payment only; renewals bill at the full plan price."}
+        {firstPaymentTotal <= 0 && applied
+          ? `Your coupon covers the full first payment — no PayPal step needed. Renewals bill at ${formatPrice(plan.price, plan.currency)} ${plan.cadenceLabel}.`
+          : (<>You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.{applied && " The discount applies to your first payment only; renewals bill at the full plan price."}</>)}
       </p>
     </div>
   );
