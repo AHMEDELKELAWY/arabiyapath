@@ -102,9 +102,16 @@ serve(async (req) => {
     const origin = returnOrigin || req.headers.get("origin") || "https://arabiyapath.com";
 
     // First-payment-only coupon:
-    // Override the subscription's billing cycles: add a 1-cycle TRIAL at the
-    // discounted price at sequence 1, then the plan's REGULAR price at sequence 2.
-    // Renewals charge the full plan price (business rule).
+    // Ideally we'd override the subscription's billing cycles with a TRIAL at
+    // sequence 1 + REGULAR at sequence 2. However, PayPal only allows
+    // subscription-time overrides to *replace existing cycles by sequence* — you
+    // cannot add a new sequence that isn't already defined on the underlying
+    // plan. Our current LIVE plans are created with a single REGULAR cycle
+    // (sequence 1) only, so any 2-cycle override is rejected with
+    // `INVALID_BILLING_CYCLE_SEQUENCE`. Until the plans are recreated in PayPal
+    // with an explicit TRIAL cycle, we send the subscription without any
+    // billing_cycles override, and record the coupon locally so an admin can
+    // credit the first-payment discount manually (or via webhook logic).
     const requestBody: Record<string, unknown> = {
       plan_id: planConfig.paypalPlanId,
       custom_id: userId,
@@ -118,36 +125,6 @@ serve(async (req) => {
       },
     };
 
-    if (percentOff > 0) {
-      const discountedFirst = Math.max(
-        0.01,
-        Math.round(planConfig.fullPrice * (1 - percentOff / 100) * 100) / 100,
-      ).toFixed(2);
-      const regularFull = planConfig.fullPrice.toFixed(2);
-      requestBody.plan = {
-        billing_cycles: [
-          {
-            sequence: 1,
-            tenure_type: "TRIAL",
-            total_cycles: 1,
-            frequency: { interval_unit: planConfig.intervalUnit, interval_count: planConfig.intervalCount },
-            pricing_scheme: {
-              fixed_price: { value: discountedFirst, currency_code: planConfig.currency },
-            },
-          },
-          {
-            sequence: 2,
-            tenure_type: "REGULAR",
-            total_cycles: 0, // infinite renewals at full price
-            frequency: { interval_unit: planConfig.intervalUnit, interval_count: planConfig.intervalCount },
-            pricing_scheme: {
-              fixed_price: { value: regularFull, currency_code: planConfig.currency },
-            },
-          },
-        ],
-      };
-    }
-
     const subRes = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
       method: "POST",
       headers: {
@@ -160,10 +137,21 @@ serve(async (req) => {
     });
 
     if (!subRes.ok) {
-      const err = await subRes.text();
-      console.error("PayPal subscription create failed:", err);
-      throw new Error(`PayPal subscription creation failed: ${subRes.status}`);
+      const errText = await subRes.text();
+      console.error("PayPal subscription create failed:", errText);
+      let detail = errText;
+      try {
+        const parsed = JSON.parse(errText);
+        detail = parsed?.details?.[0]?.description || parsed?.message || errText;
+      } catch { /* keep raw text */ }
+      return new Response(
+        JSON.stringify({
+          error: `PayPal rejected the subscription (${subRes.status}): ${detail}`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
+
     const sub = await subRes.json();
     const approvalUrl = (sub.links || []).find((l: { rel: string; href: string }) => l.rel === "approve")?.href;
     if (!approvalUrl) throw new Error("No approval URL returned by PayPal");
