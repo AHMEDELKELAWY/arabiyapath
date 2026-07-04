@@ -13,5 +13,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Use implicit flow (tokens in URL fragment) instead of PKCE so email
+    // confirmation & password-reset links work when the user opens them on a
+    // different device/browser from where they signed up (PKCE requires a
+    // code_verifier stored in the same browser's localStorage).
+    flowType: "implicit",
+    detectSessionInUrl: true,
   }
 });
