@@ -237,6 +237,20 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
     if (plan.id === "free") return;
     setLoading(true);
     try {
+      // Zero-cost path: 100%-off coupon → activate immediately, no PayPal.
+      if (applied && firstPaymentTotal <= 0) {
+        const res = await redeemFreeMembership(
+          plan.id as "monthly" | "six_months" | "yearly",
+          applied.code,
+        );
+        toast({
+          title: "Membership activated",
+          description: `Your ${plan.name} membership is active. Enjoy full access!`,
+        });
+        window.location.href = res.redirect || "/dashboard/progress";
+        return;
+      }
+
       const { approvalUrl } = await createMembershipSubscription(
         plan.id as "monthly" | "six_months" | "yearly",
         applied ? { couponCode: applied.code } : {},
@@ -244,7 +258,7 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
       window.location.href = approvalUrl;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not start PayPal checkout";
-      toast({ title: "PayPal error", description: msg, variant: "destructive" });
+      toast({ title: "Checkout error", description: msg, variant: "destructive" });
       setLoading(false);
     }
   }
