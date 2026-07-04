@@ -19,9 +19,9 @@ interface PlanConfig {
 }
 
 const PLAN_MAP: Record<string, PlanConfig> = {
-  monthly:    { paypalPlanId: "P-4TD79441C9251073ENJEEFAA", label: "ArabiyaPath Membership — Monthly",   fullPrice: 30,  currency: "USD", intervalUnit: "MONTH", intervalCount: 1 },
-  six_months: { paypalPlanId: "P-7273220749612745YNJEEKGQ", label: "ArabiyaPath Membership — 6 Months",  fullPrice: 150, currency: "USD", intervalUnit: "MONTH", intervalCount: 6 },
-  yearly:     { paypalPlanId: "P-6PH57317JM699332JNJEEMVI", label: "ArabiyaPath Membership — Yearly",    fullPrice: 270, currency: "USD", intervalUnit: "YEAR",  intervalCount: 1 },
+  monthly:    { paypalPlanId: "P-6G937167XK6712549NJEWG5I", label: "ArabiyaPath Membership — Monthly",   fullPrice: 30,  currency: "USD", intervalUnit: "MONTH", intervalCount: 1 },
+  six_months: { paypalPlanId: "P-8YP45029U5368604VNJEWG5I", label: "ArabiyaPath Membership — 6 Months",  fullPrice: 150, currency: "USD", intervalUnit: "MONTH", intervalCount: 6 },
+  yearly:     { paypalPlanId: "P-26E640386G512542KNJEWG5Q", label: "ArabiyaPath Membership — Yearly",    fullPrice: 270, currency: "USD", intervalUnit: "YEAR",  intervalCount: 1 },
 };
 
 async function getPayPalAccessToken(): Promise<string> {
