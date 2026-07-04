@@ -123,17 +123,6 @@ export default function DashboardProgress() {
     ...(hasFlashcards ? ["flashcards"] : []),
   ];
 
-  useEffect(() => {
-    if (window.location.hash === '#flashcards-section') {
-      document
-        .getElementById('flashcards-section')
-        ?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-    }
-  }, []);
-
   return (
     <DashboardLayout>
       <SEOHead title="Progress" canonicalPath="/dashboard/progress" noindex />
