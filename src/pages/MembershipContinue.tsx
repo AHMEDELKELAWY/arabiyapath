@@ -356,14 +356,17 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
 
       <Button size="lg" className="w-full" onClick={onContinue} disabled={loading}>
         {loading ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting to PayPal…</>
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {firstPaymentTotal <= 0 && applied ? "Activating membership…" : "Redirecting to PayPal…"}</>
+        ) : firstPaymentTotal <= 0 && applied ? (
+          <>Activate Membership · Free</>
         ) : (
           <>Continue to PayPal · {formatPrice(firstPaymentTotal, plan.currency)}</>
         )}
       </Button>
       <p className="text-xs text-muted-foreground text-center">
-        You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.
-        {applied && " The discount applies to your first payment only; renewals bill at the full plan price."}
+        {firstPaymentTotal <= 0 && applied
+          ? `Your coupon covers the full first payment — no PayPal step needed. Renewals bill at ${formatPrice(plan.price, plan.currency)} ${plan.cadenceLabel}.`
+          : (<>You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.{applied && " The discount applies to your first payment only; renewals bill at the full plan price."}</>)}
       </p>
     </div>
   );
