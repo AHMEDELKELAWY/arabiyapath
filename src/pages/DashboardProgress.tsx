@@ -34,6 +34,17 @@ export default function DashboardProgress() {
   const { data: fcSummary, isLoading: fcLoading } = useFlashcardsDashboard();
   const { data: fcResumeSlug } = useFlashcardsResumeSlug();
 
+  // NOTE: All hooks must run unconditionally on every render. Do NOT add early
+  // returns above this line — doing so causes React error #310 (hook order
+  // mismatch) and the page renders blank white.
+  useEffect(() => {
+    if (window.location.hash === "#flashcards-section") {
+      document
+        .getElementById("flashcards-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
   if (isLoading || fcLoading) {
     return (
       <DashboardLayout>
