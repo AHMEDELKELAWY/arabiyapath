@@ -151,10 +151,87 @@ function PlanContinueCard({ plan }: { plan: MembershipPlan }) {
   );
 }
 
+interface AppliedCoupon {
+  code: string;
+  percentOff: number;
+}
+
+function formatPrice(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `$${amount.toFixed(2)}`;
+  }
+}
+
 function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
   const [searchParams] = useSearchParams();
   const cancelled = searchParams.get("cancelled") === "1";
   const [loading, setLoading] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [applied, setApplied] = useState<AppliedCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [validating, setValidating] = useState(false);
+
+  const discountAmount = applied
+    ? Math.round(plan.price * (applied.percentOff / 100) * 100) / 100
+    : 0;
+  const firstPaymentTotal = Math.max(0, plan.price - discountAmount);
+
+  async function onApplyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError("Enter a coupon code.");
+      return;
+    }
+    setValidating(true);
+    setCouponError(null);
+    try {
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: Array<{ code: string; percent_off: number | null; discount_percent: number | null }> | null; error: unknown }>)(
+        "lookup_coupon",
+        { _code: code },
+      );
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!row) {
+        setApplied(null);
+        setCouponError("This coupon code is invalid or expired.");
+        return;
+      }
+      const percent = row.percent_off ?? row.discount_percent ?? 0;
+      if (!percent || percent <= 0) {
+        setApplied(null);
+        setCouponError("This coupon has no discount value.");
+        return;
+      }
+      setApplied({ code: row.code, percentOff: percent });
+      setCouponError(null);
+      toast({
+        title: "Coupon applied",
+        description: `${percent}% off your first payment.`,
+      });
+    } catch (e) {
+      setApplied(null);
+      setCouponError(
+        e instanceof Error ? e.message : "Could not validate coupon. Try again.",
+      );
+    } finally {
+      setValidating(false);
+    }
+  }
+
+  function onRemoveCoupon() {
+    setApplied(null);
+    setCouponInput("");
+    setCouponError(null);
+  }
 
   async function onContinue() {
     if (plan.id === "free") return;
@@ -162,6 +239,7 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
     try {
       const { approvalUrl } = await createMembershipSubscription(
         plan.id as "monthly" | "six_months" | "yearly",
+        applied ? { couponCode: applied.code } : {},
       );
       window.location.href = approvalUrl;
     } catch (e) {
@@ -172,23 +250,109 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {cancelled && (
         <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-sm px-3 py-2">
           Checkout was cancelled. You can try again anytime — no charge was made.
         </div>
       )}
+
+      {/* Coupon section */}
+      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+        <Label htmlFor="coupon" className="flex items-center gap-2 text-sm font-medium">
+          <Tag className="w-4 h-4 text-primary" />
+          Have a coupon?
+        </Label>
+        {applied ? (
+          <div className="flex items-center justify-between rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold">{applied.code}</span>
+              <span className="text-muted-foreground">
+                — {applied.percentOff}% off first payment
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRemoveCoupon}
+              aria-label="Remove coupon"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              id="coupon"
+              value={couponInput}
+              onChange={(e) => {
+                setCouponInput(e.target.value);
+                if (couponError) setCouponError(null);
+              }}
+              placeholder="Enter coupon code"
+              maxLength={40}
+              className="uppercase"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onApplyCoupon();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onApplyCoupon}
+              disabled={validating || !couponInput.trim()}
+            >
+              {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+            </Button>
+          </div>
+        )}
+        {couponError && (
+          <p className="text-sm text-destructive">{couponError}</p>
+        )}
+      </div>
+
+      {/* Price breakdown */}
+      <div className="rounded-lg border p-4 space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Plan price</span>
+          <span>{formatPrice(plan.price, plan.currency)}</span>
+        </div>
+        {applied && (
+          <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+            <span>Discount ({applied.percentOff}% — first payment only)</span>
+            <span>−{formatPrice(discountAmount, plan.currency)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold text-base border-t pt-2">
+          <span>First payment today</span>
+          <span>{formatPrice(firstPaymentTotal, plan.currency)}</span>
+        </div>
+        {applied && (
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Renewal {plan.cadenceLabel}</span>
+            <span>{formatPrice(plan.price, plan.currency)}</span>
+          </div>
+        )}
+      </div>
+
       <Button size="lg" className="w-full" onClick={onContinue} disabled={loading}>
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting to PayPal…</>
         ) : (
-          <>Continue to PayPal · {plan.priceLabel} {plan.cadenceLabel}</>
+          <>Continue to PayPal · {formatPrice(firstPaymentTotal, plan.currency)}</>
         )}
       </Button>
       <p className="text-xs text-muted-foreground text-center">
         You'll be redirected to PayPal to approve the {plan.name} subscription for {PRODUCT_NAME}.
+        {applied && " The discount applies to your first payment only; renewals bill at the full plan price."}
       </p>
     </div>
   );
 }
+
 
