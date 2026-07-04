@@ -15,7 +15,7 @@ import {
   PRODUCT_NAME,
   type MembershipPlan,
 } from "@/lib/membershipPlans";
-import { createMembershipSubscription } from "@/lib/payments/paypalSubscriptions";
+import { createMembershipSubscription, redeemFreeMembership } from "@/lib/payments/paypalSubscriptions";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2, Mail, Sparkles, Tag, X } from "lucide-react";
 

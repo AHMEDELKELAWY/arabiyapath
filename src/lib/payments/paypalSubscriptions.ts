@@ -27,6 +27,29 @@ export async function createMembershipSubscription(
   };
 }
 
+export interface RedeemFreeMembershipResult {
+  ok: true;
+  subscriptionId: string | null;
+  plan: string;
+  originalPrice: number;
+  discountAmount: number;
+  firstPayment: 0;
+  percentOff: number;
+  redirect: string;
+}
+
+export async function redeemFreeMembership(
+  plan: Exclude<MembershipPlanId, "free">,
+  couponCode: string,
+): Promise<RedeemFreeMembershipResult> {
+  const { data, error } = await supabase.functions.invoke("membership-redeem-free", {
+    body: { plan, couponCode },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data as RedeemFreeMembershipResult;
+}
+
 export async function activateMembershipSubscription(subscriptionId: string): Promise<{ status: string }> {
   const { data, error } = await supabase.functions.invoke("paypal-activate-subscription", {
     body: { subscriptionId },
