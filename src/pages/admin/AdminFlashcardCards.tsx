@@ -134,7 +134,7 @@ export default function AdminFlashcardCards() {
   // stats, duplicate detection, renumbering, copy-to-learn, and pagination total.
   const { data: summary } = useQuery({
     queryKey: ["admin-fc-cards-summary", unitId, kind],
-    enabled: !!unitId && kind !== "grammar",
+    enabled: !!unitId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
@@ -154,7 +154,7 @@ export default function AdminFlashcardCards() {
   // Paged fetch of full card rows for the visible page.
   const { data: pageCards } = useQuery({
     queryKey: ["admin-fc-cards", unitId, kind, safePage, sortKey],
-    enabled: !!unitId && kind !== "grammar",
+    enabled: !!unitId,
     queryFn: async () => {
       const from = safePage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -618,7 +618,7 @@ export default function AdminFlashcardCards() {
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
-            {kind === "learn" ? "Learn Content" : kind === "speaking" ? "Speaking Content" : "Grammar Content"}
+            {KIND_LABEL[kind]} Content
           </h1>
           <select
             className="border rounded px-2 py-1 bg-background"
@@ -635,55 +635,55 @@ export default function AdminFlashcardCards() {
             {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
           </select>
         </div>
-        {kind !== "grammar" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={!unitId}>
-                  <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={!unitId}>
-                  <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
-              <Upload className="w-4 h-4 mr-2" /> Import CSV
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!hasSlug) {
-                  toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
-                  return;
-                }
-                setBulkOpen(true);
-              }}
-              disabled={!unitId || !hasSlug}
-              title={!hasSlug ? "Unit has no slug" : undefined}
-            >
-              <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
-            </Button>
-            <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("grammar")}>Export Grammar Cards (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!unitId}>
+                <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("grammar")}>Grammar Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" /> Import CSV
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!hasSlug) {
+                toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
+                return;
+              }
+              setBulkOpen(true);
+            }}
+            disabled={!unitId || !hasSlug}
+            title={!hasSlug ? "Unit has no slug" : undefined}
+          >
+            <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
+          </Button>
+          <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
+        </div>
       </div>
 
-      {unitId && kind !== "grammar" && (
+      {unitId && (
         <ImportCardsDialog
           open={importOpen}
           onOpenChange={setImportOpen}
@@ -694,7 +694,7 @@ export default function AdminFlashcardCards() {
         />
       )}
 
-      {unitId && kind !== "grammar" && selected.size > 0 && (
+      {unitId && selected.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2">
           <span className="text-sm font-medium px-2">{selected.size} selected</span>
           <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={bulkBusy === "delete"}>
@@ -750,9 +750,15 @@ export default function AdminFlashcardCards() {
           <p className="italic">Listening and Test Yourself are generated automatically from Learn + Speaking cards — no separate authoring.</p>
         </div>
       )}
+      {unitId && kind === "grammar" && (
+        <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+          <p className="text-foreground font-medium">Grammar — one example per card</p>
+          <p>Each card = a single grammar example: Arabic sentence, English translation, and a short grammar note in the notes field. Use the same image + audio workflow as Learn and Speaking.</p>
+        </div>
+      )}
 
 
-      {unitId && kind !== "grammar" && (
+      {unitId && (
         <BulkImageUploadDialog
           open={bulkOpen}
           onOpenChange={setBulkOpen}
