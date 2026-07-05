@@ -118,6 +118,7 @@ export function ImportCardsDialog({
     arabic_text: String(r.arabic_text),
     english_translation: String(r.english_translation),
     transliteration: r.transliteration || null,
+    notes: r.notes || null,
     image_url: r.image_url || null,
     audio_url: r.audio_url || null,
     published: parseBool(r.published),
@@ -179,6 +180,7 @@ export function ImportCardsDialog({
             english_translation: r.english_translation,
             transliteration: r.transliteration || null,
           };
+          if (r.notes !== undefined) patch.notes = r.notes || null;
           if (r.image_url !== undefined && r.image_url !== "") patch.image_url = r.image_url;
           if (r.audio_url !== undefined && r.audio_url !== "") patch.audio_url = r.audio_url;
           if (r.published !== undefined && r.published !== "") patch.published = parseBool(r.published);
