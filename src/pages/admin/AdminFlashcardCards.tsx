@@ -339,7 +339,7 @@ export default function AdminFlashcardCards() {
 
   // ---- Bulk actions (scoped to current kind) ----
   const bulkSetPublished = async (published: boolean) => {
-    if (!confirm(`${published ? "Publish" : "Unpublish"} all ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit?`)) return;
+    if (!confirm(`${published ? "Publish" : "Unpublish"} all ${KIND_LABEL[kind]} cards in this unit?`)) return;
     setBulkBusy("publish");
     const { error } = await (supabase as any)
       .from("flashcards").update({ published })
@@ -352,7 +352,7 @@ export default function AdminFlashcardCards() {
 
   const bulkClear = async (column: "image_url" | "audio_url") => {
     const label = column === "image_url" ? "images" : "audio";
-    if (!confirm(`Remove ALL ${label} for ${kind === "learn" ? "Learn" : "Speaking"} cards in this unit? This cannot be undone.`)) return;
+    if (!confirm(`Remove ALL ${label} for ${KIND_LABEL[kind]} cards in this unit? This cannot be undone.`)) return;
     setBulkBusy(column);
     const { error } = await (supabase as any)
       .from("flashcards").update({ [column]: null })
