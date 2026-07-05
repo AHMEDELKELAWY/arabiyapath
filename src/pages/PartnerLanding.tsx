@@ -28,6 +28,7 @@ interface PartnerRow {
 }
 
 const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
 .ph-scope{font-family:'Work Sans','Inter',system-ui,sans-serif;background:#FBF8F1;color:#142A20;line-height:1.65;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;}
 .ph-scope *{box-sizing:border-box;}
 .ph-scope img{max-width:100%;display:block;}
@@ -56,8 +57,9 @@ const STYLES = `
 .ph-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.18) 1px,transparent 1.4px);background-size:26px 26px;opacity:0.25;pointer-events:none;}
 .ph-hero-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:48px;align-items:center;position:relative;z-index:1;}
 .ph-eyebrow-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,163,61,0.15);border:1px solid rgba(232,163,61,0.5);color:#F6CD89;font-weight:700;font-size:0.85rem;padding:8px 16px;border-radius:999px;margin-bottom:22px;}
-.ph-hero h1{font-family:'Fraunces';font-weight:600;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.2;margin:0 0 18px;}
-.ph-hero h1 .accent{color:#E8A33D;font-style:italic;}
+.ph-hero h1{font-family:'Playfair Display','Fraunces',Georgia,serif;font-weight:600;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.18;margin:0 0 18px;letter-spacing:-0.03em;}
+.ph-hero h1 .headline-main{font-weight:600;letter-spacing:-0.03em;}
+.ph-hero h1 .accent{color:#E8A33D;font-style:italic;font-weight:500;letter-spacing:-0.01em;}
 .ph-lead{font-size:1.08rem;color:#D9E8E0;max-width:520px;margin:0 0 30px;}
 .ph-price-block{display:flex;align-items:flex-end;gap:16px;margin-bottom:26px;flex-wrap:wrap;}
 .ph-price-old{font-size:1.15rem;color:#B9CDC3;text-decoration:line-through;margin-bottom:6px;}
@@ -244,7 +246,7 @@ export default function PartnerLanding() {
 
   const config = useMemo(() => {
     if (!partner) return null;
-    const basePrice = pack ? pack.price_cents / 100 : partner.old_price ?? 29.99;
+    const basePrice = pack ? pack.price_cents / 100 : partner.old_price ?? 30.00;
     return buildPartnerConfig(partner, basePrice);
   }, [partner, pack]);
 
@@ -305,7 +307,7 @@ export default function PartnerLanding() {
           <div>
             <div className="ph-eyebrow-badge">★ Exclusive for {ownerName}'s Students</div>
             <h1>
-              Arabic that <span className="accent">finally sticks</span>.
+              <span className="headline-main">Arabic that</span>{" "}<span className="accent">finally sticks</span>.
             </h1>
             <p className="ph-lead">
               A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.

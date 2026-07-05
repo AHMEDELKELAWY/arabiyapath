@@ -120,7 +120,7 @@ const DEFAULT_FAQ: PartnerFAQItem[] = [
 export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: number): PartnerLandingConfig {
   const couponCode = row.coupons?.code ?? null;
   const discount = row.coupons?.percent_off ?? 0;
-  const oldPrice = row.old_price ?? fallbackBasePrice ?? 29.99;
+  const oldPrice = row.old_price ?? fallbackBasePrice ?? 30.00;
   const newPrice =
     row.price_override != null
       ? Number(row.price_override)
