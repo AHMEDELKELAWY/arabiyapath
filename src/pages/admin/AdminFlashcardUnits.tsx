@@ -63,7 +63,7 @@ export default function AdminFlashcardUnits() {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Flash Card Units</h1>
+        <h1 className="text-2xl font-bold">Vocabulary Units</h1>
         <Button onClick={startNew}><Plus className="w-4 h-4 mr-2" /> New Unit</Button>
       </div>
 
