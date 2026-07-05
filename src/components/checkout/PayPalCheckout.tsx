@@ -10,7 +10,8 @@ import { Loader2, Tag, CheckCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CardCheckout } from "./CardCheckout";
-import { getPartnerCoupon } from "@/lib/partnerCoupon";
+import { getPartnerCoupon, setPartnerCoupon } from "@/lib/partnerCoupon";
+import { useSearchParams } from "react-router-dom";
 
 interface PayPalCheckoutProps {
   productType: string;
@@ -79,18 +80,50 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
     fetchClientToken();
   }, []);
 
-  // Auto-apply a coupon stored from a Partner landing page (sessionStorage).
+  // Auto-apply a coupon from:
+  //  1) URL param ?coupon=CODE
+  //  2) URL param ?partner=slug (resolve to that partner's coupon)
+  //  3) sessionStorage (set by a Partner landing page)
   // Re-uses the existing coupon attribution flow — no new tracking system.
+  const [searchParams] = useSearchParams();
   const autoAppliedRef = useRef(false);
   useEffect(() => {
     if (autoAppliedRef.current || appliedCoupon) return;
-    const stored = getPartnerCoupon();
-    if (!stored) return;
     autoAppliedRef.current = true;
+
     (async () => {
+      // 1. Resolve candidate code, case-insensitive, trimmed.
+      const urlCoupon = searchParams.get("coupon")?.trim();
+      const partnerSlug = searchParams.get("partner")?.trim();
+      let candidate: string | null = urlCoupon ? urlCoupon.toUpperCase() : null;
+
+      if (!candidate && partnerSlug) {
+        try {
+          const { data } = await (supabase as any)
+            .from("partners")
+            .select("coupons ( code )")
+            .eq("slug", partnerSlug.toLowerCase())
+            .maybeSingle();
+          const code = data?.coupons?.code;
+          if (code) candidate = String(code).toUpperCase();
+        } catch {
+          /* ignore, fall through */
+        }
+      }
+
+      if (!candidate) {
+        const stored = getPartnerCoupon();
+        if (stored) candidate = stored.trim().toUpperCase();
+      }
+
+      if (!candidate) {
+        autoAppliedRef.current = false;
+        return;
+      }
+
       setIsApplyingCoupon(true);
       try {
-        const { data: coupons } = await supabase.rpc("lookup_coupon", { _code: stored });
+        const { data: coupons } = await supabase.rpc("lookup_coupon", { _code: candidate });
         const coupon = Array.isArray(coupons) ? coupons[0] : coupons;
         if (!coupon) return;
         if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return;
@@ -99,22 +132,25 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
           code: coupon.code,
           discount: coupon.percent_off || coupon.discount_percent || 0,
         });
-        toast.success(`Partner discount applied: ${coupon.code}`);
+        // Persist so the discount survives refresh, login, or signup redirect.
+        setPartnerCoupon(coupon.code);
+        toast.success(`Discount applied: ${coupon.code}`);
       } catch {
         /* silent — user can apply manually */
       } finally {
         setIsApplyingCoupon(false);
       }
     })();
-  }, [appliedCoupon]);
+  }, [appliedCoupon, searchParams]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
 
     setIsApplyingCoupon(true);
     try {
+      const normalized = couponCode.trim().toUpperCase();
       const { data: coupons, error } = await supabase
-        .rpc("lookup_coupon", { _code: couponCode.toUpperCase() });
+        .rpc("lookup_coupon", { _code: normalized });
       const coupon = Array.isArray(coupons) ? coupons[0] : coupons;
 
       if (error || !coupon) {
@@ -129,6 +165,7 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
 
 
       setAppliedCoupon({ code: coupon.code, discount: coupon.percent_off || coupon.discount_percent || 0 });
+      setPartnerCoupon(coupon.code);
       toast.success(`Coupon applied! ${coupon.percent_off || coupon.discount_percent}% off`);
     } catch (error) {
       toast.error("Failed to apply coupon");
