@@ -165,6 +165,7 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
 
 
       setAppliedCoupon({ code: coupon.code, discount: coupon.percent_off || coupon.discount_percent || 0 });
+      setPartnerCoupon(coupon.code);
       toast.success(`Coupon applied! ${coupon.percent_off || coupon.discount_percent}% off`);
     } catch (error) {
       toast.error("Failed to apply coupon");
