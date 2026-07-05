@@ -173,7 +173,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
     pricingIncludes: [
       "Lifetime access",
       "Native audio",
-      "All flashcards",
+      "All vocabulary units",
       "Future updates",
       "Certificate",
       "30-day money-back guarantee",
