@@ -28,7 +28,7 @@ import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUp
 import { ImportCardsDialog } from "@/components/admin/flashcards/ImportCardsDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
-import { AdminGrammarEditor } from "@/components/admin/flashcards/AdminGrammarEditor";
+import { AdminGrammarManager } from "@/components/admin/flashcards/AdminGrammarManager";
 import { toCsv, downloadCsv, downloadJson, CARD_CSV_COLUMNS } from "@/lib/flashcards/cardsCsv";
 
 const PAGE_SIZE = 20;
@@ -761,7 +761,7 @@ export default function AdminFlashcardCards() {
       {!unitId ? (
         <p className="text-muted-foreground">Pick a unit to manage its content.</p>
       ) : kind === "grammar" ? (
-        <AdminGrammarEditor unitId={unitId} />
+        <AdminGrammarManager unitId={unitId} units={units} />
       ) : (
         <>
           {/* Stats */}
