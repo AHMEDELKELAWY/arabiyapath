@@ -92,9 +92,9 @@ serve(async (req) => {
       const { data: coupon, error: couponError } = await supabase
         .from("coupons")
         .select("*")
-        .eq("code", couponCode.toUpperCase())
-        .eq("is_active", true)
-        .single();
+        .ilike("code", couponCode)
+        .eq("active", true)
+        .maybeSingle();
 
       if (!couponError && coupon) {
         // Check if coupon is still valid
