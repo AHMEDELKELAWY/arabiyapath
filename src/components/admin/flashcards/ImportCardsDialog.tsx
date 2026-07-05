@@ -118,6 +118,7 @@ export function ImportCardsDialog({
     arabic_text: String(r.arabic_text),
     english_translation: String(r.english_translation),
     transliteration: r.transliteration || null,
+    notes: r.notes || null,
     image_url: r.image_url || null,
     audio_url: r.audio_url || null,
     published: parseBool(r.published),
