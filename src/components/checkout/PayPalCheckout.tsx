@@ -148,8 +148,9 @@ export function PayPalCheckout({ productType, productName, price, successRedirec
 
     setIsApplyingCoupon(true);
     try {
+      const normalized = couponCode.trim().toUpperCase();
       const { data: coupons, error } = await supabase
-        .rpc("lookup_coupon", { _code: couponCode.toUpperCase() });
+        .rpc("lookup_coupon", { _code: normalized });
       const coupon = Array.isArray(coupons) ? coupons[0] : coupons;
 
       if (error || !coupon) {
