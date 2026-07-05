@@ -42,7 +42,11 @@ serve(async (req) => {
   }
 
   try {
-    const { productType, couponCode } = await req.json();
+    const { productType, couponCode: rawCouponCode } = await req.json();
+    const couponCode: string | null =
+      typeof rawCouponCode === "string" && rawCouponCode.trim().length > 0
+        ? rawCouponCode.trim().toUpperCase()
+        : null;
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
