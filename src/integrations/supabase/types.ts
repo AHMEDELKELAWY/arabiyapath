@@ -653,50 +653,11 @@ export type Database = {
         }
         Relationships: []
       }
-      flashcard_unit_grammar: {
-        Row: {
-          created_at: string
-          examples: Json
-          explanation: string | null
-          id: string
-          title: string | null
-          unit_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          examples?: Json
-          explanation?: string | null
-          id?: string
-          title?: string | null
-          unit_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          examples?: Json
-          explanation?: string | null
-          id?: string
-          title?: string | null
-          unit_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "flashcard_unit_grammar_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: true
-            referencedRelation: "flashcard_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       flashcard_units: {
         Row: {
           cover_image_url: string | null
           created_at: string
           description: string | null
-          has_grammar: boolean
           id: string
           is_free: boolean
           order_index: number
@@ -712,7 +673,6 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          has_grammar?: boolean
           id?: string
           is_free?: boolean
           order_index?: number
@@ -728,7 +688,6 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          has_grammar?: boolean
           id?: string
           is_free?: boolean
           order_index?: number
@@ -1750,7 +1709,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
-      flashcard_kind: "learn" | "speaking"
+      flashcard_kind: "learn" | "speaking" | "grammar"
       flashcard_purchase_status: "pending" | "active" | "refunded" | "failed"
       flashcard_rating: "again" | "hard" | "good" | "easy"
       flashcard_status: "new" | "learning" | "review" | "mastered"
@@ -1882,7 +1841,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "affiliate"],
-      flashcard_kind: ["learn", "speaking"],
+      flashcard_kind: ["learn", "speaking", "grammar"],
       flashcard_purchase_status: ["pending", "active", "refunded", "failed"],
       flashcard_rating: ["again", "hard", "good", "easy"],
       flashcard_status: ["new", "learning", "review", "mastered"],
