@@ -240,7 +240,7 @@ export default function DashboardProgress() {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-2xl" aria-hidden="true">🃏</span>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="font-semibold truncate">Flash Cards</p>
+                      <p className="font-semibold truncate">Vocabulary</p>
                       <p className="text-xs text-muted-foreground">
                         {progressPercent}% · {reviewedCards}/{totalCards} cards · {completedUnits}/{totalUnits} units
                       </p>
