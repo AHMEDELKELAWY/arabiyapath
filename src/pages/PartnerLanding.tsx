@@ -307,7 +307,7 @@ export default function PartnerLanding() {
           <div>
             <div className="ph-eyebrow-badge">★ Exclusive for {ownerName}'s Students</div>
             <h1>
-              Arabic that <span className="accent">finally sticks</span>.
+              <span className="headline-main">Arabic that</span>{" "}<span className="accent">finally sticks</span>.
             </h1>
             <p className="ph-lead">
               A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.
