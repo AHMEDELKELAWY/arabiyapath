@@ -280,8 +280,8 @@ export default function PartnerLanding() {
   return (
     <div className="ph-scope">
       <SEOHead
-        title={`Exclusive Arabic Flashcards Offer for ${ownerName}'s Students`}
-        description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic flashcard package. Lifetime access.`}
+        title={`Exclusive Arabic Vocabulary Offer for ${ownerName}'s Students`}
+        description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic vocabulary package. Lifetime access.`}
         canonicalPath={`/partner/${config.slug}`}
       />
       <style>{STYLES}</style>
