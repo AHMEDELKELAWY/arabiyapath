@@ -162,6 +162,12 @@ export function CardRow({
               </div>
               <p className="text-xl mt-1" dir="rtl">{c.arabic_text}</p>
               <p className="text-sm text-muted-foreground">{c.english_translation}</p>
+              {c.notes && (
+                <p className="text-xs mt-1 rounded border border-primary/20 bg-primary/5 px-2 py-1 whitespace-pre-line">
+                  <span className="font-semibold text-primary mr-1">{c.kind === "grammar" ? "Grammar note:" : "Note:"}</span>
+                  {c.notes}
+                </p>
+              )}
             </div>
             <label className="flex items-center gap-2 text-sm shrink-0">
               <Switch checked={!!c.published} onCheckedChange={togglePublished} />
