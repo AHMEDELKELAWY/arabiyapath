@@ -762,7 +762,7 @@ export default function AdminFlashcardCards() {
       {!unitId ? (
         <p className="text-muted-foreground">Pick a unit to manage its content.</p>
       ) : kind === "grammar" ? (
-        <AdminGrammarEditor unitId={unitId} />
+        <AdminGrammarManager unitId={unitId} units={units} />
       ) : (
         <>
           {/* Stats */}
