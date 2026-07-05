@@ -117,16 +117,25 @@ export default function AdminFlashcardUnits() {
             </div>
 
             {editing?.id && form.has_grammar && (
-              <AdminGrammarEditor unitId={editing.id} />
+              <div className="pt-2">
+                <Button variant="outline" size="sm" asChild className="gap-2">
+                  <Link to={`/admin/flashcards/grammar?unit=${editing.id}`}>
+                    <BookOpen className="w-4 h-4" /> Manage Grammar Content
+                  </Link>
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Grammar lessons are edited in the dedicated Grammar Content section.
+                </p>
+              </div>
             )}
             {editing?.id && !form.has_grammar && (
               <p className="text-xs text-muted-foreground pt-2">
-                Enable the Grammar tab and Save the unit to edit grammar content.
+                Enable the Grammar tab and Save to create a grammar lesson for this unit.
               </p>
             )}
             {!editing?.id && form.has_grammar && (
               <p className="text-xs text-muted-foreground pt-2">
-                Save the unit first, then re-open it to add Grammar content.
+                Save the unit first, then re-open it to manage Grammar content.
               </p>
             )}
           </CardContent>
