@@ -209,7 +209,7 @@ export default function FlashCardStudy() {
               </div>
               <h1 className="text-3xl font-bold mb-2">Congratulations!</h1>
               <p className="text-muted-foreground mb-6">
-                You completed the free flashcard unit.
+                You completed the free vocabulary unit.
               </p>
               <p className="font-semibold mb-3">
                 Join the ArabiyaPath Membership and get access to:
