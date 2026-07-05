@@ -165,7 +165,7 @@ export default function AdminFlashcardDiagnostics() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="w-4 h-4" /> Repair Flashcard Images
+            <Wrench className="w-4 h-4" /> Repair Vocabulary Images
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
