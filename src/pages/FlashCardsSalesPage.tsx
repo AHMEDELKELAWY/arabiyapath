@@ -20,7 +20,7 @@ import { PRODUCT_NAME } from "@/lib/membershipPlans";
 
 const featureCards = [
   { icon: Volume2, title: "Native Audio", desc: "Learn from crisp recordings by a native Arabic speaker." },
-  { icon: ImageIcon, title: "Real Images", desc: "Photo-based flashcards for visual vocabulary memory." },
+  { icon: ImageIcon, title: "Real Images", desc: "Photo-based vocabulary for visual memory." },
   { icon: Mic, title: "Speaking Practice", desc: "Record and compare to native pronunciation." },
   { icon: Headphones, title: "Listening Practice", desc: "Immersive listening drills for every unit." },
   { icon: BookOpen, title: "Smart Quizzes", desc: "Adaptive quizzes with instant feedback." },
