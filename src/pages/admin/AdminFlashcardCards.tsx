@@ -678,7 +678,7 @@ export default function AdminFlashcardCards() {
         )}
       </div>
 
-      {unitId && (
+      {unitId && kind !== "grammar" && (
         <ImportCardsDialog
           open={importOpen}
           onOpenChange={setImportOpen}
@@ -689,7 +689,7 @@ export default function AdminFlashcardCards() {
         />
       )}
 
-      {unitId && selected.size > 0 && (
+      {unitId && kind !== "grammar" && selected.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2">
           <span className="text-sm font-medium px-2">{selected.size} selected</span>
           <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={bulkBusy === "delete"}>
@@ -713,6 +713,7 @@ export default function AdminFlashcardCards() {
           {([
             { v: "learn", label: "Learn Content" },
             { v: "speaking", label: "Speaking Content" },
+            { v: "grammar", label: "Grammar Content" },
           ] as { v: CardKind; label: string }[]).map((t) => (
             <button
               key={t.v}
@@ -731,7 +732,7 @@ export default function AdminFlashcardCards() {
         </div>
       )}
 
-      {unitId && (
+      {unitId && kind !== "grammar" && (
         <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-2">
           <div>
             <p className="text-foreground font-medium">Learn — vocabulary only</p>
@@ -746,7 +747,7 @@ export default function AdminFlashcardCards() {
       )}
 
 
-      {unitId && (
+      {unitId && kind !== "grammar" && (
         <BulkImageUploadDialog
           open={bulkOpen}
           onOpenChange={setBulkOpen}
