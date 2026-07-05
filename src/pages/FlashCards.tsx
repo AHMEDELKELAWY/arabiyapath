@@ -227,7 +227,7 @@ export default function FlashCards() {
                 the region and its people.
               </p>
               <p>
-                These flash cards focus on the advanced phrases that
+                This vocabulary focuses on the advanced phrases that
                 high-status professionals use: from welcoming dignitaries to
                 navigating delicate negotiations. Each phrase includes cultural
                 context that explains not just what to say, but when and how to
