@@ -248,7 +248,7 @@ export default function Dashboard() {
               return (
                 <ProductCard
                   key="flashcards"
-                  name="Flash Cards"
+                  name="Vocabulary"
                   emoji="🃏"
                   progressPercent={progressPercent}
                   unitsLabel={`${completedUnits}/${totalUnits} units completed`}
