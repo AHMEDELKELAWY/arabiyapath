@@ -97,7 +97,7 @@ const DEFAULT_MODE_CARDS: PartnerModeCard[] = [
 const DEFAULT_FAQ: PartnerFAQItem[] = [
   {
     q: "How long do I keep access?",
-    a: "Lifetime. You pay once and keep access forever, including future updates to the flashcards pack.",
+    a: "Lifetime. You pay once and keep access forever, including future updates to the vocabulary pack.",
   },
   {
     q: "Do I need to enter the coupon myself?",
