@@ -578,7 +578,7 @@ export default function AdminFlashcardCards() {
   };
 
   // ---- Export / Backup ----
-  const fetchUnitCards = async (forKind?: "learn" | "speaking") => {
+  const fetchUnitCards = async (forKind?: CardKind) => {
     let q = (supabase as any).from("flashcards").select("*").eq("unit_id", unitId);
     if (forKind) q = q.eq("kind", forKind);
     const { data, error } = await q.order("kind").order("order_index");
@@ -586,7 +586,7 @@ export default function AdminFlashcardCards() {
     return data ?? [];
   };
 
-  const exportCsv = async (scope: "learn" | "speaking" | "all") => {
+  const exportCsv = async (scope: CardKind | "all") => {
     try {
       const rows = await fetchUnitCards(scope === "all" ? undefined : scope);
       const csv = toCsv(rows, CARD_CSV_COLUMNS as unknown as string[]);
@@ -598,7 +598,7 @@ export default function AdminFlashcardCards() {
     }
   };
 
-  const exportBackup = async (scope: "learn" | "speaking" | "all") => {
+  const exportBackup = async (scope: CardKind | "all") => {
     try {
       const { data: unit, error: uerr } = await (supabase as any)
         .from("flashcard_units").select("*").eq("id", unitId).single();
