@@ -29,7 +29,7 @@ import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser
 import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
-import { GrammarLesson } from "@/components/flashcards/msa/GrammarLesson";
+import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
 
 type StudyTab = "learn" | "listening" | "speaking" | "grammar" | "test";
 
@@ -58,7 +58,7 @@ export default function FlashCardUnit() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description,has_grammar")
+        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description")
         .eq("slug", slug)
         .eq("published", true)
         .maybeSingle();
@@ -112,19 +112,20 @@ export default function FlashCardUnit() {
     },
   });
 
-  // Grammar tab is optional per unit. Fetched here so we can decide tab
-  // visibility (only show when has_grammar AND a grammar row exists).
-  const { data: grammar } = useQuery({
-    queryKey: ["fc-unit-grammar", unit?.id],
-    enabled: !!unit?.id && !!unit?.has_grammar,
+  // Grammar tab is optional per unit. It appears whenever the unit has at
+  // least one published Grammar card (kind = 'grammar').
+  const { data: grammarCount } = useQuery({
+    queryKey: ["fc-unit-grammar-count", unit?.id],
+    enabled: !!unit?.id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("flashcard_unit_grammar")
-        .select("id")
+      const { count, error } = await (supabase as any)
+        .from("flashcards")
+        .select("id", { count: "exact", head: true })
         .eq("unit_id", unit!.id)
-        .maybeSingle();
+        .eq("kind", "grammar")
+        .eq("published", true);
       if (error) throw error;
-      return data;
+      return count ?? 0;
     },
   });
 
@@ -143,7 +144,7 @@ export default function FlashCardUnit() {
   const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
   const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
 
-  const showGrammar = !!(unit?.has_grammar && grammar);
+  const showGrammar = !!grammarCount && grammarCount > 0;
 
 
   return (
@@ -287,7 +288,7 @@ export default function FlashCardUnit() {
             {showGrammar && (
               <TabsContent value="grammar" className="mt-3 md:mt-4">
                 {canStudy ? (
-                  <GrammarLesson unitId={unit.id} />
+                  <GrammarBrowser unitId={unit.id} onComplete={() => goToTab("test")} />
                 ) : (
                   <Card>
                     <CardContent className="p-8 text-center flex flex-col items-center gap-3">

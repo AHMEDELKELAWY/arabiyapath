@@ -28,7 +28,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   unitId: string;
   unitSlug: string;
-  kind: "learn" | "speaking";
+  kind: "learn" | "speaking" | "grammar";
   onComplete?: () => void;
 }
 
@@ -207,7 +207,7 @@ export function BulkImageUploadDialog({
         <DialogHeader>
           <DialogTitle>Bulk Image Upload</DialogTitle>
           <DialogDescription>
-            Operates on every {kind === "learn" ? "Learn" : "Speaking"} card in this unit
+            Operates on every {kind === "learn" ? "Learn" : kind === "speaking" ? "Speaking" : "Grammar"} card in this unit
             ({allCards.length} total). Files match by the last number in the filename
             (e.g. <code>msa-u01-001.jpg</code> → card #1).
           </DialogDescription>
