@@ -630,50 +630,52 @@ export default function AdminFlashcardCards() {
             {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={!unitId}>
-                <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={!unitId}>
-                <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" /> Import CSV
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!hasSlug) {
-                toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
-                return;
-              }
-              setBulkOpen(true);
-            }}
-            disabled={!unitId || !hasSlug}
-            title={!hasSlug ? "Unit has no slug" : undefined}
-          >
-            <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
-          </Button>
-          <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
-        </div>
+        {kind !== "grammar" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={!unitId}>
+                  <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportCsv("learn")}>Export Learn Cards (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportCsv("speaking")}>Export Speaking Cards (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportCsv("all")}>Export Entire Unit (CSV)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={!unitId}>
+                  <FileJson className="w-4 h-4 mr-2" /> Backup <ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportBackup("learn")}>Learn Backup (JSON)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBackup("speaking")}>Speaking Backup (JSON)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBackup("all")}>Full Unit Backup (JSON)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" disabled={!unitId} onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" /> Import CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!hasSlug) {
+                  toast({ title: "This unit has no slug — set one before uploading images.", variant: "destructive" });
+                  return;
+                }
+                setBulkOpen(true);
+              }}
+              disabled={!unitId || !hasSlug}
+              title={!hasSlug ? "Unit has no slug" : undefined}
+            >
+              <Images className="w-4 h-4 mr-2" /> Bulk Image Upload
+            </Button>
+            <Button onClick={startNew} disabled={!unitId}><Plus className="w-4 h-4 mr-2" /> New Card</Button>
+          </div>
+        )}
       </div>
 
       {unitId && (
