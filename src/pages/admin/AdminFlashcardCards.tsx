@@ -28,7 +28,6 @@ import { BulkImageUploadDialog } from "@/components/admin/flashcards/BulkImageUp
 import { ImportCardsDialog } from "@/components/admin/flashcards/ImportCardsDialog";
 import { CardRow } from "@/components/admin/flashcards/CardRow";
 import { AudioRecorder } from "@/components/admin/flashcards/AudioRecorder";
-import { AdminGrammarEditor } from "@/components/admin/flashcards/AdminGrammarEditor";
 import { AdminGrammarManager } from "@/components/admin/flashcards/AdminGrammarManager";
 import { toCsv, downloadCsv, downloadJson, CARD_CSV_COLUMNS } from "@/lib/flashcards/cardsCsv";
 
