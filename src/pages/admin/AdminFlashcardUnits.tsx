@@ -119,12 +119,12 @@ export default function AdminFlashcardUnits() {
             {editing?.id && form.has_grammar && (
               <div className="pt-2">
                 <Button variant="outline" size="sm" asChild className="gap-2">
-                  <Link to={`/admin/flashcards/grammar?unit=${editing.id}`}>
+                  <Link to={`/admin/flashcards/cards?unit=${editing.id}&kind=grammar`}>
                     <BookOpen className="w-4 h-4" /> Manage Grammar Content
                   </Link>
                 </Button>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Grammar lessons are edited in the dedicated Grammar Content section.
+                  Grammar is edited alongside Learn and Speaking in the Content workflow.
                 </p>
               </div>
             )}
