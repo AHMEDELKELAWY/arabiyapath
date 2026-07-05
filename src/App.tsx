@@ -74,6 +74,7 @@ const AdminAffiliateApplications = lazy(() => import("./pages/admin/AdminAffilia
 const AdminEmailCampaigns = lazy(() => import("./pages/admin/AdminEmailCampaigns"));
 const AdminFlashcardUnits = lazy(() => import("./pages/admin/AdminFlashcardUnits"));
 const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards"));
+const AdminFlashcardGrammar = lazy(() => import("./pages/admin/AdminFlashcardGrammar"));
 const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
