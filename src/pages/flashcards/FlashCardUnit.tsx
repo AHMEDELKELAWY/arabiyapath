@@ -127,11 +127,28 @@ export default function FlashCardUnit() {
   const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
   const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
 
+  // Grammar tab is optional per unit. Fetched here so we can decide tab
+  // visibility (only show when has_grammar AND a grammar row exists).
+  const { data: grammar } = useQuery({
+    queryKey: ["fc-unit-grammar", unit?.id],
+    enabled: !!unit?.id && !!unit?.has_grammar,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_unit_grammar")
+        .select("id")
+        .eq("unit_id", unit!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const showGrammar = !!(unit?.has_grammar && grammar);
+
   return (
     <Layout minimalFooter>
       <SEOHead
-        title={unit.seo_title || `${unit.title_en} — Flash Cards`}
-        description={unit.seo_description || unit.description || "MSA Arabic flash cards."}
+        title={unit.seo_title || `${unit.title_en} — Vocabulary`}
+        description={unit.seo_description || unit.description || "MSA Arabic vocabulary."}
         canonicalPath={`/flashcards/unit/${unit.slug}`}
         jsonLd={{
           "@context": "https://schema.org",
@@ -160,14 +177,16 @@ export default function FlashCardUnit() {
         )}
         {typeof cardCount === "number" && cardCount > 0 && (
           <span className="inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-            {cardCount} Cards
+            {cardCount} Words
           </span>
         )}
 
         <div ref={lessonTopRef} className="mt-3 md:mt-4 scroll-mt-20">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StudyTab)} className="w-full">
             <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsList
+                className={`grid w-full h-auto grid-cols-2 ${showGrammar ? "md:grid-cols-5" : "md:grid-cols-4"}`}
+              >
                 <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <BookOpen className="w-4 h-4" /> Learn
                 </TabsTrigger>
@@ -177,6 +196,11 @@ export default function FlashCardUnit() {
                 <TabsTrigger value="speaking" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <Mic className="w-4 h-4" /> Speaking
                 </TabsTrigger>
+                {showGrammar && (
+                  <TabsTrigger value="grammar" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                    <ScrollText className="w-4 h-4" /> Grammar
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="test" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <GraduationCap className="w-4 h-4" /> Test Yourself
                 </TabsTrigger>
