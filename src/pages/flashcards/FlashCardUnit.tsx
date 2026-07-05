@@ -257,7 +257,10 @@ export default function FlashCardUnit() {
 
             <TabsContent value="speaking" className="mt-3 md:mt-4">
               {canStudy ? (
-                <SpeakingPractice unitId={unit.id} onComplete={() => goToTab("test")} />
+                <SpeakingPractice
+                  unitId={unit.id}
+                  onComplete={() => goToTab(showGrammar ? "grammar" : "test")}
+                />
 
               ) : (
                 <Card>
@@ -278,6 +281,31 @@ export default function FlashCardUnit() {
                 </Card>
               )}
             </TabsContent>
+
+            {showGrammar && (
+              <TabsContent value="grammar" className="mt-3 md:mt-4">
+                {canStudy ? (
+                  <GrammarLesson unitId={unit.id} />
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ScrollText className="w-6 h-6 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Grammar</h3>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        Short grammar note with clear examples in Arabic and English.
+                      </p>
+                      <Button asChild className="mt-2">
+                        <Link to="/pricing">
+                          <Lock className="w-4 h-4 mr-2" /> Join Membership
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            )}
 
             <TabsContent value="test" className="mt-4">
               {canStudy ? (
