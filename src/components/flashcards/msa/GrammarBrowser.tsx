@@ -1,0 +1,234 @@
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { FlashCardImage } from "./FlashCardImage";
+import { ActivityProgress } from "./ActivityProgress";
+import {
+  ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft,
+  GraduationCap, ScrollText,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface GrammarCardRow {
+  id: string;
+  arabic_text: string;
+  english_translation: string;
+  notes: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+  audio_url: string | null;
+}
+
+interface Props {
+  unitId: string;
+  onComplete?: () => void;
+}
+
+/**
+ * Grammar tab — card-by-card browser mirroring LearnVocabBrowser.
+ * Reads flashcards where kind = 'grammar'. The `notes` field is used as the
+ * grammar note / explanation shown below the sentence.
+ */
+export function GrammarBrowser({ unitId, onComplete }: Props) {
+  const [idx, setIdx] = useState(0);
+  const [completed, setCompleted] = useState(false);
+  const [fadeKey, setFadeKey] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const navigate = useNavigate();
+
+  const { data: cards, isLoading } = useQuery({
+    queryKey: ["fc-grammar-cards", unitId],
+    enabled: !!unitId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcards")
+        .select("id,arabic_text,english_translation,notes,image_url,image_alt,audio_url")
+        .eq("unit_id", unitId)
+        .eq("kind", "grammar")
+        .eq("published", true)
+        .order("order_index");
+      if (error) throw error;
+      return (data ?? []) as GrammarCardRow[];
+    },
+  });
+
+  const total = cards?.length ?? 0;
+  const safeIdx = total > 0 ? Math.min(idx, total - 1) : 0;
+  const current = cards?.[safeIdx];
+
+  useEffect(() => { setFadeKey((k) => k + 1); }, [safeIdx]);
+
+  const playAudio = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+
+  const goPrev = () => setIdx((i) => Math.max(0, i - 1));
+  const goNext = () => {
+    if (safeIdx >= total - 1) setCompleted(true);
+    else setIdx((i) => i + 1);
+  };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (completed) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "Enter") { e.preventDefault(); playAudio(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIdx, total, completed]);
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-5 md:p-8 space-y-4">
+          <div className="h-2 w-full rounded bg-muted animate-pulse" />
+          <div className="aspect-[4/3] w-full max-w-[333px] md:max-w-[667px] mx-auto rounded-2xl bg-muted animate-pulse" />
+          <div className="h-8 w-1/2 mx-auto rounded bg-muted animate-pulse" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!cards?.length) {
+    return (
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-5 md:p-8 text-center text-muted-foreground">
+          No Grammar cards yet.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (completed) {
+    return (
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="p-5 md:p-8 text-center space-y-4">
+          <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
+            <Check className="w-7 h-7" />
+          </div>
+          <h3 className="text-2xl font-bold">Grammar Complete</h3>
+          <p className="text-muted-foreground">You reviewed every grammar card in this unit.</p>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-2">
+            <Button variant="ghost" onClick={() => navigate('/flashcards')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back To Units
+            </Button>
+            <Button variant="outline" onClick={() => { setCompleted(false); setIdx(0); }} className="gap-2">
+              <RotateCcw className="w-4 h-4" /> Review Again
+            </Button>
+            <Button
+              onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
+              className="gap-2"
+            >
+              <GraduationCap className="w-4 h-4" /> Continue to Test
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const isFirst = safeIdx === 0;
+  const isLast = safeIdx === total - 1;
+
+  return (
+    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-4 md:p-5 space-y-3">
+        <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
+
+        {current && (
+          <div key={fadeKey} className="space-y-3 animate-in fade-in duration-200">
+            <button
+              type="button"
+              onClick={playAudio}
+              disabled={!current.audio_url}
+              aria-label="Play audio"
+              className="relative block mx-auto w-full max-w-[333px] md:max-w-[667px] group focus:outline-none focus:ring-2 focus:ring-primary rounded-2xl"
+            >
+              <FlashCardImage
+                src={current.image_url}
+                alt={current.image_alt || current.arabic_text}
+                capped
+              />
+              {current.audio_url && (
+                <span className="pointer-events-none absolute bottom-3 right-3 bg-background/85 backdrop-blur rounded-full p-2 shadow-sm border border-border/60 transition-transform group-hover:scale-110">
+                  <Volume2 className="w-4 h-4 text-primary" />
+                </span>
+              )}
+            </button>
+
+            <div className="text-center space-y-2">
+              <p
+                className="text-2xl md:text-3xl font-bold leading-loose break-words"
+                dir="rtl"
+                lang="ar"
+              >
+                {current.arabic_text}
+              </p>
+              {current.english_translation && (
+                <p className="text-sm md:text-base text-muted-foreground">
+                  {current.english_translation}
+                </p>
+              )}
+            </div>
+
+            {current.notes && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1.5">
+                <div className="flex items-center gap-2 text-primary">
+                  <ScrollText className="w-4 h-4" />
+                  <span className="text-xs uppercase tracking-wide font-semibold">Grammar Note</span>
+                </div>
+                <p className="whitespace-pre-line text-sm md:text-base leading-relaxed">
+                  {current.notes}
+                </p>
+              </div>
+            )}
+
+            <audio ref={audioRef} src={current.audio_url ?? undefined} preload="none" />
+
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={playAudio}
+                disabled={!current.audio_url}
+                className="gap-2 min-h-[44px]"
+              >
+                <Volume2 className="w-4 h-4" /> Play Audio
+              </Button>
+            </div>
+
+            <div
+              className="flex flex-row justify-between gap-2 pt-2"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              <Button
+                variant="outline"
+                onClick={goPrev}
+                className={cn("gap-1 flex-1 min-h-[44px]", isFirst && "invisible")}
+                aria-hidden={isFirst}
+                tabIndex={isFirst ? -1 : 0}
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous
+              </Button>
+              <Button onClick={goNext} className="gap-1 flex-1 min-h-[44px]">
+                {isLast ? "Finish" : "Next"} <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

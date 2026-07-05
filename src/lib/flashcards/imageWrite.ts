@@ -23,7 +23,7 @@ import { compressFlashcardImage, type CompressionResult } from "./imageCompress"
 
 const BUCKET = "content";
 
-export type CardKind = "learn" | "speaking";
+export type CardKind = "learn" | "speaking" | "grammar";
 
 export interface CardImageFields {
   image_url: string;
@@ -80,8 +80,8 @@ export async function uploadAndWriteCardImage(
 ): Promise<UploadResult> {
   const { cardId, unitSlug, kind, orderIndex, source, imageAlt } = inputs;
   if (!unitSlug) throw new Error("Unit slug required to build storage path");
-  if (kind !== "learn" && kind !== "speaking") {
-    throw new Error(`kind must be 'learn' or 'speaking' (got: ${String(kind)})`);
+  if (kind !== "learn" && kind !== "speaking" && kind !== "grammar") {
+    throw new Error(`kind must be 'learn', 'speaking', or 'grammar' (got: ${String(kind)})`);
   }
   if (!Number.isFinite(orderIndex)) throw new Error("orderIndex required");
 

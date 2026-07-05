@@ -16,7 +16,11 @@ import {
 
 type Mode = "add" | "update" | "replace";
 type DupAction = "skip" | "overwrite";
-type Kind = "learn" | "speaking";
+type Kind = "learn" | "speaking" | "grammar";
+
+function kindLabel(k: Kind) {
+  return k === "learn" ? "Learn" : k === "speaking" ? "Speaking" : "Grammar";
+}
 
 interface Props {
   open: boolean;
