@@ -244,7 +244,7 @@ export default function AdminCoupons() {
                         <TableCell>
                           <Badge variant="outline">
                             {(coupon as any).applies_to === "flashcards"
-                              ? "Flash Cards"
+                              ? "Vocabulary"
                               : (coupon as any).applies_to === "courses"
                               ? "Courses"
                               : "All"}
