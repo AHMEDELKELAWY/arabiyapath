@@ -29,12 +29,12 @@ export default function AdminFlashcardUnits() {
 
   const startNew = () => {
     setEditing({});
-    setForm({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, order_index: (units?.length ?? 0) + 1 });
+    setForm({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, has_grammar: false, order_index: (units?.length ?? 0) + 1 });
   };
 
   const startEdit = (u: any) => {
     setEditing(u);
-    setForm({ slug: u.slug, title_en: u.title_en, title_ar: u.title_ar ?? "", description: u.description ?? "", is_free: u.is_free, published: u.published, order_index: u.order_index });
+    setForm({ slug: u.slug, title_en: u.title_en, title_ar: u.title_ar ?? "", description: u.description ?? "", is_free: u.is_free, published: u.published, has_grammar: !!u.has_grammar, order_index: u.order_index });
   };
 
   const save = async () => {
