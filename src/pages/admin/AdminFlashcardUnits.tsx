@@ -108,10 +108,28 @@ export default function AdminFlashcardUnits() {
             <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} />
             <div className="flex items-center gap-2"><Switch checked={form.is_free} onCheckedChange={(v) => setForm({ ...form, is_free: v })} /> <span>Free unit</span></div>
             <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} /> <span>Published</span></div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.has_grammar} onCheckedChange={(v) => setForm({ ...form, has_grammar: v })} />
+              <span>Enable Grammar tab</span>
+            </div>
             <div className="flex gap-2">
               <Button onClick={save}>Save</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>
+
+            {editing?.id && form.has_grammar && (
+              <AdminGrammarEditor unitId={editing.id} />
+            )}
+            {editing?.id && !form.has_grammar && (
+              <p className="text-xs text-muted-foreground pt-2">
+                Enable the Grammar tab and Save the unit to edit grammar content.
+              </p>
+            )}
+            {!editing?.id && form.has_grammar && (
+              <p className="text-xs text-muted-foreground pt-2">
+                Save the unit first, then re-open it to add Grammar content.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
