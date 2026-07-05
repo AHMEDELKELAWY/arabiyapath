@@ -103,7 +103,7 @@ export default function FlashCards() {
     },
     educationalLevel: "Advanced",
     inLanguage: ["ar", "en"],
-    learningResourceType: "Flash Cards",
+    learningResourceType: "Vocabulary",
     teaches: "Gulf Arabic (Khaleeji) for Business",
     audience: {
       "@type": "Audience",
