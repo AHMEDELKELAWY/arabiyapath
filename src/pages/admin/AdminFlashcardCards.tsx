@@ -80,13 +80,14 @@ function parseCSV(text: string): Record<string, string>[] {
 
 type SortKey = "order" | "arabic" | "published" | "hasImage" | "hasAudio";
 
-type CardKind = "speaking" | "learn";
+type CardKind = "speaking" | "learn" | "grammar";
 
 export default function AdminFlashcardCards() {
   const [params, setParams] = useSearchParams();
   const unitId = params.get("unit") || "";
   const kindParam = (params.get("kind") as CardKind) || "learn";
-  const kind: CardKind = kindParam === "speaking" ? "speaking" : "learn";
+  const kind: CardKind =
+    kindParam === "speaking" ? "speaking" : kindParam === "grammar" ? "grammar" : "learn";
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
