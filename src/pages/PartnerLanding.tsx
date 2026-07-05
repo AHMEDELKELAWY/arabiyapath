@@ -433,7 +433,7 @@ export default function PartnerLanding() {
           <div className="ph-offer-box">
             <div className="ph-offer-left">
               <span className="tag">Your exclusive package</span>
-              <h3>The complete Flashcards Course</h3>
+              <h3>The complete Vocabulary Course</h3>
               <ul>
                 {config.pricingIncludes.map((i) => (
                   <li key={i}>{i}</li>
