@@ -79,7 +79,7 @@ export default function FlashCardPack() {
     <Layout>
       <SEOHead
         title={pack.seo_title || pack.title}
-        description={pack.seo_description || pack.description || "Premium MSA Arabic flash cards."}
+        description={pack.seo_description || pack.description || "Premium MSA Arabic vocabulary."}
         canonicalPath={`/flashcards/pack/${pack.slug}`}
         jsonLd={productLd}
       />
