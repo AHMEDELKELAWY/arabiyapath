@@ -71,7 +71,7 @@ const DEFAULT_MODE_CARDS: PartnerModeCard[] = [
   {
     key: "learn",
     title: "Learn",
-    description: "Real-image flashcards with clear translations and native audio.",
+    description: "Real-image vocabulary cards with clear translations and native audio.",
     icon: "learn",
   },
   {
