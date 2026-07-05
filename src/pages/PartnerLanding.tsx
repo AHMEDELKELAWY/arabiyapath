@@ -265,7 +265,10 @@ export default function PartnerLanding() {
   }
   if (error || !partner || !config) return <Navigate to="/" replace />;
 
-  const checkoutTarget = pack?.product_id ? `/checkout?productId=${pack.product_id}` : "/flashcards-pack";
+  const couponParam = config.couponCode ? `&coupon=${encodeURIComponent(config.couponCode)}` : "";
+  const checkoutTarget = pack?.product_id
+    ? `/checkout?productId=${pack.product_id}${couponParam}`
+    : "/flashcards-pack";
   const ctaHref = user ? checkoutTarget : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
   const discountPct = partner.coupons?.percent_off ?? 0;
   const ownerName = config.partnerName;
