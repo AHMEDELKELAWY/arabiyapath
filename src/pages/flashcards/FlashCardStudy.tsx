@@ -190,7 +190,7 @@ export default function FlashCardStudy() {
   if (completed && unit.is_free && access !== true) {
     const upgradeHref = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
     const benefits = [
-      "500+ Arabic flashcards",
+      "500+ Arabic vocabulary words",
       "Native Arabic audio pronunciation",
       "Realistic image-based learning",
       "Full Arabic vowelization (Tashkeel)",
