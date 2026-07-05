@@ -135,7 +135,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
     headline: row.hero_title || "Arabic that finally sticks.",
     subheadline:
       row.hero_subtitle ||
-      "A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.",
+      "A premium vocabulary course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.",
     ctaLabel: row.cta_text || "Unlock My Discount",
     ctaNote: "No coupon code required. Discount applied automatically.",
     oldPrice,
