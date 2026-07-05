@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function AdminFlashcardUnits() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, has_grammar: false, order_index: 0 });
+  const [form, setForm] = useState({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, order_index: 0 });
 
   const { data: units } = useQuery({
     queryKey: ["admin-fc-units"],
@@ -28,12 +28,12 @@ export default function AdminFlashcardUnits() {
 
   const startNew = () => {
     setEditing({});
-    setForm({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, has_grammar: false, order_index: (units?.length ?? 0) + 1 });
+    setForm({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, order_index: (units?.length ?? 0) + 1 });
   };
 
   const startEdit = (u: any) => {
     setEditing(u);
-    setForm({ slug: u.slug, title_en: u.title_en, title_ar: u.title_ar ?? "", description: u.description ?? "", is_free: u.is_free, published: u.published, has_grammar: !!u.has_grammar, order_index: u.order_index });
+    setForm({ slug: u.slug, title_en: u.title_en, title_ar: u.title_ar ?? "", description: u.description ?? "", is_free: u.is_free, published: u.published, order_index: u.order_index });
   };
 
   const save = async () => {
@@ -68,8 +68,8 @@ export default function AdminFlashcardUnits() {
       </div>
 
       <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-        <p className="text-foreground font-medium">Every unit automatically includes: Learn, Listening, Speaking, and Test Yourself.</p>
-        <p>Admins only need to create <strong className="text-foreground">Learn</strong> and <strong className="text-foreground">Speaking</strong> content. Listening and Test Yourself are generated automatically.</p>
+        <p className="text-foreground font-medium">Every unit automatically includes: Learn, Listening, Speaking, and Test Yourself. The Grammar tab appears whenever the unit has at least one published Grammar card.</p>
+        <p>Admins only need to author <strong className="text-foreground">Learn</strong>, <strong className="text-foreground">Speaking</strong>, and optionally <strong className="text-foreground">Grammar</strong> cards. Listening and Test Yourself are generated automatically.</p>
       </div>
 
       <div className="grid gap-3">
@@ -107,40 +107,14 @@ export default function AdminFlashcardUnits() {
             <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} />
             <div className="flex items-center gap-2"><Switch checked={form.is_free} onCheckedChange={(v) => setForm({ ...form, is_free: v })} /> <span>Free unit</span></div>
             <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} /> <span>Published</span></div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.has_grammar} onCheckedChange={(v) => setForm({ ...form, has_grammar: v })} />
-              <span>Enable Grammar tab</span>
-            </div>
             <div className="flex gap-2">
               <Button onClick={save}>Save</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>
-
-            {editing?.id && form.has_grammar && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" asChild className="gap-2">
-                  <Link to={`/admin/flashcards/cards?unit=${editing.id}&kind=grammar`}>
-                    <BookOpen className="w-4 h-4" /> Manage Grammar Content
-                  </Link>
-                </Button>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Grammar is edited alongside Learn and Speaking in the Content workflow.
-                </p>
-              </div>
-            )}
-            {editing?.id && !form.has_grammar && (
-              <p className="text-xs text-muted-foreground pt-2">
-                Enable the Grammar tab and Save to create a grammar lesson for this unit.
-              </p>
-            )}
-            {!editing?.id && form.has_grammar && (
-              <p className="text-xs text-muted-foreground pt-2">
-                Save the unit first, then re-open it to manage Grammar content.
-              </p>
-            )}
           </CardContent>
         </Card>
       )}
     </AdminLayout>
   );
 }
+

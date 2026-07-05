@@ -929,8 +929,8 @@ export default function AdminFlashcardCards() {
               <Textarea value={form.example_arabic ?? ""} dir="rtl" onChange={(e) => setForm({ ...form, example_arabic: e.target.value })} /></div>
             <div className="space-y-1"><Label>Example (English)</Label>
               <Textarea value={form.example_english ?? ""} onChange={(e) => setForm({ ...form, example_english: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Notes</Label>
-              <Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+            <div className="space-y-1"><Label>{kind === "grammar" ? "Grammar Note" : "Notes"}</Label>
+              <Textarea value={form.notes ?? ""} rows={kind === "grammar" ? 5 : 3} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
             <div className="space-y-1"><Label>Image URL (optional override)</Label>
               <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
             <div className="space-y-1"><Label>Image alt text</Label>
