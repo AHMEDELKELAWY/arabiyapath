@@ -310,7 +310,7 @@ export default function PartnerLanding() {
               <span className="headline-main">Arabic that</span>{" "}<span className="accent">finally sticks</span>.
             </h1>
             <p className="ph-lead">
-              A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.
+              A premium vocabulary course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.
             </p>
 
             <div className="ph-price-block">
