@@ -149,7 +149,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
       { title: "Real Images", description: "See the word clearly and remember it faster with real product visuals." },
       { title: "Native Audio", description: "Hear authentic pronunciation from native speakers on every card." },
       { title: "Clear Translation", description: "Understand the exact meaning instantly without confusion." },
-      { title: "Interactive Flashcards", description: "Tap, review, listen, and study in a smooth mobile-first flow." },
+      { title: "Interactive Vocabulary", description: "Tap, review, listen, and study in a smooth mobile-first flow." },
     ],
     listeningFeatures: [
       { title: "Audio First", description: "Hear real Arabic before you answer so your ear adapts naturally." },
