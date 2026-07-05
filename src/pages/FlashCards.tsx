@@ -114,8 +114,8 @@ export default function FlashCards() {
   return (
     <Layout>
       <SEOHead
-        title="Gulf Arabic Flash Cards for Executives"
-        description="Master advanced Gulf Arabic for business and social influence. AI-powered flash cards with cultural insights, audio pronunciation, and level-based progression for professionals."
+        title="Gulf Arabic Vocabulary for Executives"
+        description="Master advanced Gulf Arabic for business and social influence. AI-powered vocabulary with cultural insights, audio pronunciation, and level-based progression for professionals."
         canonicalPath="/flash-cards"
         jsonLd={[pageSchema, generateOrganizationSchema()]}
       />
