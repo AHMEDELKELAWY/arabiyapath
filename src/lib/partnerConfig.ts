@@ -105,7 +105,7 @@ const DEFAULT_FAQ: PartnerFAQItem[] = [
   },
   {
     q: "Can I use it on mobile?",
-    a: "Yes. The flashcards course works beautifully on phone, tablet, and desktop.",
+    a: "Yes. The vocabulary course works beautifully on phone, tablet, and desktop.",
   },
   {
     q: "Is this good for beginners?",
