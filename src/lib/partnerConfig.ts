@@ -59,7 +59,7 @@ interface PartnerRowLike {
 }
 
 const DEFAULT_STATS: PartnerStat[] = [
-  { value: "3,000+", label: "Flashcards" },
+  { value: "3,000+", label: "Vocabulary Words" },
   { value: "60+", label: "Learning Units" },
   { value: "100%", label: "Native Audio" },
   { value: "Lifetime", label: "Access" },
