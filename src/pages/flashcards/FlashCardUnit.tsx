@@ -58,7 +58,7 @@ export default function FlashCardUnit() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description")
+        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description,has_grammar")
         .eq("slug", slug)
         .eq("published", true)
         .maybeSingle();
