@@ -285,14 +285,14 @@ export default function AdminProducts() {
                   placeholder={
                     form.scope === "level" ? "e.g., Gulf Arabic — Beginner Level" :
                     form.scope === "dialect" ? "e.g., Gulf Arabic — Full Bundle" :
-                    form.scope === "flashcard_pack" ? "e.g., Modern Standard Arabic Flash Cards Pack" :
+                    form.scope === "flashcard_pack" ? "e.g., Modern Standard Arabic Vocabulary Pack" :
                     "e.g., All Access Bundle"
                   }
                   required
                 />
                 <p className="text-xs text-muted-foreground">
                   {form.scope === "flashcard_pack"
-                    ? "Flash Card Pack products are sold only via the Flash Cards section."
+                    ? "Vocabulary Pack products are sold only via the Vocabulary section."
                     : "Use format: [Dialect] — [Level] Level or [Dialect] — Full Bundle"}
                 </p>
 
