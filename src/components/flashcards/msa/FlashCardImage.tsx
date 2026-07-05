@@ -21,16 +21,20 @@ interface Props {
  */
 export function FlashCardImage({ src, alt, className, capped, imageCount = 1 }: Props) {
   if (capped) {
-    // Responsive mobile cap by image count. Desktop is uniform 420px.
-    const mobileMaxH =
-      imageCount >= 3 ? "max-h-[140px]"
-      : imageCount === 2 ? "max-h-[170px]"
-      : "max-h-[220px]";
+    // Keep the whole study card (image + word + meaning + audio + next button)
+    // inside a typical viewport. Image shrinks first via a viewport-relative cap.
+    // Multi-image cards get a tighter cap so the grid still fits.
+    const heightCap =
+      imageCount >= 3
+        ? "max-h-[clamp(120px,22vh,200px)] md:max-h-[26vh]"
+        : imageCount === 2
+          ? "max-h-[clamp(150px,26vh,240px)] md:max-h-[30vh]"
+          : "max-h-[clamp(180px,32vh,320px)] md:max-h-[38vh]";
 
     return (
       <div
         className={cn(
-          "relative mx-auto w-full max-w-[333px] md:max-w-[640px] overflow-hidden rounded-2xl bg-muted",
+          "relative mx-auto w-full max-w-[420px] md:max-w-[560px] overflow-hidden rounded-2xl bg-muted flex items-center justify-center",
           className
         )}
       >
@@ -41,12 +45,12 @@ export function FlashCardImage({ src, alt, className, capped, imageCount = 1 }: 
             loading="lazy"
             decoding="async"
             className={cn(
-              "block w-full object-contain mx-auto md:max-h-[420px]",
-              mobileMaxH
+              "block w-auto max-w-full mx-auto object-contain",
+              heightCap
             )}
           />
         ) : (
-          <div className="flex aspect-[4/3] items-center justify-center text-muted-foreground text-sm">
+          <div className="flex aspect-[4/3] w-full items-center justify-center text-muted-foreground text-sm">
             No image
           </div>
         )}
