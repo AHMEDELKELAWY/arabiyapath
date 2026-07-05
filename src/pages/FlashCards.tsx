@@ -93,9 +93,9 @@ export default function FlashCards() {
   const pageSchema = {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    name: "Gulf Arabic Flash Cards for Business Professionals",
+    name: "Gulf Arabic Vocabulary for Business Professionals",
     description:
-      "AI-powered flash cards teaching advanced Gulf Arabic for executives, investors, and professionals working in the UAE, Saudi Arabia, and other Gulf countries.",
+      "AI-powered vocabulary teaching advanced Gulf Arabic for executives, investors, and professionals working in the UAE, Saudi Arabia, and other Gulf countries.",
     provider: {
       "@type": "Organization",
       name: "ArabiyaPath",
