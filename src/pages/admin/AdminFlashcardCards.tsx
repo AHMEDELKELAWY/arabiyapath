@@ -771,10 +771,9 @@ export default function AdminFlashcardCards() {
 
       {!unitId ? (
         <p className="text-muted-foreground">Pick a unit to manage its content.</p>
-      ) : kind === "grammar" ? (
-        <AdminGrammarManager unitId={unitId} units={units} />
       ) : (
         <>
+
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
             {[
