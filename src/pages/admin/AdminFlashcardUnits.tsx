@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminGrammarEditor } from "@/components/admin/flashcards/AdminGrammarEditor";
 
 export default function AdminFlashcardUnits() {
   const qc = useQueryClient();
