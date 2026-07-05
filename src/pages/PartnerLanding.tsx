@@ -288,7 +288,7 @@ export default function PartnerLanding() {
 
       <div className="ph-urgency">
         ⏳ This offer is exclusive to {ownerName}'s students only and ends soon{" "}
-        <b>· {discountPct > 0 ? `${discountPct}% Off Flashcards` : "Exclusive offer"}</b>
+        <b>· {discountPct > 0 ? `${discountPct}% Off Vocabulary` : "Exclusive offer"}</b>
       </div>
 
       <header className="ph-header">
