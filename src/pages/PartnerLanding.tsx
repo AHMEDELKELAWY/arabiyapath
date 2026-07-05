@@ -57,8 +57,9 @@ const STYLES = `
 .ph-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.18) 1px,transparent 1.4px);background-size:26px 26px;opacity:0.25;pointer-events:none;}
 .ph-hero-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:48px;align-items:center;position:relative;z-index:1;}
 .ph-eyebrow-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,163,61,0.15);border:1px solid rgba(232,163,61,0.5);color:#F6CD89;font-weight:700;font-size:0.85rem;padding:8px 16px;border-radius:999px;margin-bottom:22px;}
-.ph-hero h1{font-family:'Fraunces';font-weight:600;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.2;margin:0 0 18px;}
-.ph-hero h1 .accent{color:#E8A33D;font-style:italic;}
+.ph-hero h1{font-family:'Playfair Display','Fraunces',Georgia,serif;font-weight:600;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.18;margin:0 0 18px;letter-spacing:-0.03em;}
+.ph-hero h1 .headline-main{font-weight:600;letter-spacing:-0.03em;}
+.ph-hero h1 .accent{color:#E8A33D;font-style:italic;font-weight:500;letter-spacing:-0.01em;}
 .ph-lead{font-size:1.08rem;color:#D9E8E0;max-width:520px;margin:0 0 30px;}
 .ph-price-block{display:flex;align-items:flex-end;gap:16px;margin-bottom:26px;flex-wrap:wrap;}
 .ph-price-old{font-size:1.15rem;color:#B9CDC3;text-decoration:line-through;margin-bottom:6px;}
