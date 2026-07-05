@@ -149,7 +149,7 @@ export default function AdminFlashcardCards() {
   // Paged fetch of full card rows for the visible page.
   const { data: pageCards } = useQuery({
     queryKey: ["admin-fc-cards", unitId, kind, safePage, sortKey],
-    enabled: !!unitId,
+    enabled: !!unitId && kind !== "grammar",
     queryFn: async () => {
       const from = safePage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
