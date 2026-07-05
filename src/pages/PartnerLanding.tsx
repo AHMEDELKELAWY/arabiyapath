@@ -244,7 +244,7 @@ export default function PartnerLanding() {
 
   const config = useMemo(() => {
     if (!partner) return null;
-    const basePrice = pack ? pack.price_cents / 100 : partner.old_price ?? 29.99;
+    const basePrice = pack ? pack.price_cents / 100 : partner.old_price ?? 30.00;
     return buildPartnerConfig(partner, basePrice);
   }, [partner, pack]);
 
