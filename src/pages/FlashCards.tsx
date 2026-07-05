@@ -129,7 +129,7 @@ export default function FlashCards() {
               AI-Powered Learning
             </span>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              Gulf Arabic Flash Cards for{" "}
+              Gulf Arabic Vocabulary for{" "}
               <span className="text-primary">Business Professionals</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
