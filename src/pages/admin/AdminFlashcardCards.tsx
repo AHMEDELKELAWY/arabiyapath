@@ -613,7 +613,7 @@ export default function AdminFlashcardCards() {
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
-            {kind === "learn" ? "Learn Content" : "Speaking Content"}
+            {kind === "learn" ? "Learn Content" : kind === "speaking" ? "Speaking Content" : "Grammar Content"}
           </h1>
           <select
             className="border rounded px-2 py-1 bg-background"
