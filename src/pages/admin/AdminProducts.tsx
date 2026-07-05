@@ -228,7 +228,7 @@ export default function AdminProducts() {
                             product.scope === "level" ? "outline" : "secondary"
                           }>
                             {product.scope === "all" ? "All Access" :
-                             product.scope === "flashcard_pack" ? "Flash Card Pack" :
+                             product.scope === "flashcard_pack" ? "Vocabulary Pack" :
                              product.scope === "level" ? "Single Level" : "Full Dialect"}
                           </Badge>
                         </TableCell>
