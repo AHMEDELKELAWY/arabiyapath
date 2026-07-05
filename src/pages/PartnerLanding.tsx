@@ -194,7 +194,7 @@ const STYLES = `
 `;
 
 const TESTIMONIALS = [
-  { stars: "★★★★★", text: "“Finally a flashcard course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
+  { stars: "★★★★★", text: "“Finally a vocabulary course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
   { stars: "★★★★★", text: "“The speaking practice is what sold me. Hearing myself, comparing to the native voice, and improving daily — that's how you actually build confidence in Arabic.”", initial: "S", name: "Sami K.", place: "Montréal, Canada", cls: "ph-a2" },
   { stars: "★★★★★", text: "“Worth every penny — at 50% off it's almost embarrassing. Premium product, no fluff. My pronunciation has changed completely.”", initial: "A", name: "Anissa B.", place: "London, UK", cls: "ph-a3" },
 ];
