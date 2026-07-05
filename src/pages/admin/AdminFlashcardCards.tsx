@@ -859,9 +859,7 @@ export default function AdminFlashcardCards() {
           <div className="grid gap-3">
             {visibleCards.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {kind === "learn"
-                  ? "No Learn cards yet. Use New Card, Import CSV/JSON, or Copy from Speaking."
-                  : "No cards match."}
+                No {KIND_LABEL[kind]} cards yet. Use New Card, Import CSV/JSON{kind === "learn" ? ", or Copy from Speaking." : "."}
               </p>
             ) : (
               visibleCards.map((c: any, idx: number) => {
