@@ -129,7 +129,7 @@ export default function AdminFlashcardCards() {
   // stats, duplicate detection, renumbering, copy-to-learn, and pagination total.
   const { data: summary } = useQuery({
     queryKey: ["admin-fc-cards-summary", unitId, kind],
-    enabled: !!unitId,
+    enabled: !!unitId && kind !== "grammar",
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcards")
