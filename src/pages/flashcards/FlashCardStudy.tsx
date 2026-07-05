@@ -252,7 +252,7 @@ export default function FlashCardStudy() {
           <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
           <p className="text-muted-foreground mb-6">Great work.</p>
           <Button size="lg" asChild>
-            <Link to={exitHref}>Back to Flash Cards</Link>
+            <Link to={exitHref}>Back to Vocabulary</Link>
           </Button>
         </section>
       </Layout>
