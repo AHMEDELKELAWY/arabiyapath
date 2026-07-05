@@ -22,19 +22,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, BookOpen, Headphones, Mic, GraduationCap, ArrowLeft } from "lucide-react";
+import { Lock, BookOpen, Headphones, Mic, GraduationCap, ArrowLeft, ScrollText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
 import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
+import { GrammarLesson } from "@/components/flashcards/msa/GrammarLesson";
+
+type StudyTab = "learn" | "listening" | "speaking" | "grammar" | "test";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"learn" | "speaking" | "listening" | "test">("learn");
+  const [activeTab, setActiveTab] = useState<StudyTab>("learn");
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToLessonTop = () => {
@@ -43,7 +46,7 @@ export default function FlashCardUnit() {
     });
   };
 
-  const goToTab = (tab: "learn" | "speaking" | "listening" | "test") => {
+  const goToTab = (tab: StudyTab) => {
     setActiveTab(tab);
     scrollToLessonTop();
   };
