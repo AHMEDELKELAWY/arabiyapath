@@ -22,19 +22,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, BookOpen, Headphones, Mic, GraduationCap, ArrowLeft } from "lucide-react";
+import { Lock, BookOpen, Headphones, Mic, GraduationCap, ArrowLeft, ScrollText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
 import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
+import { GrammarLesson } from "@/components/flashcards/msa/GrammarLesson";
+
+type StudyTab = "learn" | "listening" | "speaking" | "grammar" | "test";
 
 export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"learn" | "speaking" | "listening" | "test">("learn");
+  const [activeTab, setActiveTab] = useState<StudyTab>("learn");
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToLessonTop = () => {
@@ -43,7 +46,7 @@ export default function FlashCardUnit() {
     });
   };
 
-  const goToTab = (tab: "learn" | "speaking" | "listening" | "test") => {
+  const goToTab = (tab: StudyTab) => {
     setActiveTab(tab);
     scrollToLessonTop();
   };
@@ -55,7 +58,7 @@ export default function FlashCardUnit() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description")
+        .select("id,slug,title_en,title_ar,description,is_free,cover_image_url,seo_title,seo_description,has_grammar")
         .eq("slug", slug)
         .eq("published", true)
         .maybeSingle();
@@ -124,11 +127,28 @@ export default function FlashCardUnit() {
   const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
   const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
 
+  // Grammar tab is optional per unit. Fetched here so we can decide tab
+  // visibility (only show when has_grammar AND a grammar row exists).
+  const { data: grammar } = useQuery({
+    queryKey: ["fc-unit-grammar", unit?.id],
+    enabled: !!unit?.id && !!unit?.has_grammar,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_unit_grammar")
+        .select("id")
+        .eq("unit_id", unit!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const showGrammar = !!(unit?.has_grammar && grammar);
+
   return (
     <Layout minimalFooter>
       <SEOHead
-        title={unit.seo_title || `${unit.title_en} — Flash Cards`}
-        description={unit.seo_description || unit.description || "MSA Arabic flash cards."}
+        title={unit.seo_title || `${unit.title_en} — Vocabulary`}
+        description={unit.seo_description || unit.description || "MSA Arabic vocabulary."}
         canonicalPath={`/flashcards/unit/${unit.slug}`}
         jsonLd={{
           "@context": "https://schema.org",
@@ -157,14 +177,16 @@ export default function FlashCardUnit() {
         )}
         {typeof cardCount === "number" && cardCount > 0 && (
           <span className="inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-            {cardCount} Cards
+            {cardCount} Words
           </span>
         )}
 
         <div ref={lessonTopRef} className="mt-3 md:mt-4 scroll-mt-20">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StudyTab)} className="w-full">
             <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsList
+                className={`grid w-full h-auto grid-cols-2 ${showGrammar ? "md:grid-cols-5" : "md:grid-cols-4"}`}
+              >
                 <TabsTrigger value="learn" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <BookOpen className="w-4 h-4" /> Learn
                 </TabsTrigger>
@@ -174,6 +196,11 @@ export default function FlashCardUnit() {
                 <TabsTrigger value="speaking" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <Mic className="w-4 h-4" /> Speaking
                 </TabsTrigger>
+                {showGrammar && (
+                  <TabsTrigger value="grammar" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
+                    <ScrollText className="w-4 h-4" /> Grammar
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="test" className="flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]">
                   <GraduationCap className="w-4 h-4" /> Test Yourself
                 </TabsTrigger>
@@ -230,7 +257,10 @@ export default function FlashCardUnit() {
 
             <TabsContent value="speaking" className="mt-3 md:mt-4">
               {canStudy ? (
-                <SpeakingPractice unitId={unit.id} onComplete={() => goToTab("test")} />
+                <SpeakingPractice
+                  unitId={unit.id}
+                  onComplete={() => goToTab(showGrammar ? "grammar" : "test")}
+                />
 
               ) : (
                 <Card>
@@ -251,6 +281,31 @@ export default function FlashCardUnit() {
                 </Card>
               )}
             </TabsContent>
+
+            {showGrammar && (
+              <TabsContent value="grammar" className="mt-3 md:mt-4">
+                {canStudy ? (
+                  <GrammarLesson unitId={unit.id} />
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ScrollText className="w-6 h-6 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Grammar</h3>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        Short grammar note with clear examples in Arabic and English.
+                      </p>
+                      <Button asChild className="mt-2">
+                        <Link to="/pricing">
+                          <Lock className="w-4 h-4 mr-2" /> Join Membership
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            )}
 
             <TabsContent value="test" className="mt-4">
               {canStudy ? (

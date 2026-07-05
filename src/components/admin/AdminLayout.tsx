@@ -39,11 +39,11 @@ const sidebarLinks = [
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/admin/memberships", label: "Memberships", icon: ShoppingCart },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
-  { href: "/admin/flashcards/units", label: "Units", icon: Layers },
+  { href: "/admin/flashcards/units", label: "Vocabulary Units", icon: Layers },
   { href: "/admin/flashcards/cards", label: "Speaking Content", icon: Layers },
-  { href: "/admin/flashcards/packs", label: "Flashcard Packs", icon: Layers },
-  { href: "/admin/flashcards/purchases", label: "Flashcard Sales", icon: ShoppingCart },
-  { href: "/admin/flashcards/diagnostics", label: "Flashcard Diagnostics", icon: Activity },
+  { href: "/admin/flashcards/packs", label: "Vocabulary Packs", icon: Layers },
+  { href: "/admin/flashcards/purchases", label: "Vocabulary Sales", icon: ShoppingCart },
+  { href: "/admin/flashcards/diagnostics", label: "Vocabulary Diagnostics", icon: Activity },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

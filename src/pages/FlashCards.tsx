@@ -93,9 +93,9 @@ export default function FlashCards() {
   const pageSchema = {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    name: "Gulf Arabic Flash Cards for Business Professionals",
+    name: "Gulf Arabic Vocabulary for Business Professionals",
     description:
-      "AI-powered flash cards teaching advanced Gulf Arabic for executives, investors, and professionals working in the UAE, Saudi Arabia, and other Gulf countries.",
+      "AI-powered vocabulary teaching advanced Gulf Arabic for executives, investors, and professionals working in the UAE, Saudi Arabia, and other Gulf countries.",
     provider: {
       "@type": "Organization",
       name: "ArabiyaPath",
@@ -103,7 +103,7 @@ export default function FlashCards() {
     },
     educationalLevel: "Advanced",
     inLanguage: ["ar", "en"],
-    learningResourceType: "Flash Cards",
+    learningResourceType: "Vocabulary",
     teaches: "Gulf Arabic (Khaleeji) for Business",
     audience: {
       "@type": "Audience",
@@ -114,8 +114,8 @@ export default function FlashCards() {
   return (
     <Layout>
       <SEOHead
-        title="Gulf Arabic Flash Cards for Executives"
-        description="Master advanced Gulf Arabic for business and social influence. AI-powered flash cards with cultural insights, audio pronunciation, and level-based progression for professionals."
+        title="Gulf Arabic Vocabulary for Executives"
+        description="Master advanced Gulf Arabic for business and social influence. AI-powered vocabulary with cultural insights, audio pronunciation, and level-based progression for professionals."
         canonicalPath="/flash-cards"
         jsonLd={[pageSchema, generateOrganizationSchema()]}
       />
@@ -129,7 +129,7 @@ export default function FlashCards() {
               AI-Powered Learning
             </span>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              Gulf Arabic Flash Cards for{" "}
+              Gulf Arabic Vocabulary for{" "}
               <span className="text-primary">Business Professionals</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
@@ -227,7 +227,7 @@ export default function FlashCards() {
                 the region and its people.
               </p>
               <p>
-                These flash cards focus on the advanced phrases that
+                This vocabulary focuses on the advanced phrases that
                 high-status professionals use: from welcoming dignitaries to
                 navigating delicate negotiations. Each phrase includes cultural
                 context that explains not just what to say, but when and how to

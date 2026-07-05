@@ -346,8 +346,8 @@ function QuestionView({
   if (q.kind === "word_for_image") {
     return (
       <div className="space-y-4">
-        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted">
-          <img src={q.image} alt={q.alt} className="w-full h-full object-cover" />
+        <div className="relative mx-auto w-full max-w-[420px] md:max-w-[560px] max-h-[clamp(180px,32vh,320px)] md:max-h-[38vh] rounded-xl overflow-hidden bg-muted flex items-center justify-center">
+          <img src={q.image} alt={q.alt} className="block w-auto max-w-full max-h-[clamp(180px,32vh,320px)] md:max-h-[38vh] object-contain" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {q.choices.map((c, n) => (

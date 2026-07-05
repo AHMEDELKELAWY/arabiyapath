@@ -194,7 +194,7 @@ const STYLES = `
 `;
 
 const TESTIMONIALS = [
-  { stars: "★★★★★", text: "“Finally a flashcard course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
+  { stars: "★★★★★", text: "“Finally a vocabulary course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
   { stars: "★★★★★", text: "“The speaking practice is what sold me. Hearing myself, comparing to the native voice, and improving daily — that's how you actually build confidence in Arabic.”", initial: "S", name: "Sami K.", place: "Montréal, Canada", cls: "ph-a2" },
   { stars: "★★★★★", text: "“Worth every penny — at 50% off it's almost embarrassing. Premium product, no fluff. My pronunciation has changed completely.”", initial: "A", name: "Anissa B.", place: "London, UK", cls: "ph-a3" },
 ];
@@ -280,15 +280,15 @@ export default function PartnerLanding() {
   return (
     <div className="ph-scope">
       <SEOHead
-        title={`Exclusive Arabic Flashcards Offer for ${ownerName}'s Students`}
-        description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic flashcard package. Lifetime access.`}
+        title={`Exclusive Arabic Vocabulary Offer for ${ownerName}'s Students`}
+        description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic vocabulary package. Lifetime access.`}
         canonicalPath={`/partner/${config.slug}`}
       />
       <style>{STYLES}</style>
 
       <div className="ph-urgency">
         ⏳ This offer is exclusive to {ownerName}'s students only and ends soon{" "}
-        <b>· {discountPct > 0 ? `${discountPct}% Off Flashcards` : "Exclusive offer"}</b>
+        <b>· {discountPct > 0 ? `${discountPct}% Off Vocabulary` : "Exclusive offer"}</b>
       </div>
 
       <header className="ph-header">
@@ -310,7 +310,7 @@ export default function PartnerLanding() {
               <span className="headline-main">Arabic that</span>{" "}<span className="accent">finally sticks</span>.
             </h1>
             <p className="ph-lead">
-              A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.
+              A premium vocabulary course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.
             </p>
 
             <div className="ph-price-block">
@@ -433,7 +433,7 @@ export default function PartnerLanding() {
           <div className="ph-offer-box">
             <div className="ph-offer-left">
               <span className="tag">Your exclusive package</span>
-              <h3>The complete Flashcards Course</h3>
+              <h3>The complete Vocabulary Course</h3>
               <ul>
                 {config.pricingIncludes.map((i) => (
                   <li key={i}>{i}</li>

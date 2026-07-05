@@ -59,7 +59,7 @@ interface PartnerRowLike {
 }
 
 const DEFAULT_STATS: PartnerStat[] = [
-  { value: "3,000+", label: "Flashcards" },
+  { value: "3,000+", label: "Vocabulary Words" },
   { value: "60+", label: "Learning Units" },
   { value: "100%", label: "Native Audio" },
   { value: "Lifetime", label: "Access" },
@@ -71,7 +71,7 @@ const DEFAULT_MODE_CARDS: PartnerModeCard[] = [
   {
     key: "learn",
     title: "Learn",
-    description: "Real-image flashcards with clear translations and native audio.",
+    description: "Real-image vocabulary cards with clear translations and native audio.",
     icon: "learn",
   },
   {
@@ -97,7 +97,7 @@ const DEFAULT_MODE_CARDS: PartnerModeCard[] = [
 const DEFAULT_FAQ: PartnerFAQItem[] = [
   {
     q: "How long do I keep access?",
-    a: "Lifetime. You pay once and keep access forever, including future updates to the flashcards pack.",
+    a: "Lifetime. You pay once and keep access forever, including future updates to the vocabulary pack.",
   },
   {
     q: "Do I need to enter the coupon myself?",
@@ -105,7 +105,7 @@ const DEFAULT_FAQ: PartnerFAQItem[] = [
   },
   {
     q: "Can I use it on mobile?",
-    a: "Yes. The flashcards course works beautifully on phone, tablet, and desktop.",
+    a: "Yes. The vocabulary course works beautifully on phone, tablet, and desktop.",
   },
   {
     q: "Is this good for beginners?",
@@ -135,7 +135,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
     headline: row.hero_title || "Arabic that finally sticks.",
     subheadline:
       row.hero_subtitle ||
-      "A premium flashcard course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.",
+      "A premium vocabulary course built around real photos, native voices, and spaced repetition — so vocabulary stays in long-term memory, not in your notes app.",
     ctaLabel: row.cta_text || "Unlock My Discount",
     ctaNote: "No coupon code required. Discount applied automatically.",
     oldPrice,
@@ -149,7 +149,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
       { title: "Real Images", description: "See the word clearly and remember it faster with real product visuals." },
       { title: "Native Audio", description: "Hear authentic pronunciation from native speakers on every card." },
       { title: "Clear Translation", description: "Understand the exact meaning instantly without confusion." },
-      { title: "Interactive Flashcards", description: "Tap, review, listen, and study in a smooth mobile-first flow." },
+      { title: "Interactive Vocabulary", description: "Tap, review, listen, and study in a smooth mobile-first flow." },
     ],
     listeningFeatures: [
       { title: "Audio First", description: "Hear real Arabic before you answer so your ear adapts naturally." },
@@ -173,7 +173,7 @@ export function buildPartnerConfig(row: PartnerRowLike, fallbackBasePrice: numbe
     pricingIncludes: [
       "Lifetime access",
       "Native audio",
-      "All flashcards",
+      "All vocabulary units",
       "Future updates",
       "Certificate",
       "30-day money-back guarantee",

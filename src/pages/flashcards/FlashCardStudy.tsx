@@ -190,7 +190,7 @@ export default function FlashCardStudy() {
   if (completed && unit.is_free && access !== true) {
     const upgradeHref = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
     const benefits = [
-      "500+ Arabic flashcards",
+      "500+ Arabic vocabulary words",
       "Native Arabic audio pronunciation",
       "Realistic image-based learning",
       "Full Arabic vowelization (Tashkeel)",
@@ -209,7 +209,7 @@ export default function FlashCardStudy() {
               </div>
               <h1 className="text-3xl font-bold mb-2">Congratulations!</h1>
               <p className="text-muted-foreground mb-6">
-                You completed the free flashcard unit.
+                You completed the free vocabulary unit.
               </p>
               <p className="font-semibold mb-3">
                 Join the ArabiyaPath Membership and get access to:
@@ -230,7 +230,7 @@ export default function FlashCardStudy() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
-                  <Link to={exitHref}>Back to Flash Cards</Link>
+                  <Link to={exitHref}>Back to Vocabulary</Link>
                 </Button>
               </div>
             </CardContent>
@@ -252,7 +252,7 @@ export default function FlashCardStudy() {
           <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
           <p className="text-muted-foreground mb-6">Great work.</p>
           <Button size="lg" asChild>
-            <Link to={exitHref}>Back to Flash Cards</Link>
+            <Link to={exitHref}>Back to Vocabulary</Link>
           </Button>
         </section>
       </Layout>
@@ -303,7 +303,7 @@ export default function FlashCardStudy() {
                 >
                   <FlashCardImage
                     src={current.image_url}
-                    alt={current.image_alt || "Flash card"}
+                    alt={current.image_alt || "Vocabulary card"}
                     className="h-full w-full aspect-auto"
                   />
                 </div>
