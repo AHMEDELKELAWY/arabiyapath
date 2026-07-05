@@ -15,7 +15,7 @@ import { AdminGrammarEditor } from "@/components/admin/flashcards/AdminGrammarEd
 export default function AdminFlashcardUnits() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, order_index: 0 });
+  const [form, setForm] = useState({ slug: "", title_en: "", title_ar: "", description: "", is_free: false, published: false, has_grammar: false, order_index: 0 });
 
   const { data: units } = useQuery({
     queryKey: ["admin-fc-units"],
