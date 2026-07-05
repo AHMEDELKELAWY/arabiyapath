@@ -264,7 +264,7 @@ export function ImportCardsDialog({
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import {kind === "learn" ? "Learn" : "Speaking"} Cards</DialogTitle>
+          <DialogTitle>Import {kindLabel(kind)} Cards</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
