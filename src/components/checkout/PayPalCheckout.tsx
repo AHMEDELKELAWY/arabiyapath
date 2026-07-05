@@ -10,7 +10,8 @@ import { Loader2, Tag, CheckCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CardCheckout } from "./CardCheckout";
-import { getPartnerCoupon } from "@/lib/partnerCoupon";
+import { getPartnerCoupon, setPartnerCoupon } from "@/lib/partnerCoupon";
+import { useSearchParams } from "react-router-dom";
 
 interface PayPalCheckoutProps {
   productType: string;
