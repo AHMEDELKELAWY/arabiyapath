@@ -60,11 +60,22 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Resolve coupon → affiliate attribution + first-payment discount
+    // Resolve coupon → affiliate attribution + first-payment discount.
+    // Coupons are ONLY accepted for the Monthly plan. Long-term plans
+    // (6 Months, Yearly) already include the maximum discount.
     let couponId: string | null = null;
     let affiliateId: string | null = null;
     let percentOff = 0;
     if (couponCode) {
+      if (plan !== "monthly") {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Coupons are available only for the Monthly Membership. Long-term plans already include the maximum discount.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       const { data: coupon } = await supabase
         .from("coupons")
         .select("id, affiliate_id, active, expires_at, percent_off, discount_percent, applies_to, max_redemptions, current_uses")

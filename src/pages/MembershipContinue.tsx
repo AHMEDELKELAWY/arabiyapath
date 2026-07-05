@@ -271,64 +271,75 @@ function ContinueToPayPalCTA({ plan }: { plan: MembershipPlan }) {
         </div>
       )}
 
-      {/* Coupon section */}
-      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-        <Label htmlFor="coupon" className="flex items-center gap-2 text-sm font-medium">
-          <Tag className="w-4 h-4 text-primary" />
-          Have a coupon?
-        </Label>
-        {applied ? (
-          <div className="flex items-center justify-between rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="font-semibold">{applied.code}</span>
-              <span className="text-muted-foreground">
-                — {applied.percentOff}% off first payment
-              </span>
+      {/* Coupon section — Monthly plan only. Long-term plans already
+          include the maximum discount, so we hide the input entirely. */}
+      {plan.id === "monthly" ? (
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+          <Label htmlFor="coupon" className="flex items-center gap-2 text-sm font-medium">
+            <Tag className="w-4 h-4 text-primary" />
+            Have a coupon?
+          </Label>
+          {applied ? (
+            <div className="flex items-center justify-between rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="font-semibold">{applied.code}</span>
+                <span className="text-muted-foreground">
+                  — {applied.percentOff}% off first payment
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRemoveCoupon}
+                aria-label="Remove coupon"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onRemoveCoupon}
-              aria-label="Remove coupon"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              id="coupon"
-              value={couponInput}
-              onChange={(e) => {
-                setCouponInput(e.target.value);
-                if (couponError) setCouponError(null);
-              }}
-              placeholder="Enter coupon code"
-              maxLength={40}
-              className="uppercase"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  onApplyCoupon();
-                }
-              }}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onApplyCoupon}
-              disabled={validating || !couponInput.trim()}
-            >
-              {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
-            </Button>
-          </div>
-        )}
-        {couponError && (
-          <p className="text-sm text-destructive">{couponError}</p>
-        )}
-      </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                id="coupon"
+                value={couponInput}
+                onChange={(e) => {
+                  setCouponInput(e.target.value);
+                  if (couponError) setCouponError(null);
+                }}
+                placeholder="Enter coupon code"
+                maxLength={40}
+                className="uppercase"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onApplyCoupon();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onApplyCoupon}
+                disabled={validating || !couponInput.trim()}
+              >
+                {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+              </Button>
+            </div>
+          )}
+          {couponError && (
+            <p className="text-sm text-destructive">{couponError}</p>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground flex items-start gap-2">
+          <Tag className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+          <span>
+            Coupons are available only for the Monthly Membership. Long-term
+            plans already include the maximum discount.
+          </span>
+        </div>
+      )}
 
       {/* Price breakdown */}
       <div className="rounded-lg border p-4 space-y-2 text-sm">
