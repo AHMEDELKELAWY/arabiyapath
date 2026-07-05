@@ -230,7 +230,7 @@ export default function FlashCardStudy() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
-                  <Link to={exitHref}>Back to Flash Cards</Link>
+                  <Link to={exitHref}>Back to Vocabulary</Link>
                 </Button>
               </div>
             </CardContent>
