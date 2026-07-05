@@ -303,7 +303,7 @@ export default function FlashCardStudy() {
                 >
                   <FlashCardImage
                     src={current.image_url}
-                    alt={current.image_alt || "Flash card"}
+                    alt={current.image_alt || "Vocabulary card"}
                     className="h-full w-full aspect-auto"
                   />
                 </div>
