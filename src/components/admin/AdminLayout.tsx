@@ -41,6 +41,7 @@ const sidebarLinks = [
   { href: "/admin/certificates", label: "Certificates", icon: Award },
   { href: "/admin/flashcards/units", label: "Vocabulary Units", icon: Layers },
   { href: "/admin/flashcards/cards", label: "Speaking Content", icon: Layers },
+  { href: "/admin/flashcards/grammar", label: "Grammar Content", icon: BookOpen },
   { href: "/admin/flashcards/packs", label: "Vocabulary Packs", icon: Layers },
   { href: "/admin/flashcards/purchases", label: "Vocabulary Sales", icon: ShoppingCart },
   { href: "/admin/flashcards/diagnostics", label: "Vocabulary Diagnostics", icon: Activity },
