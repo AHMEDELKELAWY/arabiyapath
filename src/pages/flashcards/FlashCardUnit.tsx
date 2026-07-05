@@ -112,21 +112,6 @@ export default function FlashCardUnit() {
     },
   });
 
-  if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
-  if (!unit) return <Layout><div className="container py-16">Unit not found.</div></Layout>;
-
-  const canStudy = unit.is_free || hasAccess;
-  const handleStudy = () => {
-    if (!user) {
-      navigate(`/signup?redirect=/flashcards/study/${unit.slug}`);
-      return;
-    }
-    navigate(`/flashcards/study/${unit.slug}`);
-  };
-
-  const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
-  const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
-
   // Grammar tab is optional per unit. Fetched here so we can decide tab
   // visibility (only show when has_grammar AND a grammar row exists).
   const { data: grammar } = useQuery({
@@ -142,7 +127,24 @@ export default function FlashCardUnit() {
       return data;
     },
   });
+
+  if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
+  if (!unit) return <Layout><div className="container py-16">Unit not found.</div></Layout>;
+
+  const canStudy = unit.is_free || hasAccess;
+  const handleStudy = () => {
+    if (!user) {
+      navigate(`/signup?redirect=/flashcards/study/${unit.slug}`);
+      return;
+    }
+    navigate(`/flashcards/study/${unit.slug}`);
+  };
+
+  const unlockTarget = unlockProductId ? `/checkout?productId=${unlockProductId}` : "/flashcards";
+  const unlockHref = user ? unlockTarget : `/signup?redirect=${encodeURIComponent(unlockTarget)}`;
+
   const showGrammar = !!(unit?.has_grammar && grammar);
+
 
   return (
     <Layout minimalFooter>
