@@ -507,7 +507,7 @@ export default function PartnerLanding() {
       {/* FOOTER */}
       <footer className="ph-footer">
         <div className="ph-brand">
-          <img src={logoImage} alt="ArabiyaPath" />
+          <img src={logoImage} alt="ArabiyaPath" width={36} height={36} loading="lazy" decoding="async" />
           <span>ArabiyaPath</span>
         </div>
         <p>© {new Date().getFullYear()} ArabiyaPath · Private invitation for {ownerName}'s students</p>
