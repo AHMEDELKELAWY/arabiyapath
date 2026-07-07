@@ -298,15 +298,6 @@ export default function PartnerLanding() {
         <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* Async, non-render-blocking Playfair Display */}
-        <link
-          rel="preload"
-          as="style"
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap"
-          // @ts-expect-error react/helmet accepts onload as string
-          onLoad="this.onload=null;this.rel='stylesheet'"
-        />
-        <noscript>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap">`}</noscript>
       </Helmet>
       <style>{STYLES}</style>
 
