@@ -197,25 +197,9 @@ const STYLES = `
 }
 `;
 
-const TESTIMONIALS = [
-  { stars: "★★★★★", text: "“Finally a vocabulary course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
-  { stars: "★★★★★", text: "“The speaking practice is what sold me. Hearing myself, comparing to the native voice, and improving daily — that's how you actually build confidence in Arabic.”", initial: "S", name: "Sami K.", place: "Montréal, Canada", cls: "ph-a2" },
-  { stars: "★★★★★", text: "“Worth every penny — at 50% off it's almost embarrassing. Premium product, no fluff. My pronunciation has changed completely.”", initial: "A", name: "Anissa B.", place: "London, UK", cls: "ph-a3" },
-];
-
-const RETURN_CARDS = [
-  { num: "01", title: "It actually works", desc: "Spaced repetition + native audio + speaking loops = vocabulary that stays in long-term memory, not lost by tomorrow." },
-  { num: "02", title: "Designed for adults", desc: "No cartoons, no streak guilt. A premium learning environment that respects your time and your intelligence." },
-  { num: "03", title: "Built for daily life", desc: "Mobile-first study flow you'll open at the café, on the métro, between meetings — wherever the 10 minutes appear." },
-];
-
-const MODE_EMOJI = { learn: "📚", listening: "🎧", speaking: "🎤", quiz: "🎯" } as const;
-const MODE_CLASS = { learn: "ph-m1", listening: "ph-m2", speaking: "ph-m3", quiz: "ph-m4" } as const;
-
 export default function PartnerLanding() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const { data: partner, isLoading, error } = useQuery({
     queryKey: ["partner", slug],
