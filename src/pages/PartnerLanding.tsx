@@ -16,7 +16,9 @@ const BelowFold = lazy(() => import("./PartnerLandingBelowFold"));
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
 const YT_PARAMS = `mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
-const YT_THUMB = `https://i.ytimg.com/vi/${YT_VIDEO_ID}/hqdefault.jpg`;
+// Small webp thumb (~5KB) — dramatically faster LCP than hqdefault.jpg (~15KB)
+const YT_THUMB = `https://i.ytimg.com/vi_webp/${YT_VIDEO_ID}/mqdefault.webp`;
+const YT_THUMB_FALLBACK = `https://i.ytimg.com/vi/${YT_VIDEO_ID}/mqdefault.jpg`;
 
 interface PartnerRow {
   id: string;
