@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
 import logoImage from "@/assets/logo.png";
 
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
-const YT_EMBED = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
+const YT_PARAMS = `mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
+const YT_THUMB = `https://i.ytimg.com/vi/${YT_VIDEO_ID}/hqdefault.jpg`;
 
 interface PartnerRow {
   id: string;
