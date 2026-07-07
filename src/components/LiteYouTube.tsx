@@ -13,7 +13,8 @@ interface LiteYouTubeProps {
  */
 function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
   const [activated, setActivated] = useState(false);
-  const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const thumbWebp = `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp`;
+  const thumbJpg = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
   const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&${params}`;
 
   if (activated) {
