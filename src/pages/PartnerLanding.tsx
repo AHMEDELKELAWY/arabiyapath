@@ -345,12 +345,7 @@ export default function PartnerLanding() {
 
           <div className="ph-video-stage">
             <div className="ph-video-frame">
-              <iframe
-                src={YT_EMBED}
-                title="ArabiyaPath walkthrough"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
+              <LiteYouTube videoId={YT_VIDEO_ID} title="ArabiyaPath walkthrough" params={YT_PARAMS} />
             </div>
           </div>
         </div>
