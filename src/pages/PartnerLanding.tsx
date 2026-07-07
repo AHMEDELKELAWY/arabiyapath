@@ -290,6 +290,17 @@ export default function PartnerLanding() {
         description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic vocabulary package. Lifetime access.`}
         canonicalPath={`/partner/${config.slug}`}
       />
+      <Helmet>
+        {/* Preload LCP hero video thumbnail */}
+        <link rel="preload" as="image" href={YT_THUMB} fetchpriority="high" />
+        {/* Preconnect to origins used above-the-fold */}
+        <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Only warm YouTube origins; iframe loads on click */}
+        <link rel="dns-prefetch" href="https://www.youtube.com" />
+        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
+      </Helmet>
       <style>{STYLES}</style>
 
       <div className="ph-urgency">
@@ -300,7 +311,7 @@ export default function PartnerLanding() {
       <header className="ph-header">
         <div className="ph-header-inner wrap">
           <div className="ph-brand">
-            <img src={logoImage} alt="ArabiyaPath" />
+            <img src={logoImage} alt="ArabiyaPath" width={36} height={36} decoding="async" fetchPriority="high" />
             <span>ArabiyaPath</span>
           </div>
           <div className="ph-invite-badge"><span className="dot" />Private invitation</div>
