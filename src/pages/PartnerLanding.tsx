@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEOHead } from "@/components/seo/SEOHead";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
