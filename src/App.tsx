@@ -8,7 +8,7 @@ const FullAppRoutes = lazy(() => import("./FullAppRoutes"));
 const queryClient = new QueryClient();
 
 function PageLoader() {
-  return <div className="min-h-screen" />;
+  return <div style={{ minHeight: "100vh" }} />;
 }
 
 function AppRoutes() {
