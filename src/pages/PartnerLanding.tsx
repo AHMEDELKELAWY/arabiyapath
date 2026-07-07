@@ -258,6 +258,17 @@ export default function PartnerLanding() {
     if (config?.couponCode) setPartnerCoupon(config.couponCode);
   }, [config?.couponCode]);
 
+  // Async, non-render-blocking Playfair Display
+  useEffect(() => {
+    const href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap";
+    if (document.querySelector(`link[data-ph-font="pd"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute("data-ph-font", "pd");
+    document.head.appendChild(link);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FBF8F1] p-10">
