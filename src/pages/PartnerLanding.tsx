@@ -1,8 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/seo/SEOHead";
 
 import { LiteYouTube } from "@/components/LiteYouTube";
@@ -201,54 +199,62 @@ html,body,#root{margin:0;min-height:100%;}
 export default function PartnerLanding() {
   const { slug } = useParams<{ slug: string }>();
   const [hasUser, setHasUser] = useState(false);
+  const [partner, setPartner] = useState<PartnerRow | null>(null);
+  const [partnerStatus, setPartnerStatus] = useState<"loading" | "found" | "missing" | "error">("loading");
+  const [pack, setPack] = useState<any>(null);
 
   useEffect(() => {
     let mounted = true;
+    const runAfterPaint = (callback: () => void) => {
+      requestAnimationFrame(() => window.setTimeout(callback, 0));
+    };
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setHasUser(!!data.session?.user);
-    });
+    runAfterPaint(() => {
+      import("@/integrations/supabase/client").then(({ supabase }) => {
+        if (!mounted) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) setHasUser(!!session?.user);
+        supabase.auth.getSession().then(({ data }) => {
+          if (mounted) setHasUser(!!data.session?.user);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (mounted) setHasUser(!!session?.user);
+        });
+
+        (supabase as any)
+          .from("partners")
+          .select("id, slug, display_name, campaign_title, hero_title, hero_subtitle, cta_text, price_override, old_price, landing_enabled, coupons (code, percent_off)")
+          .eq("slug", slug)
+          .eq("landing_enabled", true)
+          .maybeSingle()
+          .then(({ data, error }: { data: PartnerRow | null; error: unknown }) => {
+            if (!mounted) return;
+            if (error) setPartnerStatus("error");
+            else if (!data) setPartnerStatus("missing");
+            else {
+              setPartner(data);
+              setPartnerStatus("found");
+            }
+          });
+
+        (supabase as any)
+          .from("flashcard_packs")
+          .select("id, product_id, price_cents, currency")
+          .eq("slug", PACK_SLUG)
+          .eq("published", true)
+          .maybeSingle()
+          .then(({ data }: { data: any }) => {
+            if (mounted) setPack(data ?? null);
+          });
+
+        return () => subscription.unsubscribe();
+      });
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
-  }, []);
-
-  const { data: partner, isLoading, error } = useQuery({
-    queryKey: ["partner", slug],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("partners")
-        .select(
-          "id, slug, display_name, campaign_title, hero_title, hero_subtitle, cta_text, price_override, old_price, landing_enabled, coupons (code, percent_off)"
-        )
-        .eq("slug", slug)
-        .eq("landing_enabled", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data as PartnerRow | null;
-    },
-    enabled: !!slug,
-  });
-
-  const { data: pack } = useQuery({
-    queryKey: ["fc-pack", PACK_SLUG],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("flashcard_packs")
-        .select("id, product_id, price_cents, currency")
-        .eq("slug", PACK_SLUG)
-        .eq("published", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  }, [slug]);
 
   // Fallback config derived from the slug — lets the hero paint instantly
   // without waiting on Supabase. Real partner data hydrates in place once it arrives.
@@ -289,7 +295,7 @@ export default function PartnerLanding() {
   }, []);
 
   // Only redirect once loading has resolved AND the partner truly does not exist.
-  if (!isLoading && (error || !partner)) return <Navigate to="/" replace />;
+  if (partnerStatus === "error" || partnerStatus === "missing") return <Navigate to="/" replace />;
 
   const couponParam = config.couponCode ? `&coupon=${encodeURIComponent(config.couponCode)}` : "";
   const checkoutTarget = pack?.product_id

@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -89,20 +90,23 @@ const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboa
 const AffiliateCommissions = lazy(() => import("./pages/affiliate/AffiliateCommissions"));
 const AffiliateReferrals = lazy(() => import("./pages/affiliate/AffiliateReferrals"));
 
+const queryClient = new QueryClient();
+
 function PageLoader() {
   return <div className="min-h-screen" />;
 }
 
 export default function FullAppRoutes() {
   return (
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ScrollToTop />
-        <TrackingProvider />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <ScrollToTop />
+          <TrackingProvider />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/free-trial" element={<FreeTrial />} />
             <Route path="/free-gulf-lesson" element={<FreeGulfLesson />} />
@@ -170,9 +174,10 @@ export default function FullAppRoutes() {
             <Route path="/affiliate/commissions" element={<AffiliateRoute><AffiliateCommissions /></AffiliateRoute>} />
             <Route path="/affiliate/referrals" element={<AffiliateRoute><AffiliateReferrals /></AffiliateRoute>} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </TooltipProvider>
-    </AuthProvider>
+            </Routes>
+          </Suspense>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

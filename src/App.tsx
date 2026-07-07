@@ -1,11 +1,8 @@
 import { Suspense, lazy } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 const PartnerLanding = lazy(() => import("./pages/PartnerLanding"));
 const FullAppRoutes = lazy(() => import("./FullAppRoutes"));
-
-const queryClient = new QueryClient();
 
 function PageLoader() {
   return <div style={{ minHeight: "100vh" }} />;
@@ -33,11 +30,9 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-  </QueryClientProvider>
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
 );
 
 export default App;
