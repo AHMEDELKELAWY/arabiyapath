@@ -4,6 +4,8 @@ interface LiteYouTubeProps {
   videoId: string;
   title: string;
   params?: string;
+  thumbnailWebp?: string;
+  thumbnailJpg?: string;
 }
 
 /**
@@ -11,10 +13,10 @@ interface LiteYouTubeProps {
  * until the user clicks — then swaps in the real iframe. Saves ~500KB
  * of JS on initial page load.
  */
-function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
+function LiteYouTubeInner({ videoId, title, params = "", thumbnailWebp, thumbnailJpg }: LiteYouTubeProps) {
   const [activated, setActivated] = useState(false);
-  const thumbWebp = `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp`;
-  const thumbJpg = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+  const thumbWebp = thumbnailWebp ?? `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp`;
+  const thumbJpg = thumbnailJpg ?? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
   const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&${params}`;
 
   if (activated) {
@@ -53,9 +55,9 @@ function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
           alt={title}
           loading="eager"
           decoding="async"
-          fetchPriority="high"
-          width={320}
-          height={180}
+          {...({ fetchpriority: "high" } as any)}
+          width={720}
+          height={1280}
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
       </picture>
