@@ -278,7 +278,7 @@ export default function PartnerLanding() {
     ? `/checkout?productId=${pack.product_id}${couponParam}`
     : "/flashcards-pack";
   const ctaHref = user ? checkoutTarget : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
-  const discountPct = partner.coupons?.percent_off ?? 0;
+  const discountPct = partner?.coupons?.percent_off ?? 0;
   const ownerName = config.partnerName;
 
   const checkSvg = (
