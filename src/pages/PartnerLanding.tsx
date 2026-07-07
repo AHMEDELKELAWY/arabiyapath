@@ -292,7 +292,7 @@ export default function PartnerLanding() {
       />
       <Helmet>
         {/* Preload LCP hero video thumbnail */}
-        <link rel="preload" as="image" href={YT_THUMB} fetchpriority="high" />
+        <link rel="preload" as="image" href={YT_THUMB} fetchPriority="high" />
         {/* Preconnect to origins used above-the-fold */}
         <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
