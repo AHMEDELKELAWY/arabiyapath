@@ -205,6 +205,7 @@ export default function PartnerLanding() {
 
   useEffect(() => {
     let mounted = true;
+    let unsubscribeAuth: (() => void) | undefined;
     const runAfterPaint = (callback: () => void) => {
       requestAnimationFrame(() => window.setTimeout(callback, 0));
     };
@@ -220,6 +221,7 @@ export default function PartnerLanding() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           if (mounted) setHasUser(!!session?.user);
         });
+        unsubscribeAuth = () => subscription.unsubscribe();
 
         (supabase as any)
           .from("partners")
@@ -246,13 +248,12 @@ export default function PartnerLanding() {
           .then(({ data }: { data: any }) => {
             if (mounted) setPack(data ?? null);
           });
-
-        return () => subscription.unsubscribe();
       });
     });
 
     return () => {
       mounted = false;
+      unsubscribeAuth?.();
     };
   }, [slug]);
 
