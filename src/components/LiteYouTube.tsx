@@ -13,7 +13,8 @@ interface LiteYouTubeProps {
  */
 function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
   const [activated, setActivated] = useState(false);
-  const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const thumbWebp = `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp`;
+  const thumbJpg = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
   const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&${params}`;
 
   if (activated) {
@@ -45,16 +46,19 @@ function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
         overflow: "hidden",
       }}
     >
-      <img
-        src={thumb}
-        alt={title}
-        loading="eager"
-        decoding="async"
-        fetchPriority="high"
-        width={480}
-        height={360}
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-      />
+      <picture>
+        <source srcSet={thumbWebp} type="image/webp" />
+        <img
+          src={thumbJpg}
+          alt={title}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          width={320}
+          height={180}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      </picture>
       <span
         aria-hidden="true"
         style={{
