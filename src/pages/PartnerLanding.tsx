@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,8 @@ import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
 import logoImage from "@/assets/logo.png";
+
+const BelowFold = lazy(() => import("./PartnerLandingBelowFold"));
 
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
@@ -31,7 +33,6 @@ interface PartnerRow {
 }
 
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap');
 .ph-scope{font-family:'Work Sans','Inter',system-ui,sans-serif;background:#FBF8F1;color:#142A20;line-height:1.65;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;}
 .ph-scope *{box-sizing:border-box;}
 .ph-scope img{max-width:100%;display:block;}
@@ -196,25 +197,9 @@ const STYLES = `
 }
 `;
 
-const TESTIMONIALS = [
-  { stars: "★★★★★", text: "“Finally a vocabulary course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
-  { stars: "★★★★★", text: "“The speaking practice is what sold me. Hearing myself, comparing to the native voice, and improving daily — that's how you actually build confidence in Arabic.”", initial: "S", name: "Sami K.", place: "Montréal, Canada", cls: "ph-a2" },
-  { stars: "★★★★★", text: "“Worth every penny — at 50% off it's almost embarrassing. Premium product, no fluff. My pronunciation has changed completely.”", initial: "A", name: "Anissa B.", place: "London, UK", cls: "ph-a3" },
-];
-
-const RETURN_CARDS = [
-  { num: "01", title: "It actually works", desc: "Spaced repetition + native audio + speaking loops = vocabulary that stays in long-term memory, not lost by tomorrow." },
-  { num: "02", title: "Designed for adults", desc: "No cartoons, no streak guilt. A premium learning environment that respects your time and your intelligence." },
-  { num: "03", title: "Built for daily life", desc: "Mobile-first study flow you'll open at the café, on the métro, between meetings — wherever the 10 minutes appear." },
-];
-
-const MODE_EMOJI = { learn: "📚", listening: "🎧", speaking: "🎤", quiz: "🎯" } as const;
-const MODE_CLASS = { learn: "ph-m1", listening: "ph-m2", speaking: "ph-m3", quiz: "ph-m4" } as const;
-
 export default function PartnerLanding() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const { data: partner, isLoading, error } = useQuery({
     queryKey: ["partner", slug],
@@ -257,6 +242,17 @@ export default function PartnerLanding() {
     if (config?.couponCode) setPartnerCoupon(config.couponCode);
   }, [config?.couponCode]);
 
+  // Async, non-render-blocking Playfair Display
+  useEffect(() => {
+    const href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap";
+    if (document.querySelector(`link[data-ph-font="pd"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute("data-ph-font", "pd");
+    document.head.appendChild(link);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FBF8F1] p-10">
@@ -293,13 +289,10 @@ export default function PartnerLanding() {
       <Helmet>
         {/* Preload LCP hero video thumbnail */}
         <link rel="preload" as="image" href={YT_THUMB} fetchPriority="high" />
-        {/* Preconnect to origins used above-the-fold */}
+        {/* Only 3 preconnects — the strict Lighthouse budget */}
         <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* Only warm YouTube origins; iframe loads on click */}
-        <link rel="dns-prefetch" href="https://www.youtube.com" />
-        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
       </Helmet>
       <style>{STYLES}</style>
 
@@ -362,156 +355,15 @@ export default function PartnerLanding() {
         </div>
       </section>
 
-      {/* STATS */}
-      <div className="ph-stats-bar">
-        <div className="wrap ph-stats-grid">
-          {config.stats.slice(0, 4).map((s) => (
-            <div key={s.label}>
-              <div className="num">{s.value}</div>
-              <div className="lbl">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* MODES */}
-      <section className="ph-section">
-        <div className="wrap">
-          <div className="ph-sec-head">
-            <div className="ph-eyebrow">Four modes · One flow</div>
-            <h2>Built like a product, not a textbook.</h2>
-            <p>Every mode is designed around how memory actually works — see it, hear it, say it, recall it.</p>
-          </div>
-          <div className="ph-modes-grid">
-            {config.modeCards.map((m) => (
-              <div className="ph-mode-card" key={m.key}>
-                <div className={`ph-mode-icon ${MODE_CLASS[m.key]}`}>{MODE_EMOJI[m.key]}</div>
-                <h3>{m.title}</h3>
-                <p>{m.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* RETURN */}
-      <section className="ph-section ph-return-section">
-        <div className="wrap">
-          <div className="ph-sec-head">
-            <div className="ph-eyebrow" style={{ color: "#F6CD89" }}>Why students keep coming back</div>
-            <h2>Designed to make Arabic stay.</h2>
-            <p>Most apps teach you words you'll forget by next week. This is built differently.</p>
-          </div>
-          <div className="ph-return-grid">
-            {RETURN_CARDS.map((c) => (
-              <div className="ph-return-card" key={c.num}>
-                <span className="num-tag">{c.num}</span>
-                <h3>{c.title}</h3>
-                <p>{c.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="ph-section">
-        <div className="wrap">
-          <div className="ph-sec-head">
-            <div className="ph-eyebrow">Real students · Real results</div>
-            <h2>Loved by learners worldwide.</h2>
-          </div>
-          <div className="ph-testi-grid">
-            {TESTIMONIALS.map((t) => (
-              <div className="ph-testi-card" key={t.name}>
-                <div className="ph-stars">{t.stars}</div>
-                <p>{t.text}</p>
-                <div className="ph-testi-who">
-                  <div className={`ph-avatar ${t.cls}`}>{t.initial}</div>
-                  <div>
-                    <div className="name">{t.name}</div>
-                    <div className="place">{t.place}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* OFFER RECAP */}
-      <section className="ph-offer-section" id="offer">
-        <div className="wrap">
-          <div className="ph-offer-box">
-            <div className="ph-offer-left">
-              <span className="tag">Your exclusive package</span>
-              <h3>The complete Vocabulary Course</h3>
-              <ul>
-                {config.pricingIncludes.map((i) => (
-                  <li key={i}>{i}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="ph-offer-mid">
-              <div className="old">{formatPrice(config.oldPrice)}</div>
-              <div className="new">{formatPrice(config.newPrice)}</div>
-            </div>
-            <div className="ph-offer-right">
-              <div className="ph-seal">
-                {discountPct > 0 ? <>{discountPct}%<br />OFF</> : <>Exclusive<br />offer</>}
-              </div>
-              <Link to={ctaHref} className="ph-cta-btn">{config.ctaLabel}</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="ph-section" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="ph-sec-head">
-            <div className="ph-eyebrow">Quick answers</div>
-            <h2>Everything you'll want to know.</h2>
-          </div>
-          <div className="ph-faq-list">
-            {config.faq.map((f, i) => (
-              <div className={`ph-faq-item ${openFaq === i ? "open" : ""}`} key={f.q}>
-                <button
-                  type="button"
-                  className="ph-faq-q"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  aria-expanded={openFaq === i}
-                >
-                  {f.q}
-                  <span className="ico">+</span>
-                </button>
-                <div className="ph-faq-a"><p>{f.a}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section style={{ padding: "0 0 60px" }}>
-        <div className="ph-final-cta">
-          <h2>Your private invitation closes soon.</h2>
-          <p>Lock in {discountPct > 0 ? `${discountPct}% off` : "your exclusive price"}, get lifetime access, and start speaking Arabic with confidence.</p>
-          <Link to={ctaHref} className="ph-cta-btn">
-            {config.ctaLabel}
-            <span style={{ width: 18, height: 18, display: "inline-flex" }}>{arrowSvg}</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="ph-footer">
-        <div className="ph-brand">
-          <img src={logoImage} alt="ArabiyaPath" width={36} height={36} loading="lazy" decoding="async" />
-          <span>ArabiyaPath</span>
-        </div>
-        <p>© {new Date().getFullYear()} ArabiyaPath · Private invitation for {ownerName}'s students</p>
-      </footer>
+      <Suspense fallback={<div style={{ minHeight: 400 }} />}>
+        <BelowFold
+          config={config}
+          ctaHref={ctaHref}
+          ownerName={ownerName}
+          discountPct={discountPct}
+          arrowSvg={arrowSvg}
+        />
+      </Suspense>
 
       {/* MOBILE STICKY CTA */}
       <div className="ph-sticky-cta">
