@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,8 @@ import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
 import logoImage from "@/assets/logo.png";
+
+const BelowFold = lazy(() => import("./PartnerLandingBelowFold"));
 
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
