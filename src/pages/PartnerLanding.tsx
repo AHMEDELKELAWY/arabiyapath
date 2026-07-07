@@ -1,9 +1,8 @@
-import { Suspense, lazy, useEffect, useMemo } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { SEOHead } from "@/components/seo/SEOHead";
 
 import { LiteYouTube } from "@/components/LiteYouTube";
@@ -16,9 +15,8 @@ const BelowFold = lazy(() => import("./PartnerLandingBelowFold"));
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
 const YT_PARAMS = `mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
-// Small webp thumb (~5KB) — dramatically faster LCP than hqdefault.jpg (~15KB)
-const YT_THUMB = `https://i.ytimg.com/vi_webp/${YT_VIDEO_ID}/mqdefault.webp`;
-const YT_THUMB_FALLBACK = `https://i.ytimg.com/vi/${YT_VIDEO_ID}/mqdefault.jpg`;
+const YT_THUMB = "/partner-houria-video-thumb.webp";
+const YT_THUMB_FALLBACK = "/partner-houria-video-thumb.jpg";
 
 interface PartnerRow {
   id: string;
@@ -35,6 +33,7 @@ interface PartnerRow {
 }
 
 const STYLES = `
+html,body,#root{margin:0;min-height:100%;}
 .ph-scope{font-family:'Work Sans','Inter',system-ui,sans-serif;background:#FBF8F1;color:#142A20;line-height:1.65;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;}
 .ph-scope *{box-sizing:border-box;}
 .ph-scope img{max-width:100%;display:block;}
@@ -201,7 +200,24 @@ const STYLES = `
 
 export default function PartnerLanding() {
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
+  const [hasUser, setHasUser] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setHasUser(!!data.session?.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setHasUser(!!session?.user);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const { data: partner, isLoading, error } = useQuery({
     queryKey: ["partner", slug],
@@ -279,7 +295,7 @@ export default function PartnerLanding() {
   const checkoutTarget = pack?.product_id
     ? `/checkout?productId=${pack.product_id}${couponParam}`
     : "/flashcards-pack";
-  const ctaHref = user ? checkoutTarget : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
+  const ctaHref = hasUser ? checkoutTarget : `/signup?redirect=${encodeURIComponent(checkoutTarget)}`;
   const discountPct = partner?.coupons?.percent_off ?? 0;
   const ownerName = config.partnerName;
 
@@ -298,12 +314,7 @@ export default function PartnerLanding() {
         canonicalPath={`/partner/${config.slug}`}
       />
       <Helmet>
-        {/* Preload LCP hero video thumbnail */}
-        <link rel="preload" as="image" href={YT_THUMB} fetchPriority="high" />
-        {/* Only 3 preconnects — the strict Lighthouse budget */}
-        <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="preload" as="image" href={YT_THUMB} type="image/webp" {...({ fetchpriority: "high" } as any)} />
       </Helmet>
       <style>{STYLES}</style>
 
@@ -315,7 +326,7 @@ export default function PartnerLanding() {
       <header className="ph-header">
         <div className="ph-header-inner wrap">
           <div className="ph-brand">
-            <img src={logoImage} alt="ArabiyaPath" width={36} height={36} decoding="async" fetchPriority="high" />
+            <img src={logoImage} alt="ArabiyaPath" width={36} height={36} decoding="async" />
             <span>ArabiyaPath</span>
           </div>
           <div className="ph-invite-badge"><span className="dot" />Private invitation</div>
@@ -360,7 +371,7 @@ export default function PartnerLanding() {
 
           <div className="ph-video-stage">
             <div className="ph-video-frame">
-              <LiteYouTube videoId={YT_VIDEO_ID} title="ArabiyaPath walkthrough" params={YT_PARAMS} />
+              <LiteYouTube videoId={YT_VIDEO_ID} title="ArabiyaPath walkthrough" params={YT_PARAMS} thumbnailWebp={YT_THUMB} thumbnailJpg={YT_THUMB_FALLBACK} />
             </div>
           </div>
         </div>
