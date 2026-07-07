@@ -46,16 +46,19 @@ function LiteYouTubeInner({ videoId, title, params = "" }: LiteYouTubeProps) {
         overflow: "hidden",
       }}
     >
-      <img
-        src={thumb}
-        alt={title}
-        loading="eager"
-        decoding="async"
-        fetchPriority="high"
-        width={480}
-        height={360}
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-      />
+      <picture>
+        <source srcSet={thumbWebp} type="image/webp" />
+        <img
+          src={thumbJpg}
+          alt={title}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          width={320}
+          height={180}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      </picture>
       <span
         aria-hidden="true"
         style={{
