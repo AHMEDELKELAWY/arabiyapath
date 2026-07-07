@@ -6,37 +6,50 @@
     <meta name="keywords" content="learn Arabic, Arabic online, Gulf Arabic, Egyptian Arabic, MSA, Arabic lessons, Arabic for foreigners">
     <link rel="icon" type="image/png" href="/logo.png">
     
-    <!-- Preconnect hints for critical third-party origins -->
-    <link rel="preconnect" href="https://www.chatbase.co" crossorigin>
-    <link rel="dns-prefetch" href="https://www.chatbase.co">
-    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
-    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-    
-    <!-- Google Analytics 4 (deferred) -->
-    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-3DJ1C5CKBK"></script>
+    <!-- Analytics + Pixel loaded lazily after first paint to protect LCP.
+         Stubs preserve any early calls so nothing throws. -->
     <script>
+      // gtag stub — queues calls until GA script actually loads.
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-3DJ1C5CKBK', {
-        send_page_view: false // We handle this in React for SPA
-      });
+      window.gtag = function(){ window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-3DJ1C5CKBK', { send_page_view: false });
+
+      // fbq stub — queues events until the real Pixel script loads.
+      (function(){
+        var n = window.fbq = function(){
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        if (!window._fbq) window._fbq = n;
+        n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
+      })();
+      window.fbq('init', '1489757443152828');
+      window.fbq('track', 'PageView');
+
+      // Actually inject the third-party scripts only after the page is idle,
+      // so they never block LCP / FCP / TBT.
+      function __loadAnalytics(){
+        if (window.__lovableAnalyticsLoaded) return;
+        window.__lovableAnalyticsLoaded = true;
+        var ga = document.createElement('script');
+        ga.async = true;
+        ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-3DJ1C5CKBK';
+        document.head.appendChild(ga);
+        var fb = document.createElement('script');
+        fb.async = true;
+        fb.src = 'https://connect.facebook.net/en_US/fbevents.js';
+        document.head.appendChild(fb);
+      }
+      function __scheduleAnalytics(){
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(__loadAnalytics, { timeout: 4000 });
+        } else {
+          setTimeout(__loadAnalytics, 2500);
+        }
+      }
+      if (document.readyState === 'complete') __scheduleAnalytics();
+      else window.addEventListener('load', __scheduleAnalytics, { once: true });
     </script>
-    
-    <!-- Meta Pixel Code -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1489757443152828');
-      fbq('track', 'PageView');
-    </script>
-    <!-- End Meta Pixel Code -->
 
     <!-- Default meta tags (overridden by react-helmet-async per page) -->
     <title>ArabiyaPath - Master Arabic the Natural Way</title>

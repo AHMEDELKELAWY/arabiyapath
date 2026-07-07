@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEOHead } from "@/components/seo/SEOHead";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
@@ -232,11 +232,28 @@ export default function PartnerLanding() {
     },
   });
 
+  // Fallback config derived from the slug — lets the hero paint instantly
+  // without waiting on Supabase. Real partner data hydrates in place once it arrives.
   const config = useMemo(() => {
-    if (!partner) return null;
-    const basePrice = pack ? pack.price_cents / 100 : partner.old_price ?? 30.00;
-    return buildPartnerConfig(partner, basePrice);
-  }, [partner, pack]);
+    const fallbackRow = {
+      slug: slug || "",
+      display_name: (slug || "")
+        .split(/[-_]/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ") || "our",
+      campaign_title: null,
+      hero_title: null,
+      hero_subtitle: null,
+      cta_text: null,
+      price_override: null,
+      old_price: null,
+      coupons: null,
+    };
+    const row = partner ?? fallbackRow;
+    const basePrice = pack ? pack.price_cents / 100 : row.old_price ?? 30.0;
+    return buildPartnerConfig(row, basePrice);
+  }, [partner, pack, slug]);
 
   useEffect(() => {
     if (config?.couponCode) setPartnerCoupon(config.couponCode);
@@ -253,16 +270,8 @@ export default function PartnerLanding() {
     document.head.appendChild(link);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FBF8F1] p-10">
-        <Skeleton className="mx-auto h-12 w-2/3" />
-        <Skeleton className="mx-auto mt-4 h-6 w-1/2" />
-        <Skeleton className="mx-auto mt-8 h-64 w-full max-w-4xl rounded-3xl" />
-      </div>
-    );
-  }
-  if (error || !partner || !config) return <Navigate to="/" replace />;
+  // Only redirect once loading has resolved AND the partner truly does not exist.
+  if (!isLoading && (error || !partner)) return <Navigate to="/" replace />;
 
   const couponParam = config.couponCode ? `&coupon=${encodeURIComponent(config.couponCode)}` : "";
   const checkoutTarget = pack?.product_id
