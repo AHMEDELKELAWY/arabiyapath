@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
 import logoImage from "@/assets/logo.png";
 
 const PACK_SLUG = "msa-flashcards-pack";
 const YT_VIDEO_ID = "F6v6FMmXcfE";
-const YT_EMBED = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
+const YT_PARAMS = `mute=1&controls=1&loop=1&playlist=${YT_VIDEO_ID}&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`;
+const YT_THUMB = `https://i.ytimg.com/vi/${YT_VIDEO_ID}/hqdefault.jpg`;
 
 interface PartnerRow {
   id: string;
@@ -287,6 +290,17 @@ export default function PartnerLanding() {
         description={`An exclusive invitation for ${ownerName}'s students: ${discountPct}% off the full interactive Arabic vocabulary package. Lifetime access.`}
         canonicalPath={`/partner/${config.slug}`}
       />
+      <Helmet>
+        {/* Preload LCP hero video thumbnail */}
+        <link rel="preload" as="image" href={YT_THUMB} fetchPriority="high" />
+        {/* Preconnect to origins used above-the-fold */}
+        <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Only warm YouTube origins; iframe loads on click */}
+        <link rel="dns-prefetch" href="https://www.youtube.com" />
+        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
+      </Helmet>
       <style>{STYLES}</style>
 
       <div className="ph-urgency">
@@ -297,7 +311,7 @@ export default function PartnerLanding() {
       <header className="ph-header">
         <div className="ph-header-inner wrap">
           <div className="ph-brand">
-            <img src={logoImage} alt="ArabiyaPath" />
+            <img src={logoImage} alt="ArabiyaPath" width={36} height={36} decoding="async" fetchPriority="high" />
             <span>ArabiyaPath</span>
           </div>
           <div className="ph-invite-badge"><span className="dot" />Private invitation</div>
@@ -342,12 +356,7 @@ export default function PartnerLanding() {
 
           <div className="ph-video-stage">
             <div className="ph-video-frame">
-              <iframe
-                src={YT_EMBED}
-                title="ArabiyaPath walkthrough"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
+              <LiteYouTube videoId={YT_VIDEO_ID} title="ArabiyaPath walkthrough" params={YT_PARAMS} />
             </div>
           </div>
         </div>
@@ -498,7 +507,7 @@ export default function PartnerLanding() {
       {/* FOOTER */}
       <footer className="ph-footer">
         <div className="ph-brand">
-          <img src={logoImage} alt="ArabiyaPath" />
+          <img src={logoImage} alt="ArabiyaPath" width={36} height={36} loading="lazy" decoding="async" />
           <span>ArabiyaPath</span>
         </div>
         <p>© {new Date().getFullYear()} ArabiyaPath · Private invitation for {ownerName}'s students</p>
