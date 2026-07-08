@@ -24,6 +24,8 @@ interface CardRow {
 interface Props {
   unitId: string;
   onComplete?: () => void;
+  nextLabel?: string;
+  nextTarget?: "grammar" | "test";
 }
 
 
