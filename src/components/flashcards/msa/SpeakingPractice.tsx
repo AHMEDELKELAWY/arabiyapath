@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X, Headphones, GraduationCap } from "lucide-react";
+import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check, X, Headphones, GraduationCap, ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { SPEAKING_KIND } from "./unitTemplate";
@@ -24,6 +24,8 @@ interface CardRow {
 interface Props {
   unitId: string;
   onComplete?: () => void;
+  nextLabel?: string;
+  nextTarget?: "grammar" | "test";
 }
 
 
@@ -57,7 +59,7 @@ function similarity(a: string, b: string): number {
   return Math.max(0, 1 - dist / Math.max(m, n));
 }
 
-export function SpeakingPractice({ unitId, onComplete }: Props) {
+export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "test" }: Props) {
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [flipped, setFlipped] = useState(false);
@@ -226,7 +228,8 @@ export function SpeakingPractice({ unitId, onComplete }: Props) {
               onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
               className="gap-2"
             >
-              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
+              {nextTarget === "grammar" ? <ScrollText className="w-4 h-4" /> : <GraduationCap className="w-4 h-4" />}
+              {nextLabel ?? "Continue to Test Yourself"}
             </Button>
           </div>
         </CardContent>
