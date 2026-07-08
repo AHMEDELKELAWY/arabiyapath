@@ -228,7 +228,8 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
               onClick={() => { setCompleted(false); setIdx(0); onComplete?.(); }}
               className="gap-2"
             >
-              <GraduationCap className="w-4 h-4" /> Continue to Test Yourself
+              {nextTarget === "grammar" ? <ScrollText className="w-4 h-4" /> : <GraduationCap className="w-4 h-4" />}
+              {nextLabel ?? "Continue to Test Yourself"}
             </Button>
           </div>
         </CardContent>
