@@ -263,7 +263,10 @@ export default function FlashCardUnit() {
                 <SpeakingPractice
                   unitId={unit.id}
                   onComplete={() => goToTab(showGrammar ? "grammar" : "test")}
+                  nextTarget={showGrammar ? "grammar" : "test"}
+                  nextLabel={showGrammar ? "Continue to Grammar" : "Continue to Test Yourself"}
                 />
+
 
               ) : (
                 <Card>
