@@ -81,6 +81,7 @@ const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
 const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
 const FlashCardUnit = lazy(() => import("./pages/flashcards/FlashCardUnit"));
 const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
