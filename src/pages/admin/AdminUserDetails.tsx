@@ -143,8 +143,52 @@ export default function AdminUserDetails() {
     );
   }
 
-  const { profile, roles, progress, quizAttempts, purchases, certificates } = data;
+  const {
+    profile, roles, progress, quizAttempts, purchases, certificates,
+    flashcardProgress, flashcardStreak, flashcardReviews,
+  } = data;
   const isAdmin = roles.some((r) => r.role === "admin");
+
+  const vocabMastered = flashcardProgress.filter((p: any) => p.status === "mastered").length;
+  const vocabLearning = flashcardProgress.filter((p: any) => p.status !== "mastered").length;
+  const quizzesPassed = quizAttempts.filter((q: any) => q.passed).length;
+  const avgScore = quizAttempts.length
+    ? Math.round(
+        quizAttempts.reduce((a: number, q: any) => a + (q.score || 0), 0) / quizAttempts.length
+      )
+    : 0;
+
+  const timeline = useMemo(() => {
+    const items: { at: string; icon: any; label: string; sub?: string; kind: string }[] = [];
+    progress.forEach((p: any) => items.push({
+      at: p.completed_at, icon: BookOpen, kind: "lesson",
+      label: `Completed lesson: ${p.lessons?.title ?? "—"}`,
+      sub: p.lessons?.units?.title,
+    }));
+    quizAttempts.forEach((q: any) => items.push({
+      at: q.created_at, icon: GraduationCap, kind: "quiz",
+      label: `${q.passed ? "Passed" : "Attempted"} quiz — ${q.score}%`,
+      sub: q.quizzes?.units?.title,
+    }));
+    purchases.forEach((p: any) => items.push({
+      at: p.created_at, icon: CreditCard, kind: "purchase",
+      label: `Purchase: ${p.products?.name ?? "—"} (${p.status})`,
+    }));
+    certificates.forEach((c: any) => items.push({
+      at: c.issued_at, icon: AwardIcon, kind: "cert",
+      label: `Certificate — ${c.dialects?.name} ${c.levels?.name}`,
+    }));
+    flashcardReviews.forEach((r: any) => items.push({
+      at: r.reviewed_at, icon: ActivityIcon, kind: "vocab",
+      label: `Vocab review (${r.rating}) — ${r.flashcards?.arabic_text ?? ""}`,
+      sub: r.flashcards?.english_translation,
+    }));
+    return items
+      .filter((i) => i.at)
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, 40);
+  }, [progress, quizAttempts, purchases, certificates, flashcardReviews]);
+
 
   return (
     <AdminLayout>
