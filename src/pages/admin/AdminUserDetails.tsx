@@ -33,10 +33,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Shield, ShieldOff, CheckCircle, XCircle, Plus } from "lucide-react";
+import {
+  ArrowLeft, Shield, ShieldOff, CheckCircle, XCircle, Plus,
+  Flame, Trophy, BookOpen, GraduationCap, CreditCard, Award as AwardIcon,
+  Activity as ActivityIcon,
+} from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function AdminUserDetails() {
   const { userId } = useParams<{ userId: string }>();
