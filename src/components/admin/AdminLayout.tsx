@@ -33,6 +33,7 @@ import { FileText } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/content", label: "Content", icon: BookOpen },
   { href: "/admin/products", label: "Products", icon: DollarSign },
   { href: "/admin/users", label: "Users", icon: Users },
@@ -48,6 +49,7 @@ const sidebarLinks = [
   { href: "/admin/flashcards/purchases", label: "Vocabulary Sales", icon: ShoppingCart },
   { href: "/admin/flashcards/diagnostics", label: "Vocabulary Diagnostics", icon: Activity },
 ];
+
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
