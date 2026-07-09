@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePendingApplicationsCount } from "@/hooks/useAffiliateApplications";
+import { useAdminUnreadNotificationsCount } from "@/hooks/useAdminNotifications";
 import logoImage from "@/assets/logo.png";
 
 interface AdminLayoutProps {
