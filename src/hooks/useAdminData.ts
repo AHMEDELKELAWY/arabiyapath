@@ -196,7 +196,17 @@ export function useAdminUserDetails(userId: string) {
   return useQuery({
     queryKey: ["admin-user-details", userId],
     queryFn: async () => {
-      const [profile, roles, progress, quizAttempts, purchases, certificates] = await Promise.all([
+      const [
+        profile,
+        roles,
+        progress,
+        quizAttempts,
+        purchases,
+        certificates,
+        flashcardProgress,
+        flashcardStreak,
+        flashcardReviews,
+      ] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).single(),
         supabase.from("user_roles").select("*").eq("user_id", userId),
         supabase
@@ -219,6 +229,21 @@ export function useAdminUserDetails(userId: string) {
           .select("*, dialects(name), levels(name)")
           .eq("user_id", userId)
           .order("issued_at", { ascending: false }),
+        supabase
+          .from("flashcard_progress")
+          .select("*, flashcards(arabic_text, english_translation, kind, unit_id)")
+          .eq("user_id", userId),
+        supabase
+          .from("flashcard_streaks")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabase
+          .from("flashcard_review_log")
+          .select("*, flashcards(arabic_text, english_translation)")
+          .eq("user_id", userId)
+          .order("reviewed_at", { ascending: false })
+          .limit(50),
       ]);
 
       return {
@@ -228,11 +253,15 @@ export function useAdminUserDetails(userId: string) {
         quizAttempts: quizAttempts.data || [],
         purchases: purchases.data || [],
         certificates: certificates.data || [],
+        flashcardProgress: flashcardProgress.data || [],
+        flashcardStreak: flashcardStreak.data || null,
+        flashcardReviews: flashcardReviews.data || [],
       };
     },
     enabled: !!userId,
   });
 }
+
 
 export function useAdminCoupons() {
   return useQuery({

@@ -13,11 +13,15 @@ import {
   DollarSign,
   Layers,
   Activity,
+  Bell,
 } from "lucide-react";
+
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePendingApplicationsCount } from "@/hooks/useAffiliateApplications";
+import { useAdminUnreadNotificationsCount } from "@/hooks/useAdminNotifications";
 import logoImage from "@/assets/logo.png";
 
 interface AdminLayoutProps {
@@ -30,6 +34,7 @@ import { FileText } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/content", label: "Content", icon: BookOpen },
   { href: "/admin/products", label: "Products", icon: DollarSign },
   { href: "/admin/users", label: "Users", icon: Users },
@@ -46,11 +51,14 @@ const sidebarLinks = [
   { href: "/admin/flashcards/diagnostics", label: "Vocabulary Diagnostics", icon: Activity },
 ];
 
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
   const { data: pendingCount = 0 } = usePendingApplicationsCount();
+  const { data: unreadNotifications = 0 } = useAdminUnreadNotificationsCount();
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -97,6 +105,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {link.href === "/admin/affiliate-applications" && pendingCount > 0 && (
                   <Badge className="bg-yellow-500 text-white hover:bg-yellow-500">
                     {pendingCount}
+                  </Badge>
+                )}
+                {link.href === "/admin/notifications" && unreadNotifications > 0 && (
+                  <Badge className="bg-primary text-primary-foreground">
+                    {unreadNotifications}
                   </Badge>
                 )}
               </Link>

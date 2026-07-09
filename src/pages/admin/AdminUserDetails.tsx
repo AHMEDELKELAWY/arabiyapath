@@ -33,10 +33,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Shield, ShieldOff, CheckCircle, XCircle, Plus } from "lucide-react";
+import {
+  ArrowLeft, Shield, ShieldOff, CheckCircle, XCircle, Plus,
+  Flame, Trophy, BookOpen, GraduationCap, CreditCard, Award as AwardIcon,
+  Activity as ActivityIcon,
+} from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function AdminUserDetails() {
   const { userId } = useParams<{ userId: string }>();
@@ -139,8 +143,52 @@ export default function AdminUserDetails() {
     );
   }
 
-  const { profile, roles, progress, quizAttempts, purchases, certificates } = data;
+  const {
+    profile, roles, progress, quizAttempts, purchases, certificates,
+    flashcardProgress, flashcardStreak, flashcardReviews,
+  } = data;
   const isAdmin = roles.some((r) => r.role === "admin");
+
+  const vocabMastered = flashcardProgress.filter((p: any) => p.status === "mastered").length;
+  const vocabLearning = flashcardProgress.filter((p: any) => p.status !== "mastered").length;
+  const quizzesPassed = quizAttempts.filter((q: any) => q.passed).length;
+  const avgScore = quizAttempts.length
+    ? Math.round(
+        quizAttempts.reduce((a: number, q: any) => a + (q.score || 0), 0) / quizAttempts.length
+      )
+    : 0;
+
+  const timeline = useMemo(() => {
+    const items: { at: string; icon: any; label: string; sub?: string; kind: string }[] = [];
+    progress.forEach((p: any) => items.push({
+      at: p.completed_at, icon: BookOpen, kind: "lesson",
+      label: `Completed lesson: ${p.lessons?.title ?? "—"}`,
+      sub: p.lessons?.units?.title,
+    }));
+    quizAttempts.forEach((q: any) => items.push({
+      at: q.created_at, icon: GraduationCap, kind: "quiz",
+      label: `${q.passed ? "Passed" : "Attempted"} quiz — ${q.score}%`,
+      sub: q.quizzes?.units?.title,
+    }));
+    purchases.forEach((p: any) => items.push({
+      at: p.created_at, icon: CreditCard, kind: "purchase",
+      label: `Purchase: ${p.products?.name ?? "—"} (${p.status})`,
+    }));
+    certificates.forEach((c: any) => items.push({
+      at: c.issued_at, icon: AwardIcon, kind: "cert",
+      label: `Certificate — ${c.dialects?.name} ${c.levels?.name}`,
+    }));
+    flashcardReviews.forEach((r: any) => items.push({
+      at: r.reviewed_at, icon: ActivityIcon, kind: "vocab",
+      label: `Vocab review (${r.rating}) — ${r.flashcards?.arabic_text ?? ""}`,
+      sub: r.flashcards?.english_translation,
+    }));
+    return items
+      .filter((i) => i.at)
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, 40);
+  }, [progress, quizAttempts, purchases, certificates, flashcardReviews]);
+
 
   return (
     <AdminLayout>
@@ -198,13 +246,53 @@ export default function AdminUserDetails() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="progress">
+        <Tabs defaultValue="overview">
           <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress ({progress.length})</TabsTrigger>
             <TabsTrigger value="quizzes">Quizzes ({quizAttempts.length})</TabsTrigger>
             <TabsTrigger value="purchases">Purchases ({purchases.length})</TabsTrigger>
             <TabsTrigger value="certificates">Certificates ({certificates.length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatMini icon={Flame} label="Current Streak" value={`${flashcardStreak?.current_streak ?? 0} days`} sub={`Best: ${flashcardStreak?.longest_streak ?? 0}`} />
+              <StatMini icon={Trophy} label="Vocabulary Mastered" value={vocabMastered} sub={`${vocabLearning} in progress`} />
+              <StatMini icon={GraduationCap} label="Quizzes Passed" value={quizzesPassed} sub={`Avg ${avgScore}%`} />
+              <StatMini icon={BookOpen} label="Lessons Completed" value={progress.length} />
+            </div>
+
+            <Card>
+              <CardHeader><CardTitle className="text-lg">Activity Timeline</CardTitle></CardHeader>
+              <CardContent>
+                {timeline.length ? (
+                  <ol className="space-y-3">
+                    {timeline.map((t, i) => {
+                      const Icon = t.icon;
+                      return (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{t.label}</p>
+                            {t.sub && <p className="text-xs text-muted-foreground truncate">{t.sub}</p>}
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(t.at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : (
+                  <p className="text-center text-muted-foreground py-6">No activity yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="progress" className="mt-4">
             <Card>
@@ -429,3 +517,25 @@ export default function AdminUserDetails() {
     </AdminLayout>
   );
 }
+
+function StatMini({
+  icon: Icon, label, value, sub,
+}: { icon: any; label: string; value: React.ReactNode; sub?: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
+            {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+          </div>
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+

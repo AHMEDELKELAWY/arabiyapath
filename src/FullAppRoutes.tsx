@@ -81,6 +81,7 @@ const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
 const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
 const FlashCardUnit = lazy(() => import("./pages/flashcards/FlashCardUnit"));
 const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
@@ -165,6 +166,7 @@ export default function FullAppRoutes() {
             <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
             <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
             <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
+            <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/flashcards" element={<FlashCardsHome />} />
             <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />
             <Route path="/flashcards/unit/:slug" element={<FlashCardUnit />} />

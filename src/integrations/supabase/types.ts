@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          meta: Json
+          read_at: string | null
+          related_user_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          read_at?: string | null
+          related_user_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          read_at?: string | null
+          related_user_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       affiliate_applications: {
         Row: {
           admin_notes: string | null
@@ -1627,7 +1660,9 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_mark_all_notifications_read: { Args: never; Returns: number }
       admin_pending_applications_count: { Args: never; Returns: number }
+      admin_unread_notifications_count: { Args: never; Returns: number }
       affiliate_my_referrals: {
         Args: never
         Returns: {
