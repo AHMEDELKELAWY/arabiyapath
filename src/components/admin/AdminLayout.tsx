@@ -107,6 +107,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     {pendingCount}
                   </Badge>
                 )}
+                {link.href === "/admin/notifications" && unreadNotifications > 0 && (
+                  <Badge className="bg-primary text-primary-foreground">
+                    {unreadNotifications}
+                  </Badge>
+                )}
               </Link>
             );
           })}
