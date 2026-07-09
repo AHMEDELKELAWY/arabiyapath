@@ -246,13 +246,53 @@ export default function AdminUserDetails() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="progress">
+        <Tabs defaultValue="overview">
           <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress ({progress.length})</TabsTrigger>
             <TabsTrigger value="quizzes">Quizzes ({quizAttempts.length})</TabsTrigger>
             <TabsTrigger value="purchases">Purchases ({purchases.length})</TabsTrigger>
             <TabsTrigger value="certificates">Certificates ({certificates.length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatMini icon={Flame} label="Current Streak" value={`${flashcardStreak?.current_streak ?? 0} days`} sub={`Best: ${flashcardStreak?.longest_streak ?? 0}`} />
+              <StatMini icon={Trophy} label="Vocabulary Mastered" value={vocabMastered} sub={`${vocabLearning} in progress`} />
+              <StatMini icon={GraduationCap} label="Quizzes Passed" value={quizzesPassed} sub={`Avg ${avgScore}%`} />
+              <StatMini icon={BookOpen} label="Lessons Completed" value={progress.length} />
+            </div>
+
+            <Card>
+              <CardHeader><CardTitle className="text-lg">Activity Timeline</CardTitle></CardHeader>
+              <CardContent>
+                {timeline.length ? (
+                  <ol className="space-y-3">
+                    {timeline.map((t, i) => {
+                      const Icon = t.icon;
+                      return (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{t.label}</p>
+                            {t.sub && <p className="text-xs text-muted-foreground truncate">{t.sub}</p>}
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(t.at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : (
+                  <p className="text-center text-muted-foreground py-6">No activity yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="progress" className="mt-4">
             <Card>
