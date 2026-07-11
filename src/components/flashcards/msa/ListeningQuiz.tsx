@@ -70,10 +70,26 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     );
     if (pool.length < 3) return [];
     const ordered = shuffle(pool);
-    return ordered.map((c) => {
-      const distractors = shuffle(
-        pool.filter((d) => d.image_url !== c.image_url)
-      ).slice(0, 2);
+    const out: Prompt[] = [];
+    for (const c of ordered) {
+      // Distractor uniqueness contract:
+      //  - never the correct card (by id)
+      //  - never share the correct card's image URL
+      //  - all distractors must have distinct image URLs among themselves
+      // If we can't produce 2 valid distractors, drop the question entirely
+      // instead of reusing images.
+      const seenImages = new Set<string>([c.image_url!]);
+      const seenIds = new Set<string>([c.id]);
+      const distractors: typeof pool = [];
+      for (const d of shuffle(pool)) {
+        if (seenIds.has(d.id)) continue;
+        if (!d.image_url || seenImages.has(d.image_url)) continue;
+        seenIds.add(d.id);
+        seenImages.add(d.image_url);
+        distractors.push(d);
+        if (distractors.length === 2) break;
+      }
+      if (distractors.length < 2) continue;
       const choices = shuffle(
         [c, ...distractors].map((d) => ({
           image: d.image_url!,
@@ -81,15 +97,16 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
           correct: d.id === c.id,
         }))
       );
-      return {
+      out.push({
         id: c.id,
         audio: sentenceAudio(c)!,
         text: sentenceText(c),
         correctImage: c.image_url!,
         correctAlt: c.image_alt || "",
         choices,
-      };
-    });
+      });
+    }
+    return out;
   }, [cards]);
 
   const [i, setI] = useState(0);
