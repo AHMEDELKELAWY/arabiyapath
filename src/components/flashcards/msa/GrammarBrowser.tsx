@@ -68,6 +68,17 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
 
   useEffect(() => { setFadeKey((k) => k + 1); }, [safeIdx]);
 
+  // Hydrate exact card position from saved resume state.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
   // Persist exact card position for Resume Learning.
   useEffect(() => {
     if (!slug || total === 0) return;
