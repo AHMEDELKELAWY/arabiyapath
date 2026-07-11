@@ -404,6 +404,89 @@ export type Database = {
           },
         ]
       }
+      flashcard_course_levels: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          published: boolean
+          slug: string
+          title_ar: string | null
+          title_en: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          slug: string
+          title_ar?: string | null
+          title_en: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          slug?: string
+          title_ar?: string | null
+          title_en?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_course_levels_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          published: boolean
+          slug: string
+          title_ar: string | null
+          title_en: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          slug: string
+          title_ar?: string | null
+          title_en: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          slug?: string
+          title_ar?: string | null
+          title_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flashcard_pack_units: {
         Row: {
           order_index: number
@@ -688,6 +771,7 @@ export type Database = {
       }
       flashcard_units: {
         Row: {
+          course_level_id: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -703,6 +787,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          course_level_id?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -718,6 +803,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          course_level_id?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -732,7 +818,15 @@ export type Database = {
           title_en?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_units_course_level_id_fkey"
+            columns: ["course_level_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_course_levels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flashcards: {
         Row: {
