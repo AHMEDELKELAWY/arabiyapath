@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
-import { useEffect } from "react";
+import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
+import { useEffect, useMemo } from "react";
+import { loadSpokenArabicResume, buildUnitResumeHref } from "@/lib/spokenArabicResume";
+import { Trophy } from "lucide-react";
 
 
 interface UnitRow {
