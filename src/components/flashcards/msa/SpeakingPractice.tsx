@@ -121,6 +121,17 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
     );
   }, [slug, safeIdx, total, user?.id]);
 
+  // Hydrate exact card position from saved resume state.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "speaking" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
   // Mark cards reviewed on activity completion.
   useEffect(() => {
     if (!completed || !cards?.length) return;
