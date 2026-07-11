@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,9 @@ import { Mic, Square, Play, RotateCcw, ChevronLeft, ChevronRight, Loader2, Check
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { SPEAKING_KIND } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 
 interface CardRow {
@@ -60,6 +64,9 @@ function similarity(a: string, b: string): number {
 }
 
 export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "test" }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { slug } = useParams<{ slug: string }>();
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [flipped, setFlipped] = useState(false);
@@ -75,6 +82,7 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   const streamRef = useRef<MediaStream | null>(null);
   const refAudioRef = useRef<HTMLAudioElement | null>(null);
   const userAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-speaking-cards", unitId],
@@ -103,6 +111,32 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
     setScore(null);
     setFlipped(false);
   }, [current?.id]);
+
+  // Persist exact card position for Resume Learning.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "speaking", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
+  // Hydrate exact card position from saved resume state.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "speaking" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
+  // Mark cards reviewed on activity completion.
+  useEffect(() => {
+    if (!completed || !cards?.length) return;
+    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
+  }, [completed, cards, user?.id, queryClient]);
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());

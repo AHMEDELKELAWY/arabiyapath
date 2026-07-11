@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,9 @@ import {
   stripTashkeel,
 } from "@/lib/cardClassify";
 import { TEST_SOURCE_KINDS } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
   id: string;
@@ -171,6 +175,12 @@ function buildQuestions(cards: CardRow[]): Question[] {
 }
 
 export function TestYourselfQuiz({ unitId }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { slug } = useParams<{ slug: string }>();
+  const hydratedRef = useRef(false);
+
+
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-test-quiz", unitId],
     enabled: !!unitId,
@@ -201,6 +211,32 @@ export function TestYourselfQuiz({ unitId }: Props) {
   useEffect(() => {
     setI(0); setScore(0); setAnswered(false); setWasCorrect(false); setDone(false);
   }, [unitId, seed]);
+
+  // Persist question position for Resume Learning.
+  useEffect(() => {
+    if (!slug || questions.length === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "test", questionIndex: i },
+      user?.id ?? null
+    );
+  }, [slug, i, questions.length, user?.id]);
+
+  // On completion, mark all source cards reviewed and refresh dashboards.
+  useEffect(() => {
+    if (!done || !cards?.length) return;
+    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
+  }, [done, cards, user?.id, queryClient]);
+
+  // Hydrate exact question position once.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || questions.length === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "test" && typeof saved.questionIndex === "number") {
+      const clamped = Math.min(Math.max(saved.questionIndex, 0), questions.length - 1);
+      if (clamped > 0) setI(clamped);
+    }
+  }, [slug, questions.length]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;

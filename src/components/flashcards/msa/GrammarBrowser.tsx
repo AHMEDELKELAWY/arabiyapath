@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,9 @@ import {
   GraduationCap, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface GrammarCardRow {
   id: string;
@@ -38,6 +41,10 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   const [fadeKey, setFadeKey] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-grammar-cards", unitId],
@@ -60,6 +67,32 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   const current = cards?.[safeIdx];
 
   useEffect(() => { setFadeKey((k) => k + 1); }, [safeIdx]);
+
+  // Hydrate exact card position from saved resume state.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
+  // Persist exact card position for Resume Learning.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "grammar", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
+  // Mark cards reviewed on completion.
+  useEffect(() => {
+    if (!completed || !cards?.length) return;
+    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
+  }, [completed, cards, user?.id, queryClient]);
 
   const playAudio = () => {
     const a = audioRef.current;

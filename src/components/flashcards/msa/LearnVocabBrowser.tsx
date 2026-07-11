@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { ActivityProgress } from "./ActivityProgress";
 import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
   id: string;
@@ -36,6 +39,9 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-learn-cards", unitId],
@@ -61,6 +67,26 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     setFadeKey((k) => k + 1);
   }, [safeIdx]);
 
+  // Hydrate the exact card position from the saved resume state (DB → cache).
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "learn" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
+  // Persist exact card position so Resume Learning restores it.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "learn", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
   const playAudio = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -68,10 +94,15 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     a.play().catch(() => {});
   };
 
+  const finishActivity = () => {
+    setCompleted(true);
+    void markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
+  };
+
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
   const goNext = () => {
     if (safeIdx >= total - 1) {
-      setCompleted(true);
+      finishActivity();
     } else {
       setIdx((i) => i + 1);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
 import { LISTENING_SOURCE_KINDS } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
   id: string;
@@ -36,6 +40,10 @@ interface Props {
 }
 
 export function ListeningQuiz({ unitId, onComplete }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { slug } = useParams<{ slug: string }>();
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-listening-quiz", unitId],
@@ -63,10 +71,26 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     );
     if (pool.length < 3) return [];
     const ordered = shuffle(pool);
-    return ordered.map((c) => {
-      const distractors = shuffle(
-        pool.filter((d) => d.image_url !== c.image_url)
-      ).slice(0, 2);
+    const out: Prompt[] = [];
+    for (const c of ordered) {
+      // Distractor uniqueness contract:
+      //  - never the correct card (by id)
+      //  - never share the correct card's image URL
+      //  - all distractors must have distinct image URLs among themselves
+      // If we can't produce 2 valid distractors, drop the question entirely
+      // instead of reusing images.
+      const seenImages = new Set<string>([c.image_url!]);
+      const seenIds = new Set<string>([c.id]);
+      const distractors: typeof pool = [];
+      for (const d of shuffle(pool)) {
+        if (seenIds.has(d.id)) continue;
+        if (!d.image_url || seenImages.has(d.image_url)) continue;
+        seenIds.add(d.id);
+        seenImages.add(d.image_url);
+        distractors.push(d);
+        if (distractors.length === 2) break;
+      }
+      if (distractors.length < 2) continue;
       const choices = shuffle(
         [c, ...distractors].map((d) => ({
           image: d.image_url!,
@@ -74,15 +98,16 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
           correct: d.id === c.id,
         }))
       );
-      return {
+      out.push({
         id: c.id,
         audio: sentenceAudio(c)!,
         text: sentenceText(c),
         correctImage: c.image_url!,
         correctAlt: c.image_alt || "",
         choices,
-      };
-    });
+      });
+    }
+    return out;
   }, [cards]);
 
   const [i, setI] = useState(0);
@@ -105,6 +130,33 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
       a.play().catch(() => {});
     }
   }, [i, prompts.length]);
+
+  // Persist exact question position for Resume Learning.
+  useEffect(() => {
+    if (!slug || prompts.length === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "listening", questionIndex: i },
+      user?.id ?? null
+    );
+  }, [slug, i, prompts.length, user?.id]);
+
+  // Hydrate exact question position from saved resume state (once per mount).
+  useEffect(() => {
+    if (hydratedRef.current || !slug || prompts.length === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "listening" && typeof saved.questionIndex === "number") {
+      const clamped = Math.min(Math.max(saved.questionIndex, 0), prompts.length - 1);
+      if (clamped > 0) setI(clamped);
+    }
+  }, [slug, prompts.length]);
+
+  // On completion, mark every prompt's source card as reviewed and refresh
+  // all progress-related caches so Dashboard/Progress/Units update instantly.
+  useEffect(() => {
+    if (!done || !prompts.length) return;
+    void markCardsReviewed(user?.id, prompts.map((p) => p.id), queryClient);
+  }, [done, prompts, user?.id, queryClient]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
