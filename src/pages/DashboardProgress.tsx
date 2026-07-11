@@ -288,59 +288,59 @@ export default function DashboardProgress() {
                     />
                   </div>
 
-                  {levelGroups.map((group) => {
-                    const isBeginner = group.title === "Beginner";
-                    const gTotalCards = group.units.reduce((s, u) => s + u.total, 0);
-                    const gReviewed = group.units.reduce(
-                      (s, u) => s + (u.reviewed ?? u.mastered ?? 0),
-                      0
-                    );
-                    const gCompletedUnits = group.units.filter(
-                      (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
-                    ).length;
-                    const gPct = gTotalCards
-                      ? Math.round((gReviewed / gTotalCards) * 100)
-                      : 0;
-                    return (
-                      <div key={group.id} className="rounded-md border p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-semibold text-foreground">
-                            {group.title}
-                          </h4>
-                          {!isBeginner && (
-                            <span className="text-xs text-muted-foreground">
-                              🔜 Coming Soon
-                            </span>
-                          )}
-                        </div>
-                        {isBeginner ? (
-                          <>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {levelGroups.map((group) => {
+                      const isBeginner = group.title === "Beginner";
+                      const gTotalCards = group.units.reduce((s, u) => s + u.total, 0);
+                      const gReviewed = group.units.reduce(
+                        (s, u) => s + (u.reviewed ?? u.mastered ?? 0),
+                        0
+                      );
+                      const gCompletedUnits = group.units.filter(
+                        (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
+                      ).length;
+                      const gPct = isBeginner && gTotalCards
+                        ? Math.round((gReviewed / gTotalCards) * 100)
+                        : 0;
+                      return (
+                        <Card key={group.id} className="hover:shadow transition-shadow">
+                          <CardContent className="p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-sm">{group.title}</p>
+                              <span className="text-xs text-muted-foreground">
+                                {isBeginner ? `${gPct}%` : "🔜 Coming Soon"}
+                              </span>
+                            </div>
                             <Progress value={gPct} />
                             <p className="text-xs text-muted-foreground">
-                              {gCompletedUnits}/{group.units.length} units ·{" "}
-                              {gReviewed}/{gTotalCards} cards
+                              {isBeginner
+                                ? `${gCompletedUnits}/${group.units.length} units · ${gReviewed}/${gTotalCards} cards`
+                                : "0/0 units · 0/0 cards"}
                             </p>
-                            <Button asChild size="sm" className="w-full gap-2">
-                              <Link to="/flashcards">
-                                Continue
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </Link>
+                            <Button
+                              asChild={isBeginner}
+                              size="sm"
+                              variant={isBeginner ? "default" : "outline"}
+                              className="w-full gap-2 mt-2"
+                              disabled={!isBeginner}
+                            >
+                              {isBeginner ? (
+                                <Link to="/flashcards">
+                                  Continue
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
+                              ) : (
+                                <>
+                                  Continue
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </>
+                              )}
                             </Button>
-                          </>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full gap-2"
-                            disabled
-                          >
-                            Continue
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             );
