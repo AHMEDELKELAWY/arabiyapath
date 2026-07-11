@@ -29,24 +29,19 @@ export async function markCardsReviewed(
   if (!uniqueIds.length) return;
 
   try {
-    const now = new Date().toISOString();
-    const rows = uniqueIds.map((flashcard_id) => ({
-      user_id: userId,
-      flashcard_id,
-      status: "review" as const,
-      last_reviewed_at: now,
-    }));
-
-    const { error } = await (supabase as any)
-      .from("flashcard_progress")
-      .upsert(rows, { onConflict: "user_id,flashcard_id", ignoreDuplicates: false });
+    const { data, error } = await (supabase as any)
+      .rpc("fc_mark_cards_reviewed", { _card_ids: uniqueIds });
     if (error) {
-      console.warn("[markCardsReviewed] upsert failed", error);
-      return;
+      throw error;
+    }
+    if (Number(data) !== uniqueIds.length) {
+      throw new Error(
+        `Only ${Number(data)} of ${uniqueIds.length} cards were recorded as reviewed`
+      );
     }
   } catch (err) {
     console.warn("[markCardsReviewed] threw", err);
-    return;
+    throw err;
   }
 
   if (queryClient) {

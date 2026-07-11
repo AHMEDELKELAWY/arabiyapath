@@ -227,10 +227,13 @@ export default function Dashboard() {
                 (s, u) => s + u.total,
                 0
               );
-              const mastered = fcSummary.total_mastered;
+              const reviewed = fcSummary.units.reduce(
+                (sum, unit) => sum + (unit.reviewed ?? unit.mastered ?? 0),
+                0
+              );
               const progressPercent =
                 totalCards > 0
-                  ? Math.round((mastered / totalCards) * 100)
+                  ? Math.round((reviewed / totalCards) * 100)
                   : 0;
               const completedUnits = fcSummary.units.filter(
                 (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
