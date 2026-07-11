@@ -1845,6 +1845,7 @@ export type Database = {
         }
       }
       fc_dashboard_summary: { Args: never; Returns: Json }
+      fc_mark_cards_reviewed: { Args: { _card_ids: string[] }; Returns: number }
       fc_user_can_study_unit: {
         Args: { _unit_id: string; _user_id: string }
         Returns: boolean
