@@ -250,7 +250,7 @@ export default function FlashCardsHome() {
   // ── Resume Learning ──────────────────────────────────────────────────────
   // Source of truth = database (user_learning_position). localStorage acts
   // as a fast cache so the button shows something before the DB round-trip.
-  const dbPositionQuery = useQueryAlias({
+  const dbPositionQuery = useQuery({
     queryKey: ["fc-resume-db", user?.id],
     enabled: !!user,
     staleTime: 0,
