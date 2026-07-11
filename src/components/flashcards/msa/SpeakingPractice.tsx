@@ -111,6 +111,21 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
     setFlipped(false);
   }, [current?.id]);
 
+  // Persist exact card position for Resume Learning.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "speaking", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
+  // Mark cards reviewed on activity completion.
+  useEffect(() => {
+    if (!completed || !cards?.length) return;
+    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
+  }, [completed, cards, user?.id, queryClient]);
+
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (userBlobUrl) URL.revokeObjectURL(userBlobUrl);
