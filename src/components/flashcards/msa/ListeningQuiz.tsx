@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
 import { LISTENING_SOURCE_KINDS } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
   id: string;
