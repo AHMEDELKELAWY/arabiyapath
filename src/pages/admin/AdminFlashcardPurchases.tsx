@@ -18,7 +18,7 @@ export default function AdminFlashcardPurchases() {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Vocabulary Purchases</h1>
+      <h1 className="text-2xl font-bold mb-6">Spoken Arabic — Purchases</h1>
       <div className="grid gap-2">
         {!purchases?.length && <p className="text-muted-foreground">No purchases yet.</p>}
         {purchases?.map((p: any) => (

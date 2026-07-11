@@ -6,6 +6,7 @@ import {
   useFlashcardsDashboard,
   useFlashcardsResumeSlug,
 } from "@/hooks/useFlashcardsDashboard";
+import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function DashboardProgress() {
   const { levelsByDialect, hasLevelAccess, isLoading } = useDashboardData();
   const { data: fcSummary, isLoading: fcLoading } = useFlashcardsDashboard();
   const { data: fcResumeSlug } = useFlashcardsResumeSlug();
+  const { data: fcCourses } = useFlashcardCourseStructure();
 
   // NOTE: All hooks must run unconditionally on every render. Do NOT add early
   // returns above this line — doing so causes React error #310 (hook order
@@ -230,6 +232,22 @@ export default function DashboardProgress() {
               (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
             ).length;
             const totalUnits = fcSummary.units.length;
+
+            // Group summary units by course level using the courses hook.
+            // Falls back to a single "Beginner" bucket if courses haven't loaded.
+            const spokenCourse = fcCourses?.find((c) => c.slug === "spoken-arabic");
+            const unitById = new Map(fcSummary.units.map((u) => [u.unit_id, u]));
+            const levelGroups =
+              spokenCourse?.levels.map((lvl) => ({
+                id: lvl.id,
+                title: lvl.title_en,
+                units: lvl.unit_ids
+                  .map((id) => unitById.get(id))
+                  .filter((u): u is NonNullable<typeof u> => !!u),
+              })) ?? [
+                { id: "beginner-fallback", title: "Beginner", units: fcSummary.units },
+              ];
+
             return (
               <AccordionItem
                 id="flashcards-section"
@@ -240,7 +258,7 @@ export default function DashboardProgress() {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-2xl" aria-hidden="true">🃏</span>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="font-semibold truncate">Vocabulary</p>
+                      <p className="font-semibold truncate">Spoken Arabic</p>
                       <p className="text-xs text-muted-foreground">
                         {progressPercent}% · {reviewedCards}/{totalCards} cards · {completedUnits}/{totalUnits} units
                       </p>
@@ -267,29 +285,45 @@ export default function DashboardProgress() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    {fcSummary.units.map((u) => {
-                      const reviewed = u.reviewed ?? u.mastered ?? 0;
-                      const pct = u.total
-                        ? Math.round((reviewed / u.total) * 100)
-                        : 0;
-                      return (
-                        <Link
-                          key={u.unit_id}
-                          to={`/flashcards/unit/${u.slug}?from=dashboard`}
-                          className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium truncate">{u.title}</span>
-                            <span className="text-muted-foreground">
-                              {reviewed}/{u.total}
-                            </span>
-                          </div>
-                          <Progress value={pct} />
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  {levelGroups.map((group) => (
+                    <div key={group.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-foreground">
+                          {group.title}
+                        </h4>
+                        <span className="text-xs text-muted-foreground">
+                          {group.units.length} unit{group.units.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                      {group.units.length === 0 ? (
+                        <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+                          Coming Soon
+                        </div>
+                      ) : (
+                        group.units.map((u) => {
+                          const reviewed = u.reviewed ?? u.mastered ?? 0;
+                          const pct = u.total
+                            ? Math.round((reviewed / u.total) * 100)
+                            : 0;
+                          return (
+                            <Link
+                              key={u.unit_id}
+                              to={`/flashcards/unit/${u.slug}?from=dashboard`}
+                              className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="font-medium truncate">{u.title}</span>
+                                <span className="text-muted-foreground">
+                                  {reviewed}/{u.total}
+                                </span>
+                              </div>
+                              <Progress value={pct} />
+                            </Link>
+                          );
+                        })
+                      )}
+                    </div>
+                  ))}
 
                   <Button asChild className="w-full gap-2">
                     <Link to={fcContinueHref}>

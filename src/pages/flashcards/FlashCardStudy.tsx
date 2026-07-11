@@ -195,7 +195,7 @@ export default function FlashCardStudy() {
       "Realistic image-based learning",
       "Full Arabic vowelization (Tashkeel)",
       "Smart spaced repetition reviews",
-      "Vocabulary from real conversations",
+      "Spoken Arabic from real conversations",
       "Progress tracking and learning streaks",
     ];
     return (
@@ -230,7 +230,7 @@ export default function FlashCardStudy() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
-                  <Link to={exitHref}>Back to Vocabulary</Link>
+                  <Link to={exitHref}>Back to Spoken Arabic</Link>
                 </Button>
               </div>
             </CardContent>
@@ -252,7 +252,7 @@ export default function FlashCardStudy() {
           <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
           <p className="text-muted-foreground mb-6">Great work.</p>
           <Button size="lg" asChild>
-            <Link to={exitHref}>Back to Vocabulary</Link>
+            <Link to={exitHref}>Back to Spoken Arabic</Link>
           </Button>
         </section>
       </Layout>
@@ -303,7 +303,7 @@ export default function FlashCardStudy() {
                 >
                   <FlashCardImage
                     src={current.image_url}
-                    alt={current.image_alt || "Vocabulary card"}
+                    alt={current.image_alt || "Spoken Arabic card"}
                     className="h-full w-full aspect-auto"
                   />
                 </div>

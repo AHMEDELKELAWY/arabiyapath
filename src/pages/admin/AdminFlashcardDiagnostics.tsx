@@ -145,7 +145,7 @@ export default function AdminFlashcardDiagnostics() {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
-        <h1 className="text-2xl font-bold">Vocabulary Diagnostics</h1>
+        <h1 className="text-2xl font-bold">Spoken Arabic — Diagnostics</h1>
         <Button variant="outline" size="sm" onClick={refresh} disabled={metrics.isFetching}>
           <RefreshCw className={`w-4 h-4 mr-2 ${metrics.isFetching ? "animate-spin" : ""}`} /> Refresh
         </Button>
@@ -165,7 +165,7 @@ export default function AdminFlashcardDiagnostics() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="w-4 h-4" /> Repair Vocabulary Images
+            <Wrench className="w-4 h-4" /> Repair Spoken Arabic Images
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">

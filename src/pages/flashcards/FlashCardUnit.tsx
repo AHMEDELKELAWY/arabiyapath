@@ -150,7 +150,7 @@ export default function FlashCardUnit() {
   return (
     <Layout minimalFooter>
       <SEOHead
-        title={unit.seo_title || `${unit.title_en} — Vocabulary`}
+        title={unit.seo_title || `${unit.title_en} — Spoken Arabic`}
         description={unit.seo_description || unit.description || "MSA Arabic vocabulary."}
         canonicalPath={`/flashcards/unit/${unit.slug}`}
         jsonLd={{
