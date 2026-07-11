@@ -44,11 +44,11 @@ const sidebarLinks = [
   { href: "/admin/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/admin/memberships", label: "Memberships", icon: ShoppingCart },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
-  { href: "/admin/flashcards/units", label: "Vocabulary Units", icon: Layers },
+  { href: "/admin/flashcards/units", label: "Spoken Arabic Units", icon: Layers },
   { href: "/admin/flashcards/cards", label: "Speaking Content", icon: Layers },
-  { href: "/admin/flashcards/packs", label: "Vocabulary Packs", icon: Layers },
-  { href: "/admin/flashcards/purchases", label: "Vocabulary Sales", icon: ShoppingCart },
-  { href: "/admin/flashcards/diagnostics", label: "Vocabulary Diagnostics", icon: Activity },
+  { href: "/admin/flashcards/packs", label: "Spoken Arabic Packs", icon: Layers },
+  { href: "/admin/flashcards/purchases", label: "Spoken Arabic Sales", icon: ShoppingCart },
+  { href: "/admin/flashcards/diagnostics", label: "Spoken Arabic Diagnostics", icon: Activity },
 ];
 
 
