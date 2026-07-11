@@ -10,7 +10,7 @@ import { sentenceAudio, sentenceText, shuffle } from "@/lib/cardClassify";
 import { ActivityProgress } from "./ActivityProgress";
 import { LISTENING_SOURCE_KINDS } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
@@ -145,12 +145,12 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
   useEffect(() => {
     if (hydratedRef.current || !slug || prompts.length === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "listening" && typeof saved.questionIndex === "number") {
-      const clamped = Math.min(Math.max(saved.questionIndex, 0), prompts.length - 1);
-      if (clamped > 0) setI(clamped);
-    }
-  }, [slug, prompts.length]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "listening" && typeof saved.questionIndex === "number") {
+        setI(Math.min(Math.max(saved.questionIndex, 0), prompts.length - 1));
+      }
+    });
+  }, [slug, prompts.length, user?.id]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;

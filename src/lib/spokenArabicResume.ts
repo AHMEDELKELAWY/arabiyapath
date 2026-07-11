@@ -23,6 +23,16 @@ export interface SpokenArabicResumeState {
   updatedAt: number;
 }
 
+export async function resolveSpokenArabicResume(
+  userId?: string | null
+): Promise<SpokenArabicResumeState | null> {
+  if (userId) {
+    const databasePosition = await fetchSpokenArabicResume(userId);
+    if (databasePosition) return databasePosition;
+  }
+  return loadSpokenArabicResume();
+}
+
 const KEY = "arabiyapath.spokenArabic.resume.v1";
 const COURSE_SLUG = "spoken-arabic";
 const LEVEL_SLUG = "beginner";

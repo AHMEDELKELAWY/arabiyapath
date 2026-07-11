@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface GrammarCardRow {
@@ -72,12 +72,12 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   useEffect(() => {
     if (hydratedRef.current || !slug || total === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
-      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
-      if (clamped > 0) setIdx(clamped);
-    }
-  }, [slug, total]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
+        setIdx(Math.min(Math.max(saved.cardIndex, 0), total - 1));
+      }
+    });
+  }, [slug, total, user?.id]);
 
   // Persist exact card position for Resume Learning.
   useEffect(() => {
