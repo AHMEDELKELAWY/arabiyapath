@@ -82,6 +82,7 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   const streamRef = useRef<MediaStream | null>(null);
   const refAudioRef = useRef<HTMLAudioElement | null>(null);
   const userAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-speaking-cards", unitId],
