@@ -23,30 +23,27 @@ export async function markCardsReviewed(
   userId: string | null | undefined,
   cardIds: string[],
   queryClient?: QueryClient
-): Promise<void> {
-  if (!userId || !cardIds.length) return;
+): Promise<number> {
+  if (!userId || !cardIds.length) return 0;
   const uniqueIds = Array.from(new Set(cardIds.filter(Boolean)));
-  if (!uniqueIds.length) return;
+  if (!uniqueIds.length) return 0;
 
+  let reviewedCount = 0;
   try {
-    const now = new Date().toISOString();
-    const rows = uniqueIds.map((flashcard_id) => ({
-      user_id: userId,
-      flashcard_id,
-      status: "review" as const,
-      last_reviewed_at: now,
-    }));
-
-    const { error } = await (supabase as any)
-      .from("flashcard_progress")
-      .upsert(rows, { onConflict: "user_id,flashcard_id", ignoreDuplicates: false });
+    const { data, error } = await (supabase as any)
+      .rpc("fc_mark_cards_reviewed", { _card_ids: uniqueIds });
     if (error) {
-      console.warn("[markCardsReviewed] upsert failed", error);
-      return;
+      throw error;
     }
+    if (Number(data) !== uniqueIds.length) {
+      throw new Error(
+        `Only ${Number(data)} of ${uniqueIds.length} cards were recorded as reviewed`
+      );
+    }
+    reviewedCount = Number(data);
   } catch (err) {
     console.warn("[markCardsReviewed] threw", err);
-    return;
+    throw err;
   }
 
   if (queryClient) {
@@ -59,4 +56,5 @@ export async function markCardsReviewed(
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
     ]);
   }
+  return reviewedCount;
 }

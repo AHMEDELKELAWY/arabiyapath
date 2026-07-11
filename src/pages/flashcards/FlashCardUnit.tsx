@@ -31,6 +31,7 @@ import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
 import {
+  loadSpokenArabicResume,
   saveSpokenArabicResume,
   type SpokenArabicTab,
 } from "@/lib/spokenArabicResume";
@@ -50,16 +51,6 @@ export default function FlashCardUnit() {
   })();
   const [activeTab, setActiveTab] = useState<StudyTab>(initialTab);
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
-
-  // Persist the student's last position (unit + tab) to the database so the
-  // Resume Learning button works across devices. Falls back to localStorage cache.
-  useEffect(() => {
-    if (!slug) return;
-    saveSpokenArabicResume(
-      { unitSlug: slug, tab: activeTab as SpokenArabicTab },
-      user?.id ?? null
-    );
-  }, [slug, activeTab, user?.id]);
 
   // Keep the URL in sync so refresh/deeplink lands on the same tab.
   useEffect(() => {
@@ -81,8 +72,24 @@ export default function FlashCardUnit() {
 
   const goToTab = (tab: StudyTab) => {
     setActiveTab(tab);
+    if (slug) {
+      void saveSpokenArabicResume(
+        { unitSlug: slug, tab: tab as SpokenArabicTab },
+        user?.id ?? null
+      );
+    }
     scrollToLessonTop();
   };
+
+  // A direct unit URL without an explicit tab restores the cached lesson tab.
+  // Card/question components restore their own exact index afterward.
+  useEffect(() => {
+    if (!slug || searchParams.has("tab")) return;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab !== "learn") {
+      setActiveTab(saved.tab);
+    }
+  }, [slug, searchParams]);
 
 
   const { data: unit, isLoading } = useQuery({

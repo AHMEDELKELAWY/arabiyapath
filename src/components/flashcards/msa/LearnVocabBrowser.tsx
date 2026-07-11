@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, H
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
@@ -71,12 +71,12 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
   useEffect(() => {
     if (hydratedRef.current || !slug || total === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "learn" && typeof saved.cardIndex === "number") {
-      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
-      if (clamped > 0) setIdx(clamped);
-    }
-  }, [slug, total]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "learn" && typeof saved.cardIndex === "number") {
+        setIdx(Math.min(Math.max(saved.cardIndex, 0), total - 1));
+      }
+    });
+  }, [slug, total, user?.id]);
 
   // Persist exact card position so Resume Learning restores it.
   useEffect(() => {
@@ -94,15 +94,15 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     a.play().catch(() => {});
   };
 
-  const finishActivity = () => {
+  const finishActivity = async () => {
+    await markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
     setCompleted(true);
-    void markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
   };
 
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
   const goNext = () => {
     if (safeIdx >= total - 1) {
-      finishActivity();
+      void finishActivity();
     } else {
       setIdx((i) => i + 1);
     }

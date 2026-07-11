@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface GrammarCardRow {
@@ -72,12 +72,12 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   useEffect(() => {
     if (hydratedRef.current || !slug || total === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
-      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
-      if (clamped > 0) setIdx(clamped);
-    }
-  }, [slug, total]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "grammar" && typeof saved.cardIndex === "number") {
+        setIdx(Math.min(Math.max(saved.cardIndex, 0), total - 1));
+      }
+    });
+  }, [slug, total, user?.id]);
 
   // Persist exact card position for Resume Learning.
   useEffect(() => {
@@ -88,12 +88,6 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
     );
   }, [slug, safeIdx, total, user?.id]);
 
-  // Mark cards reviewed on completion.
-  useEffect(() => {
-    if (!completed || !cards?.length) return;
-    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
-  }, [completed, cards, user?.id, queryClient]);
-
   const playAudio = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -102,8 +96,11 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   };
 
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
-  const goNext = () => {
-    if (safeIdx >= total - 1) setCompleted(true);
+  const goNext = async () => {
+    if (safeIdx >= total - 1) {
+      await markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
+      setCompleted(true);
+    }
     else setIdx((i) => i + 1);
   };
 

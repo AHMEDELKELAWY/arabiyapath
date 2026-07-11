@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { SPEAKING_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 
@@ -125,18 +125,12 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   useEffect(() => {
     if (hydratedRef.current || !slug || total === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "speaking" && typeof saved.cardIndex === "number") {
-      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
-      if (clamped > 0) setIdx(clamped);
-    }
-  }, [slug, total]);
-
-  // Mark cards reviewed on activity completion.
-  useEffect(() => {
-    if (!completed || !cards?.length) return;
-    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
-  }, [completed, cards, user?.id, queryClient]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "speaking" && typeof saved.cardIndex === "number") {
+        setIdx(Math.min(Math.max(saved.cardIndex, 0), total - 1));
+      }
+    });
+  }, [slug, total, user?.id]);
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -421,7 +415,10 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
           </Button>
           <Button
             onClick={() => {
-              if (isLast) setCompleted(true);
+              if (isLast) {
+                void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient)
+                  .then(() => setCompleted(true));
+              }
               else setIdx((i) => Math.min(total - 1, i + 1));
             }}
             disabled={recording}

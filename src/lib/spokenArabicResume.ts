@@ -23,6 +23,16 @@ export interface SpokenArabicResumeState {
   updatedAt: number;
 }
 
+export async function resolveSpokenArabicResume(
+  userId?: string | null
+): Promise<SpokenArabicResumeState | null> {
+  if (userId) {
+    const databasePosition = await fetchSpokenArabicResume(userId);
+    if (databasePosition) return databasePosition;
+  }
+  return loadSpokenArabicResume();
+}
+
 const KEY = "arabiyapath.spokenArabic.resume.v1";
 const COURSE_SLUG = "spoken-arabic";
 const LEVEL_SLUG = "beginner";
@@ -84,7 +94,7 @@ export async function saveSpokenArabicResume(
   writeCache(next);
   if (!userId) return;
   try {
-    await (supabase as any)
+    const { error } = await (supabase as any)
       .from("user_learning_position")
       .upsert(
         {
@@ -98,9 +108,30 @@ export async function saveSpokenArabicResume(
         },
         { onConflict: "user_id,course_slug" }
       );
+    if (error) throw error;
   } catch (err) {
     console.warn("[spokenArabicResume] db upsert failed", err);
   }
+}
+
+/**
+ * Merge a newly changed index with the authoritative saved position. This
+ * prevents a parent tab render from replacing a card/question index with null.
+ */
+export async function saveSpokenArabicResumePosition(
+  next: Omit<SpokenArabicResumeState, "updatedAt">,
+  userId?: string | null
+): Promise<void> {
+  const cached = loadSpokenArabicResume();
+  const merged = cached?.unitSlug === next.unitSlug && cached.tab === next.tab
+    ? {
+        ...cached,
+        ...next,
+        cardIndex: next.cardIndex ?? cached.cardIndex,
+        questionIndex: next.questionIndex ?? cached.questionIndex,
+      }
+    : next;
+  await saveSpokenArabicResume(merged, userId);
 }
 
 /**

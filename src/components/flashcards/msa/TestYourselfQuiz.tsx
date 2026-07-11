@@ -18,7 +18,7 @@ import {
 } from "@/lib/cardClassify";
 import { TEST_SOURCE_KINDS } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
@@ -221,22 +221,16 @@ export function TestYourselfQuiz({ unitId }: Props) {
     );
   }, [slug, i, questions.length, user?.id]);
 
-  // On completion, mark all source cards reviewed and refresh dashboards.
-  useEffect(() => {
-    if (!done || !cards?.length) return;
-    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
-  }, [done, cards, user?.id, queryClient]);
-
   // Hydrate exact question position once.
   useEffect(() => {
     if (hydratedRef.current || !slug || questions.length === 0) return;
     hydratedRef.current = true;
-    const saved = loadSpokenArabicResume();
-    if (saved?.unitSlug === slug && saved.tab === "test" && typeof saved.questionIndex === "number") {
-      const clamped = Math.min(Math.max(saved.questionIndex, 0), questions.length - 1);
-      if (clamped > 0) setI(clamped);
-    }
-  }, [slug, questions.length]);
+    void resolveSpokenArabicResume(user?.id).then((saved) => {
+      if (saved?.unitSlug === slug && saved.tab === "test" && typeof saved.questionIndex === "number") {
+        setI(Math.min(Math.max(saved.questionIndex, 0), questions.length - 1));
+      }
+    });
+  }, [slug, questions.length, user?.id]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
@@ -292,10 +286,13 @@ export function TestYourselfQuiz({ unitId }: Props) {
     if (correct) setScore((s) => s + 1);
   };
 
-  const next = () => {
+  const next = async () => {
     setAnswered(false);
     setWasCorrect(false);
-    if (i + 1 >= total) setDone(true);
+    if (i + 1 >= total) {
+      await markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
+      setDone(true);
+    }
     else setI(i + 1);
   };
 
