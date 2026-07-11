@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { useEffect, useMemo } from "react";
@@ -381,10 +382,16 @@ export default function FlashCardsHome() {
               Content is being prepared. Check back soon.
             </p>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {units.map((u) => {
+            <div className="grid gap-3 sm:gap-4">
+              {units.map((u, idx) => {
                 const unlocked = unitUnlocked(u.id, u.is_free);
                 const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
+                const summaryUnit = fcSummary?.units?.find((x) => x.slug === u.slug);
+                const reviewed = summaryUnit?.reviewed ?? summaryUnit?.mastered ?? 0;
+                const total = summaryUnit?.total ?? 0;
+                const isComplete = total > 0 && reviewed >= total;
+                const isInProgress = reviewed > 0 && !isComplete;
+
                 let href: string;
                 if (entitlementLoading) {
                   href = "/flashcards";
@@ -394,47 +401,45 @@ export default function FlashCardsHome() {
                   const target = "/pricing";
                   href = user ? target : `/signup?redirect=${encodeURIComponent(target)}`;
                 }
+
+                let status: UnitCardStatus;
+                let badge: UnitCardBadge;
+                if (entitlementLoading) {
+                  status = "loading";
+                  badge = null;
+                } else if (!unlocked) {
+                  status = "locked";
+                  badge = "locked";
+                } else if (isComplete) {
+                  status = "completed";
+                  badge = "completed";
+                } else if (isInProgress) {
+                  status = "in-progress";
+                  badge = u.is_free ? "free" : "in-progress";
+                } else {
+                  status = "not-started";
+                  badge = u.is_free ? "free" : "unlocked";
+                }
+
                 return (
-                  <Link
+                  <UnitCard
                     key={u.id}
-                    to={href}
-                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-                  >
-                    <Card className="h-full hover:shadow-lg hover:border-primary/40 transition-all">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between text-lg">
-                          <span className="group-hover:text-primary transition-colors">
-                            {u.title_en}
-                          </span>
-                          {u.is_free ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
-                              Free
-                            </span>
-                          ) : unlocked ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                              Unlocked
-                            </span>
-                          ) : entitlementLoading ? (
-                            <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-                          ) : (
-                            <Lock className="w-4 h-4 text-muted-foreground" />
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                          {u.description}
-                        </p>
-                        <div className="inline-flex items-center text-sm font-medium text-primary">
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          {entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Upgrade to Access"}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                    index={idx + 1}
+                    title={u.title_en}
+                    description={u.description}
+                    href={href}
+                    status={status}
+                    badge={badge}
+                    progress={
+                      user && total > 0 && unlocked
+                        ? { completed: reviewed, total, label: "cards" }
+                        : null
+                    }
+                  />
                 );
               })}
             </div>
+
           )}
         </div>
       </section>
