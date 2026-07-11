@@ -227,6 +227,17 @@ export function TestYourselfQuiz({ unitId }: Props) {
     void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
   }, [done, cards, user?.id, queryClient]);
 
+  // Hydrate exact question position once.
+  useEffect(() => {
+    if (hydratedRef.current || !slug || questions.length === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "test" && typeof saved.questionIndex === "number") {
+      const clamped = Math.min(Math.max(saved.questionIndex, 0), questions.length - 1);
+      if (clamped > 0) setI(clamped);
+    }
+  }, [slug, questions.length]);
+
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
   }
