@@ -130,6 +130,22 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     }
   }, [i, prompts.length]);
 
+  // Persist exact question position for Resume Learning.
+  useEffect(() => {
+    if (!slug || prompts.length === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "listening", questionIndex: i },
+      user?.id ?? null
+    );
+  }, [slug, i, prompts.length, user?.id]);
+
+  // On completion, mark every prompt's source card as reviewed and refresh
+  // all progress-related caches so Dashboard/Progress/Units update instantly.
+  useEffect(() => {
+    if (!done || !prompts.length) return;
+    void markCardsReviewed(user?.id, prompts.map((p) => p.id), queryClient);
+  }, [done, prompts, user?.id, queryClient]);
+
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
   }
