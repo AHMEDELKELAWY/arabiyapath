@@ -409,16 +409,6 @@ export default function FlashCardsHome() {
               })}
             </div>
           )}
-          {user && resumeSlug && units && units.length > 0 && (
-            <div className="mt-8 flex justify-center">
-              <Button asChild size="lg" className="gap-2">
-                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
-                  Continue where you left off
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </div>
-          )}
         </div>
       </section>
     </Layout>
