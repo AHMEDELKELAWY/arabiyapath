@@ -233,7 +233,59 @@ export default function FlashCardsHome() {
     })),
   };
 
-  return (
+  // ── Resume Learning ──────────────────────────────────────────────────────
+  // Compute the exact place to drop the student back into:
+  //   1. saved (unit + tab) from localStorage — if that unit is not fully done
+  //   2. next incomplete Beginner unit (by order_index)
+  //   3. fallback: most-recently studied unit (from useFlashcardsResumeSlug)
+  //   4. all units completed → success state
+  const resumeTarget = useMemo(() => {
+    if (!user || !units?.length) return null;
+    const summaryUnits = fcSummary?.units ?? [];
+    const byId = new Map(summaryUnits.map((u) => [u.unit_id, u]));
+    const bySlug = new Map(summaryUnits.map((u) => [u.slug, u]));
+
+    const isUnitComplete = (slug: string) => {
+      const s = bySlug.get(slug);
+      return !!s && s.total > 0 && (s.reviewed ?? 0) >= s.total;
+    };
+
+    // Saved position
+    const saved = loadSpokenArabicResume();
+    if (saved) {
+      const stillExists = units.some((u) => u.slug === saved.unitSlug);
+      if (stillExists && !isUnitComplete(saved.unitSlug)) {
+        return {
+          href: buildUnitResumeHref(saved.unitSlug, saved.tab),
+          done: false,
+        };
+      }
+    }
+
+    // First incomplete unit in order
+    const ordered = [...units].sort((a, b) => a.order_index - b.order_index);
+    const nextIncomplete = ordered.find((u) => !isUnitComplete(u.slug));
+    if (nextIncomplete) {
+      return { href: buildUnitResumeHref(nextIncomplete.slug), done: false };
+    }
+
+    // Fallback: recently studied
+    if (resumeSlug) {
+      return { href: buildUnitResumeHref(resumeSlug), done: false };
+    }
+
+    // Everything done — but only claim completion if the summary knows about
+    // at least one unit AND every known unit is complete.
+    const knownCount = summaryUnits.filter((u) => u.total > 0).length;
+    if (knownCount > 0 && ordered.every((u) => isUnitComplete(u.slug))) {
+      return { href: null, done: true };
+    }
+
+    // Nothing studied yet — start with the first unit
+    return { href: buildUnitResumeHref(ordered[0]!.slug), done: false };
+  }, [user, units, fcSummary, resumeSlug]);
+  void byId;
+
     <Layout>
       <SEOHead
         title="ArabiyaPath Membership — Learn Arabic Every Day"
