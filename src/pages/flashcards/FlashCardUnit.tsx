@@ -13,8 +13,8 @@
  * See: src/components/flashcards/msa/unitTemplate.ts
  *      docs/UNIT_STANDARD.md
  */
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useRef, useState } from "react";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery } from "@tanstack/react-query";
