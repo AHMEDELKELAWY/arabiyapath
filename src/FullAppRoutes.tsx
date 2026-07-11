@@ -94,7 +94,42 @@ const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboa
 const AffiliateCommissions = lazy(() => import("./pages/affiliate/AffiliateCommissions"));
 const AffiliateReferrals = lazy(() => import("./pages/affiliate/AffiliateReferrals"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Retry transient failures but not auth/validation errors.
+      retry: (failureCount, error) => {
+        const kind = classifyError(error);
+        if (kind === "auth" || kind === "validation" || kind === "not_found") return false;
+        return failureCount < 2;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Only toast when a component is actively observing the query — avoids background noise.
+      if (query.state.data === undefined && query.getObserversCount() > 0) {
+        const kind = classifyError(error);
+        if (kind !== "auth" && kind !== "not_found") {
+          toastError(error, "Failed to load data");
+        }
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) => {
+      // Skip if the mutation defines its own onError handler.
+      if (mutation.options.onError) return;
+      toastError(error, "Action failed");
+    },
+  }),
+});
 
 function PageLoader() {
   return <div className="min-h-screen" />;
