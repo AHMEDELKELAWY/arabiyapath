@@ -9,8 +9,22 @@ import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { useEffect, useMemo } from "react";
-import { loadSpokenArabicResume, buildUnitResumeHref } from "@/lib/spokenArabicResume";
+
+import {
+  loadSpokenArabicResume,
+  fetchSpokenArabicResume,
+  buildUnitResumeHref,
+  type SpokenArabicTab,
+} from "@/lib/spokenArabicResume";
 import { Trophy } from "lucide-react";
+
+const TAB_LABEL: Record<SpokenArabicTab, string> = {
+  learn: "Learn",
+  listening: "Listening",
+  speaking: "Speaking",
+  grammar: "Grammar",
+  test: "Test Yourself",
+};
 
 
 interface UnitRow {
@@ -234,56 +248,63 @@ export default function FlashCardsHome() {
   };
 
   // ── Resume Learning ──────────────────────────────────────────────────────
-  // Compute the exact place to drop the student back into:
-  //   1. saved (unit + tab) from localStorage — if that unit is not fully done
-  //   2. next incomplete Beginner unit (by order_index)
-  //   3. fallback: most-recently studied unit (from useFlashcardsResumeSlug)
-  //   4. all units completed → success state
+  // Source of truth = database (user_learning_position). localStorage acts
+  // as a fast cache so the button shows something before the DB round-trip.
+  const dbPositionQuery = useQuery({
+    queryKey: ["fc-resume-db", user?.id],
+    enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: "always",
+    queryFn: () => fetchSpokenArabicResume(user!.id),
+  });
+
   const resumeTarget = useMemo(() => {
     if (!user || !units?.length) return null;
     const summaryUnits = fcSummary?.units ?? [];
-    const byId = new Map(summaryUnits.map((u) => [u.unit_id, u]));
     const bySlug = new Map(summaryUnits.map((u) => [u.slug, u]));
+    const unitBySlug = new Map(units.map((u) => [u.slug, u]));
 
     const isUnitComplete = (slug: string) => {
       const s = bySlug.get(slug);
       return !!s && s.total > 0 && (s.reviewed ?? 0) >= s.total;
     };
 
-    // Saved position
-    const saved = loadSpokenArabicResume();
+    const makeTarget = (slug: string, tab?: SpokenArabicTab) => {
+      const u = unitBySlug.get(slug);
+      return {
+        href: buildUnitResumeHref(slug, tab),
+        done: false as const,
+        unitTitle: u?.title_en ?? slug,
+        tabLabel: tab ? TAB_LABEL[tab] : "Learn",
+      };
+    };
+
+    // 1. DB position (authoritative), else 2. localStorage cache
+    const saved = dbPositionQuery.data ?? loadSpokenArabicResume();
     if (saved) {
-      const stillExists = units.some((u) => u.slug === saved.unitSlug);
-      if (stillExists && !isUnitComplete(saved.unitSlug)) {
-        return {
-          href: buildUnitResumeHref(saved.unitSlug, saved.tab),
-          done: false,
-        };
+      const exists = unitBySlug.has(saved.unitSlug);
+      if (exists && !isUnitComplete(saved.unitSlug)) {
+        return makeTarget(saved.unitSlug, saved.tab);
       }
     }
 
-    // First incomplete unit in order
+    // 3. Next incomplete unit in order
     const ordered = [...units].sort((a, b) => a.order_index - b.order_index);
     const nextIncomplete = ordered.find((u) => !isUnitComplete(u.slug));
-    if (nextIncomplete) {
-      return { href: buildUnitResumeHref(nextIncomplete.slug), done: false };
-    }
+    if (nextIncomplete) return makeTarget(nextIncomplete.slug);
 
-    // Fallback: recently studied
-    if (resumeSlug) {
-      return { href: buildUnitResumeHref(resumeSlug), done: false };
-    }
+    // 4. Fallback: recently studied
+    if (resumeSlug && unitBySlug.has(resumeSlug)) return makeTarget(resumeSlug);
 
-    // Everything done — but only claim completion if the summary knows about
-    // at least one unit AND every known unit is complete.
+    // 5. Everything done → success state
     const knownCount = summaryUnits.filter((u) => u.total > 0).length;
     if (knownCount > 0 && ordered.every((u) => isUnitComplete(u.slug))) {
-      return { href: null, done: true };
+      return { href: null, done: true as const, unitTitle: "", tabLabel: "" };
     }
 
-    // Nothing studied yet — start with the first unit
-    return { href: buildUnitResumeHref(ordered[0]!.slug), done: false };
-  }, [user, units, fcSummary, resumeSlug]);
+    // 6. Nothing studied yet — start with the first unit
+    return makeTarget(ordered[0]!.slug);
+  }, [user, units, fcSummary, resumeSlug, dbPositionQuery.data]);
 
   return (
     <Layout>
@@ -337,10 +358,16 @@ export default function FlashCardsHome() {
                   </CardContent>
                 </Card>
               ) : (
-                <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
+                <Button asChild size="lg" className="h-auto py-3 px-5 gap-3 w-full sm:w-auto">
                   <Link to={resumeTarget.href!}>
-                    <ArrowRight className="w-4 h-4" />
-                    Resume Learning
+                    <ArrowRight className="w-5 h-5 shrink-0" />
+                    <span className="flex flex-col items-start leading-tight text-left">
+                      <span className="text-xs font-medium opacity-90">Resume Learning</span>
+                      <span className="text-base font-semibold">
+                        {resumeTarget.unitTitle}
+                      </span>
+                      <span className="text-xs opacity-80">{resumeTarget.tabLabel}</span>
+                    </span>
                   </Link>
                 </Button>
               )}

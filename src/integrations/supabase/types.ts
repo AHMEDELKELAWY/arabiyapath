@@ -1616,6 +1616,48 @@ export type Database = {
           },
         ]
       }
+      user_learning_position: {
+        Row: {
+          card_index: number | null
+          course_slug: string
+          created_at: string
+          extra: Json
+          id: string
+          level_slug: string
+          question_index: number | null
+          tab: string
+          unit_slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_index?: number | null
+          course_slug?: string
+          created_at?: string
+          extra?: Json
+          id?: string
+          level_slug?: string
+          question_index?: number | null
+          tab?: string
+          unit_slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_index?: number | null
+          course_slug?: string
+          created_at?: string
+          extra?: Json
+          id?: string
+          level_slug?: string
+          question_index?: number | null
+          tab?: string
+          unit_slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           completed_at: string
