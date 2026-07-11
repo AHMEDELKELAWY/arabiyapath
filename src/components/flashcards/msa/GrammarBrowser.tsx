@@ -44,6 +44,7 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const hydratedRef = useRef(false);
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-grammar-cards", unitId],
