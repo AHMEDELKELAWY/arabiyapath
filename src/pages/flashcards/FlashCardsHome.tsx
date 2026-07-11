@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
-import { useEffect } from "react";
+import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
+import { useEffect, useMemo } from "react";
+import { loadSpokenArabicResume, buildUnitResumeHref } from "@/lib/spokenArabicResume";
+import { Trophy } from "lucide-react";
 
 
 interface UnitRow {
@@ -39,6 +41,7 @@ interface PackUnitRow {
 export default function FlashCardsHome() {
   const { user } = useAuth();
   const { data: resumeSlug } = useFlashcardsResumeSlug();
+  const { data: fcSummary } = useFlashcardsDashboard();
 
   const unitsQuery = useQuery({
     queryKey: ["fc-units-public"],
@@ -230,6 +233,58 @@ export default function FlashCardsHome() {
     })),
   };
 
+  // ── Resume Learning ──────────────────────────────────────────────────────
+  // Compute the exact place to drop the student back into:
+  //   1. saved (unit + tab) from localStorage — if that unit is not fully done
+  //   2. next incomplete Beginner unit (by order_index)
+  //   3. fallback: most-recently studied unit (from useFlashcardsResumeSlug)
+  //   4. all units completed → success state
+  const resumeTarget = useMemo(() => {
+    if (!user || !units?.length) return null;
+    const summaryUnits = fcSummary?.units ?? [];
+    const byId = new Map(summaryUnits.map((u) => [u.unit_id, u]));
+    const bySlug = new Map(summaryUnits.map((u) => [u.slug, u]));
+
+    const isUnitComplete = (slug: string) => {
+      const s = bySlug.get(slug);
+      return !!s && s.total > 0 && (s.reviewed ?? 0) >= s.total;
+    };
+
+    // Saved position
+    const saved = loadSpokenArabicResume();
+    if (saved) {
+      const stillExists = units.some((u) => u.slug === saved.unitSlug);
+      if (stillExists && !isUnitComplete(saved.unitSlug)) {
+        return {
+          href: buildUnitResumeHref(saved.unitSlug, saved.tab),
+          done: false,
+        };
+      }
+    }
+
+    // First incomplete unit in order
+    const ordered = [...units].sort((a, b) => a.order_index - b.order_index);
+    const nextIncomplete = ordered.find((u) => !isUnitComplete(u.slug));
+    if (nextIncomplete) {
+      return { href: buildUnitResumeHref(nextIncomplete.slug), done: false };
+    }
+
+    // Fallback: recently studied
+    if (resumeSlug) {
+      return { href: buildUnitResumeHref(resumeSlug), done: false };
+    }
+
+    // Everything done — but only claim completion if the summary knows about
+    // at least one unit AND every known unit is complete.
+    const knownCount = summaryUnits.filter((u) => u.total > 0).length;
+    if (knownCount > 0 && ordered.every((u) => isUnitComplete(u.slug))) {
+      return { href: null, done: true };
+    }
+
+    // Nothing studied yet — start with the first unit
+    return { href: buildUnitResumeHref(ordered[0]!.slug), done: false };
+  }, [user, units, fcSummary, resumeSlug]);
+
   return (
     <Layout>
       <SEOHead
@@ -264,16 +319,35 @@ export default function FlashCardsHome() {
 
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-5xl">
+          {/* Resume Learning — primary CTA above the units list. */}
+          {user && resumeTarget && (
+            <div className="mb-6">
+              {resumeTarget.done ? (
+                <Card className="border-emerald-500/40 bg-emerald-500/5">
+                  <CardContent className="py-6 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                      <Trophy className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg">Beginner Completed 🎉</p>
+                      <p className="text-sm text-muted-foreground">
+                        You've finished every Beginner unit. Review any unit below to keep it sharp.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
+                  <Link to={resumeTarget.href!}>
+                    <ArrowRight className="w-4 h-4" />
+                    Resume Learning
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
             <h2 className="text-2xl font-bold">Units</h2>
-            {user && resumeSlug && (
-              <Button asChild size="sm" className="gap-2">
-                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
-                  Continue where you left off
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            )}
           </div>
           {!units?.length ? (
             <p className="text-muted-foreground">
@@ -333,16 +407,6 @@ export default function FlashCardsHome() {
                   </Link>
                 );
               })}
-            </div>
-          )}
-          {user && resumeSlug && units && units.length > 0 && (
-            <div className="mt-8 flex justify-center">
-              <Button asChild size="lg" className="gap-2">
-                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
-                  Continue where you left off
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
             </div>
           )}
         </div>

@@ -83,9 +83,11 @@ export default function SpokenArabicOverview() {
   const overallPercent =
     totalCards > 0 ? Math.round((reviewedCards / totalCards) * 100) : 0;
 
-  const beginnerHref = fcResumeSlug
-    ? `/flashcards/unit/${fcResumeSlug}?from=spoken-arabic`
-    : "/flashcards";
+  // Continue always opens the Beginner Units page (never a lesson directly).
+  // The "Resume Learning" button on that page handles deep-linking into the
+  // last studied unit/tab.
+  void fcResumeSlug;
+  const beginnerHref = "/flashcards";
 
   return (
     <>

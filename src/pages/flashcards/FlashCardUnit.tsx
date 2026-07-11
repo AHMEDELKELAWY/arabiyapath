@@ -13,8 +13,8 @@
  * See: src/components/flashcards/msa/unitTemplate.ts
  *      docs/UNIT_STANDARD.md
  */
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useRef, useState } from "react";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery } from "@tanstack/react-query";
@@ -30,6 +30,10 @@ import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
+import {
+  saveSpokenArabicResume,
+  type SpokenArabicTab,
+} from "@/lib/spokenArabicResume";
 
 type StudyTab = "learn" | "listening" | "speaking" | "grammar" | "test";
 
@@ -37,8 +41,34 @@ export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<StudyTab>("learn");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = ((): StudyTab => {
+    const t = searchParams.get("tab");
+    return t === "listening" || t === "speaking" || t === "grammar" || t === "test"
+      ? t
+      : "learn";
+  })();
+  const [activeTab, setActiveTab] = useState<StudyTab>(initialTab);
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
+
+  // Persist the student's last position (unit + tab) so the Beginner Units
+  // page can offer a real "Resume Learning" button. UI-only; no DB writes.
+  useEffect(() => {
+    if (!slug) return;
+    saveSpokenArabicResume({ unitSlug: slug, tab: activeTab as SpokenArabicTab });
+  }, [slug, activeTab]);
+
+  // Keep the URL in sync so refresh/deeplink lands on the same tab.
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (current !== activeTab) {
+      const next = new URLSearchParams(searchParams);
+      if (activeTab === "learn") next.delete("tab");
+      else next.set("tab", activeTab);
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const scrollToLessonTop = () => {
     requestAnimationFrame(() => {
