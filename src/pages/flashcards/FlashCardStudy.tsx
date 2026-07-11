@@ -195,7 +195,7 @@ export default function FlashCardStudy() {
       "Realistic image-based learning",
       "Full Arabic vowelization (Tashkeel)",
       "Smart spaced repetition reviews",
-      "Vocabulary from real conversations",
+      "Spoken Arabic from real conversations",
       "Progress tracking and learning streaks",
     ];
     return (
@@ -303,7 +303,7 @@ export default function FlashCardStudy() {
                 >
                   <FlashCardImage
                     src={current.image_url}
-                    alt={current.image_alt || "Vocabulary card"}
+                    alt={current.image_alt || "Spoken Arabic card"}
                     className="h-full w-full aspect-auto"
                   />
                 </div>
