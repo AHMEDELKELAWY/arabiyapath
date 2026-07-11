@@ -740,7 +740,7 @@ export default function AdminFlashcardCards() {
       {unitId && kind !== "grammar" && (
         <div className="mb-6 rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground space-y-2">
           <div>
-            <p className="text-foreground font-medium">Learn — vocabulary only</p>
+            <p className="text-foreground font-medium">Learn — Spoken Arabic vocabulary only</p>
             <p>Single concept, full tashkeel, final sukoon style. Examples: <span dir="rtl" className="text-foreground">قَلَمْ · حَقِيبَةْ · كُرَّاسَةْ</span></p>
           </div>
           <div>

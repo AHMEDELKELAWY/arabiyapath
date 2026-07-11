@@ -84,7 +84,7 @@ export default function AdminFlashcardPacks() {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Vocabulary Packs</h1>
+        <h1 className="text-2xl font-bold">Spoken Arabic — Packs</h1>
         <Button onClick={startNew}><Plus className="w-4 h-4 mr-2" /> New Pack</Button>
       </div>
 

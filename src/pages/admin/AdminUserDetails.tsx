@@ -261,7 +261,7 @@ export default function AdminUserDetails() {
           <TabsContent value="overview" className="mt-4 space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatMini icon={Flame} label="Current Streak" value={`${flashcardStreak?.current_streak ?? 0} days`} sub={`Best: ${flashcardStreak?.longest_streak ?? 0}`} />
-              <StatMini icon={Trophy} label="Vocabulary Mastered" value={vocabMastered} sub={`${vocabLearning} in progress`} />
+              <StatMini icon={Trophy} label="Spoken Arabic Mastered" value={vocabMastered} sub={`${vocabLearning} in progress`} />
               <StatMini icon={GraduationCap} label="Quizzes Passed" value={quizzesPassed} sub={`Avg ${avgScore}%`} />
               <StatMini icon={BookOpen} label="Lessons Completed" value={progress.length} />
             </div>

@@ -230,7 +230,7 @@ export default function FlashCardStudy() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
-                  <Link to={exitHref}>Back to Vocabulary</Link>
+                  <Link to={exitHref}>Back to Spoken Arabic</Link>
                 </Button>
               </div>
             </CardContent>
@@ -252,7 +252,7 @@ export default function FlashCardStudy() {
           <h1 className="text-2xl font-bold mb-2">Session complete!</h1>
           <p className="text-muted-foreground mb-6">Great work.</p>
           <Button size="lg" asChild>
-            <Link to={exitHref}>Back to Vocabulary</Link>
+            <Link to={exitHref}>Back to Spoken Arabic</Link>
           </Button>
         </section>
       </Layout>
