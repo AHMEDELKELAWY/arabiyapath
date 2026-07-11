@@ -178,6 +178,8 @@ export function TestYourselfQuiz({ unitId }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { slug } = useParams<{ slug: string }>();
+  const hydratedRef = useRef(false);
+
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-test-quiz", unitId],
