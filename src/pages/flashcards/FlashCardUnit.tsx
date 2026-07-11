@@ -51,12 +51,15 @@ export default function FlashCardUnit() {
   const [activeTab, setActiveTab] = useState<StudyTab>(initialTab);
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
 
-  // Persist the student's last position (unit + tab) so the Beginner Units
-  // page can offer a real "Resume Learning" button. UI-only; no DB writes.
+  // Persist the student's last position (unit + tab) to the database so the
+  // Resume Learning button works across devices. Falls back to localStorage cache.
   useEffect(() => {
     if (!slug) return;
-    saveSpokenArabicResume({ unitSlug: slug, tab: activeTab as SpokenArabicTab });
-  }, [slug, activeTab]);
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: activeTab as SpokenArabicTab },
+      user?.id ?? null
+    );
+  }, [slug, activeTab, user?.id]);
 
   // Keep the URL in sync so refresh/deeplink lands on the same tab.
   useEffect(() => {
