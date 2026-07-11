@@ -94,15 +94,15 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     a.play().catch(() => {});
   };
 
-  const finishActivity = () => {
+  const finishActivity = async () => {
+    await markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
     setCompleted(true);
-    void markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
   };
 
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
   const goNext = () => {
     if (safeIdx >= total - 1) {
-      finishActivity();
+      void finishActivity();
     } else {
       setIdx((i) => i + 1);
     }

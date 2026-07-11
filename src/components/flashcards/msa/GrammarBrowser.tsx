@@ -88,12 +88,6 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
     );
   }, [slug, safeIdx, total, user?.id]);
 
-  // Mark cards reviewed on completion.
-  useEffect(() => {
-    if (!completed || !cards?.length) return;
-    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
-  }, [completed, cards, user?.id, queryClient]);
-
   const playAudio = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -102,8 +96,11 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   };
 
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
-  const goNext = () => {
-    if (safeIdx >= total - 1) setCompleted(true);
+  const goNext = async () => {
+    if (safeIdx >= total - 1) {
+      await markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
+      setCompleted(true);
+    }
     else setIdx((i) => i + 1);
   };
 

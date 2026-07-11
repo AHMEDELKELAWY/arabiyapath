@@ -114,6 +114,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [done, setDone] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Reset round when unit changes
@@ -150,13 +151,6 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
       if (clamped > 0) setI(clamped);
     }
   }, [slug, prompts.length]);
-
-  // On completion, mark every prompt's source card as reviewed and refresh
-  // all progress-related caches so Dashboard/Progress/Units update instantly.
-  useEffect(() => {
-    if (!done || !prompts.length) return;
-    void markCardsReviewed(user?.id, prompts.map((p) => p.id), queryClient);
-  }, [done, prompts, user?.id, queryClient]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
@@ -214,7 +208,12 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
       // Only count first-try correct
       if (picked === null) setScore((s) => s + 1);
       setTimeout(() => {
-        if (i + 1 >= total) setDone(true);
+        if (i + 1 >= total) {
+          setCompleting(true);
+          void markCardsReviewed(user?.id, prompts.map((p) => p.id), queryClient)
+            .then(() => setDone(true))
+            .finally(() => setCompleting(false));
+        }
         else setI(i + 1);
       }, 800);
     }
@@ -248,6 +247,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
                 key={n}
                 type="button"
                 onClick={() => pick(n)}
+                disabled={completing}
                 disabled={picked !== null && q.choices[picked].correct}
                 className={cn(
                   "relative aspect-[4/3] rounded-xl overflow-hidden border-4 transition-all",

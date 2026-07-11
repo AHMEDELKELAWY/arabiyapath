@@ -132,12 +132,6 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
     }
   }, [slug, total]);
 
-  // Mark cards reviewed on activity completion.
-  useEffect(() => {
-    if (!completed || !cards?.length) return;
-    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
-  }, [completed, cards, user?.id, queryClient]);
-
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (userBlobUrl) URL.revokeObjectURL(userBlobUrl);
@@ -421,7 +415,10 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
           </Button>
           <Button
             onClick={() => {
-              if (isLast) setCompleted(true);
+              if (isLast) {
+                void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient)
+                  .then(() => setCompleted(true));
+              }
               else setIdx((i) => Math.min(total - 1, i + 1));
             }}
             disabled={recording}

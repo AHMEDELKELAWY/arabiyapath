@@ -31,6 +31,7 @@ import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
 import {
+  loadSpokenArabicResume,
   saveSpokenArabicResume,
   type SpokenArabicTab,
 } from "@/lib/spokenArabicResume";
@@ -79,6 +80,16 @@ export default function FlashCardUnit() {
     }
     scrollToLessonTop();
   };
+
+  // A direct unit URL without an explicit tab restores the cached lesson tab.
+  // Card/question components restore their own exact index afterward.
+  useEffect(() => {
+    if (!slug || searchParams.has("tab")) return;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab !== "learn") {
+      setActiveTab(saved.tab);
+    }
+  }, [slug, searchParams]);
 
 
   const { data: unit, isLoading } = useQuery({

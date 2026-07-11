@@ -23,11 +23,12 @@ export async function markCardsReviewed(
   userId: string | null | undefined,
   cardIds: string[],
   queryClient?: QueryClient
-): Promise<void> {
-  if (!userId || !cardIds.length) return;
+): Promise<number> {
+  if (!userId || !cardIds.length) return 0;
   const uniqueIds = Array.from(new Set(cardIds.filter(Boolean)));
-  if (!uniqueIds.length) return;
+  if (!uniqueIds.length) return 0;
 
+  let reviewedCount = 0;
   try {
     const { data, error } = await (supabase as any)
       .rpc("fc_mark_cards_reviewed", { _card_ids: uniqueIds });
@@ -39,6 +40,7 @@ export async function markCardsReviewed(
         `Only ${Number(data)} of ${uniqueIds.length} cards were recorded as reviewed`
       );
     }
+    reviewedCount = Number(data);
   } catch (err) {
     console.warn("[markCardsReviewed] threw", err);
     throw err;
@@ -54,4 +56,5 @@ export async function markCardsReviewed(
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
     ]);
   }
+  return reviewedCount;
 }
