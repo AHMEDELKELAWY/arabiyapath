@@ -237,16 +237,19 @@ export default function DashboardProgress() {
             // Falls back to a single "Beginner" bucket if courses haven't loaded.
             const spokenCourse = fcCourses?.find((c) => c.slug === "spoken-arabic");
             const unitById = new Map(fcSummary.units.map((u) => [u.unit_id, u]));
-            const levelGroups =
-              spokenCourse?.levels.map((lvl) => ({
-                id: lvl.id,
-                title: lvl.title_en,
-                units: lvl.unit_ids
-                  .map((id) => unitById.get(id))
-                  .filter((u): u is NonNullable<typeof u> => !!u),
-              })) ?? [
-                { id: "beginner-fallback", title: "Beginner", units: fcSummary.units },
-              ];
+            const canonical = ["Beginner", "Intermediate", "Advanced"];
+            const dbLevels = spokenCourse?.levels ?? [];
+            const levelGroups = canonical.map((name) => {
+              const db = dbLevels.find((l) => l.title_en === name);
+              const units = db
+                ? db.unit_ids
+                    .map((id) => unitById.get(id))
+                    .filter((u): u is NonNullable<typeof u> => !!u)
+                : name === "Beginner"
+                ? fcSummary.units
+                : [];
+              return { id: db?.id ?? `fallback-${name}`, title: name, units };
+            });
 
             return (
               <AccordionItem
@@ -285,49 +288,63 @@ export default function DashboardProgress() {
                     />
                   </div>
 
-                  {levelGroups.map((group) => (
-                    <div key={group.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-foreground">
-                          {group.title}
-                        </h4>
-                        <span className="text-xs text-muted-foreground">
-                          {group.units.length} unit{group.units.length === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                      {group.units.length === 0 ? (
-                        <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-                          Coming Soon
+                  {levelGroups.map((group) => {
+                    const isBeginner = group.title === "Beginner";
+                    const gTotalCards = group.units.reduce((s, u) => s + u.total, 0);
+                    const gReviewed = group.units.reduce(
+                      (s, u) => s + (u.reviewed ?? u.mastered ?? 0),
+                      0
+                    );
+                    const gCompletedUnits = group.units.filter(
+                      (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
+                    ).length;
+                    const gPct = gTotalCards
+                      ? Math.round((gReviewed / gTotalCards) * 100)
+                      : 0;
+                    return (
+                      <div key={group.id} className="rounded-md border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-foreground">
+                            {group.title}
+                          </h4>
+                          {!isBeginner && (
+                            <span className="text-xs text-muted-foreground">
+                              🔜 Coming Soon
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        group.units.map((u) => {
-                          const reviewed = u.reviewed ?? u.mastered ?? 0;
-                          const pct = u.total
-                            ? Math.round((reviewed / u.total) * 100)
-                            : 0;
-                          return (
-                            <Link
-                              key={u.unit_id}
-                              to={`/flashcards/unit/${u.slug}?from=dashboard`}
-                              className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="font-medium truncate">{u.title}</span>
-                                <span className="text-muted-foreground">
-                                  {reviewed}/{u.total}
-                                </span>
-                              </div>
-                              <Progress value={pct} />
-                            </Link>
-                          );
-                        })
-                      )}
-                    </div>
-                  ))}
+                        {isBeginner ? (
+                          <>
+                            <Progress value={gPct} />
+                            <p className="text-xs text-muted-foreground">
+                              {gCompletedUnits}/{group.units.length} units ·{" "}
+                              {gReviewed}/{gTotalCards} cards
+                            </p>
+                            <Button asChild size="sm" className="w-full gap-2">
+                              <Link to="/flashcards/course/spoken-arabic">
+                                Continue
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Link>
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-2"
+                            disabled
+                          >
+                            Continue
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
 
-                  <Button asChild className="w-full gap-2">
-                    <Link to={fcContinueHref}>
-                      Continue
+                  <Button asChild className="w-full gap-2" variant="outline">
+                    <Link to="/flashcards/course/spoken-arabic">
+                      Open Spoken Arabic
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </Button>

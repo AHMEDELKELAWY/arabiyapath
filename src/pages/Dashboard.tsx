@@ -244,7 +244,7 @@ export default function Dashboard() {
                   : lastDate
                   ? `Last studied ${relativeDate(lastDate)}`
                   : "Not started yet";
-              const continueHref = "/dashboard/progress#flashcards-section";
+              const continueHref = "/flashcards/course/spoken-arabic";
               return (
                 <ProductCard
                   key="flashcards"
