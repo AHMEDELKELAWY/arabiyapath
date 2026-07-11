@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, H
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { saveSpokenArabicResume, loadSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
