@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { ActivityProgress } from "./ActivityProgress";
 import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface CardRow {
   id: string;
