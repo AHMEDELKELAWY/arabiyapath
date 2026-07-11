@@ -145,6 +145,7 @@ export default function FullAppRoutes() {
           <ScrollToTop />
           <TrackingProvider />
           <Suspense fallback={<PageLoader />}>
+            <ErrorBoundary name="routes">
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/free-trial" element={<FreeTrial />} />
