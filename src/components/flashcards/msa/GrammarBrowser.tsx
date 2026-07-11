@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,9 @@ import {
   GraduationCap, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveSpokenArabicResume } from "@/lib/spokenArabicResume";
+import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 
 interface GrammarCardRow {
   id: string;
