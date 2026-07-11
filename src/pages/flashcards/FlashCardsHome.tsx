@@ -319,16 +319,35 @@ export default function FlashCardsHome() {
 
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-5xl">
+          {/* Resume Learning — primary CTA above the units list. */}
+          {user && resumeTarget && (
+            <div className="mb-6">
+              {resumeTarget.done ? (
+                <Card className="border-emerald-500/40 bg-emerald-500/5">
+                  <CardContent className="py-6 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                      <Trophy className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg">Beginner Completed 🎉</p>
+                      <p className="text-sm text-muted-foreground">
+                        You've finished every Beginner unit. Review any unit below to keep it sharp.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
+                  <Link to={resumeTarget.href!}>
+                    <ArrowRight className="w-4 h-4" />
+                    Resume Learning
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
             <h2 className="text-2xl font-bold">Units</h2>
-            {user && resumeSlug && (
-              <Button asChild size="sm" className="gap-2">
-                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
-                  Continue where you left off
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            )}
           </div>
           {!units?.length ? (
             <p className="text-muted-foreground">
