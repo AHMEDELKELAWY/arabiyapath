@@ -175,9 +175,10 @@ export default function AdminUserDetails() {
   }
 
   const {
-    profile, roles, quizAttempts, purchases,
+    profile, roles, progress, quizAttempts, purchases, certificates,
     flashcardProgress, flashcardStreak,
   } = data;
+
   const isAdmin = roles.some((r) => r.role === "admin");
 
   const vocabMastered = flashcardProgress.filter((p: any) => p.status === "mastered").length;
