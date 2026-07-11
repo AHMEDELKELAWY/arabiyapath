@@ -39,6 +39,8 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-learn-cards", unitId],
