@@ -358,10 +358,16 @@ export default function FlashCardsHome() {
                   </CardContent>
                 </Card>
               ) : (
-                <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
+                <Button asChild size="lg" className="h-auto py-3 px-5 gap-3 w-full sm:w-auto">
                   <Link to={resumeTarget.href!}>
-                    <ArrowRight className="w-4 h-4" />
-                    Resume Learning
+                    <ArrowRight className="w-5 h-5 shrink-0" />
+                    <span className="flex flex-col items-start leading-tight text-left">
+                      <span className="text-xs font-medium opacity-90">Resume Learning</span>
+                      <span className="text-base font-semibold">
+                        {resumeTarget.unitTitle}
+                      </span>
+                      <span className="text-xs opacity-80">{resumeTarget.tabLabel}</span>
+                    </span>
                   </Link>
                 </Button>
               )}
