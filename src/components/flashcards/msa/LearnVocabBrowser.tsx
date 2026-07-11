@@ -67,6 +67,17 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     setFadeKey((k) => k + 1);
   }, [safeIdx]);
 
+  // Hydrate the exact card position from the saved resume state (DB → cache).
+  useEffect(() => {
+    if (hydratedRef.current || !slug || total === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "learn" && typeof saved.cardIndex === "number") {
+      const clamped = Math.min(Math.max(saved.cardIndex, 0), total - 1);
+      if (clamped > 0) setIdx(clamped);
+    }
+  }, [slug, total]);
+
   // Persist exact card position so Resume Learning restores it.
   useEffect(() => {
     if (!slug || total === 0) return;
