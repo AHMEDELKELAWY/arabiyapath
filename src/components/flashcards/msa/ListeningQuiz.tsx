@@ -40,6 +40,9 @@ interface Props {
 }
 
 export function ListeningQuiz({ unitId, onComplete }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { slug } = useParams<{ slug: string }>();
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-listening-quiz", unitId],
