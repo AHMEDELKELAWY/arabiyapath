@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import { AffiliateRoute } from "@/components/affiliate/AffiliateRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { classifyError, toastError } from "@/lib/errors";
 import "./index.css";
 import "@fontsource/fraunces/500.css";
 import "@fontsource/fraunces/600.css";
@@ -92,7 +94,42 @@ const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboa
 const AffiliateCommissions = lazy(() => import("./pages/affiliate/AffiliateCommissions"));
 const AffiliateReferrals = lazy(() => import("./pages/affiliate/AffiliateReferrals"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Retry transient failures but not auth/validation errors.
+      retry: (failureCount, error) => {
+        const kind = classifyError(error);
+        if (kind === "auth" || kind === "validation" || kind === "not_found") return false;
+        return failureCount < 2;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Only toast when a component is actively observing the query — avoids background noise.
+      if (query.state.data === undefined && query.getObserversCount() > 0) {
+        const kind = classifyError(error);
+        if (kind !== "auth" && kind !== "not_found") {
+          toastError(error, "Failed to load data");
+        }
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) => {
+      // Skip if the mutation defines its own onError handler.
+      if (mutation.options.onError) return;
+      toastError(error, "Action failed");
+    },
+  }),
+});
 
 function PageLoader() {
   return <div className="min-h-screen" />;
@@ -108,6 +145,7 @@ export default function FullAppRoutes() {
           <ScrollToTop />
           <TrackingProvider />
           <Suspense fallback={<PageLoader />}>
+            <ErrorBoundary name="routes">
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/free-trial" element={<FreeTrial />} />
@@ -179,6 +217,7 @@ export default function FullAppRoutes() {
             <Route path="/affiliate/referrals" element={<AffiliateRoute><AffiliateReferrals /></AffiliateRoute>} />
             <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
           </Suspense>
         </TooltipProvider>
       </AuthProvider>
