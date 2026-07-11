@@ -284,8 +284,8 @@ export default function FlashCardsHome() {
     // Nothing studied yet — start with the first unit
     return { href: buildUnitResumeHref(ordered[0]!.slug), done: false };
   }, [user, units, fcSummary, resumeSlug]);
-  void byId;
 
+  return (
     <Layout>
       <SEOHead
         title="ArabiyaPath Membership — Learn Arabic Every Day"
