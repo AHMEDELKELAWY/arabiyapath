@@ -217,6 +217,7 @@ export default function FullAppRoutes() {
             <Route path="/affiliate/referrals" element={<AffiliateRoute><AffiliateReferrals /></AffiliateRoute>} />
             <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
           </Suspense>
         </TooltipProvider>
       </AuthProvider>
