@@ -13,17 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  ChevronRight, 
+import {
   Lock,
   Trophy,
   BookOpen,
-  CheckCircle,
-  Gift,
-  ShoppingCart
+  ShoppingCart,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
+import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 
 export default function LevelOverview() {
   const { levelId } = useParams();
