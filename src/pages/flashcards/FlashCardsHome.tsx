@@ -1,23 +1,24 @@
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
+import { PageNav } from "@/components/learn/PageNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Trophy } from "lucide-react";
 import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { useEffect, useMemo } from "react";
-
 import {
   loadSpokenArabicResume,
   fetchSpokenArabicResume,
   buildUnitResumeHref,
   type SpokenArabicTab,
 } from "@/lib/spokenArabicResume";
-import { Trophy } from "lucide-react";
 
 const TAB_LABEL: Record<SpokenArabicTab, string> = {
   learn: "Learn",
@@ -26,7 +27,6 @@ const TAB_LABEL: Record<SpokenArabicTab, string> = {
   grammar: "Grammar",
   test: "Test Yourself",
 };
-
 
 interface UnitRow {
   id: string;
@@ -104,7 +104,6 @@ export default function FlashCardsHome() {
   });
   const packUnits = packUnitsQuery.data;
 
-  // Per-pack ownership via server RPC — single source of truth used everywhere.
   const ownedPacksQuery = useQuery({
     queryKey: ["fc-owned-packs", user?.id, packs?.map((p) => p.id).join(",") ?? ""],
     enabled: !!user && !!packs?.length,
@@ -154,7 +153,6 @@ export default function FlashCardsHome() {
     },
   });
 
-  // Compute access per unit from the server-side unit entitlement RPC.
   function unitUnlocked(unitId: string, isFree: boolean): boolean {
     if (isFree) return true;
     if (!user) return false;
@@ -171,71 +169,10 @@ export default function FlashCardsHome() {
     return !unitAccessQuery.data?.has(unitId) || unitAccessQuery.isFetching || ownedPacksQuery.isLoading;
   }
 
-  const firstFreeUnit = units?.find((u) => u.is_free) ?? null;
-  const firstPack = packs?.[0] ?? null;
-  const hasAnyPackAccess = (ownedPackIds?.size ?? 0) > 0;
-
-  // Diagnostic log requested for verification.
-  useEffect(() => {
-    if (!units) return;
-    const packAccess = (packs ?? []).map((p) => ({
-      packId: p.id,
-      packSlug: p.slug,
-      hasPackAccess: ownedPackIds?.has(p.id) ?? false,
-    }));
-    console.log("[FlashCardsHome] entitlement debug", {
-      userId: user?.id ?? null,
-      authUid: user?.id ?? null,
-      packOwnershipResult: packAccess,
-      hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
-      ownedPackIds: ownedPackIds ? Array.from(ownedPackIds) : null,
-      packUnitsCount: packUnits?.length ?? null,
-      packUnits: packUnits ?? null,
-      reactQueryCache: {
-        unitsUpdatedAt: unitsQuery.dataUpdatedAt,
-        packsUpdatedAt: packsQuery.dataUpdatedAt,
-        packUnitsUpdatedAt: packUnitsQuery.dataUpdatedAt,
-        ownedPacksUpdatedAt: ownedPacksQuery.dataUpdatedAt,
-        unitAccessUpdatedAt: unitAccessQuery.dataUpdatedAt,
-        packUnitsFetching: packUnitsQuery.isFetching,
-        ownedPacksFetching: ownedPacksQuery.isFetching,
-        unitAccessFetching: unitAccessQuery.isFetching,
-      },
-      units: units.map((u) => {
-        const entitlementLoading = unitEntitlementLoading(u.id, u.is_free);
-        const unlocked = unitUnlocked(u.id, u.is_free);
-        return {
-          slug: u.slug,
-          is_free: u.is_free,
-          currentUserId: user?.id ?? null,
-          hasPackAccess: (ownedPackIds?.size ?? 0) > 0,
-          canStudy: unitAccessQuery.data?.get(u.id) ?? null,
-          uiUnlocked: unlocked,
-          lockStateShownInUI: entitlementLoading ? "Checking access…" : unlocked ? "Start studying" : "Unlock pack",
-        };
-      }),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
-
-
   function lessonHrefForUnit(slug: string): string {
     const target = `/flashcards/unit/${slug}?from=home`;
-    // Logged-out visitors go through the /start-free lead-capture funnel
-    // (email → full signup → straight into Unit 1) instead of jumping to Signup.
     return user ? target : "/start-free";
   }
-
-  const heroFreeHref = firstFreeUnit
-    ? lessonHrefForUnit(firstFreeUnit.slug)
-    : (user ? "/flashcards" : "/start-free");
-
-  const heroPackHref =
-    firstPack?.product_id && !hasAnyPackAccess
-      ? (user
-          ? `/checkout?productId=${firstPack.product_id}`
-          : `/signup?redirect=${encodeURIComponent(`/checkout?productId=${firstPack.product_id}`)}`)
-      : null;
 
   const itemList = {
     "@context": "https://schema.org",
@@ -248,9 +185,7 @@ export default function FlashCardsHome() {
     })),
   };
 
-  // ── Resume Learning ──────────────────────────────────────────────────────
-  // Source of truth = database (user_learning_position). localStorage acts
-  // as a fast cache so the button shows something before the DB round-trip.
+  // Resume Learning — DB is source of truth; localStorage cache for instant hydration.
   const dbPositionQuery = useQuery({
     queryKey: ["fc-resume-db", user?.id],
     enabled: !!user,
@@ -280,7 +215,6 @@ export default function FlashCardsHome() {
       };
     };
 
-    // 1. DB position (authoritative), else 2. localStorage cache
     const saved = dbPositionQuery.data ?? loadSpokenArabicResume();
     if (saved) {
       const exists = unitBySlug.has(saved.unitSlug);
@@ -289,61 +223,109 @@ export default function FlashCardsHome() {
       }
     }
 
-    // 3. Next incomplete unit in order
     const ordered = [...units].sort((a, b) => a.order_index - b.order_index);
     const nextIncomplete = ordered.find((u) => !isUnitComplete(u.slug));
     if (nextIncomplete) return makeTarget(nextIncomplete.slug);
 
-    // 4. Fallback: recently studied
     if (resumeSlug && unitBySlug.has(resumeSlug)) return makeTarget(resumeSlug);
 
-    // 5. Everything done → success state
     const knownCount = summaryUnits.filter((u) => u.total > 0).length;
     if (knownCount > 0 && ordered.every((u) => isUnitComplete(u.slug))) {
       return { href: null, done: true as const, unitTitle: "", tabLabel: "" };
     }
 
-    // 6. Nothing studied yet — start with the first unit
     return makeTarget(ordered[0]!.slug);
   }, [user, units, fcSummary, resumeSlug, dbPositionQuery.data]);
+
+  // Level progress aggregates (mirrors Gulf: units complete / total).
+  const totalUnits = units?.length ?? 0;
+  const completedUnits = useMemo(() => {
+    if (!units || !fcSummary?.units) return 0;
+    const bySlug = new Map(fcSummary.units.map((u) => [u.slug, u]));
+    return units.filter((u) => {
+      const s = bySlug.get(u.slug);
+      return !!s && s.total > 0 && (s.reviewed ?? 0) >= s.total;
+    }).length;
+  }, [units, fcSummary]);
+  const overallProgress = totalUnits > 0 ? (completedUnits / totalUnits) * 100 : 0;
+
+  const totalWords = useMemo(() => {
+    if (!fcSummary?.units) return 0;
+    return fcSummary.units.reduce((sum, u) => sum + (u.total ?? 0), 0);
+  }, [fcSummary]);
+
+  useEffect(() => {
+    if (!units) return;
+    // Diagnostic entitlement log preserved from previous version.
+    console.log("[FlashCardsHome] entitlement debug", {
+      userId: user?.id ?? null,
+      ownedPackIds: ownedPackIds ? Array.from(ownedPackIds) : null,
+      packUnitsCount: packUnits?.length ?? null,
+    });
+  }, [units, packs, ownedPackIds, user?.id, packUnits, unitAccessQuery.data]);
 
   return (
     <Layout>
       <SEOHead
-        title="ArabiyaPath Membership — Learn Arabic Every Day"
-        description="Join the premium ArabiyaPath Membership. Fully vowelized Modern Standard Arabic with native audio, real images, speaking, listening, and quizzes. Unit 1 free."
+        title="Spoken Arabic — Beginner | ArabiyaPath"
+        description="Beginner Spoken Arabic units: vowelized vocabulary, native audio, listening, speaking, grammar and test-yourself for every unit."
         canonicalPath="/flashcards"
         jsonLd={itemList}
       />
-      <section className="py-16 px-4 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto max-w-5xl text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            ArabiyaPath Membership
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Learn fully vowelized Modern Standard Arabic with native audio, real images, speaking practice, listening drills, and smart quizzes — all included.
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Button size="lg" asChild>
-              <Link to={heroFreeHref}>
-                <Sparkles className="w-4 h-4 mr-2" />
-                {firstFreeUnit ? `Start Free — ${firstFreeUnit.title_en}` : "Start Free"}
-              </Link>
-            </Button>
-            {!hasAnyPackAccess && (
-              <Button size="lg" variant="outline" asChild>
-                <Link to="/pricing">Join Membership</Link>
-              </Button>
+
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+        {/* Header — mirrors Gulf LevelOverview */}
+        <div className="border-b bg-background/80 backdrop-blur-sm">
+          <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
+            <PageNav
+              crumbs={[
+                { label: "Dashboard", to: "/dashboard" },
+                { label: "Spoken Arabic", to: "/flashcards/course/spoken-arabic" },
+                { label: "Beginner" },
+              ]}
+              backTo="/flashcards/course/spoken-arabic"
+              backLabel="Back to Spoken Arabic"
+              className="mb-3 sm:mb-4"
+            />
+
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+                  Beginner
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
+                  {totalUnits} Units{totalWords > 0 ? ` • ${totalWords} Words` : ""}
+                </p>
+              </div>
+              {totalUnits > 0 && completedUnits === totalUnits && (
+                <Badge
+                  variant="default"
+                  className="gap-1 bg-green-600 text-sm sm:text-lg py-1 px-2 sm:px-3 w-fit"
+                >
+                  <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Completed
+                </Badge>
+              )}
+            </div>
+
+            {user && (
+              <div className="mt-4 sm:mt-6 space-y-2">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
+                  <span className="text-muted-foreground">Level Progress</span>
+                  <span className="font-medium">
+                    {completedUnits}/{totalUnits} units
+                  </span>
+                </div>
+                <Progress value={overallProgress} className="h-2 sm:h-3" />
+              </div>
             )}
           </div>
         </div>
-      </section>
 
-      <section className="py-12 px-4">
-        <div className="container mx-auto max-w-5xl">
-          {/* Resume Learning — primary CTA above the units list. */}
+        {/* Units + Resume */}
+        <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
           {user && resumeTarget && (
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               {resumeTarget.done ? (
                 <Card className="border-emerald-500/40 bg-emerald-500/5">
                   <CardContent className="py-6 flex items-center gap-4">
@@ -359,14 +341,16 @@ export default function FlashCardsHome() {
                   </CardContent>
                 </Card>
               ) : (
-                <Button asChild size="lg" className="h-auto py-3 px-5 gap-3 w-full sm:w-auto">
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-auto py-3 px-5 gap-3 w-full sm:w-auto"
+                >
                   <Link to={resumeTarget.href!}>
                     <ArrowRight className="w-5 h-5 shrink-0" />
                     <span className="flex flex-col items-start leading-tight text-left">
                       <span className="text-xs font-medium opacity-90">Resume Learning</span>
-                      <span className="text-base font-semibold">
-                        {resumeTarget.unitTitle}
-                      </span>
+                      <span className="text-base font-semibold">{resumeTarget.unitTitle}</span>
                       <span className="text-xs opacity-80">{resumeTarget.tabLabel}</span>
                     </span>
                   </Link>
@@ -374,9 +358,7 @@ export default function FlashCardsHome() {
               )}
             </div>
           )}
-          <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
-            <h2 className="text-2xl font-bold">Units</h2>
-          </div>
+
           {!units?.length ? (
             <p className="text-muted-foreground">
               Content is being prepared. Check back soon.
@@ -418,7 +400,7 @@ export default function FlashCardsHome() {
                   badge = u.is_free ? "free" : "in-progress";
                 } else {
                   status = "not-started";
-                  badge = u.is_free ? "free" : "unlocked";
+                  badge = u.is_free ? "free" : null;
                 }
 
                 return (
@@ -432,17 +414,16 @@ export default function FlashCardsHome() {
                     badge={badge}
                     progress={
                       user && total > 0 && unlocked
-                        ? { completed: reviewed, total, label: "cards" }
+                        ? { completed: reviewed, total, label: "words" }
                         : null
                     }
                   />
                 );
               })}
             </div>
-
           )}
         </div>
-      </section>
+      </div>
     </Layout>
   );
 }
