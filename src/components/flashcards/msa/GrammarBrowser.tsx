@@ -41,6 +41,9 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
   const [fadeKey, setFadeKey] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["fc-grammar-cards", unitId],
