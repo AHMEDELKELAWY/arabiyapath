@@ -6,6 +6,7 @@ import {
   useFlashcardsDashboard,
   useFlashcardsResumeSlug,
 } from "@/hooks/useFlashcardsDashboard";
+import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function DashboardProgress() {
   const { levelsByDialect, hasLevelAccess, isLoading } = useDashboardData();
   const { data: fcSummary, isLoading: fcLoading } = useFlashcardsDashboard();
   const { data: fcResumeSlug } = useFlashcardsResumeSlug();
+  const { data: fcCourses } = useFlashcardCourseStructure();
 
   // NOTE: All hooks must run unconditionally on every render. Do NOT add early
   // returns above this line — doing so causes React error #310 (hook order
