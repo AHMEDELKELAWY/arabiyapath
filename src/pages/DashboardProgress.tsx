@@ -237,16 +237,19 @@ export default function DashboardProgress() {
             // Falls back to a single "Beginner" bucket if courses haven't loaded.
             const spokenCourse = fcCourses?.find((c) => c.slug === "spoken-arabic");
             const unitById = new Map(fcSummary.units.map((u) => [u.unit_id, u]));
-            const levelGroups =
-              spokenCourse?.levels.map((lvl) => ({
-                id: lvl.id,
-                title: lvl.title_en,
-                units: lvl.unit_ids
-                  .map((id) => unitById.get(id))
-                  .filter((u): u is NonNullable<typeof u> => !!u),
-              })) ?? [
-                { id: "beginner-fallback", title: "Beginner", units: fcSummary.units },
-              ];
+            const canonical = ["Beginner", "Intermediate", "Advanced"];
+            const dbLevels = spokenCourse?.levels ?? [];
+            const levelGroups = canonical.map((name) => {
+              const db = dbLevels.find((l) => l.title_en === name);
+              const units = db
+                ? db.unit_ids
+                    .map((id) => unitById.get(id))
+                    .filter((u): u is NonNullable<typeof u> => !!u)
+                : name === "Beginner"
+                ? fcSummary.units
+                : [];
+              return { id: db?.id ?? `fallback-${name}`, title: name, units };
+            });
 
             return (
               <AccordionItem
