@@ -9,7 +9,7 @@ import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardsResumeSlug, useFlashcardsDashboard } from "@/hooks/useFlashcardsDashboard";
 import { useEffect, useMemo } from "react";
-import { useQuery as useQueryAlias } from "@tanstack/react-query";
+
 import {
   loadSpokenArabicResume,
   fetchSpokenArabicResume,
