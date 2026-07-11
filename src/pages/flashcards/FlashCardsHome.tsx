@@ -41,6 +41,7 @@ interface PackUnitRow {
 export default function FlashCardsHome() {
   const { user } = useAuth();
   const { data: resumeSlug } = useFlashcardsResumeSlug();
+  const { data: fcSummary } = useFlashcardsDashboard();
 
   const unitsQuery = useQuery({
     queryKey: ["fc-units-public"],
