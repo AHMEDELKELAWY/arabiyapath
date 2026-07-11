@@ -41,8 +41,34 @@ export default function FlashCardUnit() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<StudyTab>("learn");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = ((): StudyTab => {
+    const t = searchParams.get("tab");
+    return t === "listening" || t === "speaking" || t === "grammar" || t === "test"
+      ? t
+      : "learn";
+  })();
+  const [activeTab, setActiveTab] = useState<StudyTab>(initialTab);
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
+
+  // Persist the student's last position (unit + tab) so the Beginner Units
+  // page can offer a real "Resume Learning" button. UI-only; no DB writes.
+  useEffect(() => {
+    if (!slug) return;
+    saveSpokenArabicResume({ unitSlug: slug, tab: activeTab as SpokenArabicTab });
+  }, [slug, activeTab]);
+
+  // Keep the URL in sync so refresh/deeplink lands on the same tab.
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (current !== activeTab) {
+      const next = new URLSearchParams(searchParams);
+      if (activeTab === "learn") next.delete("tab");
+      else next.set("tab", activeTab);
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const scrollToLessonTop = () => {
     requestAnimationFrame(() => {
