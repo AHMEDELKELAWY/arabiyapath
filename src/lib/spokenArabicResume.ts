@@ -1,13 +1,12 @@
 /**
  * Spoken Arabic — Resume Learning helper.
  *
- * Persists the student's last position in Spoken Arabic study to
- * localStorage so the "Resume Learning" button can drop them back
- * into the exact tab of the exact unit they left.
- *
- * Storage is UI-only. Progress, streaks, SRS scheduling and
- * entitlements are unaffected.
+ * The **database** (`public.user_learning_position`) is the source of truth
+ * so Resume works across devices. localStorage is kept as a fast local cache
+ * for instant hydration before the DB round-trip completes.
  */
+
+import { supabase } from "@/integrations/supabase/client";
 
 export type SpokenArabicTab =
   | "learn"
@@ -20,11 +19,15 @@ export interface SpokenArabicResumeState {
   unitSlug: string;
   tab: SpokenArabicTab;
   cardIndex?: number;
+  questionIndex?: number;
   updatedAt: number;
 }
 
 const KEY = "arabiyapath.spokenArabic.resume.v1";
+const COURSE_SLUG = "spoken-arabic";
+const LEVEL_SLUG = "beginner";
 
+// ── localStorage cache ────────────────────────────────────────────────────
 export function loadSpokenArabicResume(): SpokenArabicResumeState | null {
   if (typeof window === "undefined") return null;
   try {
@@ -38,9 +41,7 @@ export function loadSpokenArabicResume(): SpokenArabicResumeState | null {
   }
 }
 
-export function saveSpokenArabicResume(
-  next: Omit<SpokenArabicResumeState, "updatedAt">
-): void {
+function writeCache(next: Omit<SpokenArabicResumeState, "updatedAt">): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(
@@ -67,4 +68,65 @@ export function buildUnitResumeHref(
 ): string {
   const base = `/flashcards/unit/${unitSlug}`;
   return tab ? `${base}?tab=${tab}` : base;
+}
+
+// ── Database sync (source of truth) ───────────────────────────────────────
+
+/**
+ * Persist the student's position to the database (upsert) and mirror to the
+ * localStorage cache. Silent on error — resume is a UX convenience, not
+ * critical path.
+ */
+export async function saveSpokenArabicResume(
+  next: Omit<SpokenArabicResumeState, "updatedAt">,
+  userId?: string | null
+): Promise<void> {
+  writeCache(next);
+  if (!userId) return;
+  try {
+    await (supabase as any)
+      .from("user_learning_position")
+      .upsert(
+        {
+          user_id: userId,
+          course_slug: COURSE_SLUG,
+          level_slug: LEVEL_SLUG,
+          unit_slug: next.unitSlug,
+          tab: next.tab,
+          card_index: next.cardIndex ?? null,
+          question_index: next.questionIndex ?? null,
+        },
+        { onConflict: "user_id,course_slug" }
+      );
+  } catch (err) {
+    console.warn("[spokenArabicResume] db upsert failed", err);
+  }
+}
+
+/**
+ * Read the authoritative position from the database. Falls back to `null`
+ * so callers can then consult the cache or compute a default.
+ */
+export async function fetchSpokenArabicResume(
+  userId: string
+): Promise<SpokenArabicResumeState | null> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from("user_learning_position")
+      .select("unit_slug, tab, card_index, question_index, updated_at")
+      .eq("user_id", userId)
+      .eq("course_slug", COURSE_SLUG)
+      .maybeSingle();
+    if (error || !data) return null;
+    const tab = (data.tab ?? "learn") as SpokenArabicTab;
+    return {
+      unitSlug: data.unit_slug,
+      tab,
+      cardIndex: data.card_index ?? undefined,
+      questionIndex: data.question_index ?? undefined,
+      updatedAt: data.updated_at ? new Date(data.updated_at).getTime() : Date.now(),
+    };
+  } catch {
+    return null;
+  }
 }
