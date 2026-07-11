@@ -66,6 +66,15 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     setFadeKey((k) => k + 1);
   }, [safeIdx]);
 
+  // Persist exact card position so Resume Learning restores it.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "learn", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
   const playAudio = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -73,10 +82,15 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
     a.play().catch(() => {});
   };
 
+  const finishActivity = () => {
+    setCompleted(true);
+    void markCardsReviewed(user?.id, (cards ?? []).map((c) => c.id), queryClient);
+  };
+
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
   const goNext = () => {
     if (safeIdx >= total - 1) {
-      setCompleted(true);
+      finishActivity();
     } else {
       setIdx((i) => i + 1);
     }
