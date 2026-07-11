@@ -247,8 +247,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
                 key={n}
                 type="button"
                 onClick={() => pick(n)}
-                disabled={completing}
-                disabled={picked !== null && q.choices[picked].correct}
+                disabled={completing || (picked !== null && q.choices[picked].correct)}
                 className={cn(
                   "relative aspect-[4/3] rounded-xl overflow-hidden border-4 transition-all",
                   showCorrect && "border-green-500 ring-2 ring-green-500/40",
