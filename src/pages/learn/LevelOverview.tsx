@@ -13,17 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  ChevronRight, 
+import {
   Lock,
   Trophy,
   BookOpen,
-  CheckCircle,
-  Gift,
-  ShoppingCart
+  ShoppingCart,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { isFreeTrial } from "@/lib/accessControl";
+import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 
 export default function LevelOverview() {
   const { levelId } = useParams();
@@ -190,97 +187,47 @@ export default function LevelOverview() {
           <div className="grid gap-3 sm:gap-4">
             {units.map((unit, index) => {
               const progress = progressData?.[unit.id];
-              const isCompleted = progress?.quizPassed;
-              const lessonProgress = progress 
-                ? (progress.completed / progress.total) * 100 
-                : 0;
+              const isCompleted = !!progress?.quizPassed;
               const isFreeTrialUnit = isFreeTrial(level.order_index, unit.order_index);
-              // Unit is locked if: not free trial AND (not logged in OR no purchase access)
               const isLocked = !isFreeTrialUnit && (!user || !hasPurchaseAccess);
+              const isInProgress =
+                !!progress && progress.completed > 0 && !isCompleted;
+
+              let status: UnitCardStatus;
+              let badge: UnitCardBadge;
+              if (isLocked) {
+                status = "locked";
+                badge = "locked";
+              } else if (isCompleted) {
+                status = "completed";
+                badge = "completed";
+              } else if (isInProgress) {
+                status = "in-progress";
+                badge = isFreeTrialUnit ? "free" : "in-progress";
+              } else {
+                status = "not-started";
+                badge = isFreeTrialUnit ? "free" : null;
+              }
 
               return (
-                <Card 
+                <UnitCard
                   key={unit.id}
-                  className={cn(
-                    "transition-all hover:shadow-md",
-                    isCompleted && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20",
-                    isFreeTrialUnit && !isCompleted && "border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/20",
-                    isLocked && "opacity-50"
-                  )}
-                >
-                  <CardContent className="p-0">
-                    <Link
-                      to={isLocked ? "#" : `/learn/unit/${unit.id}`}
-                      className={cn(
-                        "flex items-center gap-3 sm:gap-4 p-4 sm:p-6",
-                        isLocked && "pointer-events-none"
-                      )}
-                    >
-                      {/* Unit Number */}
-                      <div className={cn(
-                        "w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-base sm:text-lg shrink-0",
-                        isCompleted
-                          ? "bg-green-600 text-white"
-                          : isLocked
-                          ? "bg-muted text-muted-foreground"
-                          : isFreeTrialUnit
-                          ? "bg-amber-500 text-white"
-                          : "bg-primary/10 text-primary"
-                      )}>
-                        {isCompleted ? (
-                          <CheckCircle className="h-5 w-5 sm:h-7 sm:w-7" />
-                        ) : isLocked ? (
-                          <Lock className="h-4 w-4 sm:h-6 sm:w-6" />
-                        ) : isFreeTrialUnit ? (
-                          <Gift className="h-4 w-4 sm:h-6 sm:w-6" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-
-                      {/* Unit Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start sm:items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <h3 className="font-semibold text-base sm:text-lg text-foreground line-clamp-1">
-                            {unit.title}
-                          </h3>
-                          {isFreeTrialUnit && !isCompleted && (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5">
-                              <Gift className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                              Free
-                            </Badge>
-                          )}
-                          {isCompleted && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5">
-                              <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                              Done
-                            </Badge>
-                          )}
-                        </div>
-                        {unit.description && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-1">
-                            {unit.description}
-                          </p>
-                        )}
-                        
-                        {/* Progress Bar */}
-                        {user && progress && !isLocked && (
-                          <div className="mt-2 sm:mt-3 flex items-center gap-2 sm:gap-3">
-                            <Progress value={lessonProgress} className="flex-1 h-1 sm:h-1.5" />
-                            <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
-                              {progress.completed}/{progress.total}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                    </Link>
-                  </CardContent>
-                </Card>
+                  index={index + 1}
+                  title={unit.title}
+                  description={unit.description}
+                  href={`/learn/unit/${unit.id}`}
+                  status={status}
+                  badge={badge}
+                  progress={
+                    user && progress && !isLocked
+                      ? { completed: progress.completed, total: progress.total }
+                      : null
+                  }
+                />
               );
             })}
           </div>
+
 
           {/* Purchase prompt for logged-in users without access */}
           {user && !hasPurchaseAccess && (
