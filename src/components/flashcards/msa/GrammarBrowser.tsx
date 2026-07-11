@@ -67,6 +67,21 @@ export function GrammarBrowser({ unitId, onComplete }: Props) {
 
   useEffect(() => { setFadeKey((k) => k + 1); }, [safeIdx]);
 
+  // Persist exact card position for Resume Learning.
+  useEffect(() => {
+    if (!slug || total === 0) return;
+    saveSpokenArabicResume(
+      { unitSlug: slug, tab: "grammar", cardIndex: safeIdx },
+      user?.id ?? null
+    );
+  }, [slug, safeIdx, total, user?.id]);
+
+  // Mark cards reviewed on completion.
+  useEffect(() => {
+    if (!completed || !cards?.length) return;
+    void markCardsReviewed(user?.id, cards.map((c) => c.id), queryClient);
+  }, [completed, cards, user?.id, queryClient]);
+
   const playAudio = () => {
     const a = audioRef.current;
     if (!a) return;
