@@ -321,7 +321,7 @@ export default function DashboardProgress() {
                               {gReviewed}/{gTotalCards} cards
                             </p>
                             <Button asChild size="sm" className="w-full gap-2">
-                              <Link to="/flashcards/course/spoken-arabic">
+                              <Link to="/flashcards">
                                 Continue
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </Link>
@@ -341,13 +341,6 @@ export default function DashboardProgress() {
                       </div>
                     );
                   })}
-
-                  <Button asChild className="w-full gap-2" variant="outline">
-                    <Link to="/flashcards/course/spoken-arabic">
-                      Open Spoken Arabic
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
                 </AccordionContent>
               </AccordionItem>
             );

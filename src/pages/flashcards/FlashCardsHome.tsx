@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Sparkles, BookOpen, Loader2 } from "lucide-react";
+import { Lock, Sparkles, BookOpen, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFlashcardsResumeSlug } from "@/hooks/useFlashcardsDashboard";
 import { useEffect } from "react";
 
 
@@ -37,6 +38,7 @@ interface PackUnitRow {
 
 export default function FlashCardsHome() {
   const { user } = useAuth();
+  const { data: resumeSlug } = useFlashcardsResumeSlug();
 
   const unitsQuery = useQuery({
     queryKey: ["fc-units-public"],
@@ -262,7 +264,17 @@ export default function FlashCardsHome() {
 
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-5xl">
-          <h2 className="text-2xl font-bold mb-6">Units</h2>
+          <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+            <h2 className="text-2xl font-bold">Units</h2>
+            {user && resumeSlug && (
+              <Button asChild size="sm" className="gap-2">
+                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
+                  Continue where you left off
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+            )}
+          </div>
           {!units?.length ? (
             <p className="text-muted-foreground">
               Content is being prepared. Check back soon.
@@ -321,6 +333,16 @@ export default function FlashCardsHome() {
                   </Link>
                 );
               })}
+            </div>
+          )}
+          {user && resumeSlug && units && units.length > 0 && (
+            <div className="mt-8 flex justify-center">
+              <Button asChild size="lg" className="gap-2">
+                <Link to={`/flashcards/unit/${resumeSlug}?from=home`}>
+                  Continue where you left off
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
             </div>
           )}
         </div>
