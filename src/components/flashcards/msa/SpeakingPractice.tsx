@@ -64,6 +64,9 @@ function similarity(a: string, b: string): number {
 }
 
 export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "test" }: Props) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { slug } = useParams<{ slug: string }>();
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [flipped, setFlipped] = useState(false);
