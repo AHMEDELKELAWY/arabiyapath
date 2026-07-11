@@ -285,49 +285,63 @@ export default function DashboardProgress() {
                     />
                   </div>
 
-                  {levelGroups.map((group) => (
-                    <div key={group.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-foreground">
-                          {group.title}
-                        </h4>
-                        <span className="text-xs text-muted-foreground">
-                          {group.units.length} unit{group.units.length === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                      {group.units.length === 0 ? (
-                        <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-                          Coming Soon
+                  {levelGroups.map((group) => {
+                    const isBeginner = group.title === "Beginner";
+                    const gTotalCards = group.units.reduce((s, u) => s + u.total, 0);
+                    const gReviewed = group.units.reduce(
+                      (s, u) => s + (u.reviewed ?? u.mastered ?? 0),
+                      0
+                    );
+                    const gCompletedUnits = group.units.filter(
+                      (u) => u.total > 0 && (u.reviewed ?? 0) >= u.total
+                    ).length;
+                    const gPct = gTotalCards
+                      ? Math.round((gReviewed / gTotalCards) * 100)
+                      : 0;
+                    return (
+                      <div key={group.id} className="rounded-md border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-foreground">
+                            {group.title}
+                          </h4>
+                          {!isBeginner && (
+                            <span className="text-xs text-muted-foreground">
+                              🔜 Coming Soon
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        group.units.map((u) => {
-                          const reviewed = u.reviewed ?? u.mastered ?? 0;
-                          const pct = u.total
-                            ? Math.round((reviewed / u.total) * 100)
-                            : 0;
-                          return (
-                            <Link
-                              key={u.unit_id}
-                              to={`/flashcards/unit/${u.slug}?from=dashboard`}
-                              className="block rounded-md border p-3 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="font-medium truncate">{u.title}</span>
-                                <span className="text-muted-foreground">
-                                  {reviewed}/{u.total}
-                                </span>
-                              </div>
-                              <Progress value={pct} />
-                            </Link>
-                          );
-                        })
-                      )}
-                    </div>
-                  ))}
+                        {isBeginner ? (
+                          <>
+                            <Progress value={gPct} />
+                            <p className="text-xs text-muted-foreground">
+                              {gCompletedUnits}/{group.units.length} units ·{" "}
+                              {gReviewed}/{gTotalCards} cards
+                            </p>
+                            <Button asChild size="sm" className="w-full gap-2">
+                              <Link to="/flashcards/course/spoken-arabic">
+                                Continue
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Link>
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-2"
+                            disabled
+                          >
+                            Continue
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
 
-                  <Button asChild className="w-full gap-2">
-                    <Link to={fcContinueHref}>
-                      Continue
+                  <Button asChild className="w-full gap-2" variant="outline">
+                    <Link to="/flashcards/course/spoken-arabic">
+                      Open Spoken Arabic
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </Button>
