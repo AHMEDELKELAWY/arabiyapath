@@ -30,6 +30,10 @@ import { ListeningQuiz } from "@/components/flashcards/msa/ListeningQuiz";
 import { SpeakingPractice } from "@/components/flashcards/msa/SpeakingPractice";
 import { TestYourselfQuiz } from "@/components/flashcards/msa/TestYourselfQuiz";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
+import {
+  saveSpokenArabicResume,
+  type SpokenArabicTab,
+} from "@/lib/spokenArabicResume";
 
 type StudyTab = "learn" | "listening" | "speaking" | "grammar" | "test";
 
