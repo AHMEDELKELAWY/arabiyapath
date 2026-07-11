@@ -140,6 +140,17 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     );
   }, [slug, i, prompts.length, user?.id]);
 
+  // Hydrate exact question position from saved resume state (once per mount).
+  useEffect(() => {
+    if (hydratedRef.current || !slug || prompts.length === 0) return;
+    hydratedRef.current = true;
+    const saved = loadSpokenArabicResume();
+    if (saved?.unitSlug === slug && saved.tab === "listening" && typeof saved.questionIndex === "number") {
+      const clamped = Math.min(Math.max(saved.questionIndex, 0), prompts.length - 1);
+      if (clamped > 0) setI(clamped);
+    }
+  }, [slug, prompts.length]);
+
   // On completion, mark every prompt's source card as reviewed and refresh
   // all progress-related caches so Dashboard/Progress/Units update instantly.
   useEffect(() => {
