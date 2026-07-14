@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendTransactionalEmail, getUserContact, planLabel, formatDate } from "../_shared/notify-email.ts";
 
 /**
  * Manage a user's own PayPal subscription from ArabiyaPath.
@@ -129,6 +130,26 @@ serve(async (req) => {
           cancelled_at: nowIso,
         }).eq("id", row.id);
         if (!isFreeSub) await refreshSubscription(supabase, subId, accessToken!);
+        // Email: cancellation confirmation
+        {
+          const contact = await getUserContact(supabase, row.user_id);
+          const { data: fresh } = await supabase
+            .from("membership_subscriptions")
+            .select("next_billing_at, expires_at")
+            .eq("id", row.id)
+            .maybeSingle();
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-cancelled",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-cancelled-manual-${row.id}-${Math.floor(Date.now()/60000)}`,
+              templateData: {
+                name: contact.name,
+                accessUntil: formatDate(fresh?.expires_at || fresh?.next_billing_at),
+              },
+            });
+          }
+        }
         break;
       }
       case "suspend": {
@@ -146,6 +167,21 @@ serve(async (req) => {
           reason: reason || "User resumed from ArabiyaPath dashboard",
         });
         await refreshSubscription(supabase, subId, accessToken!);
+        // Email: welcome back
+        {
+          const contact = await getUserContact(supabase, row.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-resumed",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-resumed-${row.id}-${Math.floor(Date.now()/60000)}`,
+              templateData: {
+                name: contact.name,
+                plan: planLabel(row.plan),
+              },
+            });
+          }
+        }
         break;
       }
       case "revise": {
@@ -162,17 +198,36 @@ serve(async (req) => {
           },
         });
         const approvalUrl = (revised?.links || []).find((l: any) => l.rel === "approve")?.href ?? null;
+        const previousPlan = row.plan;
         await supabase.from("membership_subscriptions").update({
           plan: newPlan,
           paypal_plan_id: targetPlanId,
         }).eq("id", row.id);
         await refreshSubscription(supabase, subId, accessToken!);
+        // Email: plan changed
+        {
+          const contact = await getUserContact(supabase, row.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-plan-changed",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-plan-${row.id}-${newPlan}-${Math.floor(Date.now()/60000)}`,
+              templateData: {
+                name: contact.name,
+                previousPlan: planLabel(previousPlan),
+                newPlan: planLabel(newPlan),
+                effectiveDate: formatDate(new Date().toISOString()),
+              },
+            });
+          }
+        }
         extra = { approvalUrl };
         break;
       }
       default:
         throw new Error(`Unsupported action: ${action}`);
     }
+
 
     return new Response(JSON.stringify({ ok: true, action, ...extra }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -27,6 +27,8 @@ import "@fontsource/reem-kufi/400.css";
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Dialects = lazy(() => import("./pages/Dialects"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -160,6 +162,8 @@ export default function FullAppRoutes() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/start-free" element={<StartFree />} />
             <Route path="/become-affiliate" element={<BecomeAffiliate />} />
             <Route path="/partner/:slug" element={<PartnerLanding />} />

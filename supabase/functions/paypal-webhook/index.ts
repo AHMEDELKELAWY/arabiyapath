@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendTransactionalEmail, getUserContact, formatDate, planLabel } from "../_shared/notify-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -348,30 +349,60 @@ serve(async (req) => {
         if (error) console.error("Webhook subscription update error:", error);
         else console.log(`Webhook: subscription ${subscriptionId} -> ${newStatus}`);
 
+        // Look up subscription owner for email notifications
+        const { data: subForEmail } = await supabase
+          .from("membership_subscriptions")
+          .select("id, user_id, plan, next_billing_at")
+          .eq("paypal_subscription_id", subscriptionId)
+          .maybeSingle();
+
         // Safety net: on ACTIVATED, ensure a purchases row exists so the
         // customer appears in Admin → Purchases and dashboard immediately,
         // even if PAYMENT.SALE.COMPLETED is delayed. Idempotent.
-        if (body.event_type === "BILLING.SUBSCRIPTION.ACTIVATED") {
-          const { data: subRow } = await supabase
-            .from("membership_subscriptions")
-            .select("id")
-            .eq("paypal_subscription_id", subscriptionId)
-            .maybeSingle();
-          if (subRow) {
-            const { count } = await supabase
-              .from("purchases")
-              .select("id", { count: "exact", head: true })
-              .eq("subscription_id", subRow.id);
-            if ((count ?? 0) === 0) {
-              const { error: rpcErr } = await supabase.rpc("record_membership_purchase", {
-                _subscription_paypal_id: subscriptionId,
-                _sale_id: `SUB-ACTIVATED-${subscriptionId}`,
-                _amount: 0,
-                _currency: "USD",
-              });
-              if (rpcErr) console.error("record_membership_purchase (activation) error:", rpcErr);
-              else console.log(`Webhook: activation-stub purchase created for ${subscriptionId}`);
-            }
+        if (body.event_type === "BILLING.SUBSCRIPTION.ACTIVATED" && subForEmail) {
+          const { count } = await supabase
+            .from("purchases")
+            .select("id", { count: "exact", head: true })
+            .eq("subscription_id", subForEmail.id);
+          if ((count ?? 0) === 0) {
+            const { error: rpcErr } = await supabase.rpc("record_membership_purchase", {
+              _subscription_paypal_id: subscriptionId,
+              _sale_id: `SUB-ACTIVATED-${subscriptionId}`,
+              _amount: 0,
+              _currency: "USD",
+            });
+            if (rpcErr) console.error("record_membership_purchase (activation) error:", rpcErr);
+            else console.log(`Webhook: activation-stub purchase created for ${subscriptionId}`);
+          }
+
+          // Send membership-activated email (idempotent via idempotencyKey)
+          const contact = await getUserContact(supabase, subForEmail.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-activated",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-activated-${subscriptionId}`,
+              templateData: {
+                name: contact.name,
+                plan: planLabel(subForEmail.plan),
+                billingPeriod: planLabel(subForEmail.plan),
+              },
+            });
+          }
+        }
+
+        if (body.event_type === "BILLING.SUBSCRIPTION.CANCELLED" && subForEmail) {
+          const contact = await getUserContact(supabase, subForEmail.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-cancelled",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-cancelled-${subscriptionId}-${Math.floor(Date.now()/1000)}`,
+              templateData: {
+                name: contact.name,
+                accessUntil: formatDate(sub.billing_info?.next_billing_time),
+              },
+            });
           }
         }
         break;
@@ -469,6 +500,54 @@ serve(async (req) => {
             console.log(`Webhook: renewal sale for sub ${subRow.id}, no commission`);
           }
         }
+
+        // Email: receipt for every payment; also renewal notice on repeat payments
+        {
+          const contact = await getUserContact(supabase, subRow.user_id);
+          if (contact.email) {
+            // Count real payments (excluding activation stub) — the current sale is already recorded.
+            const { count: paidCount } = await supabase
+              .from("purchases")
+              .select("id", { count: "exact", head: true })
+              .eq("subscription_id", subRow.id)
+              .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`);
+            const isFirstPayment = (paidCount ?? 0) <= 1;
+
+            await sendTransactionalEmail({
+              templateName: "purchase-receipt",
+              recipientEmail: contact.email,
+              idempotencyKey: `receipt-${saleId}`,
+              templateData: {
+                name: contact.name,
+                productName: `ArabiyaPath Membership (${planLabel(subRow.plan)})`,
+                amount: saleAmount.toFixed(2),
+                currency: saleCurrency,
+                invoiceDate: formatDate(new Date().toISOString()),
+                transactionId: saleId,
+              },
+            });
+
+            if (!isFirstPayment) {
+              // Fetch fresh next_billing to include in the renewal email
+              const { data: freshSub } = await supabase
+                .from("membership_subscriptions")
+                .select("next_billing_at")
+                .eq("id", subRow.id)
+                .maybeSingle();
+              await sendTransactionalEmail({
+                templateName: "membership-renewed",
+                recipientEmail: contact.email,
+                idempotencyKey: `mem-renewed-${saleId}`,
+                templateData: {
+                  name: contact.name,
+                  plan: planLabel(subRow.plan),
+                  renewalDate: formatDate(new Date().toISOString()),
+                  nextBillingDate: formatDate(freshSub?.next_billing_at),
+                },
+              });
+            }
+          }
+        }
         break;
       }
 
@@ -477,6 +556,28 @@ serve(async (req) => {
         const subscriptionId = body.resource?.billing_agreement_id;
         if (subscriptionId) {
           console.log(`Webhook: sale ${body.event_type} for subscription ${subscriptionId}`);
+          if (body.event_type === "PAYMENT.SALE.DENIED") {
+            const { data: subRow } = await supabase
+              .from("membership_subscriptions")
+              .select("user_id, plan")
+              .eq("paypal_subscription_id", subscriptionId)
+              .maybeSingle();
+            if (subRow) {
+              const contact = await getUserContact(supabase, subRow.user_id);
+              if (contact.email) {
+                await sendTransactionalEmail({
+                  templateName: "payment-failed",
+                  recipientEmail: contact.email,
+                  idempotencyKey: `pay-failed-${body.resource?.id || subscriptionId}-${Math.floor(Date.now()/60000)}`,
+                  templateData: {
+                    name: contact.name,
+                    amount: body.resource?.amount?.total,
+                    currency: body.resource?.amount?.currency,
+                  },
+                });
+              }
+            }
+          }
         }
         break;
       }
