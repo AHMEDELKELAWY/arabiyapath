@@ -500,6 +500,55 @@ serve(async (req) => {
             console.log(`Webhook: renewal sale for sub ${subRow.id}, no commission`);
           }
         }
+
+        // Email: receipt for every payment; also renewal notice on repeat payments
+        {
+          const contact = await getUserContact(supabase, subRow.user_id);
+          if (contact.email) {
+            const isFirstPayment = !subRow.affiliate_id
+              ? // count purchases (excluding activation stub) — first real payment?
+                ((await supabase
+                  .from("purchases")
+                  .select("id", { count: "exact", head: true })
+                  .eq("subscription_id", subRow.id)
+                  .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`)).count ?? 0) <= 1
+              : true;
+
+            await sendTransactionalEmail({
+              templateName: "purchase-receipt",
+              recipientEmail: contact.email,
+              idempotencyKey: `receipt-${saleId}`,
+              templateData: {
+                name: contact.name,
+                productName: `ArabiyaPath Membership (${planLabel(subRow.plan)})`,
+                amount: saleAmount.toFixed(2),
+                currency: saleCurrency,
+                invoiceDate: formatDate(new Date().toISOString()),
+                transactionId: saleId,
+              },
+            });
+
+            if (!isFirstPayment) {
+              // Fetch fresh next_billing to include in the renewal email
+              const { data: freshSub } = await supabase
+                .from("membership_subscriptions")
+                .select("next_billing_at")
+                .eq("id", subRow.id)
+                .maybeSingle();
+              await sendTransactionalEmail({
+                templateName: "membership-renewed",
+                recipientEmail: contact.email,
+                idempotencyKey: `mem-renewed-${saleId}`,
+                templateData: {
+                  name: contact.name,
+                  plan: planLabel(subRow.plan),
+                  renewalDate: formatDate(new Date().toISOString()),
+                  nextBillingDate: formatDate(freshSub?.next_billing_at),
+                },
+              });
+            }
+          }
+        }
         break;
       }
 
@@ -508,6 +557,28 @@ serve(async (req) => {
         const subscriptionId = body.resource?.billing_agreement_id;
         if (subscriptionId) {
           console.log(`Webhook: sale ${body.event_type} for subscription ${subscriptionId}`);
+          if (body.event_type === "PAYMENT.SALE.DENIED") {
+            const { data: subRow } = await supabase
+              .from("membership_subscriptions")
+              .select("user_id, plan")
+              .eq("paypal_subscription_id", subscriptionId)
+              .maybeSingle();
+            if (subRow) {
+              const contact = await getUserContact(supabase, subRow.user_id);
+              if (contact.email) {
+                await sendTransactionalEmail({
+                  templateName: "payment-failed",
+                  recipientEmail: contact.email,
+                  idempotencyKey: `pay-failed-${body.resource?.id || subscriptionId}-${Math.floor(Date.now()/60000)}`,
+                  templateData: {
+                    name: contact.name,
+                    amount: body.resource?.amount?.total,
+                    currency: body.resource?.amount?.currency,
+                  },
+                });
+              }
+            }
+          }
         }
         break;
       }
