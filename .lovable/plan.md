@@ -1,166 +1,95 @@
-# Phase 2 — PayPal Membership Subscriptions
+# Implementation Plan
 
-Build a real recurring-subscription system for **ArabiyaPath Membership** using LIVE PayPal Plan IDs, **completely separate** from the existing one-time course checkout, products, purchases, and course affiliate flow.
+This is a large, multi-part request. I'll implement it in the order below. All work is additive and reuses the existing `enqueue_email` → `transactional_emails` → `process-email-queue` infrastructure and the same branded style as the auth templates (teal `#1a7a5c`, gold accent, logo, Reply-To `admin@arabiyapath.com`, From `ArabiyaPath <no-reply@notify.arabiyapath.com>`).
 
-## Scope guarantee (untouched)
+---
 
-- `paypal-create-order`, `paypal-capture-order`, `paypal-webhook` order paths
-- `purchases`, `pending_orders`, `products`, `coupons` (existing behavior)
-- Course checkout, Gulf sales page, flashcard packs
-- Course affiliate attribution and commissions
-- Auth, RLS on existing tables
+## PART 1 — Forgot Password (frontend only)
 
-Everything below is **additive**.
+- Edit the existing Login page (`src/pages/Login.tsx` or equivalent):
+  - Add "Forgot password?" link under the Password field → opens a small dialog / route (`/forgot-password`) already scaffolded if present, otherwise inline dialog.
+  - Calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: <origin>/reset-password })`.
+  - Success toast, error handling (rate limit → friendly message), no custom reset system.
+- Verify `/reset-password` page exists (it does — auth-email-hook already sends recovery).
 
-## Live PayPal Plan IDs
+## PART 2 — Transactional email plumbing
 
-| Plan     | PayPal Plan ID                     |
-|----------|-------------------------------------|
-| Monthly  | `P-4TD79441C9251073ENJEEFAA`        |
-| 6 Months | `P-7273220749612745YNJEEKGQ`        |
-| Yearly   | `P-6PH57317JM699332JNJEEMVI`        |
+Scaffold the transactional pipeline (one-time):
+1. `email_domain--scaffold_transactional_email` — creates `send-transactional-email`, `handle-email-unsubscribe`, `handle-email-suppression`, template registry.
+2. Add all new templates under `supabase/functions/_shared/transactional-email-templates/` and register them.
+3. Deploy the functions.
 
-Stored server-side only. `PAYPAL_API_BASE` already points to live (`https://api-m.paypal.com`). No sandbox references anywhere.
+All membership + payment webhooks will call `send-transactional-email` (which enqueues to `transactional_emails` and logs to `email_send_log` automatically).
 
-## New database (single migration)
+No PayPal business logic changes — only add email invocations after DB writes already happen.
 
-New table `public.membership_subscriptions`:
+## PART 3 — Membership templates + wiring
 
-- `user_id` → `auth.users`
-- `plan` enum-like text: `monthly | six_months | yearly`
-- `paypal_plan_id` text
-- `paypal_subscription_id` text unique
-- `status` text: `APPROVAL_PENDING | ACTIVE | CANCELLED | SUSPENDED | EXPIRED`
-- `started_at`, `next_billing_at`, `cancelled_at`, `expires_at` timestamptz
-- `affiliate_id` uuid (nullable), `coupon_id` uuid (nullable)
-- `created_at`, `updated_at`
+Create 7 branded templates:
+- `membership-activated`
+- `membership-renewed`
+- `membership-cancelled`
+- `membership-resumed`
+- `membership-plan-changed`
+- `payment-failed`
+- `payment-action-required`
 
-RLS + GRANTs:
+Wire them in these existing edge functions (add invocations only, no logic changes):
+- `paypal-webhook`: `BILLING.SUBSCRIPTION.ACTIVATED`, `PAYMENT.SALE.COMPLETED` (renewal), `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.PAYMENT.FAILED`, `BILLING.SUBSCRIPTION.UPDATED` (plan changed), `BILLING.SUBSCRIPTION.RE-ACTIVATED` (resumed).
+- `paypal-manage-subscription`: cancel handler → send cancelled email; FREE coupon activation path → send activated email.
 
-- `authenticated` → SELECT own rows; INSERT/UPDATE done from edge functions with service role
-- `service_role` → ALL
-- Admin (`has_role(auth.uid(),'admin')`) → SELECT all
-- No `anon` grant
+De-dupe first-payment vs activation using `purchases.paypal_capture_id`.
 
-Helper (SECURITY DEFINER):
+## PART 4 — Purchase receipt
 
-```sql
-public.user_has_active_membership(_uid uuid) returns boolean
--- ACTIVE, OR CANCELLED but expires_at > now()
-```
+- Template `purchase-receipt`.
+- Wire into `paypal-capture-order` and `record_membership_purchase` flow (after insertion into `purchases`).
 
-## Edge functions (new)
+## PART 5 — Branding
 
-1. **`paypal-create-subscription`** (`verify_jwt = true`)
-   - Input: `{ plan: 'monthly'|'six_months'|'yearly', couponCode?, affiliateCode? }`
-   - Maps plan → live `paypal_plan_id`
-   - Calls `POST /v1/billing/subscriptions` with `application_context.return_url = <origin>/membership/activate` and `cancel_url = <origin>/membership/continue?cancelled=1`
-   - Insert `membership_subscriptions` row (`status='APPROVAL_PENDING'`, subscription id, affiliate/coupon resolved)
-   - Return `{ approvalUrl, subscriptionId }`
+Reuse the same header/footer/style constants from existing auth templates in `supabase/functions/_shared/email-templates/`. Extract a small shared layout helper (`_shared/transactional-email-templates/_layout.tsx`) that mirrors the auth branding.
 
-2. **`paypal-activate-subscription`** (`verify_jwt = true`)
-   - Input: `{ subscriptionId }`
-   - Fetch `/v1/billing/subscriptions/{id}` — confirm it belongs to `auth.uid()`, update row (`status`, `started_at`, `next_billing_at`)
-   - Return `{ status }`
+## PART 6 — Logging
 
-3. **Extend `paypal-webhook`** — add cases (existing order cases untouched):
-   - `BILLING.SUBSCRIPTION.CREATED / ACTIVATED / CANCELLED / SUSPENDED / EXPIRED` → update `membership_subscriptions` (`status`, `next_billing_at`, `cancelled_at`, `expires_at`)
-   - `PAYMENT.SALE.COMPLETED` → look up subscription by `billing_agreement_id`; refresh `next_billing_at`; **on first sale only**, create affiliate commission (see below)
-   - `PAYMENT.SALE.DENIED` / `PAYMENT.SALE.REFUNDED` → status update, no commission
+Nothing extra. The existing `send-transactional-email` already writes to `email_send_log` (pending → sent/failed). Confirm during verification.
 
-All three functions registered in `supabase/config.toml` with `verify_jwt = false` for the webhook (existing pattern), `verify_jwt = true` for the two subscription endpoints.
+## PART 7 — Google OAuth branding (documentation only, no code)
 
-Reuses existing `getPayPalAccessToken()` and `PAYPAL_CLIENT_ID` / `PAYPAL_SECRET` / `PAYPAL_WEBHOOK_ID` secrets.
+Report will be provided in chat, not committed:
+- Current setup uses Lovable Cloud's managed Google OAuth client → this is why the consent screen shows "Lovable".
+- Migration steps: create own Google Cloud project → OAuth consent screen branded "ArabiyaPath" with logo, support email `admin@arabiyapath.com`, homepage `https://arabiyapath.com` → create OAuth 2.0 Web Client → authorized redirect URI = the callback URL shown in Cloud → Users → Auth Settings → Google provider → paste Client ID + Secret into that same panel → save. No code changes; sessions remain valid.
 
-## Affiliate + coupon rules (subscriptions only)
+## PART 8 — Verification
 
-- Affiliate: on `PAYMENT.SALE.COMPLETED`, if it's the **first** sale for that subscription and `affiliate_id` present → insert one row into `affiliate_commissions` (reuse existing table; `purchase_id` left null, add `subscription_id` column via same migration). Renewals: skip.
-- Coupon: applied only during the initial subscription creation (via PayPal's plan pricing override on `POST /billing/subscriptions`, `plan.billing_cycles[0].pricing_scheme` for a single cycle). If not straightforward, keep coupons out of Phase 2 (log as TODO). Existing coupon behavior for one-time products unchanged.
+- Deploy all functions.
+- Read `email_send_log` after triggering signup + password reset from the running app.
+- For membership/payment flows: cannot fire real PayPal webhooks from the agent — will instead:
+  - Statically verify each invocation site compiles + is on the correct event branch.
+  - Query `email_send_log` for any historical rows.
+  - Provide the user a checklist to trigger each flow, then re-inspect on request.
 
-Add nullable `subscription_id uuid references membership_subscriptions(id)` to `affiliate_commissions` in the same migration.
+---
 
-## Frontend
+## Technical details
 
-### `src/lib/payments/paypalSubscriptions.ts` (new)
-Small client wrapper calling the two edge functions via `supabase.functions.invoke`.
+Files created:
+- `supabase/functions/_shared/transactional-email-templates/_layout.tsx` (shared branding)
+- `supabase/functions/_shared/transactional-email-templates/membership-activated.tsx`
+- `.../membership-renewed.tsx`
+- `.../membership-cancelled.tsx`
+- `.../membership-resumed.tsx`
+- `.../membership-plan-changed.tsx`
+- `.../payment-failed.tsx`
+- `.../payment-action-required.tsx`
+- `.../purchase-receipt.tsx`
+- registry.ts updated
 
-### `src/pages/MembershipContinue.tsx`
-Replace the "opens soon" placeholder with a real **Continue to PayPal** button:
+Files modified (invocations only):
+- `supabase/functions/paypal-webhook/index.ts`
+- `supabase/functions/paypal-manage-subscription/index.ts`
+- `supabase/functions/paypal-capture-order/index.ts`
+- `src/pages/Login.tsx` (Forgot Password link)
 
-- On click → `paypal-create-subscription` → `window.location.href = approvalUrl`
-- Loading + error states
-- Keep the plan summary card
+No DB migrations. No changes to pricing, products, purchases, users, RLS, or auth config.
 
-### `src/pages/MembershipActivate.tsx` (new, route `/membership/activate`)
-- Reads `?subscription_id=` from PayPal return
-- Calls `paypal-activate-subscription`
-- On `ACTIVE` → redirect to `/dashboard/progress#membership`
-- Otherwise → show pending state with retry
-
-### Dashboard — Membership section
-New `src/components/dashboard/MembershipSection.tsx` in `DashboardProgress`:
-
-- Current plan, status badge, next billing date, subscription id
-- Buttons:
-  - **Manage** → link to PayPal customer portal (`https://www.paypal.com/myaccount/autopay/`)
-  - **Upgrade** → `/pricing#membership`
-  - **Cancel** → placeholder confirm dialog + link to PayPal (real cancel API in Phase 3)
-
-### Access control
-New `src/lib/membershipAccess.ts` + `useMembershipAccess()` hook querying `membership_subscriptions` for `auth.uid()`. Used for future Membership-gated content. Does **not** touch existing course access.
-
-### Admin
-New page `src/pages/admin/AdminMembershipSubscriptions.tsx` (route `/admin/memberships`), linked from `AdminLayout`. Read-only list with filters: Active / Cancelled / Expired. Uses the admin SELECT policy.
-
-## Files touched
-
-**New**
-- `supabase/functions/paypal-create-subscription/index.ts`
-- `supabase/functions/paypal-activate-subscription/index.ts`
-- `src/pages/MembershipActivate.tsx`
-- `src/components/dashboard/MembershipSection.tsx`
-- `src/lib/payments/paypalSubscriptions.ts`
-- `src/lib/membershipAccess.ts`
-- `src/hooks/useMembership.ts`
-- `src/pages/admin/AdminMembershipSubscriptions.tsx`
-
-**Edited**
-- `supabase/functions/paypal-webhook/index.ts` (add subscription cases only)
-- `supabase/config.toml` (register 2 new functions)
-- `src/pages/MembershipContinue.tsx` (wire the real button)
-- `src/App.tsx` (routes: `/membership/activate`, `/admin/memberships`)
-- `src/pages/DashboardProgress.tsx` (mount `MembershipSection`)
-- `src/components/admin/AdminLayout.tsx` (nav link)
-
-**Migration**
-- `membership_subscriptions` table + grants + RLS + helper function
-- `affiliate_commissions.subscription_id` nullable FK
-
-## Flow summary
-
-```text
-/pricing → /signup?plan=<x> → auto-login → /membership/continue
-  → [Continue to PayPal] → paypal-create-subscription
-  → PayPal approval → /membership/activate?subscription_id=...
-  → paypal-activate-subscription → /dashboard/progress#membership
-Webhook keeps status, next_billing_at, cancelled_at, expires_at fresh.
-```
-
-## Verification
-
-1. `tsgo` typecheck passes.
-2. Each plan on `/pricing` → correct live plan id sent to PayPal (log check).
-3. Existing course checkout (Gulf, flashcard packs) unaffected — smoke test one order path.
-4. Webhook `BILLING.SUBSCRIPTION.ACTIVATED` → row moves to ACTIVE.
-5. Existing `purchases` rows untouched by any new code path (grep confirms no writes).
-6. Admin `/admin/memberships` lists subscriptions; non-admin blocked.
-
-## Not in Phase 2
-
-- Server-side PayPal cancel/upgrade API (buttons are placeholders + PayPal deep link).
-- Coupon override on subscriptions if PayPal pricing-scheme override is non-trivial — logged as TODO.
-- Migrating existing one-time Membership-like purchases into the new table.
-
-## Note on activation
-
-As you noted, keep the three PayPal plans **OFF** until this ships and one end-to-end test subscription is completed. Nothing here activates the plans on PayPal's side.
+Approve to proceed.
