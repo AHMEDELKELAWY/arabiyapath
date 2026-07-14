@@ -212,6 +212,7 @@ serve(async (req) => {
     await client.send({
       from: `ArabiyaPath <${smtpUser}>`,
       to: email,
+      replyTo: "admin@arabiyapath.com",
       subject: template.subject,
       html: wrapInTemplate(template.html),
     });
