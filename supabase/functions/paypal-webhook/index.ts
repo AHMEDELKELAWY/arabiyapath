@@ -349,30 +349,60 @@ serve(async (req) => {
         if (error) console.error("Webhook subscription update error:", error);
         else console.log(`Webhook: subscription ${subscriptionId} -> ${newStatus}`);
 
+        // Look up subscription owner for email notifications
+        const { data: subForEmail } = await supabase
+          .from("membership_subscriptions")
+          .select("id, user_id, plan, next_billing_at")
+          .eq("paypal_subscription_id", subscriptionId)
+          .maybeSingle();
+
         // Safety net: on ACTIVATED, ensure a purchases row exists so the
         // customer appears in Admin → Purchases and dashboard immediately,
         // even if PAYMENT.SALE.COMPLETED is delayed. Idempotent.
-        if (body.event_type === "BILLING.SUBSCRIPTION.ACTIVATED") {
-          const { data: subRow } = await supabase
-            .from("membership_subscriptions")
-            .select("id")
-            .eq("paypal_subscription_id", subscriptionId)
-            .maybeSingle();
-          if (subRow) {
-            const { count } = await supabase
-              .from("purchases")
-              .select("id", { count: "exact", head: true })
-              .eq("subscription_id", subRow.id);
-            if ((count ?? 0) === 0) {
-              const { error: rpcErr } = await supabase.rpc("record_membership_purchase", {
-                _subscription_paypal_id: subscriptionId,
-                _sale_id: `SUB-ACTIVATED-${subscriptionId}`,
-                _amount: 0,
-                _currency: "USD",
-              });
-              if (rpcErr) console.error("record_membership_purchase (activation) error:", rpcErr);
-              else console.log(`Webhook: activation-stub purchase created for ${subscriptionId}`);
-            }
+        if (body.event_type === "BILLING.SUBSCRIPTION.ACTIVATED" && subForEmail) {
+          const { count } = await supabase
+            .from("purchases")
+            .select("id", { count: "exact", head: true })
+            .eq("subscription_id", subForEmail.id);
+          if ((count ?? 0) === 0) {
+            const { error: rpcErr } = await supabase.rpc("record_membership_purchase", {
+              _subscription_paypal_id: subscriptionId,
+              _sale_id: `SUB-ACTIVATED-${subscriptionId}`,
+              _amount: 0,
+              _currency: "USD",
+            });
+            if (rpcErr) console.error("record_membership_purchase (activation) error:", rpcErr);
+            else console.log(`Webhook: activation-stub purchase created for ${subscriptionId}`);
+          }
+
+          // Send membership-activated email (idempotent via idempotencyKey)
+          const contact = await getUserContact(supabase, subForEmail.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-activated",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-activated-${subscriptionId}`,
+              templateData: {
+                name: contact.name,
+                plan: planLabel(subForEmail.plan),
+                billingPeriod: planLabel(subForEmail.plan),
+              },
+            });
+          }
+        }
+
+        if (body.event_type === "BILLING.SUBSCRIPTION.CANCELLED" && subForEmail) {
+          const contact = await getUserContact(supabase, subForEmail.user_id);
+          if (contact.email) {
+            await sendTransactionalEmail({
+              templateName: "membership-cancelled",
+              recipientEmail: contact.email,
+              idempotencyKey: `mem-cancelled-${subscriptionId}-${Math.floor(Date.now()/1000)}`,
+              templateData: {
+                name: contact.name,
+                accessUntil: formatDate(sub.billing_info?.next_billing_time),
+              },
+            });
           }
         }
         break;
