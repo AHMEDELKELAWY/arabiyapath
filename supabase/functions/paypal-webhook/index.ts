@@ -527,7 +527,21 @@ serve(async (req) => {
               },
             });
 
-            if (!isFirstPayment) {
+            if (isFirstPayment) {
+              // First successful payment → membership-activated.
+              // Shares idempotency key with BILLING.SUBSCRIPTION.ACTIVATED so
+              // if both webhooks fire, only one email is sent.
+              await sendTransactionalEmail({
+                templateName: "membership-activated",
+                recipientEmail: contact.email,
+                idempotencyKey: `mem-activated-${subscriptionId}`,
+                templateData: {
+                  name: contact.name,
+                  plan: planLabel(subRow.plan),
+                  billingPeriod: planLabel(subRow.plan),
+                },
+              });
+            } else {
               // Fetch fresh next_billing to include in the renewal email
               const { data: freshSub } = await supabase
                 .from("membership_subscriptions")
