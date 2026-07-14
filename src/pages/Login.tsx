@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { destinationForPlan, getPlanById } from "@/lib/membershipPlans";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
