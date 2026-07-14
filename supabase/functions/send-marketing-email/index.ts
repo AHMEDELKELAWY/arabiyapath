@@ -191,6 +191,7 @@ serve(async (req) => {
         await client.send({
           from: `ArabiyaPath <${smtpUser}>`,
           to: subscriber.email,
+          replyTo: "admin@arabiyapath.com",
           subject: campaign.subject,
           html: htmlContent,
         });
