@@ -90,8 +90,11 @@ serve(async (req) => {
       });
     }
 
-    const accessToken = await getPayPalAccessToken();
+    const accessToken = row.paypal_subscription_id.startsWith("FREE-")
+      ? null
+      : await getPayPalAccessToken();
     const subId = row.paypal_subscription_id;
+    const isFreeSub = subId.startsWith("FREE-");
 
     async function paypalPost(path: string, body: unknown) {
       const res = await fetch(`${PAYPAL_API_BASE}${path}`, {
