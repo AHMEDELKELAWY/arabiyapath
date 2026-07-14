@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendTransactionalEmail, getUserContact, planLabel, formatDate } from "../_shared/notify-email.ts";
 
 /**
  * Manage a user's own PayPal subscription from ArabiyaPath.
