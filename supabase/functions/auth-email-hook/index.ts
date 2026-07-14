@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Confirm your email — ArabiyaPath',
+  invite: "You're invited to ArabiyaPath",
+  magiclink: 'Your ArabiyaPath sign-in link',
+  recovery: 'Reset your ArabiyaPath password',
+  email_change: 'Confirm your new email — ArabiyaPath',
+  reauthentication: 'Your ArabiyaPath verification code',
 }
 
 // Template mapping
@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "arabiyapath"
+const SITE_NAME = "ArabiyaPath"
 const SENDER_DOMAIN = "notify.arabiyapath.com"
 const ROOT_DOMAIN = "arabiyapath.com"
 const FROM_DOMAIN = "notify.arabiyapath.com" // Domain shown in From address (may be root or sender subdomain)
@@ -258,7 +258,8 @@ async function handleWebhook(req: Request): Promise<Response> {
       run_id,
       message_id: messageId,
       to: payload.data.email,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: `ArabiyaPath <no-reply@${FROM_DOMAIN}>`,
+      reply_to: 'admin@arabiyapath.com',
       sender_domain: SENDER_DOMAIN,
       subject: EMAIL_SUBJECTS[emailType] || 'Notification',
       html,
