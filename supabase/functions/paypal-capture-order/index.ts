@@ -91,6 +91,26 @@ async function createPurchaseFromPendingOrder(
 
   console.log(`Purchase created: ${purchase.id}, user: ${pendingOrder.user_id}, product: ${pendingOrder.product_id}, paypal_order: ${paypalOrderId}, capture: ${captureId}`);
 
+  // Email: purchase receipt (fire-and-forget)
+  try {
+    const contact = await getUserContact(supabase, pendingOrder.user_id);
+    if (contact.email) {
+      await sendTransactionalEmail({
+        templateName: "purchase-receipt",
+        recipientEmail: contact.email,
+        idempotencyKey: `receipt-${captureId}`,
+        templateData: {
+          name: contact.name,
+          productName: pendingOrder.product_name,
+          amount: Number(captureAmount).toFixed(2),
+          currency: captureCurrency,
+          invoiceDate: formatDate(new Date().toISOString()),
+          transactionId: captureId,
+        },
+      });
+    }
+  } catch (e) { console.error("receipt email failed", e); }
+
   // Mirror into flashcard_purchases when this is a flash card pack
   try {
     if (pendingOrder.product_type === "flashcard_pack") {
