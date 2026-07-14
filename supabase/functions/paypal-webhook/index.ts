@@ -512,7 +512,7 @@ serve(async (req) => {
               .select("id", { count: "exact", head: true })
               .eq("subscription_id", subRow.id)
               .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`);
-            const isFirstPayment = (paidCount ?? 0) <= 1;
+            const { sendActivated, sendRenewed } = decideMembershipEmails(paidCount ?? 0);
 
             await sendTransactionalEmail({
               templateName: "purchase-receipt",
