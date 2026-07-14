@@ -114,6 +114,15 @@ export default function Login() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmail(email); setForgotSent(false); setForgotOpen(true); }}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                 </div>
 
                 <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
@@ -130,6 +139,70 @@ export default function Login() {
           </div>
         </div>
       </section>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+            <DialogDescription>
+              Enter the email you signed up with and we'll send you a secure link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          {forgotSent ? (
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-foreground">
+                If an account exists for <strong>{forgotEmail}</strong>, a password reset link is on its way. Check your inbox (and spam folder).
+              </p>
+              <Button className="w-full" onClick={() => setForgotOpen(false)}>Close</Button>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!forgotEmail) return;
+                setForgotSending(true);
+                const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+                  redirectTo: `${window.location.origin}/reset-password`,
+                });
+                setForgotSending(false);
+                if (error) {
+                  const msg = (error.message || "").toLowerCase();
+                  if (msg.includes("rate") || msg.includes("too many")) {
+                    toast({
+                      title: "Please wait a moment",
+                      description: "Too many attempts. Try again in a few minutes.",
+                      variant: "destructive",
+                    });
+                  } else {
+                    // Still show generic success to avoid email enumeration
+                    setForgotSent(true);
+                  }
+                } else {
+                  setForgotSent(true);
+                  toast({ title: "Check your inbox", description: "Password reset link sent." });
+                }
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={forgotSending || !forgotEmail}>
+                {forgotSending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send reset link"}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
