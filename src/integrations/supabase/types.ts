@@ -1397,6 +1397,7 @@ export type Database = {
           product_name: string | null
           product_type: string | null
           status: string
+          subscription_id: string | null
           user_id: string
         }
         Insert: {
@@ -1415,6 +1416,7 @@ export type Database = {
           product_name?: string | null
           product_type?: string | null
           status?: string
+          subscription_id?: string | null
           user_id: string
         }
         Update: {
@@ -1433,6 +1435,7 @@ export type Database = {
           product_name?: string | null
           product_type?: string | null
           status?: string
+          subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1469,6 +1472,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "membership_subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -1875,6 +1885,15 @@ export type Database = {
           expires_at: string
           percent_off: number
         }[]
+      }
+      record_membership_purchase: {
+        Args: {
+          _amount: number
+          _currency: string
+          _sale_id: string
+          _subscription_paypal_id: string
+        }
+        Returns: string
       }
       user_can_access_unit: { Args: { _unit_id: string }; Returns: boolean }
       user_has_active_membership: { Args: { _uid: string }; Returns: boolean }
