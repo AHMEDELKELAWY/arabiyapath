@@ -542,7 +542,7 @@ serve(async (req) => {
                   billingPeriod: planLabel(subRow.plan),
                 },
               });
-            } else {
+            } else if (sendRenewed) {
               // Fetch fresh next_billing to include in the renewal email
               const { data: freshSub } = await supabase
                 .from("membership_subscriptions")
