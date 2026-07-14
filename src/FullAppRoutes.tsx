@@ -86,6 +86,7 @@ const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardP
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
 const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminEmailLog = lazy(() => import("./pages/admin/AdminEmailLog"));
 const FlashCardsHome = lazy(() => import("./pages/flashcards/FlashCardsHome"));
 const FlashCardUnit = lazy(() => import("./pages/flashcards/FlashCardUnit"));
 const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
@@ -210,6 +211,7 @@ export default function FullAppRoutes() {
             <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
             <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+            <Route path="/admin/email-log" element={<AdminRoute><AdminEmailLog /></AdminRoute>} />
             <Route path="/flashcards/course/spoken-arabic" element={<SpokenArabicOverview />} />
             <Route path="/flashcards" element={<FlashCardsHome />} />
             <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />
