@@ -121,7 +121,7 @@ serve(async (req) => {
             <tr><td style="color:#64748b;">Submitted</td><td>${escapeHtml(new Date(app.created_at).toUTCString())}</td></tr>
           </table>
           <div style="margin-top:24px;">
-            <a href="https://arabiyapath.lovable.app/admin/affiliate-applications" style="display:inline-block;background:#2f6b58;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">
+            <a href="https://arabiyapath.com/admin/affiliate-applications" style="display:inline-block;background:#2f6b58;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">
               Review application →
             </a>
           </div>
