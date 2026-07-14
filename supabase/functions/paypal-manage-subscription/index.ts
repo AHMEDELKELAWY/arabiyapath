@@ -149,12 +149,10 @@ serve(async (req) => {
         break;
       }
       case "revise": {
-        // Upgrade / downgrade to another Membership plan.
+        if (isFreeSub) throw new Error("Please contact support to change this membership plan.");
         const targetPlanId = newPlan ? PLAN_MAP[newPlan] : null;
         if (!targetPlanId) throw new Error(`Unknown target plan: ${newPlan}`);
         const origin = returnOrigin || req.headers.get("origin") || "https://arabiyapath.com";
-        // Some plan changes require buyer re-approval. PayPal returns an
-        // approval link when so; front the user with it.
         const revised = await paypalPost(`/v1/billing/subscriptions/${subId}/revise`, {
           plan_id: targetPlanId,
           application_context: {
@@ -168,7 +166,7 @@ serve(async (req) => {
           plan: newPlan,
           paypal_plan_id: targetPlanId,
         }).eq("id", row.id);
-        await refreshSubscription(supabase, subId, accessToken);
+        await refreshSubscription(supabase, subId, accessToken!);
         extra = { approvalUrl };
         break;
       }
