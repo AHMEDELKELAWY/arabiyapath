@@ -163,7 +163,7 @@ serve(async (req) => {
                 </ul>
               </div>
 
-              <a href="https://arabiyapath.lovable.app/affiliate" style="display:block;background:linear-gradient(135deg,#2f6b58 0%,#3d8b70 100%);color:#fff;text-decoration:none;text-align:center;padding:14px 24px;border-radius:8px;font-weight:600;font-size:14px;">
+              <a href="https://arabiyapath.com/affiliate" style="display:block;background:linear-gradient(135deg,#2f6b58 0%,#3d8b70 100%);color:#fff;text-decoration:none;text-align:center;padding:14px 24px;border-radius:8px;font-weight:600;font-size:14px;">
                 Go to Your Affiliate Dashboard →
               </a>
 
