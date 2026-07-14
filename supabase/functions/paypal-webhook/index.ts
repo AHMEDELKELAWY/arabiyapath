@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendTransactionalEmail, getUserContact, formatDate, planLabel } from "../_shared/notify-email.ts";
+import { decideMembershipEmails } from "./membership-email-decision.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -511,7 +512,7 @@ serve(async (req) => {
               .select("id", { count: "exact", head: true })
               .eq("subscription_id", subRow.id)
               .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`);
-            const isFirstPayment = (paidCount ?? 0) <= 1;
+            const { sendActivated, sendRenewed } = decideMembershipEmails(paidCount ?? 0);
 
             await sendTransactionalEmail({
               templateName: "purchase-receipt",
@@ -527,7 +528,7 @@ serve(async (req) => {
               },
             });
 
-            if (isFirstPayment) {
+            if (sendActivated) {
               // First successful payment → membership-activated.
               // Shares idempotency key with BILLING.SUBSCRIPTION.ACTIVATED so
               // if both webhooks fire, only one email is sent.
@@ -541,7 +542,7 @@ serve(async (req) => {
                   billingPeriod: planLabel(subRow.plan),
                 },
               });
-            } else {
+            } else if (sendRenewed) {
               // Fetch fresh next_billing to include in the renewal email
               const { data: freshSub } = await supabase
                 .from("membership_subscriptions")
