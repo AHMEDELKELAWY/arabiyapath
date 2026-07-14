@@ -347,6 +347,33 @@ serve(async (req) => {
           .eq("paypal_subscription_id", subscriptionId);
         if (error) console.error("Webhook subscription update error:", error);
         else console.log(`Webhook: subscription ${subscriptionId} -> ${newStatus}`);
+
+        // Safety net: on ACTIVATED, ensure a purchases row exists so the
+        // customer appears in Admin → Purchases and dashboard immediately,
+        // even if PAYMENT.SALE.COMPLETED is delayed. Idempotent.
+        if (body.event_type === "BILLING.SUBSCRIPTION.ACTIVATED") {
+          const { data: subRow } = await supabase
+            .from("membership_subscriptions")
+            .select("id")
+            .eq("paypal_subscription_id", subscriptionId)
+            .maybeSingle();
+          if (subRow) {
+            const { count } = await supabase
+              .from("purchases")
+              .select("id", { count: "exact", head: true })
+              .eq("subscription_id", subRow.id);
+            if ((count ?? 0) === 0) {
+              const { error: rpcErr } = await supabase.rpc("record_membership_purchase", {
+                _subscription_paypal_id: subscriptionId,
+                _sale_id: `SUB-ACTIVATED-${subscriptionId}`,
+                _amount: 0,
+                _currency: "USD",
+              });
+              if (rpcErr) console.error("record_membership_purchase (activation) error:", rpcErr);
+              else console.log(`Webhook: activation-stub purchase created for ${subscriptionId}`);
+            }
+          }
+        }
         break;
       }
 
@@ -383,6 +410,32 @@ serve(async (req) => {
         } catch (e) {
           console.error("Failed to refresh subscription from PayPal:", e);
         }
+
+        // ALWAYS record the sale as a purchases row (idempotent via unique
+        // index on paypal_capture_id). Guarantees every membership payment
+        // appears in Admin → Purchases and dashboard counters.
+        const saleAmount = parseFloat(sale.amount?.total || "0");
+        const saleCurrency = sale.amount?.currency || "USD";
+        const saleId = sale.id;
+        const { error: purchaseErr } = await supabase.rpc("record_membership_purchase", {
+          _subscription_paypal_id: subscriptionId,
+          _sale_id: saleId,
+          _amount: saleAmount,
+          _currency: saleCurrency,
+        });
+        if (purchaseErr) {
+          console.error("record_membership_purchase error:", purchaseErr);
+        } else {
+          console.log(`Webhook: membership purchase recorded for sale ${saleId}`);
+        }
+
+        // Clear any earlier activation-stub row so we don't show duplicates
+        await supabase
+          .from("purchases")
+          .delete()
+          .eq("subscription_id", subRow.id)
+          .eq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`);
+
 
         // Affiliate commission — first sale ONLY, renewals skipped
         if (subRow.affiliate_id) {
