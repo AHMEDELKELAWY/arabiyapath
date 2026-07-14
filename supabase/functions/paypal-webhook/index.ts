@@ -505,14 +505,13 @@ serve(async (req) => {
         {
           const contact = await getUserContact(supabase, subRow.user_id);
           if (contact.email) {
-            const isFirstPayment = !subRow.affiliate_id
-              ? // count purchases (excluding activation stub) — first real payment?
-                ((await supabase
-                  .from("purchases")
-                  .select("id", { count: "exact", head: true })
-                  .eq("subscription_id", subRow.id)
-                  .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`)).count ?? 0) <= 1
-              : true;
+            // Count real payments (excluding activation stub) — the current sale is already recorded.
+            const { count: paidCount } = await supabase
+              .from("purchases")
+              .select("id", { count: "exact", head: true })
+              .eq("subscription_id", subRow.id)
+              .neq("paypal_capture_id", `SUB-ACTIVATED-${subscriptionId}`);
+            const isFirstPayment = (paidCount ?? 0) <= 1;
 
             await sendTransactionalEmail({
               templateName: "purchase-receipt",
