@@ -90,8 +90,11 @@ serve(async (req) => {
       });
     }
 
-    const accessToken = await getPayPalAccessToken();
+    const accessToken = row.paypal_subscription_id.startsWith("FREE-")
+      ? null
+      : await getPayPalAccessToken();
     const subId = row.paypal_subscription_id;
+    const isFreeSub = subId.startsWith("FREE-");
 
     async function paypalPost(path: string, body: unknown) {
       const res = await fetch(`${PAYPAL_API_BASE}${path}`, {
@@ -115,40 +118,41 @@ serve(async (req) => {
 
     switch (action) {
       case "cancel": {
-        await paypalPost(`/v1/billing/subscriptions/${subId}/cancel`, {
-          reason: reason || "User cancelled from ArabiyaPath dashboard",
-        });
-        // PayPal sends BILLING.SUBSCRIPTION.CANCELLED webhook; we optimistically update.
+        if (!isFreeSub) {
+          await paypalPost(`/v1/billing/subscriptions/${subId}/cancel`, {
+            reason: reason || "User cancelled from ArabiyaPath dashboard",
+          });
+        }
         const nowIso = new Date().toISOString();
         await supabase.from("membership_subscriptions").update({
           status: "CANCELLED",
           cancelled_at: nowIso,
         }).eq("id", row.id);
-        await refreshSubscription(supabase, subId, accessToken);
+        if (!isFreeSub) await refreshSubscription(supabase, subId, accessToken!);
         break;
       }
       case "suspend": {
+        if (isFreeSub) throw new Error("Pausing is not supported for this membership. Please cancel instead.");
         await paypalPost(`/v1/billing/subscriptions/${subId}/suspend`, {
           reason: reason || "User paused from ArabiyaPath dashboard",
         });
         await supabase.from("membership_subscriptions").update({ status: "SUSPENDED" }).eq("id", row.id);
-        await refreshSubscription(supabase, subId, accessToken);
+        await refreshSubscription(supabase, subId, accessToken!);
         break;
       }
       case "reactivate": {
+        if (isFreeSub) throw new Error("This membership cannot be reactivated automatically.");
         await paypalPost(`/v1/billing/subscriptions/${subId}/activate`, {
           reason: reason || "User resumed from ArabiyaPath dashboard",
         });
-        await refreshSubscription(supabase, subId, accessToken);
+        await refreshSubscription(supabase, subId, accessToken!);
         break;
       }
       case "revise": {
-        // Upgrade / downgrade to another Membership plan.
+        if (isFreeSub) throw new Error("Please contact support to change this membership plan.");
         const targetPlanId = newPlan ? PLAN_MAP[newPlan] : null;
         if (!targetPlanId) throw new Error(`Unknown target plan: ${newPlan}`);
         const origin = returnOrigin || req.headers.get("origin") || "https://arabiyapath.com";
-        // Some plan changes require buyer re-approval. PayPal returns an
-        // approval link when so; front the user with it.
         const revised = await paypalPost(`/v1/billing/subscriptions/${subId}/revise`, {
           plan_id: targetPlanId,
           application_context: {
@@ -162,7 +166,7 @@ serve(async (req) => {
           plan: newPlan,
           paypal_plan_id: targetPlanId,
         }).eq("id", row.id);
-        await refreshSubscription(supabase, subId, accessToken);
+        await refreshSubscription(supabase, subId, accessToken!);
         extra = { approvalUrl };
         break;
       }

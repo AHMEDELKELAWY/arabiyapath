@@ -152,16 +152,6 @@ export function MembershipSection() {
               <div className="flex flex-wrap gap-2 pt-2">
                 {subscription.status === "ACTIVE" && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={busy !== null}
-                      onClick={() => run("suspend")}
-                    >
-                      {busy === "suspend" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pause className="w-4 h-4 mr-2" />}
-                      Pause
-                    </Button>
-
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" disabled={busy !== null}>

@@ -143,7 +143,34 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+            <CardContent className="py-8 px-6 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    Membership
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-1">
+                  Unlock every dialect and level
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  One membership unlocks Gulf, Fusha, and MSA vocabulary — all units,
+                  audio, quizzes, and grammar. Cancel anytime.
+                </p>
+              </div>
+              <Link to="/pricing#membership" className="w-full sm:w-auto">
+                <Button size="lg" className="gap-2 w-full sm:w-auto">
+                  View Membership plans
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
           <FlashcardsDashboardSection />
+
 
           <p className="text-xs text-center text-muted-foreground">
             Already purchased?{" "}
