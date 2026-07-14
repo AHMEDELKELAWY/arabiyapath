@@ -41,3 +41,6 @@ project_id = "wruizzwgevxdsaiblmsd"
     verify_jwt = false
   [functions.translate-lesson-titles]
     verify_jwt = false
+
+[functions.process-email-queue]
+verify_jwt = true
