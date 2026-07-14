@@ -528,7 +528,7 @@ serve(async (req) => {
               },
             });
 
-            if (isFirstPayment) {
+            if (sendActivated) {
               // First successful payment → membership-activated.
               // Shares idempotency key with BILLING.SUBSCRIPTION.ACTIVATED so
               // if both webhooks fire, only one email is sent.
