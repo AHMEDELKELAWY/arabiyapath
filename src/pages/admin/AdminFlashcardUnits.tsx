@@ -77,9 +77,15 @@ export default function AdminFlashcardUnits() {
     )
   );
 
+  // Filter units to the currently selected level (from the shared admin scope).
+  // When no level is selected, show everything (grouped) so the page still works.
+  const filteredUnits = adminScope.levelId
+    ? (units ?? []).filter((u: any) => u.course_level_id === adminScope.levelId)
+    : (units ?? []);
+
   // Group units by "Course — Level". Unassigned units land in "Unassigned".
   const grouped: Record<string, any[]> = {};
-  for (const u of units ?? []) {
+  for (const u of filteredUnits) {
     const info = u.course_level_id
       ? levelLookup.get(u.course_level_id)
       : undefined;
