@@ -33,5 +33,5 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <AdminScopeProvider>{children}</AdminScopeProvider>;
 }
