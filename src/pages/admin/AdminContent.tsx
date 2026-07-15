@@ -71,6 +71,11 @@ export default function AdminContent() {
           <TabsContent value="quizzes" className="mt-6">
             <QuizzesTab />
           </TabsContent>
+
+          <TabsContent value="listening" className="mt-6">
+            <ListeningTab />
+          </TabsContent>
+
         </Tabs>
       </div>
     </AdminLayout>
