@@ -93,7 +93,21 @@ export default function IntermediateHome() {
         </div>
 
         <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
-          {!units?.length ? (
+          {isLoading ? (
+            <div className="grid gap-3 sm:gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between gap-3">
+                <span>Couldn't load Intermediate units.</span>
+                <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+              </AlertDescription>
+            </Alert>
+          ) : !units?.length ? (
             <p className="text-muted-foreground">
               Intermediate units are being prepared. Check back soon.
             </p>
