@@ -276,7 +276,13 @@ export function LessonsTab() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Button
+              onClick={() => {
+                if (scope.unitId) setForm((f) => ({ ...f, unit_id: scope.unitId! }));
+                setIsDialogOpen(true);
+              }}
+              className="gap-2"
+            >
               <Plus className="h-4 w-4" />
               Add Lesson
             </Button>
