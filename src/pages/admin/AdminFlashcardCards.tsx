@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
+import { useAdminFlashcardScope } from "@/components/admin/AdminScopeContext";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,10 +91,34 @@ type CardKind = "speaking" | "learn" | "grammar";
 
 export default function AdminFlashcardCards() {
   const [params, setParams] = useSearchParams();
-  const unitId = params.get("unit") || "";
+  const scope = useAdminFlashcardScope();
+  const urlUnit = params.get("unit") || "";
+  const unitId = scope.unitId || urlUnit || "";
   const kindParam = (params.get("kind") as CardKind) || "learn";
   const kind: CardKind =
     kindParam === "speaking" ? "speaking" : kindParam === "grammar" ? "grammar" : "learn";
+
+  // Sync URL ?unit= with the shared scope so deep-links still work, and hydrate
+  // scope from URL when arriving from a link that pre-selected a unit.
+  useEffect(() => {
+    if (urlUnit && urlUnit !== scope.unitId) {
+      // Try to find which level the URL unit belongs to so both selectors update.
+      const opt = scope.unitOptions.find((u) => u.id === urlUnit);
+      if (opt?.levelId && opt.levelId !== scope.levelId) scope.setLevel(opt.levelId);
+      scope.setUnit(urlUnit);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlUnit, scope.unitOptions.length]);
+
+  useEffect(() => {
+    if (scope.unitId && scope.unitId !== urlUnit) {
+      const p = new URLSearchParams(params);
+      p.set("unit", scope.unitId);
+      p.set("kind", kind);
+      setParams(p, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope.unitId]);
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -615,25 +641,21 @@ export default function AdminFlashcardCards() {
 
   return (
     <AdminLayout>
+      <AdminScopePicker
+        scope="flashcard"
+        hint={
+          scope.currentLevel && scope.currentUnit
+            ? `Working in: ${scope.currentLevel.label} / ${scope.currentUnit.title}`
+            : scope.currentLevel
+              ? `Pick a unit in ${scope.currentLevel.label} to manage its cards.`
+              : "Pick a Course / Level and a Unit to manage its content."
+        }
+      />
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
             {KIND_LABEL[kind]} Content
           </h1>
-          <select
-            className="border rounded px-2 py-1 bg-background"
-            value={unitId}
-            onChange={(e) => {
-              const p = new URLSearchParams();
-              if (e.target.value) p.set("unit", e.target.value);
-              p.set("kind", kind);
-              setParams(p, { replace: true });
-              setSelected(new Set());
-            }}
-          >
-            <option value="">— select unit —</option>
-            {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
-          </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <DropdownMenu>

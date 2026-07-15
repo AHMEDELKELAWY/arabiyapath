@@ -18,6 +18,8 @@ import {
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure";
+import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
+import { useAdminFlashcardScope } from "@/components/admin/AdminScopeContext";
 
 type UnitForm = {
   slug: string;
@@ -43,6 +45,7 @@ const EMPTY: UnitForm = {
 
 export default function AdminFlashcardUnits() {
   const qc = useQueryClient();
+  const adminScope = useAdminFlashcardScope();
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<UnitForm>(EMPTY);
 
@@ -74,9 +77,15 @@ export default function AdminFlashcardUnits() {
     )
   );
 
+  // Filter units to the currently selected level (from the shared admin scope).
+  // When no level is selected, show everything (grouped) so the page still works.
+  const filteredUnits = adminScope.levelId
+    ? (units ?? []).filter((u: any) => u.course_level_id === adminScope.levelId)
+    : (units ?? []);
+
   // Group units by "Course — Level". Unassigned units land in "Unassigned".
   const grouped: Record<string, any[]> = {};
-  for (const u of units ?? []) {
+  for (const u of filteredUnits) {
     const info = u.course_level_id
       ? levelLookup.get(u.course_level_id)
       : undefined;
@@ -94,7 +103,7 @@ export default function AdminFlashcardUnits() {
     setForm({
       ...EMPTY,
       order_index: (units?.length ?? 0) + 1,
-      course_level_id: levelOptions[0]?.id ?? null,
+      course_level_id: adminScope.levelId ?? levelOptions[0]?.id ?? null,
     });
   };
 
@@ -153,6 +162,15 @@ export default function AdminFlashcardUnits() {
 
   return (
     <AdminLayout>
+      <AdminScopePicker
+        scope="flashcard"
+        allowAllUnits
+        hint={
+          adminScope.currentLevel
+            ? `Showing units in ${adminScope.currentLevel.label}. New units are created inside this level automatically.`
+            : "Pick a Course / Level to filter units. New units land in the selected level."
+        }
+      />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Spoken Arabic — Units</h1>
         <Button onClick={startNew}>
