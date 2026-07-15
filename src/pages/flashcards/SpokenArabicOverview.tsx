@@ -265,7 +265,7 @@ export default function SpokenArabicOverview() {
                         variant="outline"
                         size="sm"
                       >
-                        <Link to={beginnerHref}>
+                        <Link to={levelHref(lvl.name)}>
                           Continue
                           <ArrowRight className="w-4 h-4 ml-1" />
                         </Link>
