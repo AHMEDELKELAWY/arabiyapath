@@ -204,7 +204,7 @@ export default function IntermediateUnit() {
 
             <TabsContent value="test" className="mt-4">
               {canStudy ? (
-                <TestRunner unitId={unit.id} />
+                <IntermediateTestRunner unitId={unit.id} />
               ) : (
                 <LockedCard icon={GraduationCap} title="Test" body="A mixed quiz drawn from this lesson's video, vocabulary, and grammar." />
               )}
