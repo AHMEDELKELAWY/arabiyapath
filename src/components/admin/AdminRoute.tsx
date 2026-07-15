@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminScopeProvider } from "@/components/admin/AdminScopeContext";
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -32,5 +33,5 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <AdminScopeProvider>{children}</AdminScopeProvider>;
 }

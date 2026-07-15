@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLessons, useUnits, useLevels, useDialects, useLessonsWithoutImages } from "@/hooks/useAdminData";
+import { useAdminLearnScope } from "@/components/admin/AdminScopeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -70,8 +71,12 @@ export function LessonsTab() {
   const { data: dialects } = useDialects();
   const { data: lessonsWithoutImages, refetch: refetchMissingImages } = useLessonsWithoutImages();
   const queryClient = useQueryClient();
+  const scope = useAdminLearnScope();
   const [search, setSearch] = useState("");
-  const [filterUnit, setFilterUnit] = useState<string>("all");
+  const [filterUnit, setFilterUnit] = useState<string>(scope.unitId ?? "all");
+  useEffect(() => {
+    setFilterUnit(scope.unitId ?? "all");
+  }, [scope.unitId]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewLesson, setPreviewLesson] = useState<any>(null);
   const [deleteLesson, setDeleteLesson] = useState<string | null>(null);
@@ -221,14 +226,21 @@ export function LessonsTab() {
     }
   };
 
+  // Restrict units in dropdown to selected level (from admin scope) if any.
+  const scopedUnits = scope.levelId
+    ? (units ?? []).filter((u: any) => u.level_id === scope.levelId)
+    : (units ?? []);
+
   const filteredLessons = lessons?.filter((l) => {
     const matchesSearch = l.title.toLowerCase().includes(search.toLowerCase());
-    const matchesUnit = filterUnit === "all" || l.unit_id === filterUnit;
+    const matchesUnit = filterUnit === "all"
+      ? (scope.levelId ? scopedUnits.some((u: any) => u.id === l.unit_id) : true)
+      : l.unit_id === filterUnit;
     return matchesSearch && matchesUnit;
   });
 
-  // Group units for the select
-  const unitsGrouped = units?.map((u) => {
+  // Group units for the select (restricted to scoped level)
+  const unitsGrouped = scopedUnits?.map((u: any) => {
     const level = levels?.find((l) => l.id === u.level_id);
     const dialect = dialects?.find((d) => d.id === level?.dialect_id);
     return {
@@ -264,7 +276,13 @@ export function LessonsTab() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Button
+              onClick={() => {
+                if (scope.unitId) setForm((f) => ({ ...f, unit_id: scope.unitId! }));
+                setIsDialogOpen(true);
+              }}
+              className="gap-2"
+            >
               <Plus className="h-4 w-4" />
               Add Lesson
             </Button>

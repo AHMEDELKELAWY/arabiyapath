@@ -24,7 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePendingApplicationsCount } from "@/hooks/useAffiliateApplications";
 import { useAdminUnreadNotificationsCount } from "@/hooks/useAdminNotifications";
 import logoImage from "@/assets/logo.png";
-import { AdminScopeProvider } from "@/components/admin/AdminScopeContext";
+
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -69,7 +69,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <AdminScopeProvider>
     <div className="min-h-screen flex bg-muted/30">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
@@ -151,6 +150,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-6">{children}</div>
       </main>
     </div>
-    </AdminScopeProvider>
   );
 }
