@@ -91,10 +91,34 @@ type CardKind = "speaking" | "learn" | "grammar";
 
 export default function AdminFlashcardCards() {
   const [params, setParams] = useSearchParams();
-  const unitId = params.get("unit") || "";
+  const scope = useAdminFlashcardScope();
+  const urlUnit = params.get("unit") || "";
+  const unitId = scope.unitId || urlUnit || "";
   const kindParam = (params.get("kind") as CardKind) || "learn";
   const kind: CardKind =
     kindParam === "speaking" ? "speaking" : kindParam === "grammar" ? "grammar" : "learn";
+
+  // Sync URL ?unit= with the shared scope so deep-links still work, and hydrate
+  // scope from URL when arriving from a link that pre-selected a unit.
+  useEffect(() => {
+    if (urlUnit && urlUnit !== scope.unitId) {
+      // Try to find which level the URL unit belongs to so both selectors update.
+      const opt = scope.unitOptions.find((u) => u.id === urlUnit);
+      if (opt?.levelId && opt.levelId !== scope.levelId) scope.setLevel(opt.levelId);
+      scope.setUnit(urlUnit);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlUnit, scope.unitOptions.length]);
+
+  useEffect(() => {
+    if (scope.unitId && scope.unitId !== urlUnit) {
+      const p = new URLSearchParams(params);
+      p.set("unit", scope.unitId);
+      p.set("kind", kind);
+      setParams(p, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope.unitId]);
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
