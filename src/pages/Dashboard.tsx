@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Globe } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 import { FlashcardsDashboardSection } from "@/components/dashboard/FlashcardsDashboardSection";
+import { MembershipUpsellHero } from "@/components/dashboard/MembershipUpsellHero";
+import { useMembership } from "@/hooks/useMembership";
 import { SEOHead } from "@/components/seo/SEOHead";
 
 const dialectEmojis: Record<string, string> = {
