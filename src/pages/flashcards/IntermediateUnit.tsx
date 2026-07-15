@@ -12,11 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Lock, BookOpen, Headphones, GraduationCap, ScrollText } from "lucide-react";
+import { ArrowLeft, Lock, BookOpen, Headphones, GraduationCap, ScrollText, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
+import { IntermediateTestRunner } from "@/components/flashcards/msa/IntermediateTestRunner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CONTENT_BUCKET = "content";
 
