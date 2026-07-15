@@ -42,12 +42,14 @@ export default function AdminContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 max-w-xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-2xl">
             <TabsTrigger value="dialects">Dialects</TabsTrigger>
             <TabsTrigger value="levels">Levels</TabsTrigger>
             <TabsTrigger value="units">Units</TabsTrigger>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+            <TabsTrigger value="listening">Listening</TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="dialects" className="mt-6">
