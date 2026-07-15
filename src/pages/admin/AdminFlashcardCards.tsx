@@ -752,7 +752,7 @@ export default function AdminFlashcardCards({
         </div>
       )}
 
-      {unitId && (
+      {unitId && !embedded && (
         <div className="flex gap-1 mb-3 border-b">
           {([
             { v: "learn", label: "Learn Content" },
