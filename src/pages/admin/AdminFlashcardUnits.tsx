@@ -18,6 +18,8 @@ import {
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure";
+import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
+import { useAdminFlashcardScope } from "@/components/admin/AdminScopeContext";
 
 type UnitForm = {
   slug: string;
