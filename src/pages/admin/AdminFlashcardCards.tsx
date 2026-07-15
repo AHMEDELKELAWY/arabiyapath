@@ -1002,6 +1002,6 @@ export default function AdminFlashcardCards({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </Wrapper>
   );
 }
