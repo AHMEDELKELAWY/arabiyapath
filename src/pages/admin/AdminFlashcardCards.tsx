@@ -89,14 +89,23 @@ type SortKey = "order" | "arabic" | "published" | "hasImage" | "hasAudio";
 
 type CardKind = "speaking" | "learn" | "grammar";
 
-export default function AdminFlashcardCards() {
+export default function AdminFlashcardCards({
+  embedded = false,
+  embeddedUnitId,
+  embeddedKind,
+}: {
+  embedded?: boolean;
+  embeddedUnitId?: string;
+  embeddedKind?: CardKind;
+} = {}) {
   const [params, setParams] = useSearchParams();
   const scope = useAdminFlashcardScope();
   const urlUnit = params.get("unit") || "";
-  const unitId = scope.unitId || urlUnit || "";
+  const unitId = embedded ? (embeddedUnitId || "") : (scope.unitId || urlUnit || "");
   const kindParam = (params.get("kind") as CardKind) || "learn";
-  const kind: CardKind =
-    kindParam === "speaking" ? "speaking" : kindParam === "grammar" ? "grammar" : "learn";
+  const kind: CardKind = embedded
+    ? (embeddedKind || "learn")
+    : (kindParam === "speaking" ? "speaking" : kindParam === "grammar" ? "grammar" : "learn");
 
   // Sync URL ?unit= with the shared scope so deep-links still work, and hydrate
   // scope from URL when arriving from a link that pre-selected a unit.
