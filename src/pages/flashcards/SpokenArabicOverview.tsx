@@ -71,7 +71,7 @@ export default function SpokenArabicOverview() {
       reviewedCards,
       progressPercent:
         totalCards > 0 ? Math.round((reviewedCards / totalCards) * 100) : 0,
-      isComingSoon: name !== "Beginner",
+      isComingSoon: name === "Advanced",
     };
   });
 
@@ -83,11 +83,12 @@ export default function SpokenArabicOverview() {
   const overallPercent =
     totalCards > 0 ? Math.round((reviewedCards / totalCards) * 100) : 0;
 
-  // Continue always opens the Beginner Units page (never a lesson directly).
-  // The "Resume Learning" button on that page handles deep-linking into the
-  // last studied unit/tab.
   void fcResumeSlug;
-  const beginnerHref = "/flashcards";
+  const levelHref = (name: string) => {
+    if (name === "Beginner") return "/flashcards";
+    if (name === "Intermediate") return "/flashcards/level/intermediate";
+    return "/flashcards";
+  };
 
   return (
     <>
@@ -264,7 +265,7 @@ export default function SpokenArabicOverview() {
                         variant="outline"
                         size="sm"
                       >
-                        <Link to={beginnerHref}>
+                        <Link to={levelHref(lvl.name)}>
                           Continue
                           <ArrowRight className="w-4 h-4 ml-1" />
                         </Link>
