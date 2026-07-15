@@ -641,25 +641,21 @@ export default function AdminFlashcardCards() {
 
   return (
     <AdminLayout>
+      <AdminScopePicker
+        scope="flashcard"
+        hint={
+          scope.currentLevel && scope.currentUnit
+            ? `Working in: ${scope.currentLevel.label} / ${scope.currentUnit.title}`
+            : scope.currentLevel
+              ? `Pick a unit in ${scope.currentLevel.label} to manage its cards.`
+              : "Pick a Course / Level and a Unit to manage its content."
+        }
+      />
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
             {KIND_LABEL[kind]} Content
           </h1>
-          <select
-            className="border rounded px-2 py-1 bg-background"
-            value={unitId}
-            onChange={(e) => {
-              const p = new URLSearchParams();
-              if (e.target.value) p.set("unit", e.target.value);
-              p.set("kind", kind);
-              setParams(p, { replace: true });
-              setSelected(new Set());
-            }}
-          >
-            <option value="">— select unit —</option>
-            {units?.map((u: any) => <option key={u.id} value={u.id}>{u.title_en}</option>)}
-          </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <DropdownMenu>
