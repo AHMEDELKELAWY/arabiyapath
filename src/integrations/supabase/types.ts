@@ -856,6 +856,62 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcard_unit_tests: {
+        Row: {
+          audio_url: string | null
+          correct_answer: Json
+          created_at: string
+          explanation: string | null
+          id: string
+          options: Json | null
+          order_index: number
+          passage: string | null
+          published: boolean
+          question: string
+          question_type: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          correct_answer: Json
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          order_index?: number
+          passage?: string | null
+          published?: boolean
+          question: string
+          question_type: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          correct_answer?: Json
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          order_index?: number
+          passage?: string | null
+          published?: boolean
+          question?: string
+          question_type?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_unit_tests_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flashcard_units: {
         Row: {
           course_level_id: string | null
@@ -864,6 +920,7 @@ export type Database = {
           description: string | null
           id: string
           is_free: boolean
+          lesson_topic: string | null
           order_index: number
           published: boolean
           seo_description: string | null
@@ -872,6 +929,8 @@ export type Database = {
           title_ar: string | null
           title_en: string
           updated_at: string
+          video_storage_path: string | null
+          video_url: string | null
         }
         Insert: {
           course_level_id?: string | null
@@ -880,6 +939,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_free?: boolean
+          lesson_topic?: string | null
           order_index?: number
           published?: boolean
           seo_description?: string | null
@@ -888,6 +948,8 @@ export type Database = {
           title_ar?: string | null
           title_en: string
           updated_at?: string
+          video_storage_path?: string | null
+          video_url?: string | null
         }
         Update: {
           course_level_id?: string | null
@@ -896,6 +958,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_free?: boolean
+          lesson_topic?: string | null
           order_index?: number
           published?: boolean
           seo_description?: string | null
@@ -904,6 +967,8 @@ export type Database = {
           title_ar?: string | null
           title_en?: string
           updated_at?: string
+          video_storage_path?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {

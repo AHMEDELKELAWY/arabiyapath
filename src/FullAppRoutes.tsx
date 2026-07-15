@@ -84,6 +84,7 @@ const AdminFlashcardCards = lazy(() => import("./pages/admin/AdminFlashcardCards
 const AdminFlashcardPacks = lazy(() => import("./pages/admin/AdminFlashcardPacks"));
 const AdminFlashcardPurchases = lazy(() => import("./pages/admin/AdminFlashcardPurchases"));
 const AdminFlashcardDiagnostics = lazy(() => import("./pages/admin/AdminFlashcardDiagnostics"));
+const AdminIntermediateUnit = lazy(() => import("./pages/admin/AdminIntermediateUnit"));
 const AdminMembershipSubscriptions = lazy(() => import("./pages/admin/AdminMembershipSubscriptions"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminEmailLog = lazy(() => import("./pages/admin/AdminEmailLog"));
@@ -209,6 +210,7 @@ export default function FullAppRoutes() {
             <Route path="/admin/flashcards/packs" element={<AdminRoute><AdminFlashcardPacks /></AdminRoute>} />
             <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
             <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
+            <Route path="/admin/flashcards/intermediate/unit/:id" element={<AdminRoute><AdminIntermediateUnit /></AdminRoute>} />
             <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/email-log" element={<AdminRoute><AdminEmailLog /></AdminRoute>} />

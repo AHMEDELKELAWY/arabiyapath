@@ -21,6 +21,18 @@ import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure
 import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
 import { useAdminFlashcardScope } from "@/components/admin/AdminScopeContext";
 
+const INTERMEDIATE_LEVEL_ID = "01d4e9e7-b0c5-4599-867c-f4c2bfac542f";
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80);
+}
+
 type UnitForm = {
   slug: string;
   title_en: string;
@@ -30,6 +42,7 @@ type UnitForm = {
   published: boolean;
   order_index: number;
   course_level_id: string | null;
+  lesson_topic: string;
 };
 
 const EMPTY: UnitForm = {
@@ -41,6 +54,7 @@ const EMPTY: UnitForm = {
   published: false,
   order_index: 0,
   course_level_id: null,
+  lesson_topic: "",
 };
 
 export default function AdminFlashcardUnits() {
@@ -118,11 +132,16 @@ export default function AdminFlashcardUnits() {
       published: u.published,
       order_index: u.order_index,
       course_level_id: u.course_level_id ?? null,
+      lesson_topic: u.lesson_topic ?? "",
     });
   };
 
   const save = async () => {
-    const payload = { ...form };
+    const payload: any = { ...form };
+    // Auto-generate a slug from title when missing (Intermediate authors don't edit slug directly).
+    if (!payload.slug && payload.title_en) {
+      payload.slug = slugify(payload.title_en);
+    }
     let error;
     if (editing?.id) {
       ({ error } = await (supabase as any)
@@ -222,9 +241,15 @@ export default function AdminFlashcardUnits() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to={`/admin/flashcards/cards?unit=${u.id}`}>Cards</Link>
-                      </Button>
+                      {u.course_level_id === INTERMEDIATE_LEVEL_ID ? (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/admin/flashcards/intermediate/unit/${u.id}`}>Manage Content</Link>
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/admin/flashcards/cards?unit=${u.id}`}>Cards</Link>
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -280,50 +305,109 @@ export default function AdminFlashcardUnits() {
                 </SelectContent>
               </Select>
             </div>
-            <Input
-              placeholder="slug"
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            />
-            <Input
-              placeholder="Title (EN)"
-              value={form.title_en}
-              onChange={(e) => setForm({ ...form, title_en: e.target.value })}
-            />
-            <Input
-              placeholder="Title (AR with tashkeel)"
-              value={form.title_ar}
-              onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
-              dir="rtl"
-            />
-            <Textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-            />
-            <Input
-              type="number"
-              value={form.order_index}
-              onChange={(e) =>
-                setForm({ ...form, order_index: Number(e.target.value) })
-              }
-            />
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.is_free}
-                onCheckedChange={(v) => setForm({ ...form, is_free: v })}
-              />{" "}
-              <span>Free unit</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.published}
-                onCheckedChange={(v) => setForm({ ...form, published: v })}
-              />{" "}
-              <span>Published</span>
-            </div>
+
+            {form.course_level_id === INTERMEDIATE_LEVEL_ID ? (
+              // Intermediate: simplified authoring form.
+              <>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Name (English)
+                  </label>
+                  <Input
+                    value={form.title_en}
+                    onChange={(e) => setForm({ ...form, title_en: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Name (Arabic)
+                  </label>
+                  <Input
+                    value={form.title_ar}
+                    onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Topic <span className="text-muted-foreground">(rich text — AI reference for Test generation)</span>
+                  </label>
+                  <Textarea
+                    value={form.lesson_topic}
+                    onChange={(e) => setForm({ ...form, lesson_topic: e.target.value })}
+                    rows={8}
+                    placeholder="Describe the main topic of this lesson. This text is the primary reference the AI uses to generate the Test."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Order</label>
+                  <Input
+                    type="number"
+                    value={form.order_index}
+                    onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.published}
+                    onCheckedChange={(v) => setForm({ ...form, published: v })}
+                  />
+                  <span>Published</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Listening, Learn, Grammar, and Test are managed on the unit's Content page after saving.
+                </p>
+              </>
+            ) : (
+              // Existing (Beginner / other levels) form — unchanged.
+              <>
+                <Input
+                  placeholder="slug"
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                />
+                <Input
+                  placeholder="Title (EN)"
+                  value={form.title_en}
+                  onChange={(e) => setForm({ ...form, title_en: e.target.value })}
+                />
+                <Input
+                  placeholder="Title (AR with tashkeel)"
+                  value={form.title_ar}
+                  onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
+                  dir="rtl"
+                />
+                <Textarea
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+                <Input
+                  type="number"
+                  value={form.order_index}
+                  onChange={(e) =>
+                    setForm({ ...form, order_index: Number(e.target.value) })
+                  }
+                />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.is_free}
+                    onCheckedChange={(v) => setForm({ ...form, is_free: v })}
+                  />{" "}
+                  <span>Free unit</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.published}
+                    onCheckedChange={(v) => setForm({ ...form, published: v })}
+                  />{" "}
+                  <span>Published</span>
+                </div>
+              </>
+            )}
+
             <div className="flex gap-2">
               <Button onClick={save}>Save</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>
