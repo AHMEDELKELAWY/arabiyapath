@@ -241,9 +241,15 @@ export default function AdminFlashcardUnits() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to={`/admin/flashcards/cards?unit=${u.id}`}>Cards</Link>
-                      </Button>
+                      {u.course_level_id === INTERMEDIATE_LEVEL_ID ? (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/admin/flashcards/intermediate/unit/${u.id}`}>Manage Content</Link>
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/admin/flashcards/cards?unit=${u.id}`}>Cards</Link>
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
