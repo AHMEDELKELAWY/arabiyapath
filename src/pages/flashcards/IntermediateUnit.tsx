@@ -70,27 +70,33 @@ function LockedCard({ icon: Icon, title, body }: { icon: any; title: string; bod
 }
 
 function ListeningPlayer({ videoUrl, storagePath }: { videoUrl: string | null; storagePath: string | null }) {
-  if (storagePath) {
-    const publicUrl = supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl;
-    return <video src={publicUrl} controls className="w-full rounded-lg border" />;
-  }
-  if (videoUrl) {
+  if (!storagePath && !videoUrl) {
     return (
-      <div className="rounded-lg border overflow-hidden aspect-video bg-muted">
-        <iframe
-          src={toYouTubeEmbed(videoUrl)}
-          title="Lesson video"
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
+      <p className="text-sm text-muted-foreground text-center py-8">
+        No video has been added to this lesson yet.
+      </p>
     );
   }
   return (
-    <p className="text-sm text-muted-foreground text-center py-8">
-      No video has been added to this lesson yet.
-    </p>
+    <div className="mx-auto w-full md:w-[70%] max-w-[720px]">
+      {storagePath ? (
+        <video
+          src={supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl}
+          controls
+          className="w-full rounded-lg border max-h-[60vh] bg-black"
+        />
+      ) : (
+        <div className="rounded-lg border overflow-hidden aspect-video bg-muted max-h-[60vh]">
+          <iframe
+            src={toYouTubeEmbed(videoUrl!)}
+            title="Lesson video"
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
