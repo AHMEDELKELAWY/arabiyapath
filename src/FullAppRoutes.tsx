@@ -94,6 +94,8 @@ const FlashCardPack = lazy(() => import("./pages/flashcards/FlashCardPack"));
 const FlashCardStudy = lazy(() => import("./pages/flashcards/FlashCardStudy"));
 const FlashCardsSalesPage = lazy(() => import("./pages/FlashCardsSalesPage"));
 const SpokenArabicOverview = lazy(() => import("./pages/flashcards/SpokenArabicOverview"));
+const IntermediateHome = lazy(() => import("./pages/flashcards/IntermediateHome"));
+const IntermediateUnit = lazy(() => import("./pages/flashcards/IntermediateUnit"));
 const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboard"));
 const AffiliateCommissions = lazy(() => import("./pages/affiliate/AffiliateCommissions"));
 const AffiliateReferrals = lazy(() => import("./pages/affiliate/AffiliateReferrals"));
