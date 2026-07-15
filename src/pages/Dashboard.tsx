@@ -63,6 +63,7 @@ export default function Dashboard() {
       (subscription.status === "CANCELLED" &&
         !!subscription.expires_at &&
         new Date(subscription.expires_at) > new Date()));
+  const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
   const lastActivity = recentActivity[0] || null;
 
