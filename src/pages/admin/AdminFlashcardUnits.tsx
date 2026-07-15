@@ -305,50 +305,109 @@ export default function AdminFlashcardUnits() {
                 </SelectContent>
               </Select>
             </div>
-            <Input
-              placeholder="slug"
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            />
-            <Input
-              placeholder="Title (EN)"
-              value={form.title_en}
-              onChange={(e) => setForm({ ...form, title_en: e.target.value })}
-            />
-            <Input
-              placeholder="Title (AR with tashkeel)"
-              value={form.title_ar}
-              onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
-              dir="rtl"
-            />
-            <Textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-            />
-            <Input
-              type="number"
-              value={form.order_index}
-              onChange={(e) =>
-                setForm({ ...form, order_index: Number(e.target.value) })
-              }
-            />
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.is_free}
-                onCheckedChange={(v) => setForm({ ...form, is_free: v })}
-              />{" "}
-              <span>Free unit</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.published}
-                onCheckedChange={(v) => setForm({ ...form, published: v })}
-              />{" "}
-              <span>Published</span>
-            </div>
+
+            {form.course_level_id === INTERMEDIATE_LEVEL_ID ? (
+              // Intermediate: simplified authoring form.
+              <>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Name (English)
+                  </label>
+                  <Input
+                    value={form.title_en}
+                    onChange={(e) => setForm({ ...form, title_en: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Name (Arabic)
+                  </label>
+                  <Input
+                    value={form.title_ar}
+                    onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Lesson Topic <span className="text-muted-foreground">(rich text — AI reference for Test generation)</span>
+                  </label>
+                  <Textarea
+                    value={form.lesson_topic}
+                    onChange={(e) => setForm({ ...form, lesson_topic: e.target.value })}
+                    rows={8}
+                    placeholder="Describe the main topic of this lesson. This text is the primary reference the AI uses to generate the Test."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Order</label>
+                  <Input
+                    type="number"
+                    value={form.order_index}
+                    onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.published}
+                    onCheckedChange={(v) => setForm({ ...form, published: v })}
+                  />
+                  <span>Published</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Listening, Learn, Grammar, and Test are managed on the unit's Content page after saving.
+                </p>
+              </>
+            ) : (
+              // Existing (Beginner / other levels) form — unchanged.
+              <>
+                <Input
+                  placeholder="slug"
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                />
+                <Input
+                  placeholder="Title (EN)"
+                  value={form.title_en}
+                  onChange={(e) => setForm({ ...form, title_en: e.target.value })}
+                />
+                <Input
+                  placeholder="Title (AR with tashkeel)"
+                  value={form.title_ar}
+                  onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
+                  dir="rtl"
+                />
+                <Textarea
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+                <Input
+                  type="number"
+                  value={form.order_index}
+                  onChange={(e) =>
+                    setForm({ ...form, order_index: Number(e.target.value) })
+                  }
+                />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.is_free}
+                    onCheckedChange={(v) => setForm({ ...form, is_free: v })}
+                  />{" "}
+                  <span>Free unit</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.published}
+                    onCheckedChange={(v) => setForm({ ...form, published: v })}
+                  />{" "}
+                  <span>Published</span>
+                </div>
+              </>
+            )}
+
             <div className="flex gap-2">
               <Button onClick={save}>Save</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>
