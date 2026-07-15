@@ -11,7 +11,7 @@
  */
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,9 +28,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
 import {
   Headphones, BookOpen, ScrollText, ClipboardCheck, Sparkles,
-  Video, Youtube, ExternalLink, Loader2, Pencil, Trash2, Plus, Upload,
+  Video, Youtube, Loader2, Pencil, Trash2, Plus, Upload,
 } from "lucide-react";
 
 const CONTENT_BUCKET = "content";
