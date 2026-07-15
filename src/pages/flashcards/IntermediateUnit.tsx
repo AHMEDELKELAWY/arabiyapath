@@ -12,11 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Lock, BookOpen, Headphones, GraduationCap, ScrollText } from "lucide-react";
+import { ArrowLeft, Lock, BookOpen, Headphones, GraduationCap, ScrollText, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFlashcardUnitAccess } from "@/lib/flashcardAccess";
 import { LearnVocabBrowser } from "@/components/flashcards/msa/LearnVocabBrowser";
 import { GrammarBrowser } from "@/components/flashcards/msa/GrammarBrowser";
+import { IntermediateTestRunner } from "@/components/flashcards/msa/IntermediateTestRunner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CONTENT_BUCKET = "content";
 
@@ -38,16 +41,6 @@ function toYouTubeEmbed(url: string): string {
   return url;
 }
 
-interface TestQuestion {
-  id: string;
-  question_type: string;
-  question: string;
-  passage: string | null;
-  options: any;
-  correct_answer: any;
-  explanation: string | null;
-  order_index: number;
-}
 
 function LockedCard({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
   return (
@@ -67,146 +60,37 @@ function LockedCard({ icon: Icon, title, body }: { icon: any; title: string; bod
 }
 
 function ListeningPlayer({ videoUrl, storagePath }: { videoUrl: string | null; storagePath: string | null }) {
-  if (storagePath) {
-    const publicUrl = supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl;
-    return <video src={publicUrl} controls className="w-full rounded-lg border" />;
-  }
-  if (videoUrl) {
-    return (
-      <div className="rounded-lg border overflow-hidden aspect-video bg-muted">
-        <iframe
-          src={toYouTubeEmbed(videoUrl)}
-          title="Lesson video"
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-  return (
-    <p className="text-sm text-muted-foreground text-center py-8">
-      No video has been added to this lesson yet.
-    </p>
-  );
-}
-
-function TestRunner({ unitId }: { unitId: string }) {
-  const { data: questions, isLoading } = useQuery<TestQuestion[]>({
-    queryKey: ["fc-unit-test", unitId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("flashcard_unit_tests")
-        .select("id,question_type,question,passage,options,correct_answer,explanation,order_index")
-        .eq("unit_id", unitId)
-        .eq("published", true)
-        .order("order_index");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading questions…</p>;
-  if (!questions?.length) {
+  if (!storagePath && !videoUrl) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        No test questions yet. Check back soon.
+        No video has been added to this lesson yet.
       </p>
     );
   }
-
-  const normalize = (v: any) => (typeof v === "string" ? v : Array.isArray(v) ? v.join("|") : JSON.stringify(v));
-
-  const score = questions.reduce((n, q) => {
-    const user = answers[q.id];
-    if (!user) return n;
-    return normalize(q.correct_answer) === user ? n + 1 : n;
-  }, 0);
-
   return (
-    <div className="space-y-4">
-      {questions.map((q, i) => {
-        const opts: string[] = Array.isArray(q.options) ? q.options : [];
-        const userAnswer = answers[q.id];
-        const correct = normalize(q.correct_answer);
-        return (
-          <Card key={q.id}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="px-2 py-0.5 rounded bg-muted">{q.question_type.replace(/_/g, " ")}</span>
-                <span>Question {i + 1} / {questions.length}</span>
-              </div>
-              {q.passage && (
-                <p className="text-sm bg-muted/40 rounded p-3" dir="rtl" lang="ar">{q.passage}</p>
-              )}
-              <p className="font-medium">{q.question}</p>
-              {opts.length > 0 ? (
-                <div className="grid gap-2">
-                  {opts.map((opt, idx) => {
-                    const chosen = userAnswer === opt;
-                    const isCorrect = submitted && opt === correct;
-                    const isWrong = submitted && chosen && opt !== correct;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        disabled={submitted}
-                        onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
-                        className={`text-left px-3 py-2 rounded border text-sm transition-colors ${
-                          isCorrect
-                            ? "border-emerald-500 bg-emerald-500/10"
-                            : isWrong
-                            ? "border-destructive bg-destructive/10"
-                            : chosen
-                            ? "border-primary bg-primary/10"
-                            : "hover:bg-accent"
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  disabled={submitted}
-                  value={userAnswer ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
-                  className="w-full px-3 py-2 rounded border bg-background text-sm"
-                  placeholder="Type your answer…"
-                />
-              )}
-              {submitted && q.explanation && (
-                <p className="text-xs text-muted-foreground border-l-2 pl-3">{q.explanation}</p>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-      {!submitted ? (
-        <Button onClick={() => setSubmitted(true)} className="w-full sm:w-auto">
-          Submit answers
-        </Button>
+    <div className="mx-auto w-full md:w-[70%] max-w-[720px]">
+      {storagePath ? (
+        <video
+          src={supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl}
+          controls
+          className="w-full rounded-lg border max-h-[60vh] bg-black"
+        />
       ) : (
-        <Card className="border-primary/40 bg-primary/5">
-          <CardContent className="p-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold">Score: {score} / {questions.length}</p>
-              <p className="text-xs text-muted-foreground">Review your answers above.</p>
-            </div>
-            <Button variant="outline" onClick={() => { setAnswers({}); setSubmitted(false); }}>
-              Try again
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border overflow-hidden aspect-video bg-muted max-h-[60vh]">
+          <iframe
+            src={toYouTubeEmbed(videoUrl!)}
+            title="Lesson video"
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
       )}
     </div>
   );
 }
+
+/* Legacy inline TestRunner removed — replaced by IntermediateTestRunner. */
 
 export default function IntermediateUnit() {
   const { slug } = useParams<{ slug: string }>();
@@ -214,7 +98,7 @@ export default function IntermediateUnit() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("listening");
 
-  const { data: unit, isLoading } = useQuery({
+  const { data: unit, isLoading, error, refetch } = useQuery({
     queryKey: ["fc-intermediate-unit", slug],
     enabled: !!slug,
     queryFn: async () => {
@@ -231,7 +115,34 @@ export default function IntermediateUnit() {
 
   const { data: hasAccess } = useFlashcardUnitAccess(unit?.id);
 
-  if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
+  if (isLoading) {
+    return (
+      <Layout>
+        <section className="container max-w-3xl py-6 px-4 space-y-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-9 w-2/3" />
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-10 w-full mt-4" />
+          <Skeleton className="aspect-video w-full md:w-[70%] mx-auto rounded-lg" />
+        </section>
+      </Layout>
+    );
+  }
+  if (error) {
+    return (
+      <Layout>
+        <section className="container max-w-3xl py-8 px-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>Couldn't load this lesson.</span>
+              <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+            </AlertDescription>
+          </Alert>
+        </section>
+      </Layout>
+    );
+  }
   if (!unit) return <Layout><div className="container py-16">Unit not found.</div></Layout>;
 
   const canStudy = unit.is_free || hasAccess;
@@ -294,7 +205,13 @@ export default function IntermediateUnit() {
 
             <TabsContent value="learn" className="mt-3 md:mt-4">
               {canStudy ? (
-                <LearnVocabBrowser unitId={unit.id} onComplete={() => setActiveTab("grammar")} />
+                <LearnVocabBrowser
+                  unitId={unit.id}
+                  onComplete={() => setActiveTab("grammar")}
+                  nextLabel="Continue to Grammar"
+                  nextIcon={ScrollText}
+                />
+
               ) : (
                 <LockedCard icon={BookOpen} title="Learn" body="Study each vocabulary card with Arabic, transliteration, English, image and audio." />
               )}
@@ -310,7 +227,7 @@ export default function IntermediateUnit() {
 
             <TabsContent value="test" className="mt-4">
               {canStudy ? (
-                <TestRunner unitId={unit.id} />
+                <IntermediateTestRunner unitId={unit.id} />
               ) : (
                 <LockedCard icon={GraduationCap} title="Test" body="A mixed quiz drawn from this lesson's video, vocabulary, and grammar." />
               )}

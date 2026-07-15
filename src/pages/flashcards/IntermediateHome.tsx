@@ -5,6 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 const INTERMEDIATE_LEVEL_ID = "01d4e9e7-b0c5-4599-867c-f4c2bfac542f";
 
@@ -21,7 +25,7 @@ interface UnitRow {
 export default function IntermediateHome() {
   const { user } = useAuth();
 
-  const { data: units } = useQuery({
+  const { data: units, isLoading, error, refetch } = useQuery({
     queryKey: ["fc-units-intermediate"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -89,7 +93,21 @@ export default function IntermediateHome() {
         </div>
 
         <div className="container max-w-4xl py-6 sm:py-8 px-4 sm:px-6">
-          {!units?.length ? (
+          {isLoading ? (
+            <div className="grid gap-3 sm:gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between gap-3">
+                <span>Couldn't load Intermediate units.</span>
+                <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+              </AlertDescription>
+            </Alert>
+          ) : !units?.length ? (
             <p className="text-muted-foreground">
               Intermediate units are being prepared. Check back soon.
             </p>
