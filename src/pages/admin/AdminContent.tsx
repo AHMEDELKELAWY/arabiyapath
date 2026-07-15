@@ -8,11 +8,17 @@ import { LevelsTab } from "@/components/admin/content/LevelsTab";
 import { UnitsTab } from "@/components/admin/content/UnitsTab";
 import { LessonsTab } from "@/components/admin/content/LessonsTab";
 import { QuizzesTab } from "@/components/admin/content/QuizzesTab";
+import { ListeningTab } from "@/components/admin/content/ListeningTab";
 
 export default function AdminContent() {
   const [activeTab, setActiveTab] = useState("dialects");
   const scope = useAdminLearnScope();
-  const scopedTab = activeTab === "units" || activeTab === "lessons" || activeTab === "quizzes";
+  const scopedTab =
+    activeTab === "units" ||
+    activeTab === "lessons" ||
+    activeTab === "quizzes" ||
+    activeTab === "listening";
+
 
   return (
     <AdminLayout>
