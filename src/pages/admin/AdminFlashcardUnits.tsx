@@ -132,6 +132,7 @@ export default function AdminFlashcardUnits() {
       published: u.published,
       order_index: u.order_index,
       course_level_id: u.course_level_id ?? null,
+      lesson_topic: u.lesson_topic ?? "",
     });
   };
 
