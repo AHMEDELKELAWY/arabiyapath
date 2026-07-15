@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Globe } from "lucide-react";
 import { FREE_LESSON_URL } from "@/lib/gulfAccess";
 import { FlashcardsDashboardSection } from "@/components/dashboard/FlashcardsDashboardSection";
+import { MembershipUpsellHero } from "@/components/dashboard/MembershipUpsellHero";
+import { useMembership } from "@/hooks/useMembership";
 import { SEOHead } from "@/components/seo/SEOHead";
 
 const dialectEmojis: Record<string, string> = {
@@ -52,7 +54,15 @@ export default function Dashboard() {
     isLoading,
   } = useDashboardData();
   const { data: fcSummary } = useFlashcardsDashboard();
-
+  const { subscription } = useMembership();
+  const isFreeMembership = !!subscription?.paypal_subscription_id?.startsWith("FREE-");
+  const isPaidActive =
+    !!subscription &&
+    !isFreeMembership &&
+    (subscription.status === "ACTIVE" ||
+      (subscription.status === "CANCELLED" &&
+        !!subscription.expires_at &&
+        new Date(subscription.expires_at) > new Date()));
   const firstName = profile?.first_name || "Learner";
   const hasAnyProgress = recentActivity.length > 0;
   const lastActivity = recentActivity[0] || null;
@@ -200,10 +210,14 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <ContinueLearningCard
-          lastActivity={lastActivity}
-          hasAnyProgress={hasAnyProgress}
-        />
+        {isPaidActive ? (
+          <ContinueLearningCard
+            lastActivity={lastActivity}
+            hasAnyProgress={hasAnyProgress}
+          />
+        ) : (
+          <MembershipUpsellHero mode={isFreeMembership ? "free" : "none"} />
+        )}
 
         {/* ===== MY LEARNING ===== */}
         <section>
