@@ -41,16 +41,6 @@ function toYouTubeEmbed(url: string): string {
   return url;
 }
 
-interface TestQuestion {
-  id: string;
-  question_type: string;
-  question: string;
-  passage: string | null;
-  options: any;
-  correct_answer: any;
-  explanation: string | null;
-  order_index: number;
-}
 
 function LockedCard({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
   return (
@@ -108,7 +98,7 @@ export default function IntermediateUnit() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("listening");
 
-  const { data: unit, isLoading } = useQuery({
+  const { data: unit, isLoading, error, refetch } = useQuery({
     queryKey: ["fc-intermediate-unit", slug],
     enabled: !!slug,
     queryFn: async () => {
@@ -125,7 +115,34 @@ export default function IntermediateUnit() {
 
   const { data: hasAccess } = useFlashcardUnitAccess(unit?.id);
 
-  if (isLoading) return <Layout><div className="container py-16">Loading…</div></Layout>;
+  if (isLoading) {
+    return (
+      <Layout>
+        <section className="container max-w-3xl py-6 px-4 space-y-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-9 w-2/3" />
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-10 w-full mt-4" />
+          <Skeleton className="aspect-video w-full md:w-[70%] mx-auto rounded-lg" />
+        </section>
+      </Layout>
+    );
+  }
+  if (error) {
+    return (
+      <Layout>
+        <section className="container max-w-3xl py-8 px-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>Couldn't load this lesson.</span>
+              <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+            </AlertDescription>
+          </Alert>
+        </section>
+      </Layout>
+    );
+  }
   if (!unit) return <Layout><div className="container py-16">Unit not found.</div></Layout>;
 
   const canStudy = unit.is_free || hasAccess;
