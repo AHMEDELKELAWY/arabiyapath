@@ -137,7 +137,11 @@ export default function AdminFlashcardUnits() {
   };
 
   const save = async () => {
-    const payload = { ...form };
+    const payload: any = { ...form };
+    // Auto-generate a slug from title when missing (Intermediate authors don't edit slug directly).
+    if (!payload.slug && payload.title_en) {
+      payload.slug = slugify(payload.title_en);
+    }
     let error;
     if (editing?.id) {
       ({ error } = await (supabase as any)
