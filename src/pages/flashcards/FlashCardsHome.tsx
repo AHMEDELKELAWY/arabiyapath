@@ -58,13 +58,18 @@ export default function FlashCardsHome() {
   const { data: resumeSlug } = useFlashcardsResumeSlug();
   const { data: fcSummary } = useFlashcardsDashboard();
 
+  // Beginner level (Spoken Arabic → Beginner). Filter units so newer levels
+  // (Intermediate, Advanced) don't leak into this page.
+  const BEGINNER_LEVEL_ID = "9ff5712d-1746-4bf5-a1bc-03a92bead252";
+
   const unitsQuery = useQuery({
-    queryKey: ["fc-units-public"],
+    queryKey: ["fc-units-public", "beginner"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,description,is_free,order_index,cover_image_url")
+        .select("id,slug,title_en,description,is_free,order_index,cover_image_url,course_level_id")
         .eq("published", true)
+        .eq("course_level_id", BEGINNER_LEVEL_ID)
         .order("order_index");
       if (error) throw error;
       return (data ?? []) as UnitRow[];
