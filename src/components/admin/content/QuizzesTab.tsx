@@ -216,13 +216,18 @@ export function QuizzesTab() {
     setQuestionForm({ ...questionForm, options_json: newOptions });
   };
 
-  // Get units that don't have quizzes
-  const unitsWithoutQuiz = units?.filter(
-    (u) => !quizzes?.some((q) => q.unit_id === u.id)
+  // Restrict units to selected level (from admin scope), if any.
+  const scopedUnits = scope.levelId
+    ? (units ?? []).filter((u: any) => u.level_id === scope.levelId)
+    : (units ?? []);
+
+  // Get units (in scope) that don't have quizzes yet
+  const unitsWithoutQuiz = scopedUnits?.filter(
+    (u: any) => !quizzes?.some((q) => q.unit_id === u.id)
   );
 
   // Group units for select
-  const unitsGrouped = units?.map((u) => {
+  const unitsGrouped = scopedUnits?.map((u: any) => {
     const level = levels?.find((l) => l.id === u.level_id);
     const dialect = dialects?.find((d) => d.id === level?.dialect_id);
     return {
@@ -232,8 +237,10 @@ export function QuizzesTab() {
     };
   });
 
+  const scopedUnitIds = new Set(scopedUnits.map((u: any) => u.id));
   const filteredQuizzes = quizzes?.filter((q) => {
-    const unit = unitsGrouped?.find((u) => u.id === q.unit_id);
+    if (scope.levelId && !scopedUnitIds.has(q.unit_id)) return false;
+    const unit = unitsGrouped?.find((u: any) => u.id === q.unit_id);
     const matchesSearch = unit?.title.toLowerCase().includes(search.toLowerCase()) ||
       unit?.dialectName?.toLowerCase().includes(search.toLowerCase());
     const matchesUnit = filterUnit === "all" || q.unit_id === filterUnit;
