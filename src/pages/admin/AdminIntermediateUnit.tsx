@@ -262,43 +262,6 @@ function toYouTubeEmbed(url: string): string {
   return url;
 }
 
-/* --------------------------- Learn / Grammar link ------------------------- */
-
-function LinkOutCard({
-  title, description, href, unitId, kind,
-}: { title: string; description: string; href: string; unitId: string; kind: "learn" | "grammar" }) {
-  const { data: count } = useQuery({
-    queryKey: ["admin-intermediate-cardcount", unitId, kind],
-    queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("flashcards")
-        .select("id", { count: "exact", head: true })
-        .eq("unit_id", unitId)
-        .eq("kind", kind);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-sm">
-          <strong>{count ?? 0}</strong> card{count === 1 ? "" : "s"} in this unit.
-        </p>
-        <Button asChild>
-          <Link to={href}>
-            Open editor <ExternalLink className="w-4 h-4 ml-2" />
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 /* ---------------------------------- Test ---------------------------------- */
 
