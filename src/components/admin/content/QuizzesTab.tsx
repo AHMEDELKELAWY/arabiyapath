@@ -61,9 +61,13 @@ export function QuizzesTab() {
   const { data: levels } = useLevels();
   const { data: dialects } = useDialects();
   const queryClient = useQueryClient();
+  const scope = useAdminLearnScope();
 
   const [search, setSearch] = useState("");
-  const [filterUnit, setFilterUnit] = useState<string>("all");
+  const [filterUnit, setFilterUnit] = useState<string>(scope.unitId ?? "all");
+  useEffect(() => {
+    setFilterUnit(scope.unitId ?? "all");
+  }, [scope.unitId]);
   const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [deleteQuestion, setDeleteQuestion] = useState<string | null>(null);
