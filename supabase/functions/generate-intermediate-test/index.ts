@@ -64,19 +64,19 @@ Deno.serve(async (req) => {
 
     const { data: learnCards } = await admin
       .from("flashcards")
-      .select("arabic, transliteration, english, notes")
+      .select("arabic_text, transliteration, english_translation, notes")
       .eq("unit_id", unit_id).eq("kind", "learn").eq("published", true).limit(80);
 
     const { data: grammarCards } = await admin
       .from("flashcards")
-      .select("arabic, english, notes")
+      .select("arabic_text, english_translation, notes")
       .eq("unit_id", unit_id).eq("kind", "grammar").eq("published", true).limit(40);
 
     const vocabList = (learnCards ?? []).map((c: any) =>
-      `- ${c.arabic}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english}`
+      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}`
     ).join("\n");
     const grammarList = (grammarCards ?? []).map((c: any) =>
-      `- ${c.arabic} — ${c.english}${c.notes ? `\n  Note: ${c.notes}` : ""}`
+      `- ${c.arabic_text} — ${c.english_translation}${c.notes ? `\n  Note: ${c.notes}` : ""}`
     ).join("\n");
 
     const prompt = `You are an Arabic language curriculum designer creating an INTERMEDIATE-level assessment.
