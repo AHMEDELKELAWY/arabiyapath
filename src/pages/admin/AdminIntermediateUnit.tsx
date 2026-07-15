@@ -109,23 +109,11 @@ export default function AdminIntermediateUnit() {
         </TabsContent>
 
         <TabsContent value="learn" className="mt-4">
-          <LinkOutCard
-            title="Learn cards"
-            description="Vocabulary cards for this unit (kind = learn). The editor is unchanged from the Beginner workflow."
-            href={`/admin/flashcards/cards?unit=${unit.id}&kind=learn`}
-            unitId={unit.id}
-            kind="learn"
-          />
+          <AdminFlashcardCards embedded embeddedUnitId={unit.id} embeddedKind="learn" />
         </TabsContent>
 
         <TabsContent value="grammar" className="mt-4">
-          <LinkOutCard
-            title="Grammar cards"
-            description="Grammar cards for this unit (kind = grammar). The editor is unchanged."
-            href={`/admin/flashcards/cards?unit=${unit.id}&kind=grammar`}
-            unitId={unit.id}
-            kind="grammar"
-          />
+          <AdminFlashcardCards embedded embeddedUnitId={unit.id} embeddedKind="grammar" />
         </TabsContent>
 
         <TabsContent value="test" className="mt-4">
