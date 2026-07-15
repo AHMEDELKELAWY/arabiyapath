@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FlashCardImage } from "./FlashCardImage";
 import { ActivityProgress } from "./ActivityProgress";
-import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, Check, RotateCcw, ArrowLeft, Mic, Headphones, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEARN_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,13 +26,17 @@ interface CardRow {
 interface Props {
   unitId: string;
   onComplete?: () => void;
+  /** Label of the completion CTA (defaults to "Continue to Listening"). */
+  nextLabel?: string;
+  /** Icon shown in the completion CTA (defaults to Headphones). */
+  nextIcon?: LucideIcon;
 }
 
 /**
  * Learn tab — pure manually authored vocabulary browser.
  * Reads only flashcards where kind = 'learn'.
  */
-export function LearnVocabBrowser({ unitId, onComplete }: Props) {
+export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to Listening", nextIcon: NextIcon = Headphones }: Props) {
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [fadeKey, setFadeKey] = useState(0);
@@ -170,7 +174,7 @@ export function LearnVocabBrowser({ unitId, onComplete }: Props) {
               }}
               className="gap-2"
             >
-              <Headphones className="w-4 h-4" /> Continue to Listening
+              <NextIcon className="w-4 h-4" /> {nextLabel}
             </Button>
           </div>
         </CardContent>
