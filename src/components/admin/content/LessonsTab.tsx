@@ -71,8 +71,12 @@ export function LessonsTab() {
   const { data: dialects } = useDialects();
   const { data: lessonsWithoutImages, refetch: refetchMissingImages } = useLessonsWithoutImages();
   const queryClient = useQueryClient();
+  const scope = useAdminLearnScope();
   const [search, setSearch] = useState("");
-  const [filterUnit, setFilterUnit] = useState<string>("all");
+  const [filterUnit, setFilterUnit] = useState<string>(scope.unitId ?? "all");
+  useEffect(() => {
+    setFilterUnit(scope.unitId ?? "all");
+  }, [scope.unitId]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewLesson, setPreviewLesson] = useState<any>(null);
   const [deleteLesson, setDeleteLesson] = useState<string | null>(null);
