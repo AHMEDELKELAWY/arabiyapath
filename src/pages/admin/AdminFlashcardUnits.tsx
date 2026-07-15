@@ -45,6 +45,7 @@ const EMPTY: UnitForm = {
 
 export default function AdminFlashcardUnits() {
   const qc = useQueryClient();
+  const adminScope = useAdminFlashcardScope();
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<UnitForm>(EMPTY);
 
