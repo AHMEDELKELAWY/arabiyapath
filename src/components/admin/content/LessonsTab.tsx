@@ -226,14 +226,21 @@ export function LessonsTab() {
     }
   };
 
+  // Restrict units in dropdown to selected level (from admin scope) if any.
+  const scopedUnits = scope.levelId
+    ? (units ?? []).filter((u: any) => u.level_id === scope.levelId)
+    : (units ?? []);
+
   const filteredLessons = lessons?.filter((l) => {
     const matchesSearch = l.title.toLowerCase().includes(search.toLowerCase());
-    const matchesUnit = filterUnit === "all" || l.unit_id === filterUnit;
+    const matchesUnit = filterUnit === "all"
+      ? (scope.levelId ? scopedUnits.some((u: any) => u.id === l.unit_id) : true)
+      : l.unit_id === filterUnit;
     return matchesSearch && matchesUnit;
   });
 
-  // Group units for the select
-  const unitsGrouped = units?.map((u) => {
+  // Group units for the select (restricted to scoped level)
+  const unitsGrouped = scopedUnits?.map((u: any) => {
     const level = levels?.find((l) => l.id === u.level_id);
     const dialect = dialects?.find((d) => d.id === level?.dialect_id);
     return {
