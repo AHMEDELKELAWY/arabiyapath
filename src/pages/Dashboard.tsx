@@ -54,8 +54,15 @@ export default function Dashboard() {
     isLoading,
   } = useDashboardData();
   const { data: fcSummary } = useFlashcardsDashboard();
-
-  const firstName = profile?.first_name || "Learner";
+  const { subscription } = useMembership();
+  const isFreeMembership = !!subscription?.paypal_subscription_id?.startsWith("FREE-");
+  const isPaidActive =
+    !!subscription &&
+    !isFreeMembership &&
+    (subscription.status === "ACTIVE" ||
+      (subscription.status === "CANCELLED" &&
+        !!subscription.expires_at &&
+        new Date(subscription.expires_at) > new Date()));
   const hasAnyProgress = recentActivity.length > 0;
   const lastActivity = recentActivity[0] || null;
 
