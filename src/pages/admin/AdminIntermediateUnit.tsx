@@ -11,7 +11,7 @@
  */
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,9 +28,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
 import {
   Headphones, BookOpen, ScrollText, ClipboardCheck, Sparkles,
-  Video, Youtube, ExternalLink, Loader2, Pencil, Trash2, Plus, Upload,
+  Video, Youtube, Loader2, Pencil, Trash2, Plus, Upload,
 } from "lucide-react";
 
 const CONTENT_BUCKET = "content";
@@ -108,23 +109,11 @@ export default function AdminIntermediateUnit() {
         </TabsContent>
 
         <TabsContent value="learn" className="mt-4">
-          <LinkOutCard
-            title="Learn cards"
-            description="Vocabulary cards for this unit (kind = learn). The editor is unchanged from the Beginner workflow."
-            href={`/admin/flashcards/cards?unit=${unit.id}&kind=learn`}
-            unitId={unit.id}
-            kind="learn"
-          />
+          <AdminFlashcardCards embedded embeddedUnitId={unit.id} embeddedKind="learn" />
         </TabsContent>
 
         <TabsContent value="grammar" className="mt-4">
-          <LinkOutCard
-            title="Grammar cards"
-            description="Grammar cards for this unit (kind = grammar). The editor is unchanged."
-            href={`/admin/flashcards/cards?unit=${unit.id}&kind=grammar`}
-            unitId={unit.id}
-            kind="grammar"
-          />
+          <AdminFlashcardCards embedded embeddedUnitId={unit.id} embeddedKind="grammar" />
         </TabsContent>
 
         <TabsContent value="test" className="mt-4">
@@ -273,43 +262,6 @@ function toYouTubeEmbed(url: string): string {
   return url;
 }
 
-/* --------------------------- Learn / Grammar link ------------------------- */
-
-function LinkOutCard({
-  title, description, href, unitId, kind,
-}: { title: string; description: string; href: string; unitId: string; kind: "learn" | "grammar" }) {
-  const { data: count } = useQuery({
-    queryKey: ["admin-intermediate-cardcount", unitId, kind],
-    queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("flashcards")
-        .select("id", { count: "exact", head: true })
-        .eq("unit_id", unitId)
-        .eq("kind", kind);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-sm">
-          <strong>{count ?? 0}</strong> card{count === 1 ? "" : "s"} in this unit.
-        </p>
-        <Button asChild>
-          <Link to={href}>
-            Open editor <ExternalLink className="w-4 h-4 ml-2" />
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 /* ---------------------------------- Test ---------------------------------- */
 
