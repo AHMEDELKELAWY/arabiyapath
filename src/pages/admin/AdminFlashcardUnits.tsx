@@ -21,6 +21,18 @@ import { useFlashcardCourseStructure } from "@/hooks/useFlashcardCourseStructure
 import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
 import { useAdminFlashcardScope } from "@/components/admin/AdminScopeContext";
 
+const INTERMEDIATE_LEVEL_ID = "01d4e9e7-b0c5-4599-867c-f4c2bfac542f";
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80);
+}
+
 type UnitForm = {
   slug: string;
   title_en: string;
@@ -30,6 +42,7 @@ type UnitForm = {
   published: boolean;
   order_index: number;
   course_level_id: string | null;
+  lesson_topic: string;
 };
 
 const EMPTY: UnitForm = {
@@ -41,6 +54,7 @@ const EMPTY: UnitForm = {
   published: false,
   order_index: 0,
   course_level_id: null,
+  lesson_topic: "",
 };
 
 export default function AdminFlashcardUnits() {
