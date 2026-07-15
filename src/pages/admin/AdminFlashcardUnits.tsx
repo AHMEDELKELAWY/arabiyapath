@@ -162,6 +162,15 @@ export default function AdminFlashcardUnits() {
 
   return (
     <AdminLayout>
+      <AdminScopePicker
+        scope="flashcard"
+        allowAllUnits
+        hint={
+          adminScope.currentLevel
+            ? `Showing units in ${adminScope.currentLevel.label}. New units are created inside this level automatically.`
+            : "Pick a Course / Level to filter units. New units land in the selected level."
+        }
+      />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Spoken Arabic — Units</h1>
         <Button onClick={startNew}>
