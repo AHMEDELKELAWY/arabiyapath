@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePendingApplicationsCount } from "@/hooks/useAffiliateApplications";
 import { useAdminUnreadNotificationsCount } from "@/hooks/useAdminNotifications";
 import logoImage from "@/assets/logo.png";
+import { AdminScopeProvider } from "@/components/admin/AdminScopeContext";
 
 interface AdminLayoutProps {
   children: ReactNode;
