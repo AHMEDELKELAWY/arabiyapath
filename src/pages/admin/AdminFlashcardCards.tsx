@@ -650,18 +650,24 @@ export default function AdminFlashcardCards({
   };
 
 
+  const Wrapper: React.FC<{ children: React.ReactNode }> = embedded
+    ? ({ children }) => <>{children}</>
+    : ({ children }) => <AdminLayout>{children}</AdminLayout>;
+
   return (
-    <AdminLayout>
-      <AdminScopePicker
-        scope="flashcard"
-        hint={
-          scope.currentLevel && scope.currentUnit
-            ? `Working in: ${scope.currentLevel.label} / ${scope.currentUnit.title}`
-            : scope.currentLevel
-              ? `Pick a unit in ${scope.currentLevel.label} to manage its cards.`
-              : "Pick a Course / Level and a Unit to manage its content."
-        }
-      />
+    <Wrapper>
+      {!embedded && (
+        <AdminScopePicker
+          scope="flashcard"
+          hint={
+            scope.currentLevel && scope.currentUnit
+              ? `Working in: ${scope.currentLevel.label} / ${scope.currentUnit.title}`
+              : scope.currentLevel
+                ? `Pick a unit in ${scope.currentLevel.label} to manage its cards.`
+                : "Pick a Course / Level and a Unit to manage its content."
+          }
+        />
+      )}
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
