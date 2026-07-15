@@ -210,10 +210,14 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <ContinueLearningCard
-          lastActivity={lastActivity}
-          hasAnyProgress={hasAnyProgress}
-        />
+        {isPaidActive ? (
+          <ContinueLearningCard
+            lastActivity={lastActivity}
+            hasAnyProgress={hasAnyProgress}
+          />
+        ) : (
+          <MembershipUpsellHero mode={isFreeMembership ? "free" : "none"} />
+        )}
 
         {/* ===== MY LEARNING ===== */}
         <section>
