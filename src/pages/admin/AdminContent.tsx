@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminScopePicker } from "@/components/admin/AdminScopePicker";
+import { useAdminLearnScope } from "@/components/admin/AdminScopeContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DialectsTab } from "@/components/admin/content/DialectsTab";
 import { LevelsTab } from "@/components/admin/content/LevelsTab";
