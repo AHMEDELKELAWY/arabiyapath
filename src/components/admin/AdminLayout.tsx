@@ -69,7 +69,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <AdminScopeProvider>
     <div className="min-h-screen flex bg-muted/30">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
