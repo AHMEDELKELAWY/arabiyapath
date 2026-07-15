@@ -11,9 +11,24 @@ import { QuizzesTab } from "@/components/admin/content/QuizzesTab";
 
 export default function AdminContent() {
   const [activeTab, setActiveTab] = useState("dialects");
+  const scope = useAdminLearnScope();
+  const scopedTab = activeTab === "units" || activeTab === "lessons" || activeTab === "quizzes";
 
   return (
     <AdminLayout>
+      {scopedTab && (
+        <AdminScopePicker
+          scope="learn"
+          allowAllUnits
+          hint={
+            scope.currentLevel && scope.currentUnit
+              ? `Working in: ${scope.currentLevel.label} / ${scope.currentUnit.title}`
+              : scope.currentLevel
+                ? `Filtering ${activeTab} in ${scope.currentLevel.label}. Pick a unit to narrow further.`
+                : "Pick a Course / Level to keep your selection while managing units, lessons, and quizzes."
+          }
+        />
+      )}
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Content Management</h1>
