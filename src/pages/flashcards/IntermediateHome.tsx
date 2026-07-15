@@ -5,6 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { UnitCard, type UnitCardBadge, type UnitCardStatus } from "@/components/units/UnitCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 const INTERMEDIATE_LEVEL_ID = "01d4e9e7-b0c5-4599-867c-f4c2bfac542f";
 
