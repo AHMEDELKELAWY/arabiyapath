@@ -1,95 +1,74 @@
-# Implementation Plan
+## Goal
+Restructure the Admin dashboard so content is always managed inside a Course → Level → Unit scope, before Intermediate/Advanced content is added. Student-facing code is not touched.
 
-This is a large, multi-part request. I'll implement it in the order below. All work is additive and reuses the existing `enqueue_email` → `transactional_emails` → `process-email-queue` infrastructure and the same branded style as the auth templates (teal `#1a7a5c`, gold accent, logo, Reply-To `admin@arabiyapath.com`, From `ArabiyaPath <no-reply@notify.arabiyapath.com>`).
+## Data model (no schema changes needed)
+The hierarchy already exists in the DB:
+- `flashcard_courses` → `flashcard_course_levels` → `flashcard_units.course_level_id` → `flashcards` (Spoken Arabic path used by Vocabulary/Cards/Grammar/Listening/Speaking)
+- `dialects` → `levels` → `units` → `lessons`/`quizzes` (legacy Learn path used by AdminContent)
 
----
+Both hierarchies stay. Only requirement: every Unit belongs to exactly one Level. We will add a one-time guard in the Units admin to make `course_level_id` (or `level_id`) required going forward. No student-side change.
 
-## PART 1 — Forgot Password (frontend only)
+## New shared admin scope
 
-- Edit the existing Login page (`src/pages/Login.tsx` or equivalent):
-  - Add "Forgot password?" link under the Password field → opens a small dialog / route (`/forgot-password`) already scaffolded if present, otherwise inline dialog.
-  - Calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: <origin>/reset-password })`.
-  - Success toast, error handling (rate limit → friendly message), no custom reset system.
-- Verify `/reset-password` page exists (it does — auth-email-hook already sends recovery).
+### 1. `AdminScopeContext` (new)
+`src/components/admin/AdminScopeContext.tsx`
+- Holds `{ courseId, levelId, unitId, setLevel(levelId), setUnit(unitId) }`.
+- Persists to `localStorage` key `admin.scope.v1` so selection survives navigation and reloads.
+- Two flavors, one provider file, exposed via `useAdminFlashcardScope()` (for Spoken Arabic / flashcards) and `useAdminLearnScope()` (for legacy dialect/level/unit content). Same shape, different data source, so admin pages stay simple.
+- Provider mounted once in `AdminLayout` so every admin page shares the same selection.
 
-## PART 2 — Transactional email plumbing
+### 2. `<AdminScopePicker />` (new)
+`src/components/admin/AdminScopePicker.tsx`
+- Renders two dropdowns side by side:
+  1. **Course / Level** — e.g. "Spoken Arabic – Beginner", "Spoken Arabic – Intermediate". Uses `useFlashcardCourseStructure()` (already exists) for the flashcard scope; uses `useLevels()` grouped by dialect for the Learn scope.
+  2. **Unit** — filtered to units whose `course_level_id` / `level_id` matches the selected Level. Beginner units are never shown when Intermediate is selected.
+- When Level changes, Unit auto-resets to the first Unit of that Level.
+- Sticky bar at the top of every content page so admins never lose context.
 
-Scaffold the transactional pipeline (one-time):
-1. `email_domain--scaffold_transactional_email` — creates `send-transactional-email`, `handle-email-unsubscribe`, `handle-email-suppression`, template registry.
-2. Add all new templates under `supabase/functions/_shared/transactional-email-templates/` and register them.
-3. Deploy the functions.
+## Admin pages to migrate
 
-All membership + payment webhooks will call `send-transactional-email` (which enqueues to `transactional_emails` and logs to `email_send_log` automatically).
+Replace each page's local "Select Unit" dropdown with `<AdminScopePicker />` + `useAdminFlashcardScope()` / `useAdminLearnScope()`.
 
-No PayPal business logic changes — only add email invocations after DB writes already happen.
+Flashcard-side (Spoken Arabic hierarchy):
+- `AdminFlashcardUnits.tsx` — already grouped by Course/Level; add Level filter, keep the "Unassigned" bucket only visible when Level = "All".
+- `AdminFlashcardCards.tsx` — remove internal unit picker, read `unitId` from scope. Search/filter, Import CSV, Export, Backup, Restore, Bulk Image Upload all operate on `scope.unitId` only.
+- Cards Grammar tab (inside `AdminFlashcardCards.tsx`) — same scope.
+- `AdminFlashcardDiagnostics.tsx` — scoped by unit.
+- `AdminFlashcardPacks.tsx` — packs are cross-unit, keep as-is (packs bundle units, do not belong to a single unit).
 
-## PART 3 — Membership templates + wiring
+Learn-side (legacy dialects/levels/units):
+- `AdminContent.tsx` (Units, Lessons, Quizzes tabs) — add the same scope bar. Lessons and Quizzes tabs list only items whose unit is in the selected Level; the Unit selector inside those tabs is replaced by the shared one.
 
-Create 7 branded templates:
-- `membership-activated`
-- `membership-renewed`
-- `membership-cancelled`
-- `membership-resumed`
-- `membership-plan-changed`
-- `payment-failed`
-- `payment-action-required`
+Untouched admin pages (no content scope needed): Users, Purchases, Coupons, Products, Notifications, Email Log, Affiliates, Certificates, Memberships.
 
-Wire them in these existing edge functions (add invocations only, no logic changes):
-- `paypal-webhook`: `BILLING.SUBSCRIPTION.ACTIVATED`, `PAYMENT.SALE.COMPLETED` (renewal), `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.PAYMENT.FAILED`, `BILLING.SUBSCRIPTION.UPDATED` (plan changed), `BILLING.SUBSCRIPTION.RE-ACTIVATED` (resumed).
-- `paypal-manage-subscription`: cancel handler → send cancelled email; FREE coupon activation path → send activated email.
+## Create-content defaults
+When admin creates a Card, Lesson, Grammar note, Quiz, Listening item, etc. from a scoped page, we pre-fill `unit_id` / `course_level_id` from the current scope and hide those fields in the create dialog (still editable via a small "Change scope" link so mis-scoped items can be moved). No prompt, no re-selection.
 
-De-dupe first-payment vs activation using `purchases.paypal_capture_id`.
+## Import / Export / Backup / Restore / Bulk Image Upload
+All existing buttons stay, but their handlers change from "iterate current filter" to "operate on `scope.unitId`". The scope bar shows a short line like *"Importing into: Spoken Arabic – Beginner / Unit 3 — Greetings"* above the action so mistakes are obvious.
 
-## PART 4 — Purchase receipt
+## Search
+Search inputs in `AdminFlashcardCards`, Lessons tab, Quizzes tab, Grammar tab filter within `scope.unitId` only. Cross-unit search is removed for now (out of scope).
 
-- Template `purchase-receipt`.
-- Wire into `paypal-capture-order` and `record_membership_purchase` flow (after insertion into `purchases`).
+## Guard against unassigned units
+`AdminFlashcardUnits` and Learn `UnitsTab` will require a Level selection when creating a new unit (already true for Learn, needs enforcement for flashcard units — the "Unassigned" option in the create form will be removed; existing unassigned rows keep working and show a warning badge).
 
-## PART 5 — Branding
+## Explicitly not changed
+Student dashboard, learning flow, progress, flashcards runtime, quiz logic, membership, payments, emails, auth, routing, SEO, DB schema, RLS.
 
-Reuse the same header/footer/style constants from existing auth templates in `supabase/functions/_shared/email-templates/`. Extract a small shared layout helper (`_shared/transactional-email-templates/_layout.tsx`) that mirrors the auth branding.
+## Technical file list
+New:
+- `src/components/admin/AdminScopeContext.tsx`
+- `src/components/admin/AdminScopePicker.tsx`
 
-## PART 6 — Logging
+Edited:
+- `src/components/admin/AdminLayout.tsx` (mount provider + optional sticky picker slot)
+- `src/pages/admin/AdminFlashcardUnits.tsx`
+- `src/pages/admin/AdminFlashcardCards.tsx`
+- `src/pages/admin/AdminFlashcardDiagnostics.tsx`
+- `src/pages/admin/AdminContent.tsx`
+- `src/components/admin/content/UnitsTab.tsx`
+- `src/components/admin/content/LessonsTab.tsx`
+- `src/components/admin/content/QuizzesTab.tsx`
 
-Nothing extra. The existing `send-transactional-email` already writes to `email_send_log` (pending → sent/failed). Confirm during verification.
-
-## PART 7 — Google OAuth branding (documentation only, no code)
-
-Report will be provided in chat, not committed:
-- Current setup uses Lovable Cloud's managed Google OAuth client → this is why the consent screen shows "Lovable".
-- Migration steps: create own Google Cloud project → OAuth consent screen branded "ArabiyaPath" with logo, support email `admin@arabiyapath.com`, homepage `https://arabiyapath.com` → create OAuth 2.0 Web Client → authorized redirect URI = the callback URL shown in Cloud → Users → Auth Settings → Google provider → paste Client ID + Secret into that same panel → save. No code changes; sessions remain valid.
-
-## PART 8 — Verification
-
-- Deploy all functions.
-- Read `email_send_log` after triggering signup + password reset from the running app.
-- For membership/payment flows: cannot fire real PayPal webhooks from the agent — will instead:
-  - Statically verify each invocation site compiles + is on the correct event branch.
-  - Query `email_send_log` for any historical rows.
-  - Provide the user a checklist to trigger each flow, then re-inspect on request.
-
----
-
-## Technical details
-
-Files created:
-- `supabase/functions/_shared/transactional-email-templates/_layout.tsx` (shared branding)
-- `supabase/functions/_shared/transactional-email-templates/membership-activated.tsx`
-- `.../membership-renewed.tsx`
-- `.../membership-cancelled.tsx`
-- `.../membership-resumed.tsx`
-- `.../membership-plan-changed.tsx`
-- `.../payment-failed.tsx`
-- `.../payment-action-required.tsx`
-- `.../purchase-receipt.tsx`
-- registry.ts updated
-
-Files modified (invocations only):
-- `supabase/functions/paypal-webhook/index.ts`
-- `supabase/functions/paypal-manage-subscription/index.ts`
-- `supabase/functions/paypal-capture-order/index.ts`
-- `src/pages/Login.tsx` (Forgot Password link)
-
-No DB migrations. No changes to pricing, products, purchases, users, RLS, or auth config.
-
-Approve to proceed.
+No DB migration. No student code changes.
