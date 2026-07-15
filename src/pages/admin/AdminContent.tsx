@@ -8,11 +8,17 @@ import { LevelsTab } from "@/components/admin/content/LevelsTab";
 import { UnitsTab } from "@/components/admin/content/UnitsTab";
 import { LessonsTab } from "@/components/admin/content/LessonsTab";
 import { QuizzesTab } from "@/components/admin/content/QuizzesTab";
+import { ListeningTab } from "@/components/admin/content/ListeningTab";
 
 export default function AdminContent() {
   const [activeTab, setActiveTab] = useState("dialects");
   const scope = useAdminLearnScope();
-  const scopedTab = activeTab === "units" || activeTab === "lessons" || activeTab === "quizzes";
+  const scopedTab =
+    activeTab === "units" ||
+    activeTab === "lessons" ||
+    activeTab === "quizzes" ||
+    activeTab === "listening";
+
 
   return (
     <AdminLayout>
@@ -36,12 +42,14 @@ export default function AdminContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 max-w-xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-2xl">
             <TabsTrigger value="dialects">Dialects</TabsTrigger>
             <TabsTrigger value="levels">Levels</TabsTrigger>
             <TabsTrigger value="units">Units</TabsTrigger>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+            <TabsTrigger value="listening">Listening</TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="dialects" className="mt-6">
@@ -63,6 +71,11 @@ export default function AdminContent() {
           <TabsContent value="quizzes" className="mt-6">
             <QuizzesTab />
           </TabsContent>
+
+          <TabsContent value="listening" className="mt-6">
+            <ListeningTab />
+          </TabsContent>
+
         </Tabs>
       </div>
     </AdminLayout>
