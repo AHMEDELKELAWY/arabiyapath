@@ -25,7 +25,7 @@ interface UnitRow {
 export default function IntermediateHome() {
   const { user } = useAuth();
 
-  const { data: units } = useQuery({
+  const { data: units, isLoading, error, refetch } = useQuery({
     queryKey: ["fc-units-intermediate"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
