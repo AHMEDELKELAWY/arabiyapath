@@ -219,6 +219,8 @@ export default function FullAppRoutes() {
             <Route path="/flashcards/course/spoken-arabic" element={<SpokenArabicOverview />} />
             <Route path="/flashcards" element={<FlashCardsHome />} />
             <Route path="/flashcards-pack" element={<FlashCardsSalesPage />} />
+            <Route path="/flashcards/level/intermediate" element={<IntermediateHome />} />
+            <Route path="/flashcards/intermediate/unit/:slug" element={<IntermediateUnit />} />
             <Route path="/flashcards/unit/:slug" element={<FlashCardUnit />} />
             <Route path="/flashcards/pack/:slug" element={<FlashCardPack />} />
             <Route path="/flashcards/study/:unitSlug" element={<ProtectedRoute><FlashCardStudy /></ProtectedRoute>} />
