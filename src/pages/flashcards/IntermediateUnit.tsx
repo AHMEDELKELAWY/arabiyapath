@@ -205,7 +205,13 @@ export default function IntermediateUnit() {
 
             <TabsContent value="learn" className="mt-3 md:mt-4">
               {canStudy ? (
-                <LearnVocabBrowser unitId={unit.id} onComplete={() => setActiveTab("grammar")} />
+                <LearnVocabBrowser
+                  unitId={unit.id}
+                  onComplete={() => setActiveTab("grammar")}
+                  nextLabel="Continue to Grammar"
+                  nextIcon={ScrollText}
+                />
+
               ) : (
                 <LockedCard icon={BookOpen} title="Learn" body="Study each vocabulary card with Arabic, transliteration, English, image and audio." />
               )}
