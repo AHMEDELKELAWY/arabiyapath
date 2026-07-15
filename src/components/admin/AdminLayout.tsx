@@ -150,6 +150,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-6">{children}</div>
       </main>
     </div>
-    </AdminScopeProvider>
   );
 }
