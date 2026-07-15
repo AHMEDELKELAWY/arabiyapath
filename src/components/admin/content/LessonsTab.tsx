@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLessons, useUnits, useLevels, useDialects, useLessonsWithoutImages } from "@/hooks/useAdminData";
+import { useAdminLearnScope } from "@/components/admin/AdminScopeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
