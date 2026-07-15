@@ -103,7 +103,7 @@ export default function AdminFlashcardUnits() {
     setForm({
       ...EMPTY,
       order_index: (units?.length ?? 0) + 1,
-      course_level_id: levelOptions[0]?.id ?? null,
+      course_level_id: adminScope.levelId ?? levelOptions[0]?.id ?? null,
     });
   };
 
