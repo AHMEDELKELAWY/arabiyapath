@@ -56,11 +56,33 @@ export default function IntermediateHome() {
     },
   });
 
+  const progressQuery = useQuery({
+    queryKey: ["fc-intermediate-progress-all", user?.id ?? "anon"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_intermediate_progress")
+        .select("unit_id,listening_completed_at,learn_completed_at,grammar_completed_at,test_completed_at")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      const map = new Map<string, { pct: number; done: boolean }>();
+      for (const row of data ?? []) {
+        const steps = [
+          row.listening_completed_at, row.learn_completed_at,
+          row.grammar_completed_at, row.test_completed_at,
+        ].filter(Boolean).length;
+        map.set(row.unit_id, { pct: (steps / 4) * 100, done: steps === 4 });
+      }
+      return map;
+    },
+  });
+
   function unlocked(u: UnitRow): boolean {
     if (u.is_free) return true;
     if (!user) return false;
     return !!accessQuery.data?.get(u.id);
   }
+
 
   return (
     <Layout>
