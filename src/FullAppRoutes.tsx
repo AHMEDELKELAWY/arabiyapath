@@ -119,8 +119,13 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error, query) => {
-      // Only toast when a component is actively observing the query — avoids background noise.
-      if (query.state.data === undefined && query.getObserversCount() > 0) {
+      // Only toast for the initial load of an observed query — silences background
+      // refetches and anything a component chooses to render inline via `meta.silent`.
+      if (
+        query.state.data === undefined &&
+        query.getObserversCount() > 0 &&
+        (query.meta as any)?.silent !== true
+      ) {
         const kind = classifyError(error);
         if (kind !== "auth" && kind !== "not_found") {
           toastError(error, "Failed to load data");
@@ -128,13 +133,10 @@ const queryClient = new QueryClient({
       }
     },
   }),
-  mutationCache: new MutationCache({
-    onError: (error, _vars, _ctx, mutation) => {
-      // Skip if the mutation defines its own onError handler.
-      if (mutation.options.onError) return;
-      toastError(error, "Action failed");
-    },
-  }),
+  // NOTE: no global mutation onError — individual mutations already surface
+  // their own errors inline (forms, checkout, admin actions). A blanket toast
+  // caused duplicate/confusing error banners.
+
 });
 
 function PageLoader() {
