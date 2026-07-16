@@ -1,13 +1,18 @@
 // Generate an Intermediate-level Test using Lovable AI Gateway (Gemini 2.5 Pro).
 //
 // Reference inputs:
-//   1. flashcard_units.lesson_topic  — primary topic reference
-//   2. flashcard_units.video_url / video_storage_path — mentioned as context
-//   3. flashcards where kind='learn'   — vocabulary
-//   4. flashcards where kind='grammar' — grammar rules
+//   1. flashcard_units.lesson_topic  — primary topic reference (30% of questions)
+//   2. flashcards where kind='learn'  — vocabulary (30% of questions)
+//   3. flashcards where kind='grammar' — grammar rules (20% of questions)
+//   4. original AI-authored inference questions using all context (20%)
+//
+// Question types the runner supports (must be one of these):
+//   multiple_choice, grammar_selection, conversation_completion,
+//   vocab_in_context, audio, fill_in_blank, sentence_ordering, matching,
+//   reading_comprehension.
 //
 // Output: rows in `flashcard_unit_tests`. Existing rows for the unit are wiped
-// so the admin gets a clean set to review/edit/publish.
+// so the admin gets a clean regenerated set.
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -15,13 +20,16 @@ import { z } from "npm:zod";
 
 const BodySchema = z.object({ unit_id: z.string().uuid() });
 
-const QUESTION_TYPES = [
-  "listening",
-  "vocabulary",
-  "grammar",
+const ALLOWED_TYPES = [
+  "multiple_choice",
+  "grammar_selection",
+  "conversation_completion",
+  "vocab_in_context",
+  "fill_in_blank",
   "sentence_ordering",
-  "fill_blank",
+  "matching",
   "reading_comprehension",
+  "audio",
 ] as const;
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -40,7 +48,7 @@ Deno.serve(async (req) => {
     }
     const { unit_id } = parsed.data;
 
-    // Verify caller is admin via JWT
+    // Verify caller is admin
     const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
     if (!jwt) return json({ error: "auth required" }, 401);
     const authClient = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -65,21 +73,21 @@ Deno.serve(async (req) => {
     const { data: learnCards } = await admin
       .from("flashcards")
       .select("arabic_text, transliteration, english_translation, notes")
-      .eq("unit_id", unit_id).eq("kind", "learn").eq("published", true).limit(80);
+      .eq("unit_id", unit_id).eq("kind", "learn").eq("published", true).limit(120);
 
     const { data: grammarCards } = await admin
       .from("flashcards")
       .select("arabic_text, english_translation, notes")
-      .eq("unit_id", unit_id).eq("kind", "grammar").eq("published", true).limit(40);
+      .eq("unit_id", unit_id).eq("kind", "grammar").eq("published", true).limit(60);
 
     const vocabList = (learnCards ?? []).map((c: any) =>
-      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}`
+      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}`
     ).join("\n");
     const grammarList = (grammarCards ?? []).map((c: any) =>
       `- ${c.arabic_text} — ${c.english_translation}${c.notes ? `\n  Note: ${c.notes}` : ""}`
     ).join("\n");
 
-    const prompt = `You are an Arabic language curriculum designer creating an INTERMEDIATE-level assessment.
+    const prompt = `You are a senior Arabic language curriculum designer creating an INTERMEDIATE-level assessment (CEFR B1). Learners have already mastered vocabulary drills at the beginner level — this test must feel meaningfully harder than a beginner quiz.
 
 ## Unit
 Title (EN): ${unit.title_en}
@@ -88,9 +96,8 @@ Title (AR): ${unit.title_ar ?? ""}
 ## Lesson Topic (primary reference)
 ${unit.lesson_topic ?? "(none provided)"}
 
-## Listening resource
-${unit.video_url ? `YouTube: ${unit.video_url}` : ""}${unit.video_storage_path ? `\nUploaded video: yes` : ""}
-(You cannot watch the video; write listening questions inferred from the lesson topic that a listener of an intermediate Arabic clip on this topic would reasonably be tested on.)
+## Listening resource (context only — do NOT include audio questions unless audio content is provided)
+${unit.video_url ? `YouTube: ${unit.video_url}` : "(none)"}${unit.video_storage_path ? `\nUploaded video: yes` : ""}
 
 ## Learn vocabulary
 ${vocabList || "(none)"}
@@ -99,34 +106,49 @@ ${vocabList || "(none)"}
 ${grammarList || "(none)"}
 
 ## Task
-Produce 10 diverse test questions covering these types: listening, vocabulary, grammar, sentence_ordering, fill_blank, reading_comprehension. Use MULTIPLE types (aim for at least 4 distinct types).
+Produce EXACTLY 10 diverse questions with this distribution:
+- 3 questions grounded in the LESSON TOPIC (comprehension, inference, event ordering).
+- 3 questions grounded in LEARN VOCABULARY (vocab_in_context, matching, sentence_ordering — not simple recall).
+- 2 questions grounded in GRAMMAR (grammar_selection, identifying incorrect usage, sentence_ordering).
+- 2 ORIGINAL reasoning questions combining topic + vocab + grammar (best-response, conversation_completion, inference).
 
-Rules:
-- Arabic text must include full tashkeel (harakat).
-- Difficulty is INTERMEDIATE — beyond simple word recognition; test understanding, inference, and application.
-- Multiple-choice questions must have exactly 4 options and one correct answer text (matching one option exactly).
-- sentence_ordering: "options" is the shuffled tokens array; "correct_answer" is the tokens in correct order (JSON array of strings).
-- fill_blank: the question contains "____"; "options" is 4 candidate fills; "correct_answer" is the correct fill string.
-- reading_comprehension: include a short "passage" field (2-4 Arabic sentences) plus a multiple-choice question about it.
-- listening: frame the question as if the learner just watched the lesson video.
-- Include a brief English "explanation" for every question.
+Question type must be one of:
+  multiple_choice, grammar_selection, conversation_completion, vocab_in_context,
+  fill_in_blank, sentence_ordering, matching, reading_comprehension.
+Do NOT use "audio" — no audio files are attached.
+Use at least 5 DIFFERENT question types across the 10 questions.
 
-Return STRICT JSON only, matching this shape (no prose, no markdown fences):
+Intermediate difficulty rules (critical):
+- Never test single-word recall. Always require understanding in context.
+- Distractors must be plausible (near-synonyms, close grammar forms, sentences that are grammatical but wrong-meaning).
+- Include at least one "identify the INCORRECT usage" question phrased as multiple_choice.
+- Include at least one reading_comprehension with a 2–4 sentence Arabic passage inferring meaning (not stated verbatim).
+- Include at least one conversation_completion where the learner picks the best natural reply.
+- Arabic text MUST have full tashkeel (harakat).
+- Every question ends with a brief English "explanation" giving the reasoning, not just the answer.
+
+Format rules per type:
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context: 4 options, correct_answer is a string that matches ONE option exactly.
+- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is the correct fill string.
+- sentence_ordering: options is the shuffled tokens (array of strings); correct_answer is the tokens in correct order (array of strings).
+- matching: options is an array of 4 {left,right} pairs shown to the learner shuffled; correct_answer is the SAME object as {"left":"right", ...} mapping.
+- reading_comprehension: include "passage" (Arabic, 2–4 sentences); options is 4; correct_answer is one option string.
+
+Return STRICT JSON only, no prose, no markdown fences:
 {
   "questions": [
     {
       "order_index": 1,
-      "question_type": "vocabulary" | "listening" | "grammar" | "sentence_ordering" | "fill_blank" | "reading_comprehension",
+      "question_type": "multiple_choice" | "grammar_selection" | "conversation_completion" | "vocab_in_context" | "fill_in_blank" | "sentence_ordering" | "matching" | "reading_comprehension",
       "question": "string",
       "passage": "string or null",
-      "options": ["...", "..."] | null,
-      "correct_answer": "string or array of strings",
+      "options": ["...","..."] | [{"left":"...","right":"..."}, ...],
+      "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
       "explanation": "string"
     }
   ]
 }`;
 
-    // Call Lovable AI Gateway
     const gwRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -155,7 +177,6 @@ Return STRICT JSON only, matching this shape (no prose, no markdown fences):
     try {
       parsedOutput = JSON.parse(raw);
     } catch {
-      // Strip potential markdown fences and retry
       const cleaned = raw.replace(/```json|```/g, "").trim();
       parsedOutput = JSON.parse(cleaned);
     }
@@ -164,13 +185,13 @@ Return STRICT JSON only, matching this shape (no prose, no markdown fences):
       return json({ error: "AI returned no questions", raw }, 502);
     }
 
-    // Wipe existing generated set so admin has a clean list to review.
+    // Wipe existing generated set so admin has a clean list.
     await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
 
     const rows = questions.map((q, i) => ({
       unit_id,
       order_index: q.order_index ?? i + 1,
-      question_type: QUESTION_TYPES.includes(q.question_type) ? q.question_type : "vocabulary",
+      question_type: ALLOWED_TYPES.includes(q.question_type) ? q.question_type : "multiple_choice",
       question: String(q.question ?? "").slice(0, 2000),
       passage: q.passage ?? null,
       options: q.options ?? null,

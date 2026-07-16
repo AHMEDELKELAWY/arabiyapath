@@ -37,7 +37,10 @@ interface TestQuestion {
 
 interface Props {
   unitId: string;
+  onFinished?: () => void;
 }
+
+
 
 const PASS_PCT = 70;
 
@@ -119,7 +122,7 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
 
 /* -------------------- main -------------------- */
 
-export function IntermediateTestRunner({ unitId }: Props) {
+export function IntermediateTestRunner({ unitId, onFinished }: Props) {
   const { data: questions, isLoading, error, refetch, isRefetching } = useQuery<TestQuestion[]>({
     queryKey: ["fc-unit-test", unitId],
     enabled: !!unitId,
@@ -139,12 +142,17 @@ export function IntermediateTestRunner({ unitId }: Props) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const startedAtRef = useRef<Date | null>(null);
+  const recordedRef = useRef(false);
 
   useEffect(() => {
     setI(0);
     setAnswers({});
     setSubmitted(false);
+    startedAtRef.current = new Date();
+    recordedRef.current = false;
   }, [unitId, resetKey]);
+
 
   const total = questions?.length ?? 0;
   const q = questions?.[i];
@@ -197,6 +205,38 @@ export function IntermediateTestRunner({ unitId }: Props) {
   if (submitted) {
     const pct = Math.round((score / total) * 100);
     const passed = pct >= PASS_PCT;
+
+    // Persist attempt (once per submission) + fire onFinished.
+    if (!recordedRef.current) {
+      recordedRef.current = true;
+      const started = startedAtRef.current ?? new Date();
+      const finished = new Date();
+      const duration = Math.max(0, Math.round((finished.getTime() - started.getTime()) / 1000));
+      (async () => {
+        try {
+          const { data: userRes } = await supabase.auth.getUser();
+          const uid = userRes?.user?.id;
+          if (uid) {
+            await (supabase as any).from("flashcard_intermediate_test_attempts").insert({
+              user_id: uid,
+              unit_id: unitId,
+              score,
+              total,
+              percentage: pct,
+              passed,
+              started_at: started.toISOString(),
+              finished_at: finished.toISOString(),
+              duration_seconds: duration,
+            });
+          }
+        } catch (e) {
+          console.warn("[test-attempt] record failed", e);
+        }
+        try { onFinished?.(); } catch { /* noop */ }
+      })();
+    }
+
+
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardContent className="p-6 md:p-8 text-center space-y-4">

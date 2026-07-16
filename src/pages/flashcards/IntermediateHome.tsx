@@ -56,11 +56,33 @@ export default function IntermediateHome() {
     },
   });
 
+  const progressQuery = useQuery({
+    queryKey: ["fc-intermediate-progress-all", user?.id ?? "anon"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_intermediate_progress")
+        .select("unit_id,listening_completed_at,learn_completed_at,grammar_completed_at,test_completed_at")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      const map = new Map<string, { pct: number; done: boolean }>();
+      for (const row of data ?? []) {
+        const steps = [
+          row.listening_completed_at, row.learn_completed_at,
+          row.grammar_completed_at, row.test_completed_at,
+        ].filter(Boolean).length;
+        map.set(row.unit_id, { pct: (steps / 4) * 100, done: steps === 4 });
+      }
+      return map;
+    },
+  });
+
   function unlocked(u: UnitRow): boolean {
     if (u.is_free) return true;
     if (!user) return false;
     return !!accessQuery.data?.get(u.id);
   }
+
 
   return (
     <Layout>
@@ -115,11 +137,18 @@ export default function IntermediateHome() {
             <div className="grid gap-3 sm:gap-4">
               {units.map((u, idx) => {
                 const open = unlocked(u);
+                const prog = progressQuery.data?.get(u.id);
                 let status: UnitCardStatus;
                 let badge: UnitCardBadge;
                 if (!open) {
                   status = "locked";
                   badge = "locked";
+                } else if (prog?.done) {
+                  status = "completed";
+                  badge = null;
+                } else if (prog && prog.pct > 0) {
+                  status = "in-progress";
+                  badge = u.is_free ? "free" : null;
                 } else {
                   status = "not-started";
                   badge = u.is_free ? "free" : null;
@@ -136,10 +165,11 @@ export default function IntermediateHome() {
                     href={href}
                     status={status}
                     badge={badge}
-                    progress={null}
+                    progress={prog ? { completed: Math.round((prog.pct / 100) * 4), total: 4, label: "steps" } : null}
                   />
                 );
               })}
+
             </div>
           )}
         </div>
