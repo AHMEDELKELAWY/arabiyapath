@@ -37,7 +37,13 @@ interface TestQuestion {
 
 interface Props {
   unitId: string;
-  onFinished?: () => void;
+  /** Called after the learner acknowledges the completion screen with a passing score. */
+  onPassed?: () => void;
+  /** Optional post-completion navigation UI shown on the celebration screen. */
+  nextUnitSlug?: string | null;
+  nextUnitTitle?: string | null;
+  /** Called when user clicks "Review this unit" on completion screen. */
+  onReviewUnit?: () => void;
 }
 
 
