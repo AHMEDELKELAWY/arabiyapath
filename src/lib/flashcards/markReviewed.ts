@@ -19,6 +19,11 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Best-effort progress write. NEVER throws — a flaky network must not
+ * prevent the learner from seeing the completion screen. Server progress
+ * is refreshed via cache invalidation whenever the write succeeds.
+ */
 export async function markCardsReviewed(
   userId: string | null | undefined,
   cardIds: string[],
@@ -33,28 +38,32 @@ export async function markCardsReviewed(
     const { data, error } = await (supabase as any)
       .rpc("fc_mark_cards_reviewed", { _card_ids: uniqueIds });
     if (error) {
-      throw error;
+      console.warn("[markCardsReviewed] rpc error (non-fatal)", error);
+      return 0;
     }
-    if (Number(data) !== uniqueIds.length) {
-      throw new Error(
-        `Only ${Number(data)} of ${uniqueIds.length} cards were recorded as reviewed`
+    reviewedCount = Number(data) || 0;
+    if (reviewedCount !== uniqueIds.length) {
+      console.warn(
+        `[markCardsReviewed] partial write: ${reviewedCount}/${uniqueIds.length}`
       );
     }
-    reviewedCount = Number(data);
   } catch (err) {
-    console.warn("[markCardsReviewed] threw", err);
-    throw err;
+    console.warn("[markCardsReviewed] threw (non-fatal)", err);
+    return 0;
   }
 
-  if (queryClient) {
-    // Any screen showing unit/level/course/dashboard progress needs a refresh.
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] }),
-      queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] }),
-      queryClient.invalidateQueries({ queryKey: ["fc-resume-db"] }),
-      queryClient.invalidateQueries({ queryKey: ["fc-units-public"] }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-    ]);
+  if (queryClient && reviewedCount > 0) {
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["fc-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["fc-resume-slug"] }),
+        queryClient.invalidateQueries({ queryKey: ["fc-resume-db"] }),
+        queryClient.invalidateQueries({ queryKey: ["fc-units-public"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+    } catch (err) {
+      console.warn("[markCardsReviewed] invalidate failed", err);
+    }
   }
   return reviewedCount;
 }

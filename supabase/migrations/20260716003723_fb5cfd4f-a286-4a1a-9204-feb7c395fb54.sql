@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.fc_user_can_study_unit(uuid, uuid) TO anon;

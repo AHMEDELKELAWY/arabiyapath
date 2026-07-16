@@ -2,24 +2,25 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { toastError } from "./lib/errors";
 
-// Global handlers for uncaught errors so nothing fails silently.
+// Global handlers — log only. User-facing errors are surfaced by the layer
+// closest to the action (React Query for observed queries, forms/mutations
+// for actions, error boundaries for render errors). A blanket toast here
+// caused confusing red banners for benign background rejections.
 if (typeof window !== "undefined") {
   window.addEventListener("unhandledrejection", (e) => {
-    // Avoid noisy toasts for aborted fetches / navigation cancellations.
     const reason: any = e.reason;
     const name = reason?.name;
     if (name === "AbortError" || name === "CanceledError") return;
-    toastError(reason, "An unexpected error occurred");
+    console.error("[unhandledrejection]", reason);
   });
   window.addEventListener("error", (e) => {
-    // Only surface real Error objects; ignore ResizeObserver noise.
     const msg = e.message || "";
     if (msg.includes("ResizeObserver")) return;
     console.error("[window.error]", e.error || msg);
   });
 }
+
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary name="root">
