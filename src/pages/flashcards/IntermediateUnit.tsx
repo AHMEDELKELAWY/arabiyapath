@@ -507,8 +507,16 @@ export default function IntermediateUnit() {
               ) : canStudy ? (
                 <IntermediateTestRunner
                   unitId={unit.id}
-                  onFinished={async () => {
+                  nextUnitSlug={nextUnit?.slug ?? null}
+                  nextUnitTitle={nextUnit?.title_en ?? null}
+                  onReviewUnit={() => setActiveTab("listening")}
+                  onPassed={async () => {
                     if (!done.test) await markCompleted("test_completed_at");
+                    if (nextUnit?.slug) {
+                      navigate(`/flashcards/intermediate/unit/${nextUnit.slug}`);
+                    } else {
+                      navigate("/flashcards/level/intermediate");
+                    }
                   }}
                 />
               ) : (
