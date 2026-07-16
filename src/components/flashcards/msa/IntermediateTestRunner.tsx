@@ -118,20 +118,6 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
       const accepted = Array.isArray(c) ? c : [c];
       return accepted.some((a) => norm(String(a)) === norm(String(userAnswer ?? "")));
 }
-
-function formatAnswer(v: any): string {
-  if (v === null || v === undefined || v === "") return "";
-  if (typeof v === "string") return v;
-  if (Array.isArray(v)) {
-    if (v.length && typeof v[0] === "object") {
-      return v.map((p: any) => `${p.left ?? p.a ?? ""} → ${p.right ?? p.b ?? ""}`).join(", ");
-    }
-    return v.join(" ");
-  }
-  if (typeof v === "object") {
-    return Object.entries(v).map(([k, val]) => `${k} → ${val}`).join(", ");
-  }
-  return String(v);
     default: {
       // multiple_choice / grammar_selection / conversation_completion / audio / vocab_in_context / mcq default
       const correct = Array.isArray(c) ? c[0] : c;
