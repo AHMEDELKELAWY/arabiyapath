@@ -115,6 +115,11 @@ ${vocabList || "(none)"}
 ## Grammar
 ${grammarList || "(none)"}
 
+${previousList ? `## Previously generated questions (DO NOT REPEAT)
+The following questions have been used before. NEVER repeat them. Generate NEW questions that assess the same concepts using different wording, contexts, and examples. Do not simply shuffle or paraphrase these.
+
+${previousList}
+` : ""}
 ## Task
 Produce EXACTLY 10 diverse questions with this distribution:
 - 3 questions grounded in the LESSON TOPIC (comprehension, inference, event ordering).
