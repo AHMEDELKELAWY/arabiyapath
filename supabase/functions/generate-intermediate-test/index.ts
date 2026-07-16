@@ -203,9 +203,33 @@ Return STRICT JSON only, no prose, no markdown fences:
     // Wipe existing generated set so admin has a clean list.
     await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
 
-    const rows = questions.map((q, i) => ({
+    // Fisher–Yates shuffle
+    const shuffle = <T,>(arr: T[]): T[] => {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    // Shuffle answer options for each question while preserving correct_answer mapping.
+    // Only shuffle simple array-of-strings options (multiple_choice-style). Leave
+    // matching / sentence_ordering / structured options alone since order encodes meaning.
+    const shuffleOptions = (q: any) => {
+      if (Array.isArray(q.options) && q.options.every((o: any) => typeof o === "string")) {
+        if (q.question_type === "sentence_ordering") return q; // order is the answer
+        q.options = shuffle(q.options);
+      }
+      return q;
+    };
+
+    // Shuffle question order every generation, then re-index.
+    const shuffledQuestions = shuffle(questions).map(shuffleOptions);
+
+    const rows = shuffledQuestions.map((q, i) => ({
       unit_id,
-      order_index: q.order_index ?? i + 1,
+      order_index: i + 1,
       question_type: ALLOWED_TYPES.includes(q.question_type) ? q.question_type : "multiple_choice",
       question: String(q.question ?? "").slice(0, 2000),
       passage: q.passage ?? null,
