@@ -80,6 +80,16 @@ Deno.serve(async (req) => {
       .select("arabic_text, english_translation, notes")
       .eq("unit_id", unit_id).eq("kind", "grammar").eq("published", true).limit(60);
 
+    // Fetch previous questions so the AI can avoid repeating them on regenerate.
+    const { data: previousQs } = await admin
+      .from("flashcard_unit_tests")
+      .select("question")
+      .eq("unit_id", unit_id)
+      .limit(50);
+    const previousList = (previousQs ?? [])
+      .map((r: any, i: number) => `${i + 1}. ${r.question}`)
+      .join("\n");
+
     const vocabList = (learnCards ?? []).map((c: any) =>
       `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}`
     ).join("\n");
