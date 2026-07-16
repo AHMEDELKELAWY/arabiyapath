@@ -1,74 +1,128 @@
-## Goal
-Restructure the Admin dashboard so content is always managed inside a Course → Level → Unit scope, before Intermediate/Advanced content is added. Student-facing code is not touched.
+# ArabiyaPath — Complete SEO Plan
 
-## Data model (no schema changes needed)
-The hierarchy already exists in the DB:
-- `flashcard_courses` → `flashcard_course_levels` → `flashcard_units.course_level_id` → `flashcards` (Spoken Arabic path used by Vocabulary/Cards/Grammar/Listening/Speaking)
-- `dialects` → `levels` → `units` → `lessons`/`quizzes` (legacy Learn path used by AdminContent)
+## 1. Where we stand (Semrush snapshot, US database)
 
-Both hierarchies stay. Only requirement: every Unit belongs to exactly one Level. We will add a one-time guard in the Units admin to make `course_level_id` (or `level_id`) required going forward. No student-side change.
+| Metric | Value | Read |
+|---|---|---|
+| Authority Score | **2/100** | Brand-new domain in Google's eyes. |
+| Referring domains | 13 (mostly spam/PBN anchors) | Toxic anchor text — needs disavow. |
+| Indexed keywords | 18 | Only 2 pages ranking: `/learn/gulf-arabic` and `/learn/fusha-arabic`. |
+| Best position | #16 ("what is fusha arabic") | Nothing on page 1 yet. |
+| Est. organic traffic | 0/mo | No clicks. |
+| Top competitor | playaling.com (7.9K/mo, AS higher) | Big-site territory. Realistic peers: al-fusha.com, yallakhaleeji.com, fusha-connect.ca. |
 
-## New shared admin scope
+Diagnosis: solid indexation, decent product content, but (a) no topical depth around the money keywords, (b) a spammy backlink profile hurting trust, (c) title/description/canonical hygiene issues to sweep, (d) the two ranking pages sit at positions 16–65 and just need on-page + internal-link work to move to page 1.
 
-### 1. `AdminScopeContext` (new)
-`src/components/admin/AdminScopeContext.tsx`
-- Holds `{ courseId, levelId, unitId, setLevel(levelId), setUnit(unitId) }`.
-- Persists to `localStorage` key `admin.scope.v1` so selection survives navigation and reloads.
-- Two flavors, one provider file, exposed via `useAdminFlashcardScope()` (for Spoken Arabic / flashcards) and `useAdminLearnScope()` (for legacy dialect/level/unit content). Same shape, different data source, so admin pages stay simple.
-- Provider mounted once in `AdminLayout` so every admin page shares the same selection.
+## 2. Strategy — three horizons
 
-### 2. `<AdminScopePicker />` (new)
-`src/components/admin/AdminScopePicker.tsx`
-- Renders two dropdowns side by side:
-  1. **Course / Level** — e.g. "Spoken Arabic – Beginner", "Spoken Arabic – Intermediate". Uses `useFlashcardCourseStructure()` (already exists) for the flashcard scope; uses `useLevels()` grouped by dialect for the Learn scope.
-  2. **Unit** — filtered to units whose `course_level_id` / `level_id` matches the selected Level. Beginner units are never shown when Intermediate is selected.
-- When Level changes, Unit auto-resets to the first Unit of that Level.
-- Sticky bar at the top of every content page so admins never lose context.
+**Horizon 1 (0–30 days) — Fix the foundation.** Technical SEO, on-page hygiene, schema, disavow spam links, ship 3 pillar rewrites.
 
-## Admin pages to migrate
+**Horizon 2 (30–90 days) — Win the dialect niche.** Publish a keyword-clustered content hub around "learn Gulf/Fusha Arabic", strengthen internal linking, earn first quality backlinks, launch programmatic city/audience pages.
 
-Replace each page's local "Select Unit" dropdown with `<AdminScopePicker />` + `useAdminFlashcardScope()` / `useAdminLearnScope()`.
+**Horizon 3 (90–180 days) — Scale.** Blog velocity of 2–3 posts/week, guest posts on expat/language sites, YouTube→site funnel, review signals, EEAT authorship.
 
-Flashcard-side (Spoken Arabic hierarchy):
-- `AdminFlashcardUnits.tsx` — already grouped by Course/Level; add Level filter, keep the "Unassigned" bucket only visible when Level = "All".
-- `AdminFlashcardCards.tsx` — remove internal unit picker, read `unitId` from scope. Search/filter, Import CSV, Export, Backup, Restore, Bulk Image Upload all operate on `scope.unitId` only.
-- Cards Grammar tab (inside `AdminFlashcardCards.tsx`) — same scope.
-- `AdminFlashcardDiagnostics.tsx` — scoped by unit.
-- `AdminFlashcardPacks.tsx` — packs are cross-unit, keep as-is (packs bundle units, do not belong to a single unit).
+## 3. Horizon 1 — Foundation fixes
 
-Learn-side (legacy dialects/levels/units):
-- `AdminContent.tsx` (Units, Lessons, Quizzes tabs) — add the same scope bar. Lessons and Quizzes tabs list only items whose unit is in the selected Level; the Unit selector inside those tabs is replaced by the shared one.
+### 3.1 Technical
+- Audit `index.html` head: real title, description, `og:*`, `twitter:card`, favicon set ✅ (already done).
+- Per-route `<Helmet>` on every public page — audit `SEOHead` coverage on: `/`, `/pricing`, `/flashcards`, `/flashcards/level/*`, `/blog/*`, `/learn/*`, `/free-gulf-lesson`, `/become-affiliate`, `/faq`, `/contact`.
+- Confirm every route's `canonical` and `og:url` self-reference (no homepage fallback).
+- Robots: keep `/admin/`, `/dashboard/`, `/checkout`, `/payment/` blocked (already done). Add `Disallow: /flashcards/study/`, `/flashcards/unit/`, `/partner/`.
+- Sitemap: switch to a generator script that pulls blog posts + published units from `content/blog` and DB. Currently hand-edited — will drift.
+- Core Web Vitals: LiteYouTube is live on Houria — extend to any other YouTube embed (home, dialect landings). Convert hero images to `<img loading="eager" fetchpriority="high">` above-the-fold, everything else `loading="lazy"`.
+- 404s: verify `/learn/egyptian-arabic` still noindex; add `410` behavior for removed URLs via `NotFound`.
 
-Untouched admin pages (no content scope needed): Users, Purchases, Coupons, Products, Notifications, Email Log, Affiliates, Certificates, Memberships.
+### 3.2 On-page — rewrite the two ranking pages first (fastest lift)
+Positions 16–30 with 500–4,400/mo volume are the biggest unclaimed wins.
 
-## Create-content defaults
-When admin creates a Card, Lesson, Grammar note, Quiz, Listening item, etc. from a scoped page, we pre-fill `unit_id` / `course_level_id` from the current scope and hide those fields in the create dialog (still editable via a small "Change scope" link so mis-scoped items can be moved). No prompt, no re-selection.
+**`/learn/fusha-arabic`** — target cluster: *fusha, fusha arabic, learn fusha arabic, what is fusha arabic, fusha vs …*
+- H1: "Learn Fusha Arabic (Modern Standard Arabic) Online"
+- Add sections: "What is Fusha?", "Fusha vs dialect", "Fusha alphabet", "How long to learn Fusha", FAQ, course CTA.
+- 1,500–2,000 words, one embedded native-audio sample, `Course` + `FAQPage` JSON-LD (already scaffolded — verify it fires).
 
-## Import / Export / Backup / Restore / Bulk Image Upload
-All existing buttons stay, but their handlers change from "iterate current filter" to "operate on `scope.unitId`". The scope bar shows a short line like *"Importing into: Spoken Arabic – Beginner / Unit 3 — Greetings"* above the action so mistakes are obvious.
+**`/learn/gulf-arabic`** — target: *gulf arabic dialect, khaleeji arabic, learn gulf arabic, arabic khaleeji, gulf arabic vs fusha.*
+- Same treatment. Include a "Gulf Arabic for expats in Dubai/Riyadh" section — funnels to existing blog posts.
 
-## Search
-Search inputs in `AdminFlashcardCards`, Lessons tab, Quizzes tab, Grammar tab filter within `scope.unitId` only. Cross-unit search is removed for now (out of scope).
+### 3.3 Schema (JSON-LD)
+- Sitewide: `Organization` + `WebSite` with `SearchAction`.
+- Course pages: `Course` (name, description, provider, inLanguage, hasCourseInstance with price).
+- Blog: `Article` + `BreadcrumbList` per post. Verify `BlogPost.tsx` emits `datePublished`, `author`, `image`.
+- Pricing: `Product` + `Offer` with `price`, `priceCurrency`, `availability`.
+- FAQ: `FAQPage` on `/faq` and dialect pages.
+- Reviews: add `AggregateRating` once you have ≥5 real testimonials.
 
-## Guard against unassigned units
-`AdminFlashcardUnits` and Learn `UnitsTab` will require a Level selection when creating a new unit (already true for Learn, needs enforcement for flashcard units — the "Unassigned" option in the create form will be removed; existing unassigned rows keep working and show a warning badge).
+### 3.4 Backlink cleanup
+- Export the 16 backlinks from Semrush. The anchors show classic PBN spam ("high quality dofollow backlinks…", "fiverr"). File a **disavow** in Google Search Console for the toxic domains: 8coint.com, toplikevideo.com, fittyfoody.com, fiverr-seo-for-business-growth.site, ggmap.co.com, dailymusings.top, metamagic.top, bisprofit.com.
 
-## Explicitly not changed
-Student dashboard, learning flow, progress, flashcards runtime, quiz logic, membership, payments, emails, auth, routing, SEO, DB schema, RLS.
+## 4. Horizon 2 — Topical authority hub (30–90 days)
 
-## Technical file list
-New:
-- `src/components/admin/AdminScopeContext.tsx`
-- `src/components/admin/AdminScopePicker.tsx`
+### 4.1 Pillar + cluster map
 
-Edited:
-- `src/components/admin/AdminLayout.tsx` (mount provider + optional sticky picker slot)
-- `src/pages/admin/AdminFlashcardUnits.tsx`
-- `src/pages/admin/AdminFlashcardCards.tsx`
-- `src/pages/admin/AdminFlashcardDiagnostics.tsx`
-- `src/pages/admin/AdminContent.tsx`
-- `src/components/admin/content/UnitsTab.tsx`
-- `src/components/admin/content/LessonsTab.tsx`
-- `src/components/admin/content/QuizzesTab.tsx`
+```text
+PILLAR: /learn/gulf-arabic  (target: "learn gulf arabic")
+├─ /blog/khaleeji-arabic-explained         (khaleeji arabic, 260)
+├─ /blog/gulf-arabic-alphabet              (existing gulf posts)
+├─ /blog/gulf-arabic-phrases-for-work-dubai
+├─ /blog/gulf-arabic-vs-egyptian
+└─ /blog/best-way-to-learn-gulf-arabic
 
-No DB migration. No student code changes.
+PILLAR: /learn/fusha-arabic  (target: "fusha arabic", 4,400)
+├─ /blog/fusha-vs-ammiya
+├─ /blog/fusha-arabic-alphabet             (KW volume 50)
+├─ /blog/learn-fusha-arabic-for-beginners
+├─ /blog/how-long-to-learn-fusha
+└─ /blog/best-fusha-textbooks
+
+PILLAR: /flashcards  (target: "arabic flashcards", "msa vocabulary")
+├─ /blog/msa-arabic-vocabulary-list
+├─ /blog/best-arabic-flashcard-app
+└─ /blog/spaced-repetition-arabic
+```
+
+Every cluster post links up to its pillar with keyword-rich anchor, and pillar links down to every cluster. This is the single biggest lever for a young domain.
+
+### 4.2 Programmatic pages (medium priority)
+`/learn/gulf-arabic/for-<audience>` — expats, engineers, teachers, doctors, tourists — each 800 words with audience-specific vocab preview + course CTA. Use existing blog structure. Start with 5 audiences.
+
+### 4.3 Link building
+- **Guest posts**: expat blogs in UAE/KSA/Qatar, language-learning roundups (Fluent in 3 Months, All Language Resources), student communities.
+- **Free tool**: publish an "Arabic name transliterator" or "Arabic alphabet trainer" as a linkable asset.
+- **HARO / Qwoted**: pitch on "learning Arabic" queries — the founder becomes the quoted expert.
+- **Directory listings**: language school directories, Course Report equivalents.
+- **YouTube Shorts**: keep publishing (Houria video is already embedded) — description links back to the pillar page.
+
+### 4.4 Internal linking rules
+- Every blog post: 3+ contextual links to pillar or cluster siblings.
+- Navbar: add a "Learn" mega-menu with Gulf / Fusha / Egyptian → drops CTR on the two money pages.
+- Footer: add a "Popular topics" column with 6–10 cluster-page anchors.
+
+## 5. Horizon 3 — Scale (90–180 days)
+
+- **Blog velocity**: 2–3 posts/week using the cluster map. Existing `scripts/enrich-blog-posts.mjs` can help.
+- **EEAT**: add author bios (native speaker credentials), publish/updated dates on every post, "reviewed by" line for course pages.
+- **International SEO**: consider `/ar/` prefix for Arabic-language pages targeting SA/AE/EG databases where you already show ranking signal. Add `hreflang` on translated pages.
+- **Reviews**: collect Trustpilot / G2 reviews → adds `AggregateRating` schema and social proof.
+- **YouTube channel**: transcribe lessons → embed transcripts on blog posts (fresh content + video schema).
+- **Search Console monitoring**: weekly review of top queries, CTR, position. Rewrite titles on any page averaging position 6–12 with CTR <3%.
+
+## 6. Measurement
+
+Track monthly in Google Search Console + Semrush:
+- Impressions and clicks (baseline: currently ~0).
+- # of keywords in top-10 (baseline: 0 → target 20 by day 90, 100 by day 180).
+- Authority Score (baseline 2 → target 15 by day 180).
+- Referring domains — quality, not count.
+- Conversion rate: organic → signup → paid membership.
+
+## 7. Execution — what I'd ship in code next
+
+If you want, I can start immediately on any of these — each is a self-contained PR:
+
+1. **Sitemap generator** (`scripts/generate-sitemap.ts` + `predev`/`prebuild` hooks) that pulls blog posts and DB units.
+2. **SEOHead audit** — sweep every route, add missing `<Helmet>` blocks and JSON-LD.
+3. **Rewrite `/learn/fusha-arabic`** with the 2K-word structure above (biggest single traffic win).
+4. **Rewrite `/learn/gulf-arabic`** likewise.
+5. **Mega-menu Navbar** with Learn → Gulf / Fusha, plus footer "Popular topics" for internal linking.
+6. **Programmatic audience pages** under `/learn/gulf-arabic/for-*`.
+
+Tell me which one to start with — I recommend #1 → #3 → #4 → #2 in that order.
