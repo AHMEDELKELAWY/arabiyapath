@@ -16,8 +16,12 @@ export function useFlashcardUnitAccess(unitId: string | undefined) {
     enabled: !!unitId,
     queryFn: async () => {
       if (!unitId) return false;
+      // Skip RPC for anonymous users — the function isn't granted to `anon`
+      // and would return 42501. Anon access to free units is handled by the
+      // caller via `is_free`.
+      if (!user?.id) return false;
       const { data, error } = await (supabase.rpc as any)("fc_user_can_study_unit", {
-        _user_id: user?.id ?? null,
+        _user_id: user.id,
         _unit_id: unitId,
       });
       if (error) {
