@@ -147,6 +147,7 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
   const [i, setI] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [phase, setPhase] = useState<"review" | "score">("review");
   const [resetKey, setResetKey] = useState(0);
   const startedAtRef = useRef<Date | null>(null);
   const recordedRef = useRef(false);
@@ -155,6 +156,7 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
     setI(0);
     setAnswers({});
     setSubmitted(false);
+    setPhase("review");
     startedAtRef.current = new Date();
     recordedRef.current = false;
   }, [unitId, resetKey]);
