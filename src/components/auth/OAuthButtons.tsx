@@ -13,8 +13,11 @@ export function OAuthButtons({ redirectUrl = "/dashboard" }: OAuthButtonsProps) 
 
   const handleOAuth = async (provider: "google" | "apple") => {
     const target = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/dashboard";
+    // Preserve the intended destination through the provider round-trip.
+    // /auth/callback reads `?redirect=` and navigates there after the session hydrates.
+    const redirect_uri = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(target)}`;
     const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+      redirect_uri,
     });
 
     if (result.error) {
