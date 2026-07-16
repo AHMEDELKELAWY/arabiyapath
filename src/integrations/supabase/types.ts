@@ -574,6 +574,97 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcard_intermediate_progress: {
+        Row: {
+          created_at: string
+          grammar_completed_at: string | null
+          learn_completed_at: string | null
+          listening_completed_at: string | null
+          test_completed_at: string | null
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grammar_completed_at?: string | null
+          learn_completed_at?: string | null
+          listening_completed_at?: string | null
+          test_completed_at?: string | null
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          grammar_completed_at?: string | null
+          learn_completed_at?: string | null
+          listening_completed_at?: string | null
+          test_completed_at?: string | null
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_intermediate_progress_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_intermediate_test_attempts: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          finished_at: string
+          id: string
+          passed: boolean
+          percentage: number
+          score: number
+          started_at: string | null
+          total: number
+          unit_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          finished_at?: string
+          id?: string
+          passed: boolean
+          percentage: number
+          score: number
+          started_at?: string | null
+          total: number
+          unit_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          finished_at?: string
+          id?: string
+          passed?: boolean
+          percentage?: number
+          score?: number
+          started_at?: string | null
+          total?: number
+          unit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_intermediate_test_attempts_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flashcard_pack_units: {
         Row: {
           order_index: number
