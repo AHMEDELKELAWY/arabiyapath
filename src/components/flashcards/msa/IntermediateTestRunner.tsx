@@ -128,7 +128,7 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
 
 /* -------------------- main -------------------- */
 
-export function IntermediateTestRunner({ unitId, onFinished }: Props) {
+export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUnitTitle, onReviewUnit }: Props) {
   const { data: questions, isLoading, error, refetch, isRefetching } = useQuery<TestQuestion[]>({
     queryKey: ["fc-unit-test", unitId],
     enabled: !!unitId,
