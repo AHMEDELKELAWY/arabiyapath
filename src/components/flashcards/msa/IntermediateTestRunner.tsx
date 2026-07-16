@@ -122,7 +122,7 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
 
 /* -------------------- main -------------------- */
 
-export function IntermediateTestRunner({ unitId }: Props) {
+export function IntermediateTestRunner({ unitId, onFinished }: Props) {
   const { data: questions, isLoading, error, refetch, isRefetching } = useQuery<TestQuestion[]>({
     queryKey: ["fc-unit-test", unitId],
     enabled: !!unitId,
@@ -142,12 +142,17 @@ export function IntermediateTestRunner({ unitId }: Props) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const startedAtRef = useRef<Date | null>(null);
+  const recordedRef = useRef(false);
 
   useEffect(() => {
     setI(0);
     setAnswers({});
     setSubmitted(false);
+    startedAtRef.current = new Date();
+    recordedRef.current = false;
   }, [unitId, resetKey]);
+
 
   const total = questions?.length ?? 0;
   const q = questions?.[i];
