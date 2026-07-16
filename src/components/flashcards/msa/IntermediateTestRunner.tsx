@@ -37,7 +37,10 @@ interface TestQuestion {
 
 interface Props {
   unitId: string;
+  onFinished?: () => void;
 }
+
+
 
 const PASS_PCT = 70;
 
