@@ -256,11 +256,29 @@ export default function IntermediateUnit() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,title_ar,description,is_free,video_url,video_storage_path,seo_title,seo_description")
+        .select("id,slug,title_en,title_ar,description,is_free,video_url,video_storage_path,seo_title,seo_description,order_index,course_level_id")
         .eq("slug", slug)
         .eq("published", true)
         .maybeSingle();
       if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: nextUnit } = useQuery({
+    queryKey: ["fc-intermediate-next-unit", unit?.id],
+    enabled: !!unit?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_units")
+        .select("id,slug,title_en,order_index")
+        .eq("published", true)
+        .eq("course_level_id", unit!.course_level_id)
+        .gt("order_index", unit!.order_index)
+        .order("order_index", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error && error.code !== "PGRST116") throw error;
       return data;
     },
   });
