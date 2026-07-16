@@ -52,6 +52,7 @@ const sidebarLinks = [
   { href: "/admin/flashcards/packs", label: "Spoken Arabic Packs", icon: Layers },
   { href: "/admin/flashcards/purchases", label: "Spoken Arabic Sales", icon: ShoppingCart },
   { href: "/admin/flashcards/diagnostics", label: "Spoken Arabic Diagnostics", icon: Activity },
+  { href: "/admin/flashcards/intermediate/analytics", label: "Intermediate Analytics", icon: Activity },
 ];
 
 
