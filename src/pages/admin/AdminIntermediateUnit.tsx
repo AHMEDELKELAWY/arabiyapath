@@ -268,7 +268,6 @@ function toYouTubeEmbed(url: string): string {
 function TestTab({ unit }: { unit: any }) {
   const qc = useQueryClient();
   const [generating, setGenerating] = useState(false);
-  const [editing, setEditing] = useState<TestQuestion | null>(null);
 
   const { data: questions } = useQuery<TestQuestion[]>({
     queryKey: ["admin-intermediate-tests", unit.id],
@@ -283,6 +282,8 @@ function TestTab({ unit }: { unit: any }) {
     },
   });
 
+  const hasQuestions = (questions?.length ?? 0) > 0;
+
   const generate = async () => {
     if (!unit.lesson_topic || unit.lesson_topic.trim().length < 10) {
       return toast({
@@ -291,6 +292,8 @@ function TestTab({ unit }: { unit: any }) {
         variant: "destructive",
       });
     }
+    if (hasQuestions && !confirm("Regenerate will delete the current test and create a new one. Continue?")) return;
+
     setGenerating(true);
     const { data, error } = await supabase.functions.invoke("generate-intermediate-test", {
       body: { unit_id: unit.id },
@@ -301,28 +304,6 @@ function TestTab({ unit }: { unit: any }) {
     qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
   };
 
-  const del = async (id: string) => {
-    if (!confirm("Delete this question?")) return;
-    await (supabase as any).from("flashcard_unit_tests").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
-  };
-
-  const addBlank = () => {
-    setEditing({
-      id: "",
-      unit_id: unit.id,
-      order_index: (questions?.length ?? 0) + 1,
-      question_type: "vocabulary",
-      question: "",
-      passage: null,
-      options: ["", "", "", ""],
-      correct_answer: "",
-      explanation: null,
-      audio_url: null,
-      published: true,
-    });
-  };
-
   return (
     <div className="space-y-4">
       <Card>
@@ -330,172 +311,55 @@ function TestTab({ unit }: { unit: any }) {
           <div>
             <p className="text-sm font-medium">AI-generated Test</p>
             <p className="text-xs text-muted-foreground">
-              Uses Lesson Topic, Listening video URL, Learn vocabulary, and Grammar cards as reference.
+              Auto-generated from Lesson Topic, Learn vocabulary and Grammar. No manual authoring needed —
+              just click Generate. Regenerate replaces the existing set.
             </p>
           </div>
           <div className="flex gap-2">
             <Button onClick={generate} disabled={generating}>
               {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              Generate Test
-            </Button>
-            <Button variant="outline" onClick={addBlank}>
-              <Plus className="w-4 h-4 mr-2" /> Add manually
+              {hasQuestions ? "Regenerate Test" : "Generate Test"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {!questions?.length && (
+      {!hasQuestions && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No questions yet. Click <strong>Generate Test</strong> to create a set with AI, or add one manually.
+          No questions yet. Click <strong>Generate Test</strong> to create a full Intermediate assessment.
         </p>
       )}
 
       <div className="grid gap-2">
         {questions?.map((q) => (
           <Card key={q.id}>
-            <CardContent className="p-4 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs px-2 py-0.5 rounded bg-muted">{q.question_type.replace(/_/g, " ")}</span>
-                  {!q.published && <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-700">Draft</span>}
-                  <span className="text-xs text-muted-foreground">#{q.order_index}</span>
-                </div>
-                <p className="text-sm font-medium">{q.question}</p>
-                {q.options && Array.isArray(q.options) && (
-                  <ul className="mt-1 text-xs text-muted-foreground list-disc list-inside">
-                    {q.options.map((o: string, i: number) => <li key={i}>{o}</li>)}
-                  </ul>
-                )}
-                <p className="text-xs mt-1"><strong>Answer:</strong> {JSON.stringify(q.correct_answer)}</p>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs px-2 py-0.5 rounded bg-muted">{q.question_type.replace(/_/g, " ")}</span>
+                <span className="text-xs text-muted-foreground">#{q.order_index}</span>
               </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setEditing(q)}><Pencil className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => del(q.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-              </div>
+              <p className="text-sm font-medium">{q.question}</p>
+              {q.passage && (
+                <p className="text-xs text-muted-foreground mt-1 italic" dir="rtl" lang="ar">
+                  {q.passage}
+                </p>
+              )}
+              {q.options && Array.isArray(q.options) && (
+                <ul className="mt-1 text-xs text-muted-foreground list-disc list-inside">
+                  {q.options.map((o: any, i: number) => (
+                    <li key={i}>{typeof o === "string" ? o : JSON.stringify(o)}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs mt-1"><strong>Answer:</strong> {typeof q.correct_answer === "string" ? q.correct_answer : JSON.stringify(q.correct_answer)}</p>
+              {q.explanation && (
+                <p className="text-xs mt-1 text-muted-foreground"><strong>Why:</strong> {q.explanation}</p>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
-
-      {editing && (
-        <QuestionEditor
-          value={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
-            qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
-          }}
-        />
-      )}
     </div>
   );
 }
 
-function QuestionEditor({
-  value, onClose, onSaved,
-}: { value: TestQuestion; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState<TestQuestion>(value);
-  const [saving, setSaving] = useState(false);
-
-  const save = async () => {
-    setSaving(true);
-    const payload: any = {
-      unit_id: form.unit_id,
-      order_index: form.order_index,
-      question_type: form.question_type,
-      question: form.question,
-      passage: form.passage,
-      options: form.options,
-      correct_answer: form.correct_answer,
-      explanation: form.explanation,
-      audio_url: form.audio_url,
-      published: form.published,
-    };
-    const { error } = form.id
-      ? await (supabase as any).from("flashcard_unit_tests").update(payload).eq("id", form.id)
-      : await (supabase as any).from("flashcard_unit_tests").insert(payload);
-    setSaving(false);
-    if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
-    toast({ title: "Saved" });
-    onSaved();
-  };
-
-  const optionsText = Array.isArray(form.options) ? form.options.join("\n") : (form.options ? JSON.stringify(form.options) : "");
-  const answerText = typeof form.correct_answer === "string"
-    ? form.correct_answer
-    : JSON.stringify(form.correct_answer);
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{form.id ? "Edit question" : "New question"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Question type</Label>
-            <Select value={form.question_type} onValueChange={(v) => setForm({ ...form, question_type: v as QuestionType })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {QUESTION_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Question</Label>
-            <Textarea value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} rows={2} />
-          </div>
-          {form.question_type === "reading_comprehension" && (
-            <div>
-              <Label>Passage</Label>
-              <Textarea value={form.passage ?? ""} onChange={(e) => setForm({ ...form, passage: e.target.value })} rows={4} />
-            </div>
-          )}
-          <div>
-            <Label>Options (one per line, or leave empty for open-answer)</Label>
-            <Textarea
-              value={optionsText}
-              onChange={(e) => {
-                const arr = e.target.value.split("\n").map((s) => s.trim()).filter(Boolean);
-                setForm({ ...form, options: arr.length ? arr : null });
-              }}
-              rows={4}
-            />
-          </div>
-          <div>
-            <Label>Correct answer (text, or JSON array for sentence ordering)</Label>
-            <Textarea
-              value={answerText}
-              onChange={(e) => {
-                const v = e.target.value;
-                try {
-                  setForm({ ...form, correct_answer: JSON.parse(v) });
-                } catch {
-                  setForm({ ...form, correct_answer: v });
-                }
-              }}
-              rows={2}
-            />
-          </div>
-          <div>
-            <Label>Explanation (optional)</Label>
-            <Textarea value={form.explanation ?? ""} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={2} />
-          </div>
-          <div>
-            <Label>Order</Label>
-            <Input type="number" value={form.order_index} onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })} />
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-            <span className="text-sm">Published</span>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
