@@ -9,7 +9,7 @@
  *   Grammar    — link out to the existing card editor filtered by kind=grammar.
  *   Test       — AI-generated questions from Lesson Topic + Learn + Grammar + Listening.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -17,35 +17,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
 import {
   Headphones, BookOpen, ScrollText, ClipboardCheck, Sparkles,
-  Video, Youtube, Loader2, Pencil, Trash2, Plus, Upload,
+  Video, Youtube, Loader2, Trash2, Upload,
 } from "lucide-react";
 
 const CONTENT_BUCKET = "content";
 
-const QUESTION_TYPES = [
-  { value: "listening", label: "Listening comprehension" },
-  { value: "vocabulary", label: "Vocabulary" },
-  { value: "grammar", label: "Grammar" },
-  { value: "sentence_ordering", label: "Sentence ordering" },
-  { value: "fill_blank", label: "Fill in the blank" },
-  { value: "reading_comprehension", label: "Reading comprehension" },
-] as const;
+type QuestionType = string;
 
-type QuestionType = typeof QUESTION_TYPES[number]["value"];
 
 interface TestQuestion {
   id: string;
