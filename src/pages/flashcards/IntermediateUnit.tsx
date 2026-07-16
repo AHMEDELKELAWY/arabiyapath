@@ -12,7 +12,7 @@
  * Beginner is not affected by this file.
  */
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -95,6 +95,8 @@ function TabLocked({ prevLabel }: { prevLabel: string }) {
   );
 }
 
+const REQUIRED_WATCH_PCT = 0.9;
+
 function ListeningPlayer({
   videoUrl, storagePath, alreadyDone, onContinue,
 }: {
@@ -103,6 +105,85 @@ function ListeningPlayer({
   alreadyDone: boolean;
   onContinue: () => void;
 }) {
+  const [watchedPct, setWatchedPct] = useState(alreadyDone ? 1 : 0);
+  const [ended, setEnded] = useState(alreadyDone);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const iframeReadyRef = useRef(false);
+
+  const unlocked = alreadyDone || ended || watchedPct >= REQUIRED_WATCH_PCT;
+
+  // Native <video> tracking.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onTime = () => {
+      if (!v.duration) return;
+      setWatchedPct(v.currentTime / v.duration);
+    };
+    const onEnded = () => setEnded(true);
+    v.addEventListener("timeupdate", onTime);
+    v.addEventListener("ended", onEnded);
+    return () => {
+      v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("ended", onEnded);
+    };
+  }, [storagePath]);
+
+  // YouTube iframe tracking via postMessage (enablejsapi=1).
+  useEffect(() => {
+    if (!videoUrl || storagePath) return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    function send(func: string, args: any[] = []) {
+      try {
+        iframe!.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func, args }),
+          "*"
+        );
+      } catch { /* noop */ }
+    }
+
+    function onMessage(e: MessageEvent) {
+      if (!iframe || e.source !== iframe.contentWindow) return;
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (data?.event === "onReady" || data?.event === "initialDelivery") {
+          iframeReadyRef.current = true;
+          send("addEventListener", ["onStateChange"]);
+        }
+        if (data?.event === "onStateChange" && data?.info === 0) {
+          setEnded(true);
+        }
+        if (data?.event === "infoDelivery" && data?.info) {
+          const info = data.info;
+          if (typeof info.currentTime === "number" && typeof info.duration === "number" && info.duration > 0) {
+            setWatchedPct(info.currentTime / info.duration);
+          }
+          if (info.playerState === 0) setEnded(true);
+        }
+      } catch { /* noop */ }
+    }
+    window.addEventListener("message", onMessage);
+
+    // Poll for current time.
+    const poll = window.setInterval(() => {
+      if (iframeReadyRef.current) send("getCurrentTime");
+    }, 1000);
+
+    // Kick off handshake.
+    const kick = window.setTimeout(() => {
+      send("listening", []);
+    }, 500);
+
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.clearInterval(poll);
+      window.clearTimeout(kick);
+    };
+  }, [videoUrl, storagePath]);
+
   if (!storagePath && !videoUrl) {
     return (
       <div className="space-y-4">
@@ -117,11 +198,15 @@ function ListeningPlayer({
       </div>
     );
   }
+
+  const pctShown = Math.min(100, Math.round(watchedPct * 100));
+
   return (
     <div className="space-y-4">
       <div className="mx-auto w-full md:w-[70%] max-w-[720px]">
         {storagePath ? (
           <video
+            ref={videoRef}
             src={supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl}
             controls
             className="w-full rounded-lg border max-h-[60vh] bg-black"
@@ -129,7 +214,8 @@ function ListeningPlayer({
         ) : (
           <div className="rounded-lg border overflow-hidden aspect-video bg-muted max-h-[60vh]">
             <iframe
-              src={toYouTubeEmbed(videoUrl!)}
+              ref={iframeRef}
+              src={`${toYouTubeEmbed(videoUrl!)}?enablejsapi=1`}
               title="Lesson video"
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -138,9 +224,18 @@ function ListeningPlayer({
           </div>
         )}
       </div>
+      <div className="text-center text-xs text-muted-foreground">
+        {unlocked
+          ? "You can now continue to Learn."
+          : `Watch at least 90% of the video to unlock Learn (${pctShown}%).`}
+      </div>
       <div className="flex justify-center">
-        <Button onClick={onContinue} className="gap-1 min-h-[44px]">
-          {alreadyDone ? "Continue to Learn" : "I've watched — Continue to Learn"}
+        <Button
+          onClick={onContinue}
+          disabled={!unlocked}
+          className="gap-1 min-h-[44px]"
+        >
+          {alreadyDone ? "Continue to Learn" : "Continue to Learn"}
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
@@ -161,11 +256,29 @@ export default function IntermediateUnit() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_units")
-        .select("id,slug,title_en,title_ar,description,is_free,video_url,video_storage_path,seo_title,seo_description")
+        .select("id,slug,title_en,title_ar,description,is_free,video_url,video_storage_path,seo_title,seo_description,order_index,course_level_id")
         .eq("slug", slug)
         .eq("published", true)
         .maybeSingle();
       if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: nextUnit } = useQuery({
+    queryKey: ["fc-intermediate-next-unit", unit?.id],
+    enabled: !!unit?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("flashcard_units")
+        .select("id,slug,title_en,order_index")
+        .eq("published", true)
+        .eq("course_level_id", unit!.course_level_id)
+        .gt("order_index", unit!.order_index)
+        .order("order_index", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error && error.code !== "PGRST116") throw error;
       return data;
     },
   });
@@ -394,8 +507,16 @@ export default function IntermediateUnit() {
               ) : canStudy ? (
                 <IntermediateTestRunner
                   unitId={unit.id}
-                  onFinished={async () => {
+                  nextUnitSlug={nextUnit?.slug ?? null}
+                  nextUnitTitle={nextUnit?.title_en ?? null}
+                  onReviewUnit={() => setActiveTab("listening")}
+                  onPassed={async () => {
                     if (!done.test) await markCompleted("test_completed_at");
+                    if (nextUnit?.slug) {
+                      navigate(`/flashcards/intermediate/unit/${nextUnit.slug}`);
+                    } else {
+                      navigate("/flashcards/level/intermediate");
+                    }
                   }}
                 />
               ) : (

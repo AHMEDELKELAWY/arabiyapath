@@ -37,7 +37,13 @@ interface TestQuestion {
 
 interface Props {
   unitId: string;
-  onFinished?: () => void;
+  /** Called after the learner acknowledges the completion screen with a passing score. */
+  onPassed?: () => void;
+  /** Optional post-completion navigation UI shown on the celebration screen. */
+  nextUnitSlug?: string | null;
+  nextUnitTitle?: string | null;
+  /** Called when user clicks "Review this unit" on completion screen. */
+  onReviewUnit?: () => void;
 }
 
 
@@ -111,7 +117,7 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
     case "fill_in_blank": {
       const accepted = Array.isArray(c) ? c : [c];
       return accepted.some((a) => norm(String(a)) === norm(String(userAnswer ?? "")));
-    }
+}
     default: {
       // multiple_choice / grammar_selection / conversation_completion / audio / vocab_in_context / mcq default
       const correct = Array.isArray(c) ? c[0] : c;
@@ -120,9 +126,24 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
   }
 }
 
+function formatAnswer(v: any): string {
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) {
+    if (v.length && typeof v[0] === "object") {
+      return v.map((p: any) => `${p.left ?? p.a ?? ""} → ${p.right ?? p.b ?? ""}`).join(", ");
+    }
+    return v.join(" ");
+  }
+  if (typeof v === "object") {
+    return Object.entries(v).map(([k, val]) => `${k} → ${val}`).join(", ");
+  }
+  return String(v);
+}
+
 /* -------------------- main -------------------- */
 
-export function IntermediateTestRunner({ unitId, onFinished }: Props) {
+export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUnitTitle, onReviewUnit }: Props) {
   const { data: questions, isLoading, error, refetch, isRefetching } = useQuery<TestQuestion[]>({
     queryKey: ["fc-unit-test", unitId],
     enabled: !!unitId,
@@ -141,6 +162,7 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
   const [i, setI] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [phase, setPhase] = useState<"review" | "score">("review");
   const [resetKey, setResetKey] = useState(0);
   const startedAtRef = useRef<Date | null>(null);
   const recordedRef = useRef(false);
@@ -149,6 +171,7 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
     setI(0);
     setAnswers({});
     setSubmitted(false);
+    setPhase("review");
     startedAtRef.current = new Date();
     recordedRef.current = false;
   }, [unitId, resetKey]);
@@ -206,7 +229,7 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
     const pct = Math.round((score / total) * 100);
     const passed = pct >= PASS_PCT;
 
-    // Persist attempt (once per submission) + fire onFinished.
+    // Persist attempt once per submission.
     if (!recordedRef.current) {
       recordedRef.current = true;
       const started = startedAtRef.current ?? new Date();
@@ -232,11 +255,81 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
         } catch (e) {
           console.warn("[test-attempt] record failed", e);
         }
-        try { onFinished?.(); } catch { /* noop */ }
       })();
     }
 
+    if (phase === "review") {
+      return (
+        <Card className="rounded-2xl border-border/60 shadow-sm">
+          <CardContent className="p-4 md:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold">Answer review</h3>
+              <span className="text-sm text-muted-foreground">
+                {score} / {total} correct
+              </span>
+            </div>
+            <div className="space-y-3">
+              {questions.map((qq, idx) => {
+                const ua = answers[qq.id];
+                const ok = isCorrect(qq, ua);
+                const correctDisplay = formatAnswer(qq.correct_answer);
+                const userDisplay = formatAnswer(ua);
+                return (
+                  <Card key={qq.id} className={cn("border-2", ok ? "border-green-500/40" : "border-destructive/40")}>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <span className={cn(
+                          "mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0",
+                          ok ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"
+                        )}>
+                          {ok ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Question {idx + 1} · <span className="capitalize">{qq.question_type.replace(/_/g, " ")}</span>
+                          </p>
+                          <p className="font-medium">{qq.question}</p>
+                          {qq.passage && (
+                            <p className="text-sm bg-muted/40 rounded p-2 mt-1 leading-loose" dir="rtl" lang="ar">
+                              {qq.passage}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm space-y-1 pl-8">
+                        <p>
+                          <span className="text-muted-foreground">Your answer: </span>
+                          <span className={ok ? "text-green-700" : "text-destructive"}>{userDisplay || "—"}</span>
+                        </p>
+                        {!ok && (
+                          <p>
+                            <span className="text-muted-foreground">Correct answer: </span>
+                            <span className="text-green-700 font-medium">{correctDisplay}</span>
+                          </p>
+                        )}
+                        {qq.explanation && (
+                          <p className="text-muted-foreground italic">
+                            <span className="not-italic font-medium text-foreground">Why: </span>
+                            {qq.explanation}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setPhase("score")} className="gap-1 min-h-[44px]">
+                See final score <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
 
+    // Score / completion screen
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardContent className="p-6 md:p-8 text-center space-y-4">
@@ -246,7 +339,14 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
           )}>
             <Trophy className="w-8 h-8" />
           </div>
-          <h3 className="text-2xl font-bold">Test complete</h3>
+          {passed ? (
+            <>
+              <h3 className="text-2xl font-bold">✅ Unit Completed</h3>
+              <p className="text-muted-foreground">Congratulations!</p>
+            </>
+          ) : (
+            <h3 className="text-2xl font-bold">Test complete</h3>
+          )}
           <p className="text-xl">Score: <strong>{score} / {total}</strong></p>
           <div className="max-w-xs mx-auto">
             <Progress value={pct} />
@@ -255,12 +355,41 @@ export function IntermediateTestRunner({ unitId, onFinished }: Props) {
           <p className={cn("inline-block px-4 py-1 rounded-full font-semibold",
             passed ? "bg-green-100 text-green-700" : "bg-destructive/10 text-destructive"
           )}>
-            {passed ? "Passed" : "Keep practicing"}
+            {passed ? `Passed (≥ ${PASS_PCT}%)` : `Below passing (${PASS_PCT}%)`}
           </p>
+
+          {!passed && (
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              You need at least {PASS_PCT}% to complete this unit. Review your answers, then try again.
+            </p>
+          )}
+
           <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
-            <Button onClick={() => setResetKey((k) => k + 1)} className="gap-2 min-h-[44px]">
-              <RotateCcw className="w-4 h-4" /> Retake test
+            <Button variant="outline" onClick={() => setPhase("review")} className="gap-2 min-h-[44px]">
+              Review answers
             </Button>
+            {passed ? (
+              <>
+                {onReviewUnit && (
+                  <Button variant="outline" onClick={onReviewUnit} className="gap-2 min-h-[44px]">
+                    Review this unit
+                  </Button>
+                )}
+                <Button
+                  onClick={() => { try { onPassed?.(); } catch { /* noop */ } }}
+                  className="gap-2 min-h-[44px]"
+                >
+                  {nextUnitSlug
+                    ? `Continue to ${nextUnitTitle || "next unit"}`
+                    : "Return to Intermediate Home"}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setResetKey((k) => k + 1)} className="gap-2 min-h-[44px]">
+                <RotateCcw className="w-4 h-4" /> Retake Test
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
