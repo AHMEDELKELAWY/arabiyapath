@@ -216,6 +216,7 @@ export default function FullAppRoutes() {
             <Route path="/admin/flashcards/purchases" element={<AdminRoute><AdminFlashcardPurchases /></AdminRoute>} />
             <Route path="/admin/flashcards/diagnostics" element={<AdminRoute><AdminFlashcardDiagnostics /></AdminRoute>} />
             <Route path="/admin/flashcards/intermediate/unit/:id" element={<AdminRoute><AdminIntermediateUnit /></AdminRoute>} />
+            <Route path="/admin/flashcards/intermediate/analytics" element={<AdminRoute><AdminIntermediateAnalytics /></AdminRoute>} />
             <Route path="/admin/memberships" element={<AdminRoute><AdminMembershipSubscriptions /></AdminRoute>} />
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/email-log" element={<AdminRoute><AdminEmailLog /></AdminRoute>} />
