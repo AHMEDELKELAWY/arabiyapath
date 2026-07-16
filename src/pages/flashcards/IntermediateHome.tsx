@@ -165,7 +165,7 @@ export default function IntermediateHome() {
                     href={href}
                     status={status}
                     badge={badge}
-                    progress={prog?.pct ?? null}
+                    progress={prog ? { completed: Math.round((prog.pct / 100) * 4), total: 4, label: "steps" } : null}
                   />
                 );
               })}
