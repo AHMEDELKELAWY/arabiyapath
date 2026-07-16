@@ -100,6 +100,7 @@ const IntermediateUnit = lazy(() => import("./pages/flashcards/IntermediateUnit"
 const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboard"));
 const AffiliateCommissions = lazy(() => import("./pages/affiliate/AffiliateCommissions"));
 const AffiliateReferrals = lazy(() => import("./pages/affiliate/AffiliateReferrals"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -231,6 +232,7 @@ export default function FullAppRoutes() {
             <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />
             <Route path="/affiliate/commissions" element={<AffiliateRoute><AffiliateCommissions /></AffiliateRoute>} />
             <Route path="/affiliate/referrals" element={<AffiliateRoute><AffiliateReferrals /></AffiliateRoute>} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
             </ErrorBoundary>
