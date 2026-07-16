@@ -126,6 +126,21 @@ function isCorrect(q: TestQuestion, userAnswer: any): boolean {
   }
 }
 
+function formatAnswer(v: any): string {
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) {
+    if (v.length && typeof v[0] === "object") {
+      return v.map((p: any) => `${p.left ?? p.a ?? ""} → ${p.right ?? p.b ?? ""}`).join(", ");
+    }
+    return v.join(" ");
+  }
+  if (typeof v === "object") {
+    return Object.entries(v).map(([k, val]) => `${k} → ${val}`).join(", ");
+  }
+  return String(v);
+}
+
 /* -------------------- main -------------------- */
 
 export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUnitTitle, onReviewUnit }: Props) {
