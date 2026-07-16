@@ -137,11 +137,18 @@ export default function IntermediateHome() {
             <div className="grid gap-3 sm:gap-4">
               {units.map((u, idx) => {
                 const open = unlocked(u);
+                const prog = progressQuery.data?.get(u.id);
                 let status: UnitCardStatus;
                 let badge: UnitCardBadge;
                 if (!open) {
                   status = "locked";
                   badge = "locked";
+                } else if (prog?.done) {
+                  status = "completed";
+                  badge = null;
+                } else if (prog && prog.pct > 0) {
+                  status = "in-progress";
+                  badge = u.is_free ? "free" : null;
                 } else {
                   status = "not-started";
                   badge = u.is_free ? "free" : null;
@@ -158,10 +165,11 @@ export default function IntermediateHome() {
                     href={href}
                     status={status}
                     badge={badge}
-                    progress={null}
+                    progress={prog?.pct ?? null}
                   />
                 );
               })}
+
             </div>
           )}
         </div>
