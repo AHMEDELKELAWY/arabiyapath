@@ -26,8 +26,9 @@
       window.fbq('init', '1489757443152828');
       window.fbq('track', 'PageView');
 
-      // Actually inject the third-party scripts only after the page is idle,
-      // so they never block LCP / FCP / TBT.
+      // Inject third-party scripts as soon as the browser is idle after first
+      // paint — no artificial delay, so PageView/Lead/Purchase events flush
+      // reliably even on bounces. Scripts are async so they never block LCP.
       function __loadAnalytics(){
         if (window.__lovableAnalyticsLoaded) return;
         window.__lovableAnalyticsLoaded = true;
@@ -40,17 +41,11 @@
         fb.src = 'https://connect.facebook.net/en_US/fbevents.js';
         document.head.appendChild(fb);
       }
-      function __scheduleAnalytics(){
-        setTimeout(function(){
-          if ('requestIdleCallback' in window) {
-            requestIdleCallback(__loadAnalytics, { timeout: 3000 });
-          } else {
-            __loadAnalytics();
-          }
-        }, 10000);
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(__loadAnalytics, { timeout: 1500 });
+      } else {
+        setTimeout(__loadAnalytics, 200);
       }
-      if (document.readyState === 'complete') __scheduleAnalytics();
-      else window.addEventListener('load', __scheduleAnalytics, { once: true });
     </script>
 
     <!-- Default meta tags (overridden by react-helmet-async per page) -->
