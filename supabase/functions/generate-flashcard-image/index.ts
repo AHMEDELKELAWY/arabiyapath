@@ -55,27 +55,35 @@ serve(async (req) => {
     const vocab = String(card.english_translation ?? "").trim();
     if (!vocab) throw new Error("english_translation is empty");
 
-    // --- Rule 1: pre-generation concept validation -------------------------
-    const conceptCheck = validateVocabularyConcept(vocab);
-    if (!conceptCheck.valid && !force) {
-      return json({
-        error: "vocab_rule_violation",
-        rule: "one-concept",
-        reason: conceptCheck.reason,
-        vocabulary: vocab,
-      }, 422);
+    const isGrammar = String(card.kind ?? "").toLowerCase() === "grammar";
+
+    // --- Rule 1: pre-generation concept validation (vocabulary only) -------
+    if (!isGrammar) {
+      const conceptCheck = validateVocabularyConcept(vocab);
+      if (!conceptCheck.valid && !force) {
+        return json({
+          error: "vocab_rule_violation",
+          rule: "one-concept",
+          reason: conceptCheck.reason,
+          vocabulary: vocab,
+        }, 422);
+      }
     }
 
-    // --- Rule 2: canonical reuse across the platform -----------------------
+    // --- Rule 2: canonical reuse across the platform (same kind only) ------
     const normalized = normalizeVocabulary(vocab);
     const { data: existing } = await supabase.from("flashcards")
-      .select("id, image_url, thumbnail_url, image_width, image_height, image_size_kb, image_alt, english_translation")
+      .select("id, image_url, thumbnail_url, image_width, image_height, image_size_kb, image_alt, english_translation, kind")
       .neq("id", cardId)
       .not("image_url", "is", null)
       .ilike("english_translation", vocab)
       .limit(20);
     const canonical = (existing ?? []).find(
-      (r: any) => normalizeVocabulary(r.english_translation) === normalized && r.image_url
+      (r: any) =>
+        normalizeVocabulary(r.english_translation) === normalized &&
+        r.image_url &&
+        String(r.kind ?? "").toLowerCase() === (isGrammar ? "grammar" : String(r.kind ?? "").toLowerCase()) &&
+        (isGrammar ? String(r.kind ?? "").toLowerCase() === "grammar" : String(r.kind ?? "").toLowerCase() !== "grammar")
     );
     if (canonical && !force) {
       return json({
@@ -96,7 +104,9 @@ serve(async (req) => {
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
-    const prompt = buildVocabularyImagePrompt(vocab);
+    const prompt = isGrammar
+      ? buildGrammarImagePrompt(vocab)
+      : buildVocabularyImagePrompt(vocab);
     const MAX_ATTEMPTS = 3;
     let lastValidation: { valid: boolean; issues: string[] } | null = null;
     let b64: string | null = null;
@@ -115,13 +125,15 @@ serve(async (req) => {
       const candidate = aiJson?.data?.[0]?.b64_json;
       if (!candidate) throw new Error("No image returned");
 
-      const validation = await validateGeneratedImage(candidate, vocab, apiKey);
+      const validation = isGrammar
+        ? await validateGrammarImage(candidate, vocab, apiKey)
+        : await validateGeneratedImage(candidate, vocab, apiKey);
       lastValidation = validation;
       if (validation.valid) {
         b64 = candidate;
         break;
       }
-      console.warn(`[image-rules] attempt ${attempt} failed for "${vocab}":`, validation.issues);
+      console.warn(`[image-rules] attempt ${attempt} failed for "${vocab}" (${isGrammar ? "grammar" : "vocab"}):`, validation.issues);
     }
 
     if (!b64) {
