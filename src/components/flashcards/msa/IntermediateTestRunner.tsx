@@ -188,7 +188,9 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     return questions.reduce((n, qq) => (isCorrect(qq, answers[qq.id]) ? n + 1 : n), 0);
   }, [questions, answers]);
 
-  const [i, setIState] = [null, null] as any; // placeholder to prevent accidental usage
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
+
 
     return (
       <Card className="rounded-2xl">
