@@ -1,0 +1,64 @@
+{
+  "@context": "https://www.rfc-editor.org/rfc/rfc9727",
+  "linkset": [
+    {
+      "anchor": "https://arabiyapath.com/",
+      "service-desc": [
+        {
+          "href": "https://arabiyapath.com/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "ArabiyaPath MCP Server Card"
+        },
+        {
+          "href": "https://arabiyapath.com/.well-known/agent-skills/index.json",
+          "type": "application/json",
+          "title": "ArabiyaPath Agent Skills (MCP tools)"
+        },
+        {
+          "href": "https://arabiyapath.com/.well-known/openid-configuration",
+          "type": "application/json",
+          "title": "OpenID Connect discovery"
+        },
+        {
+          "href": "https://arabiyapath.com/.well-known/oauth-authorization-server",
+          "type": "application/json",
+          "title": "OAuth 2.0 Authorization Server metadata"
+        },
+        {
+          "href": "https://arabiyapath.com/.well-known/oauth-protected-resource",
+          "type": "application/json",
+          "title": "OAuth 2.0 Protected Resource metadata"
+        },
+        {
+          "href": "https://arabiyapath.com/auth.md",
+          "type": "text/markdown",
+          "title": "How AI agents authenticate with ArabiyaPath"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://arabiyapath.com/auth.md",
+          "type": "text/markdown",
+          "title": "Agent authentication guide"
+        }
+      ]
+    },
+    {
+      "anchor": "https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp",
+      "service-desc": [
+        {
+          "href": "https://arabiyapath.com/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "MCP Server Card"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource",
+          "type": "application/json",
+          "title": "MCP OAuth Protected Resource metadata"
+        }
+      ]
+    }
+  ]
+}

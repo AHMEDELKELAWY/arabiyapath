@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "server": {
+    "name": "arabiyapath-mcp",
+    "title": "ArabiyaPath",
+    "version": "0.1.0",
+    "endpoint": "https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp",
+    "server_card": "https://arabiyapath.com/.well-known/mcp/server-card.json"
+  },
+  "authentication": {
+    "type": "oauth2",
+    "protected_resource_metadata": "https://arabiyapath.com/.well-known/oauth-protected-resource",
+    "documentation": "https://arabiyapath.com/auth.md"
+  },
+  "skills": [
+    {
+      "name": "whoami",
+      "title": "Who am I",
+      "description": "Return the signed-in ArabiyaPath user's profile: name, email, preferred dialect, and admin flag.",
+      "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false, "requiresAuth": true },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "list_courses",
+      "title": "List courses",
+      "description": "List ArabiyaPath dialects with their levels and units. Public catalog data.",
+      "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false, "requiresAuth": true },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "my_progress",
+      "title": "My learning progress",
+      "description": "Return the signed-in user's recently completed ArabiyaPath lessons with unit, level, and dialect names.",
+      "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false, "requiresAuth": true },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "How many recent lessons to return. Defaults to 20." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "my_purchases",
+      "title": "My purchases",
+      "description": "Return the signed-in user's purchases (courses, bundles, memberships) with product scope and status.",
+      "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false, "requiresAuth": true },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "my_certificates",
+      "title": "My certificates",
+      "description": "Return the signed-in user's completion certificates with dialect, level, issue date, and public verification URL.",
+      "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false, "requiresAuth": true },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    }
+  ]
+}

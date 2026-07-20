@@ -1,0 +1,35 @@
+{
+  "schema_version": "2025-06-18",
+  "name": "arabiyapath-mcp",
+  "title": "ArabiyaPath",
+  "version": "0.1.0",
+  "description": "MCP server exposing the signed-in ArabiyaPath user's profile, course catalog, learning progress, purchases, and certificates. All tools run under the user's row-level security.",
+  "publisher": {
+    "name": "ArabiyaPath",
+    "url": "https://arabiyapath.com"
+  },
+  "endpoints": {
+    "mcp": "https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp"
+  },
+  "transport": ["streamable-http"],
+  "authentication": {
+    "type": "oauth2",
+    "issuer": "https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1",
+    "authorization_server_metadata": "https://wruizzwgevxdsaiblmsd.supabase.co/.well-known/oauth-authorization-server",
+    "protected_resource_metadata": "https://arabiyapath.com/.well-known/oauth-protected-resource",
+    "accepted_audiences": ["authenticated"],
+    "dynamic_client_registration": true,
+    "consent_url": "https://arabiyapath.com/.lovable/oauth/consent",
+    "documentation": "https://arabiyapath.com/auth.md"
+  },
+  "instructions": "Tools for your ArabiyaPath account. Use `whoami` for profile details, `list_courses` to browse dialects/levels/units, `my_progress` for recently completed lessons, `my_purchases` for owned courses and memberships, and `my_certificates` for earned certificates. All tools act as the signed-in user; per-user data is protected by row-level security.",
+  "tools": [
+    { "name": "whoami", "title": "Who am I", "description": "Return the signed-in ArabiyaPath user's profile: name, email, preferred dialect, and admin flag.", "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false } },
+    { "name": "list_courses", "title": "List courses", "description": "List ArabiyaPath dialects with their levels and units.", "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false } },
+    { "name": "my_progress", "title": "My learning progress", "description": "Return the signed-in user's recently completed ArabiyaPath lessons.", "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false } },
+    { "name": "my_purchases", "title": "My purchases", "description": "Return the signed-in user's ArabiyaPath purchases (courses, bundles, memberships).", "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false } },
+    { "name": "my_certificates", "title": "My certificates", "description": "Return the signed-in user's completion certificates with public verification URLs.", "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false } }
+  ],
+  "skills_index": "https://arabiyapath.com/.well-known/agent-skills/index.json",
+  "manifest": "https://arabiyapath.com/.lovable/mcp/manifest.json"
+}
