@@ -599,8 +599,9 @@ function QuestionEditorDialog({
 
   const save = async () => {
     const result = serializeForm(form);
-    if (!result.ok) {
-      return toast({ title: "Missing info", description: result.error, variant: "destructive" });
+    if (result.ok !== true) {
+      toast({ title: "Missing info", description: (result as { error: string }).error, variant: "destructive" });
+      return;
     }
     setSaving(true);
     if (isCreate) {
