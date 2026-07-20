@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-qu
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { TrackingProvider } from "@/components/analytics/TrackingProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -145,6 +145,15 @@ function PageLoader() {
   return <div className="min-h-screen" />;
 }
 
+/**
+ * Route-level error boundary that resets when the pathname changes, so a
+ * crash on one page doesn't stick after the user navigates elsewhere.
+ */
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname} name={`route:${pathname}`}>{children}</ErrorBoundary>;
+}
+
 export default function FullAppRoutes() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -155,7 +164,7 @@ export default function FullAppRoutes() {
           <ScrollToTop />
           <TrackingProvider />
           <Suspense fallback={<PageLoader />}>
-            <ErrorBoundary name="routes">
+            <RouteErrorBoundary>
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/free-trial" element={<FreeTrial />} />
@@ -235,7 +244,7 @@ export default function FullAppRoutes() {
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
-            </ErrorBoundary>
+            </RouteErrorBoundary>
           </Suspense>
         </TooltipProvider>
       </AuthProvider>
