@@ -17,8 +17,7 @@ export function useImagePreload(urls: Array<string | null | undefined>) {
       const img = new Image();
       img.decoding = "async";
       // Hint low priority so we don't fight the current LCP image.
-      // @ts-expect-error - fetchPriority is not yet in lib.dom typings everywhere
-      img.fetchPriority = "low";
+      (img as unknown as { fetchPriority?: string }).fetchPriority = "low";
       img.src = src;
       imgs.push(img);
     }
