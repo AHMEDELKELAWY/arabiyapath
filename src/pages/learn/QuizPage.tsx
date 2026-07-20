@@ -26,7 +26,7 @@ export default function QuizPage() {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data, isLoading } = useQuiz(quizId);
+  // useQuiz is called below with attemptSeed.
   const submitQuiz = useSubmitQuiz();
   const { playSound } = useSoundEffects();
 
