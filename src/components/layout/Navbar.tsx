@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import logoImage from "@/assets/logo.svg";
+import logoImage from "@/assets/logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,

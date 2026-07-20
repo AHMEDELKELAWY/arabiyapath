@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import logoImage from "@/assets/logo.svg";
+import logoImage from "@/assets/logo.png";
 
 interface FocusLayoutProps {
   children: ReactNode;

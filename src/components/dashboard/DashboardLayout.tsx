@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useAffiliateProfile } from "@/hooks/useAffiliateData";
 import { cn } from "@/lib/utils";
-import logoImage from "@/assets/logo.svg";
+import logoImage from "@/assets/logo.png";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
