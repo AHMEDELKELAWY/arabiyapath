@@ -29,7 +29,7 @@ const BodySchema = z.object({
   target_type: z.enum(ALLOWED_TYPES).optional(),
 });
 
-const AI_VERSION = "int-test/v2-adaptive";
+const AI_VERSION = "int-test/v3-pedagogical";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -161,7 +161,20 @@ ${modeInstruction}
 - reading_comprehension: include a 2–4 sentence Arabic "passage"; 4 options; correct_answer is one option.
 - image_question / choose_correct_sentence: set "image_url" to one of the listed image URLs above.
 
-Fully vowelized Arabic (tashkeel). Plausible distractors. Brief English explanation.
+## Pedagogy (mandatory)
+Write this like an experienced Arabic teacher, not a random generator.
+- Before writing, silently answer: "What specific learning outcome does this question measure?" Pick ONE learning_objective from:
+  vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
+  listening_comprehension | listening_inference | reading_comprehension | reading_inference |
+  sentence_construction | word_order | image_interpretation | context_understanding |
+  everyday_communication
+- Classify cognitive_level (1=Recognition, 2=Recall, 3=Understanding, 4=Application). Prefer 3–4 whenever possible.
+- Distractors must model realistic learner mistakes (near-synonyms, wrong gender/plural/tense/preposition, similar-sounding word, grammatical-but-wrong-meaning). Never nonsense or obvious.
+- Do not test pure memorization when the lesson supports understanding.
+- Do not duplicate any sibling question's concept or wording.
+- Arabic must be fully vowelized (tashkeel) and sound natural.
+- Provide a "teaching_explanation" (2–4 English sentences) that explains WHY the answer is correct AND why each key distractor is wrong. This is shown after submission.
+- Silently self-score 0–100 (educational_value, clarity, authenticity, distractor_quality, alignment, naturalness). If below 70, rewrite before returning.
 
 Return STRICT JSON only:
 {
@@ -171,8 +184,13 @@ Return STRICT JSON only:
   "options": [...],
   "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
   "explanation": "string",
+  "teaching_explanation": "string",
   "image_url": "string or null",
   "difficulty": "easy" | "medium" | "hard",
+  "learning_objective": "<one of the objectives>",
+  "cognitive_level": 1 | 2 | 3 | 4,
+  "estimated_time_seconds": 20-180,
+  "quality_score": 0-100,
   "skills_tested": ["..."],
   "lesson_concepts": ["..."],
   "vocabulary_used": ["..."],
@@ -186,7 +204,7 @@ Return STRICT JSON only:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only." },
+          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessment items. Every question must measure a clear learning objective with realistic distractors and prefer understanding/application over rote recall. Silently self-review before returning. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
@@ -212,8 +230,13 @@ Return STRICT JSON only:
       options: q.options ?? null,
       correct_answer: q.correct_answer ?? "",
       explanation: q.explanation ?? null,
+      teaching_explanation: q.teaching_explanation ?? null,
       image_url: q.image_url ?? existing.image_url ?? null,
       difficulty: normalizeDifficulty(q.difficulty ?? existing.difficulty),
+      learning_objective: normalizeObjective(q.learning_objective),
+      cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
+      estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
+      quality_score: normalizeQualityScore(q.quality_score),
       skills_tested: toStrArr(q.skills_tested),
       lesson_concepts: toStrArr(q.lesson_concepts),
       vocabulary_used: toStrArr(q.vocabulary_used),
@@ -239,6 +262,31 @@ function normalizeDifficulty(d: any): string {
   const v = String(d ?? "medium").toLowerCase();
   return ["easy", "medium", "hard"].includes(v) ? v : "medium";
 }
+
+const OBJECTIVES = new Set([
+  "vocabulary_recognition","vocabulary_usage","grammar_recognition","grammar_usage",
+  "listening_comprehension","listening_inference","reading_comprehension","reading_inference",
+  "sentence_construction","word_order","image_interpretation","context_understanding",
+  "everyday_communication",
+]);
+function normalizeObjective(v: any): string | null {
+  if (!v) return null;
+  const s = String(v).toLowerCase().replace(/\s+/g, "_");
+  return OBJECTIVES.has(s) ? s : null;
+}
+function normalizeCognitiveLevel(v: any): number | null {
+  const n = Math.round(Number(v));
+  return n >= 1 && n <= 4 ? n : null;
+}
+function normalizeEstimatedTime(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(10, Math.min(300, n));
+}
+function normalizeQualityScore(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, n));
 
 function toStrArr(v: any): string[] {
   if (!v) return [];

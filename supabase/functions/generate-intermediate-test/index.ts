@@ -36,7 +36,8 @@ const ALLOWED_TYPES = [
   "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v2-adaptive";
+const AI_VERSION = "int-test/v3-pedagogical";
+const MIN_QUALITY_SCORE = 70;
 const TARGET_QUESTIONS = 10;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -120,7 +121,7 @@ Deno.serve(async (req) => {
     const blueprintText = blueprint
       .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
 
-    const prompt = `You are a senior Arabic language curriculum designer creating an INTERMEDIATE (CEFR B1) assessment. Learners have mastered beginner drills — this test must feel meaningfully harder.
+    const prompt = `You are an experienced Arabic language TEACHER (not a question generator) authoring an INTERMEDIATE (CEFR B1) assessment. Every question must feel like it was intentionally designed by a human teacher to measure a specific learning outcome — not randomly produced from available data.
 
 ## Unit
 Title (EN): ${unit.title_en}
@@ -141,24 +142,55 @@ ${imageList || "(none available)"}
 ## Grammar (${grammar.length} concepts)
 ${grammarList || "(none)"}
 
-${previousList ? `## Previously generated questions (DO NOT REPEAT — vary wording, distractors, and framing)
+${previousList ? `## Previously generated questions (DO NOT REPEAT — vary wording, distractors, framing, and concept)
 ${previousList}
 ` : ""}
 ## Adaptive blueprint — produce EXACTLY ${TARGET_QUESTIONS} questions in this mix
 ${blueprintText}
 
-## Hard rules
-- Allowed question_type values: ${ALLOWED_TYPES.join(", ")}.
-- Use at least 5 DIFFERENT question types across the ${TARGET_QUESTIONS} questions.
-- Never place more than 2 consecutive questions of the same type.
-- Never repeat wording, distractors, or the same "correct answer" pattern across questions.
-- Test understanding and inference. Never test single-word recall.
-- Distractors must be plausible (near-synonyms, close grammar forms, sentences grammatical but wrong-meaning). Never obviously wrong.
-- Do NOT quote lesson sentences verbatim unless testing listening or reading comprehension.
-- Arabic must be fully vowelized (tashkeel).
-- Every question ends with a brief English "explanation" giving the reasoning.
+## CORE TEACHING PHILOSOPHY
+Before writing each question, silently ask yourself:
+  "What specific learning outcome does this measure?"
+If you cannot answer in one sentence, DO NOT write the question.
+Never generate a question simply because information exists in the lesson.
 
-## Type formats
+## Learning objective (pick ONE per question)
+Classify each question's primary objective as EXACTLY one of:
+  vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
+  listening_comprehension | listening_inference | reading_comprehension | reading_inference |
+  sentence_construction | word_order | image_interpretation | context_understanding |
+  everyday_communication
+Do not mix multiple unrelated objectives into one question.
+
+## Cognitive level (Bloom-style, 1–4)
+  1 = Recognition, 2 = Recall, 3 = Understanding, 4 = Application
+Whenever the lesson allows, PREFER levels 3 and 4. An assessment mostly at levels 1–2 is unacceptable — the final set MUST have at least 60% of questions at level 3 or 4.
+
+## Distractor intelligence (mandatory)
+Every wrong option must model a REALISTIC learner mistake. Examples:
+  - a near-synonym with a subtly wrong nuance
+  - similar-sounding word (تشابه صوتي)
+  - wrong gender (مذكر/مؤنث)
+  - wrong plural pattern
+  - wrong verb tense or aspect
+  - wrong preposition (حرف جر)
+  - wrong location within a sentence
+  - grammatically valid sentence with the wrong meaning
+  - wrong register (فصحى vs. عامية) if relevant
+Never use nonsense, obviously unrelated words, or joke options. Never make the correct answer noticeably longer or more detailed than distractors.
+
+## Question diversity
+- Do not test the same vocabulary item or grammar rule more than once directly. If a concept must reappear, assess it from a different angle (e.g. usage after recognition).
+- Do not reuse question stems or answer patterns across questions.
+
+## Quality rules
+- Test understanding, not memorization. Avoid asking learners to recall a sentence they already saw verbatim.
+- Arabic must be fully vowelized (tashkeel) and sound natural — the way an educated Arab writes, not a literal translation from English.
+- Do NOT quote lesson sentences verbatim unless testing listening/reading comprehension.
+- Distractors must be believable, not obviously wrong.
+- The correct answer must be defensible on linguistic grounds — no ambiguity.
+
+## Type formats (strict)
 - multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is an array of 4 strings; correct_answer is one option string.
 - true_false: options is exactly ["True","False"]; correct_answer is "True" or "False".
 - fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
@@ -168,14 +200,31 @@ ${blueprintText}
 - image_question / choose_correct_sentence: set "image_url" to one of the URLs listed above.
 - listening_comprehension: reference the lesson video content in "question" only (no audio file).
 
-## Internal AI review before returning
-Before finalizing each question, silently check:
-  1. Is it too similar to another question in this test? If yes, rewrite.
-  2. Does it test the same skill as the previous question? If yes, swap type.
-  3. Are the distractors weak or obvious? If yes, strengthen.
-  4. Does it test memorization instead of understanding? If yes, rewrite for inference.
-  5. Does it duplicate a lesson sentence? If yes, paraphrase.
-Return ONLY the final polished set.
+## Teaching explanation
+For every question write a "teaching_explanation" (English, 2–4 sentences) that:
+  - states WHY the correct answer is correct (rule/nuance),
+  - states WHY each key distractor is wrong (name the mistake it models),
+  - names the relevant grammar or vocabulary point when applicable.
+This is a teaching moment shown ONLY after the learner submits. Do not repeat the answer verbatim without explaining.
+Also keep the shorter "explanation" field (one sentence, plain answer justification).
+
+## Self-review + quality score (mandatory, silent)
+For each question you drafted, silently score it 1–100 using: educational_value, clarity, authenticity, distractor_quality, lesson_alignment, language_naturalness.
+REJECT and regenerate any question where:
+  - the correct answer is obvious at a glance,
+  - a distractor is weak, silly, or unrelated,
+  - wording is unnatural or translated-sounding,
+  - it duplicates another question's concept or stem,
+  - it tests only memorization when the lesson supports higher-order thinking,
+  - overall score < ${MIN_QUALITY_SCORE}.
+Return "quality_score" as your final self-assessment (an integer 0–100). Only return questions that pass.
+
+## Final set constraints
+- EXACTLY ${TARGET_QUESTIONS} questions.
+- At least 5 DIFFERENT question types across the set.
+- No more than 2 consecutive questions of the same type.
+- At least 60% of questions at cognitive_level 3 or 4.
+- No two questions may share the same primary learning_objective + vocabulary_used pair.
 
 ## Output — STRICT JSON, no prose, no markdown fences
 {
@@ -185,11 +234,16 @@ Return ONLY the final polished set.
       "question_type": "<one of the allowed types>",
       "question": "string",
       "passage": "string or null",
-      "options": [...] ,
+      "options": [...],
       "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
       "explanation": "string",
+      "teaching_explanation": "string",
       "image_url": "string or null",
       "difficulty": "easy" | "medium" | "hard",
+      "learning_objective": "<one of the objectives listed above>",
+      "cognitive_level": 1 | 2 | 3 | 4,
+      "estimated_time_seconds": 20-180,
+      "quality_score": 0-100,
       "skills_tested": ["reading","vocabulary","grammar","listening","inference","writing"],
       "lesson_concepts": ["..."],
       "vocabulary_used": ["..."],
@@ -208,7 +262,7 @@ Return ONLY the final polished set.
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only. Follow the adaptive blueprint exactly." },
+          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessments. You care about pedagogy: every question must measure a specific learning objective, use realistic distractors, and prefer understanding/application over recall. Silently self-review and drop any question scoring below the required quality bar. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
@@ -256,8 +310,14 @@ Return ONLY the final polished set.
       return q;
     };
 
-    // Enforce "no more than 2 consecutive same-type" after AI order.
-    const spaced = spaceConsecutiveTypes(shuffle(questions));
+    // Drop low-quality questions the AI self-flagged, then enforce spacing.
+    const passed = questions.filter((q: any) => {
+      const s = Number(q?.quality_score);
+      return !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
+    });
+    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6) ? passed : questions;
+
+    const spaced = spaceConsecutiveTypes(shuffle(pool));
     const finalQuestions = spaced.map(shuffleOptions);
 
     // Wipe existing draft
@@ -274,8 +334,13 @@ Return ONLY the final polished set.
       options: q.options ?? null,
       correct_answer: q.correct_answer ?? "",
       explanation: q.explanation ?? null,
+      teaching_explanation: q.teaching_explanation ?? null,
       image_url: q.image_url ?? null,
       difficulty: normalizeDifficulty(q.difficulty),
+      learning_objective: normalizeObjective(q.learning_objective),
+      cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
+      estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
+      quality_score: normalizeQualityScore(q.quality_score),
       skills_tested: toStrArr(q.skills_tested),
       lesson_concepts: toStrArr(q.lesson_concepts),
       vocabulary_used: toStrArr(q.vocabulary_used),
@@ -426,6 +491,31 @@ function normalizeDifficulty(d: any): string {
   const v = String(d ?? "medium").toLowerCase();
   return ["easy", "medium", "hard"].includes(v) ? v : "medium";
 }
+
+const OBJECTIVES = new Set([
+  "vocabulary_recognition","vocabulary_usage","grammar_recognition","grammar_usage",
+  "listening_comprehension","listening_inference","reading_comprehension","reading_inference",
+  "sentence_construction","word_order","image_interpretation","context_understanding",
+  "everyday_communication",
+]);
+function normalizeObjective(v: any): string | null {
+  if (!v) return null;
+  const s = String(v).toLowerCase().replace(/\s+/g, "_");
+  return OBJECTIVES.has(s) ? s : null;
+}
+function normalizeCognitiveLevel(v: any): number | null {
+  const n = Math.round(Number(v));
+  return n >= 1 && n <= 4 ? n : null;
+}
+function normalizeEstimatedTime(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(10, Math.min(300, n));
+}
+function normalizeQualityScore(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, n));
 
 function toStrArr(v: any): string[] {
   if (!v) return [];

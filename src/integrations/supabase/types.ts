@@ -951,23 +951,28 @@ export type Database = {
         Row: {
           ai_version: string | null
           audio_url: string | null
+          cognitive_level: number | null
           correct_answer: Json
           created_at: string
           difficulty: string | null
+          estimated_time_seconds: number | null
           explanation: string | null
           generated_at: string | null
           grammar_concepts_used: string[] | null
           id: string
           image_url: string | null
+          learning_objective: string | null
           lesson_concepts: string[] | null
           options: Json | null
           order_index: number
           passage: string | null
           points: number
           published: boolean
+          quality_score: number | null
           question: string
           question_type: string
           skills_tested: string[] | null
+          teaching_explanation: string | null
           unit_id: string
           updated_at: string
           vocabulary_used: string[] | null
@@ -975,23 +980,28 @@ export type Database = {
         Insert: {
           ai_version?: string | null
           audio_url?: string | null
+          cognitive_level?: number | null
           correct_answer: Json
           created_at?: string
           difficulty?: string | null
+          estimated_time_seconds?: number | null
           explanation?: string | null
           generated_at?: string | null
           grammar_concepts_used?: string[] | null
           id?: string
           image_url?: string | null
+          learning_objective?: string | null
           lesson_concepts?: string[] | null
           options?: Json | null
           order_index?: number
           passage?: string | null
           points?: number
           published?: boolean
+          quality_score?: number | null
           question: string
           question_type: string
           skills_tested?: string[] | null
+          teaching_explanation?: string | null
           unit_id: string
           updated_at?: string
           vocabulary_used?: string[] | null
@@ -999,23 +1009,28 @@ export type Database = {
         Update: {
           ai_version?: string | null
           audio_url?: string | null
+          cognitive_level?: number | null
           correct_answer?: Json
           created_at?: string
           difficulty?: string | null
+          estimated_time_seconds?: number | null
           explanation?: string | null
           generated_at?: string | null
           grammar_concepts_used?: string[] | null
           id?: string
           image_url?: string | null
+          learning_objective?: string | null
           lesson_concepts?: string[] | null
           options?: Json | null
           order_index?: number
           passage?: string | null
           points?: number
           published?: boolean
+          quality_score?: number | null
           question?: string
           question_type?: string
           skills_tested?: string[] | null
+          teaching_explanation?: string | null
           unit_id?: string
           updated_at?: string
           vocabulary_used?: string[] | null

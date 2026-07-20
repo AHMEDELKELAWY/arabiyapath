@@ -30,7 +30,8 @@ interface TestQuestion {
   passage: string | null;
   options: any;
   correct_answer: any;
-  explanation: string | null;
+ explanation: string | null;
+ teaching_explanation?: string | null;
   audio_url: string | null;
   image_url: string | null;
   order_index: number;
@@ -151,7 +152,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_unit_tests")
-        .select("id,question_type,question,passage,options,correct_answer,explanation,audio_url,image_url,order_index")
+        .select("id,question_type,question,passage,options,correct_answer,explanation,teaching_explanation,audio_url,image_url,order_index")
         .eq("unit_id", unitId)
         .eq("published", true)
         .order("order_index");
@@ -313,6 +314,12 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
                             <span className="not-italic font-medium text-foreground">Why: </span>
                             {qq.explanation}
                           </p>
+                        )}
+                        {qq.teaching_explanation && (
+                          <div className="mt-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                            <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">Teacher's note</p>
+                            <p className="text-sm text-foreground/90 whitespace-pre-wrap">{qq.teaching_explanation}</p>
+                          </div>
                         )}
                       </div>
                     </CardContent>
