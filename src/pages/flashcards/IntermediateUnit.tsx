@@ -524,11 +524,20 @@ export default function IntermediateUnit() {
                   videoUrl={unit.video_url}
                   storagePath={unit.video_storage_path}
                   alreadyDone={done.listening}
+                  userId={user?.id ?? null}
+                  unitId={unit.id}
                   onContinue={async () => {
+                    if (user?.id) {
+                      void logUnitEvent({
+                        userId: user.id, unitId: unit.id,
+                        eventType: "continue_click", step: "listening",
+                      });
+                    }
                     if (!done.listening) await markCompleted("listening_completed_at");
                     setActiveTab("learn");
                   }}
                 />
+
               ) : (
                 <LockedCard icon={Headphones} title="Listening" body="Watch the lesson video and follow along with the dialogue." />
               )}
