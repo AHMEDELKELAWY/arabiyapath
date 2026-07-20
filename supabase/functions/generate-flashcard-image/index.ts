@@ -182,6 +182,18 @@ serve(async (req) => {
       const validation = isGrammar
         ? await validateGrammarImage(candidate, vocab, apiKey)
         : await validateGeneratedImage(candidate, vocab, apiKey);
+      // When admin supplied a custom image_prompt, the scene intentionally
+      // extends beyond the single vocab word (e.g. a child in a bathroom for
+      // "bathroom"). Do not fail on matchesVocab / oneConcept in that case —
+      // only photoreal + noText remain hard requirements.
+      if (!validation.valid && useCustom && !isGrammar) {
+        const hardFail = validation.issues.some((i) =>
+          /not photorealistic|contains visible text/i.test(i)
+        );
+        if (!hardFail) {
+          validation.valid = true;
+        }
+      }
       lastValidation = validation;
       if (validation.valid) {
         b64 = candidate;
