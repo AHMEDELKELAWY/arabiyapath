@@ -51,7 +51,7 @@ serve(async (req) => {
     if (!cardId) throw new Error("cardId required");
 
     const { data: card, error: cardErr } = await supabase.from("flashcards")
-      .select("id, english_translation, kind").eq("id", cardId).single();
+      .select("id, english_translation, arabic_text, kind, image_prompt").eq("id", cardId).single();
     if (cardErr || !card) throw new Error("card not found");
 
     const vocab = String(card.english_translation ?? "").trim();
@@ -60,8 +60,24 @@ serve(async (req) => {
     const isGrammar = String(card.kind ?? "").toLowerCase() === "grammar";
     const kindLabel = isGrammar ? "grammar" : "vocab";
 
-    const imagePrompt = isGrammar ? buildGrammarImagePrompt(vocab) : buildVocabularyImagePrompt(vocab);
+    const customPrompt = String((card as any).image_prompt ?? "").trim();
+    const useCustom = customPrompt.length > 0;
+
+    // If image_prompt is set on the card, it is sent to the model VERBATIM.
+    // No summarization, no substitution, no appending.
+    const imagePrompt = useCustom
+      ? customPrompt
+      : (isGrammar ? buildGrammarImagePrompt(vocab) : buildVocabularyImagePrompt(vocab));
     const validatorPrompt = isGrammar ? buildGrammarValidatorPrompt(vocab) : buildVocabularyValidatorPrompt(vocab);
+
+    console.log("[generate-flashcard-image] pipeline input", {
+      cardId,
+      arabic: (card as any).arabic_text,
+      english: vocab,
+      imagePromptField: customPrompt || null,
+      usingCustomPrompt: useCustom,
+      finalPromptSentToModel: imagePrompt,
+    });
 
     const logDebug = async (row: {
       status: number;
