@@ -51,7 +51,7 @@ serve(async (req) => {
     if (!cardId) throw new Error("cardId required");
 
     const { data: card, error: cardErr } = await supabase.from("flashcards")
-      .select("id, english_translation, kind").eq("id", cardId).single();
+      .select("id, english_translation, arabic_text, kind, image_prompt").eq("id", cardId).single();
     if (cardErr || !card) throw new Error("card not found");
 
     const vocab = String(card.english_translation ?? "").trim();
@@ -60,8 +60,24 @@ serve(async (req) => {
     const isGrammar = String(card.kind ?? "").toLowerCase() === "grammar";
     const kindLabel = isGrammar ? "grammar" : "vocab";
 
-    const imagePrompt = isGrammar ? buildGrammarImagePrompt(vocab) : buildVocabularyImagePrompt(vocab);
+    const customPrompt = String((card as any).image_prompt ?? "").trim();
+    const useCustom = customPrompt.length > 0;
+
+    // If image_prompt is set on the card, it is sent to the model VERBATIM.
+    // No summarization, no substitution, no appending.
+    const imagePrompt = useCustom
+      ? customPrompt
+      : (isGrammar ? buildGrammarImagePrompt(vocab) : buildVocabularyImagePrompt(vocab));
     const validatorPrompt = isGrammar ? buildGrammarValidatorPrompt(vocab) : buildVocabularyValidatorPrompt(vocab);
+
+    console.log("[generate-flashcard-image] pipeline input", {
+      cardId,
+      arabic: (card as any).arabic_text,
+      english: vocab,
+      imagePromptField: customPrompt || null,
+      usingCustomPrompt: useCustom,
+      finalPromptSentToModel: imagePrompt,
+    });
 
     const logDebug = async (row: {
       status: number;
@@ -90,7 +106,10 @@ serve(async (req) => {
     };
 
     // --- Rule 1: pre-generation concept validation (vocabulary only) -------
-    if (!isGrammar) {
+    // Skip when card has a custom image_prompt — that field is a scene
+    // description, not a single vocabulary term, so the one-concept check
+    // does not apply.
+    if (!isGrammar && !useCustom) {
       const conceptCheck = validateVocabularyConcept(vocab);
       if (!conceptCheck.valid && !force) {
         await logDebug({ status: 422, outcome: "vocab_rule_violation", reason: conceptCheck.reason });
@@ -119,7 +138,7 @@ serve(async (req) => {
           ? String(r.kind ?? "").toLowerCase() === "grammar"
           : String(r.kind ?? "").toLowerCase() !== "grammar")
     );
-    if (canonical && !force) {
+    if (canonical && !force && !useCustom) {
       await logDebug({ status: 200, outcome: "reused_canonical" });
       return json({
         reused: true,
