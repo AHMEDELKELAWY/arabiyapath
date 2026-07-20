@@ -339,10 +339,12 @@ export default function IntermediateUnit() {
   // land on the first unlocked-not-yet-done tab.
   useEffect(() => {
     if (!progress) return;
-    const next = TAB_ORDER.find((t) => unlocked[t] && !done[t]) ?? "test";
+    const order = TAB_ORDER.filter((t) => !(t === "grammar" && !hasGrammar));
+    const next = order.find((t) => unlocked[t] && !done[t]) ?? "test";
     setActiveTab(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unit?.id]);
+  }, [unit?.id, hasGrammar]);
+
 
   async function markCompleted(field: keyof ProgressRow) {
     if (!user?.id || !unit?.id) return;
