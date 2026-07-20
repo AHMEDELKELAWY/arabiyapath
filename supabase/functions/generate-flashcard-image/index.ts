@@ -106,7 +106,10 @@ serve(async (req) => {
     };
 
     // --- Rule 1: pre-generation concept validation (vocabulary only) -------
-    if (!isGrammar) {
+    // Skip when card has a custom image_prompt — that field is a scene
+    // description, not a single vocabulary term, so the one-concept check
+    // does not apply.
+    if (!isGrammar && !useCustom) {
       const conceptCheck = validateVocabularyConcept(vocab);
       if (!conceptCheck.valid && !force) {
         await logDebug({ status: 422, outcome: "vocab_rule_violation", reason: conceptCheck.reason });
