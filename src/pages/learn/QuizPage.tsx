@@ -212,7 +212,7 @@ export default function QuizPage() {
                 <h3 className="font-semibold mb-4">Answer Review</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {questions.map((q, index) => {
-                    const result = results[index];
+                    const result = results[q.originalIndex];
                     return (
                       <div 
                         key={index}
