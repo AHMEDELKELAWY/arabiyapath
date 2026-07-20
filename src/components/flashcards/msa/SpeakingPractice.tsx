@@ -232,6 +232,8 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
     setScore(null);
   };
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
+
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading cards…</CardContent></Card>;
   }
@@ -276,7 +278,6 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   const isFirst = safeIdx === 0;
   const isLast = safeIdx === total - 1;
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
 
   return (
     <Card

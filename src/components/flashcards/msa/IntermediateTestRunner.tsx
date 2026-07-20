@@ -188,6 +188,8 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     return questions.reduce((n, qq) => (isCorrect(qq, answers[qq.id]) ? n + 1 : n), 0);
   }, [questions, answers]);
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
   if (isLoading) {
     return (
       <Card className="rounded-2xl">
@@ -414,7 +416,6 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
       ? Array.isArray(userAnswer) && userAnswer.length > 0
       : userAnswer !== undefined && userAnswer !== "";
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
 
   return (
     <Card
