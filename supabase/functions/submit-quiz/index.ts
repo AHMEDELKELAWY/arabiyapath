@@ -132,7 +132,14 @@ serve(async (req) => {
         const userAnswer = (answers as Record<number, string>)[index];
         const isCorrect = userAnswer === q.correct_answer;
         if (isCorrect) correctCount++;
-        legacyResults.push({ questionIndex: index, correct: isCorrect, correctAnswer: q.correct_answer });
+        legacyResults.push({
+          questionIndex: index,
+          correct: isCorrect,
+          correctAnswer: q.correct_answer,
+          userAnswer: userAnswer ?? null,
+          prompt: q.prompt,
+          explanation: explanationOf(q),
+        });
       });
     }
 
