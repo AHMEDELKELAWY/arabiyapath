@@ -262,7 +262,7 @@ Return "quality_score" as your final self-assessment (an integer 0–100). Only 
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only. Follow the adaptive blueprint exactly." },
+          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessments. You care about pedagogy: every question must measure a specific learning objective, use realistic distractors, and prefer understanding/application over recall. Silently self-review and drop any question scoring below the required quality bar. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
