@@ -34,6 +34,26 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
+  const [attemptSeed, setAttemptSeed] = useState(() => Date.now());
+
+  function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  const rawQuestions = data?.questions;
+  const questions = useMemo(() => {
+    if (!rawQuestions) return [];
+    return shuffle(rawQuestions).map((q) => ({
+      ...q,
+      options: shuffle(q.options as string[]),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawQuestions, attemptSeed]);
 
   if (isLoading) {
     return (
