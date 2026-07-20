@@ -448,10 +448,16 @@ function SortableQuestionRow({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onClick={onEdit}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
               <DropdownMenuItem onClick={onDuplicate}><Copy className="w-4 h-4 mr-2" />Duplicate</DropdownMenuItem>
-              <DropdownMenuItem onClick={onRegenerate}><RotateCcw className="w-4 h-4 mr-2" />Regenerate this question</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onRegenerate}><RotateCcw className="w-4 h-4 mr-2" />Regenerate</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEasier}><ArrowDownCircle className="w-4 h-4 mr-2" />Make easier</DropdownMenuItem>
+              <DropdownMenuItem onClick={onHarder}><ArrowUpCircle className="w-4 h-4 mr-2" />Make harder</DropdownMenuItem>
+              <DropdownMenuItem onClick={onImproveDistractors}><Shuffle className="w-4 h-4 mr-2" />Improve distractors</DropdownMenuItem>
+              <DropdownMenuItem onClick={onRewrite}><Wand2 className="w-4 h-4 mr-2" />Rewrite question</DropdownMenuItem>
+              <DropdownMenuItem onClick={onChangeType}><Repeat className="w-4 h-4 mr-2" />Change type…</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onMoveUp} disabled={index === 0}><ArrowUp className="w-4 h-4 mr-2" />Move up</DropdownMenuItem>
               <DropdownMenuItem onClick={onMoveDown} disabled={index === count - 1}><ArrowDown className="w-4 h-4 mr-2" />Move down</DropdownMenuItem>
