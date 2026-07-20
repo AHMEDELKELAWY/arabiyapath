@@ -33,6 +33,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logUnitEvent, type UnitStep } from "@/lib/unitAnalytics";
+
 
 const CONTENT_BUCKET = "content";
 
@@ -98,20 +100,46 @@ function TabLocked({ prevLabel }: { prevLabel: string }) {
 const REQUIRED_WATCH_PCT = 0.9;
 
 function ListeningPlayer({
-  videoUrl, storagePath, alreadyDone, onContinue,
+  videoUrl, storagePath, alreadyDone, onContinue, userId, unitId,
 }: {
   videoUrl: string | null;
   storagePath: string | null;
   alreadyDone: boolean;
   onContinue: () => void;
+  userId: string | null;
+  unitId: string | null;
 }) {
   const [watchedPct, setWatchedPct] = useState(alreadyDone ? 1 : 0);
   const [ended, setEnded] = useState(alreadyDone);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const iframeReadyRef = useRef(false);
+  const endedLoggedRef = useRef(false);
 
   const unlocked = alreadyDone || ended || watchedPct >= REQUIRED_WATCH_PCT;
+
+  // Log video progress + ended (throttled inside logUnitEvent).
+  useEffect(() => {
+    if (!userId || !unitId) return;
+    logUnitEvent({
+      userId, unitId,
+      eventType: "video_progress",
+      step: "listening",
+      watchedPct: watchedPct * 100,
+    });
+  }, [watchedPct, userId, unitId]);
+
+  useEffect(() => {
+    if (!ended || endedLoggedRef.current || !userId || !unitId) return;
+    endedLoggedRef.current = true;
+    logUnitEvent({
+      userId, unitId,
+      eventType: "video_ended",
+      step: "listening",
+      watchedPct: 100,
+    });
+  }, [ended, userId, unitId]);
+
 
   // Native <video> tracking.
   useEffect(() => {
@@ -360,7 +388,23 @@ export default function IntermediateUnit() {
       return;
     }
     qc.invalidateQueries({ queryKey: ["fc-intermediate-progress", user.id, unit.id] });
+    const stepMap: Record<string, UnitStep> = {
+      listening_completed_at: "listening",
+      learn_completed_at: "learn",
+      grammar_completed_at: "grammar",
+      test_completed_at: "test",
+    };
+    const step = stepMap[field as string];
+    if (step) {
+      void logUnitEvent({
+        userId: user.id,
+        unitId: unit.id,
+        eventType: "step_completed",
+        step,
+      });
+    }
   }
+
 
   function tryChangeTab(next: Tab) {
     if (!unlocked[next]) {
@@ -480,11 +524,20 @@ export default function IntermediateUnit() {
                   videoUrl={unit.video_url}
                   storagePath={unit.video_storage_path}
                   alreadyDone={done.listening}
+                  userId={user?.id ?? null}
+                  unitId={unit.id}
                   onContinue={async () => {
+                    if (user?.id) {
+                      void logUnitEvent({
+                        userId: user.id, unitId: unit.id,
+                        eventType: "continue_click", step: "listening",
+                      });
+                    }
                     if (!done.listening) await markCompleted("listening_completed_at");
                     setActiveTab("learn");
                   }}
                 />
+
               ) : (
                 <LockedCard icon={Headphones} title="Listening" body="Watch the lesson video and follow along with the dialogue." />
               )}

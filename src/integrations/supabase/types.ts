@@ -1903,6 +1903,47 @@ export type Database = {
         }
         Relationships: []
       }
+      unit_learning_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          step: string | null
+          unit_id: string
+          user_id: string
+          watched_pct: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          step?: string | null
+          unit_id: string
+          user_id: string
+          watched_pct?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          step?: string | null
+          unit_id?: string
+          user_id?: string
+          watched_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_learning_events_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           created_at: string
@@ -2123,6 +2164,14 @@ export type Database = {
       }
       admin_mark_all_notifications_read: { Args: never; Returns: number }
       admin_pending_applications_count: { Args: never; Returns: number }
+      admin_unit_funnel: {
+        Args: { _unit_id: string }
+        Returns: {
+          completed: number
+          reached: number
+          step: string
+        }[]
+      }
       admin_unread_notifications_count: { Args: never; Returns: number }
       affiliate_my_referrals: {
         Args: never
