@@ -96,6 +96,96 @@ export function buildVocabularyImagePrompt(vocabulary: string): string {
 }
 
 /**
+ * Build the enforced prompt for a GRAMMAR image.
+ *
+ * Grammar cards teach function words (pronouns, question words, particles,
+ * prepositions, connectors). A literal depiction rarely conveys meaning, so
+ * we ask for an educational everyday scene where a learner can infer the
+ * grammatical function from the interaction between people.
+ */
+export function buildGrammarImagePrompt(vocabulary: string): string {
+  return [
+    `Ultra-realistic photograph of a friendly Arab family or Arab people in a simple everyday scene that teaches the meaning and conversational use of the Arabic grammar word: "${vocabulary}".`,
+    `Do NOT depict the word literally. Instead show a natural situation where a beginner can infer the grammatical function from the interaction, gestures, and facial expressions of the people.`,
+    `Exactly ONE clear educational concept, focused on the interaction between the people. Expressions must clearly communicate the grammatical meaning.`,
+    `Realistic photography style, bright natural lighting, clean uncluttered background, professional DSLR look, culturally appropriate Middle Eastern context, modest clothing.`,
+    `Absolutely NO text of any kind: no Arabic letters, no English letters, no numbers, no captions, no subtitles, no signs, no labels, no logos, no watermarks, no speech bubbles containing writing, no writing on objects or clothing.`,
+    `NO illustrations, NO cartoons, NO 3D renders, NO drawings, NO paintings, NO clip art, NO collages, NO split screens, NO multi-panel compositions.`,
+  ].join(" ");
+}
+
+/**
+ * Post-generation validator for grammar images. Looser than the vocabulary
+ * validator: we do not require the image to visually match the grammar word
+ * itself — only that it is a photorealistic, text-free, single-scene image
+ * of people whose interaction plausibly teaches a grammatical function.
+ */
+export async function validateGrammarImage(
+  b64Png: string,
+  vocabulary: string,
+  apiKey: string,
+): Promise<{ valid: boolean; issues: string[] }> {
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a strict validator for Arabic grammar teaching images. Return ONLY compact JSON.",
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  `Arabic grammar word being taught: "${vocabulary}".\n` +
+                  `Judge the image against these rules:\n` +
+                  `1. Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting).\n` +
+                  `2. Contains NO visible text, letters, numbers, captions, signs, logos, watermarks, or writing in any language.\n` +
+                  `3. Shows ONE clear scene of people interacting — no split screens, no multi-panel, no collage.\n` +
+                  `4. The interaction/expressions plausibly teach a grammatical function to a beginner.\n` +
+                  `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"teachesGrammar":bool,"issues":[string]}`,
+              },
+              {
+                type: "image_url",
+                image_url: { url: `data:image/png;base64,${b64Png}` },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) return { valid: true, issues: [] };
+    const json = await res.json();
+    const raw: string = json?.choices?.[0]?.message?.content ?? "";
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return { valid: true, issues: [] };
+    const parsed = JSON.parse(match[0]);
+    const issues: string[] = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 5) : [];
+    const valid =
+      parsed.photoreal === true &&
+      parsed.noText === true &&
+      parsed.oneScene === true &&
+      parsed.teachesGrammar === true;
+    if (!valid) {
+      if (parsed.photoreal === false) issues.push("not photorealistic");
+      if (parsed.noText === false) issues.push("contains visible text");
+      if (parsed.oneScene === false) issues.push("more than one scene");
+      if (parsed.teachesGrammar === false) issues.push("scene does not teach the grammar function");
+    }
+    return { valid, issues };
+  } catch {
+    return { valid: true, issues: [] };
+  }
+}
+
+/**
  * Post-generation: use a vision model to verify the produced image obeys the
  * rules. Returns { valid, issues[] }.
  *
