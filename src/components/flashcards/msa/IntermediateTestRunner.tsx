@@ -32,6 +32,7 @@ interface TestQuestion {
   correct_answer: any;
   explanation: string | null;
   audio_url: string | null;
+  image_url: string | null;
   order_index: number;
 }
 
@@ -150,7 +151,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_unit_tests")
-        .select("id,question_type,question,passage,options,correct_answer,explanation,audio_url,order_index")
+        .select("id,question_type,question,passage,options,correct_answer,explanation,audio_url,image_url,order_index")
         .eq("unit_id", unitId)
         .eq("published", true)
         .order("order_index");
@@ -482,6 +483,16 @@ function QuestionView({
       )}
       {question.audio_url && (
         <AudioButton src={question.audio_url} autoplay={question.question_type === "audio"} />
+      )}
+      {question.image_url && (
+        <div className="flex justify-center">
+          <img
+            src={question.image_url}
+            alt=""
+            loading="lazy"
+            className="max-h-64 w-auto rounded-lg border object-contain bg-muted/30"
+          />
+        </div>
       )}
       <p className="text-base md:text-lg font-medium leading-relaxed">{question.question}</p>
     </div>
