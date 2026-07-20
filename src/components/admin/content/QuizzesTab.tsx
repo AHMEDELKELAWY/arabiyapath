@@ -434,7 +434,42 @@ export function QuizzesTab() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Question Type</Label>
+                  <Label>Format</Label>
+                  <Select value={questionForm.question_type} disabled>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    More formats (image, audio, fill-in-the-blank...) coming soon.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Difficulty</Label>
+                  <Select
+                    value={questionForm.difficulty}
+                    onValueChange={(value) =>
+                      setQuestionForm({ ...questionForm, difficulty: value as any })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Sub-variant</Label>
                   <Select
                     value={questionForm.type}
                     onValueChange={(value) =>
@@ -445,7 +480,7 @@ export function QuizzesTab() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                      <SelectItem value="multiple_choice">Text</SelectItem>
                       <SelectItem value="listening">Listening</SelectItem>
                     </SelectContent>
                   </Select>
