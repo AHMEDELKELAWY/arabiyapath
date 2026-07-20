@@ -98,6 +98,46 @@ function TabLocked({ prevLabel }: { prevLabel: string }) {
 }
 
 const REQUIRED_WATCH_PCT = 0.9;
+const YT_API_SRC = "https://www.youtube.com/iframe_api";
+
+// Global promise so we only inject the YT IFrame API script once.
+let ytApiPromise: Promise<any> | null = null;
+function loadYouTubeAPI(): Promise<any> {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  const w = window as any;
+  if (w.YT && w.YT.Player) return Promise.resolve(w.YT);
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => {
+      try { prev && prev(); } catch { /* noop */ }
+      resolve(w.YT);
+    };
+    if (!document.querySelector(`script[src="${YT_API_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = YT_API_SRC;
+      s.async = true;
+      document.head.appendChild(s);
+    }
+  });
+  return ytApiPromise;
+}
+
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return id;
+      const shorts = u.pathname.match(/\/shorts\/([\w-]+)/);
+      if (shorts) return shorts[1];
+      const embed = u.pathname.match(/\/embed\/([\w-]+)/);
+      if (embed) return embed[1];
+    }
+    if (u.hostname === "youtu.be") return u.pathname.slice(1);
+  } catch { /* fall through */ }
+  return null;
+}
 
 function ListeningPlayer({
   videoUrl, storagePath, alreadyDone, onContinue, userId, unitId,
@@ -111,12 +151,23 @@ function ListeningPlayer({
 }) {
   const [watchedPct, setWatchedPct] = useState(alreadyDone ? 1 : 0);
   const [ended, setEnded] = useState(alreadyDone);
+  const [manualOverride, setManualOverride] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const iframeReadyRef = useRef(false);
+  const ytContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
   const endedLoggedRef = useRef(false);
 
-  const unlocked = alreadyDone || ended || watchedPct >= REQUIRED_WATCH_PCT;
+  const unlocked = alreadyDone || ended || manualOverride || watchedPct >= REQUIRED_WATCH_PCT;
+  const youTubeId = videoUrl && !storagePath ? extractYouTubeId(videoUrl) : null;
+
+  // Show the manual "I've watched the video" fallback after 15s in case the
+  // YT IFrame API is blocked (some mobile browsers / privacy modes).
+  useEffect(() => {
+    if (storagePath || !youTubeId) return;
+    const t = window.setTimeout(() => setShowManual(true), 15000);
+    return () => window.clearTimeout(t);
+  }, [youTubeId, storagePath]);
 
   // Log video progress + ended (throttled inside logUnitEvent).
   useEffect(() => {
@@ -140,7 +191,6 @@ function ListeningPlayer({
     });
   }, [ended, userId, unitId]);
 
-
   // Native <video> tracking.
   useEffect(() => {
     const v = videoRef.current;
@@ -158,59 +208,57 @@ function ListeningPlayer({
     };
   }, [storagePath]);
 
-  // YouTube iframe tracking via postMessage (enablejsapi=1).
+  // YouTube IFrame Player API tracking (official).
   useEffect(() => {
-    if (!videoUrl || storagePath) return;
-    const iframe = iframeRef.current;
-    if (!iframe) return;
+    if (!youTubeId || !ytContainerRef.current) return;
+    let cancelled = false;
+    let pollId: number | null = null;
 
-    function send(func: string, args: any[] = []) {
-      try {
-        iframe!.contentWindow?.postMessage(
-          JSON.stringify({ event: "command", func, args }),
-          "*"
-        );
-      } catch { /* noop */ }
-    }
-
-    function onMessage(e: MessageEvent) {
-      if (!iframe || e.source !== iframe.contentWindow) return;
-      try {
-        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-        if (data?.event === "onReady" || data?.event === "initialDelivery") {
-          iframeReadyRef.current = true;
-          send("addEventListener", ["onStateChange"]);
-        }
-        if (data?.event === "onStateChange" && data?.info === 0) {
-          setEnded(true);
-        }
-        if (data?.event === "infoDelivery" && data?.info) {
-          const info = data.info;
-          if (typeof info.currentTime === "number" && typeof info.duration === "number" && info.duration > 0) {
-            setWatchedPct(info.currentTime / info.duration);
-          }
-          if (info.playerState === 0) setEnded(true);
-        }
-      } catch { /* noop */ }
-    }
-    window.addEventListener("message", onMessage);
-
-    // Poll for current time.
-    const poll = window.setInterval(() => {
-      if (iframeReadyRef.current) send("getCurrentTime");
-    }, 1000);
-
-    // Kick off handshake.
-    const kick = window.setTimeout(() => {
-      send("listening", []);
-    }, 500);
+    loadYouTubeAPI()
+      .then((YT: any) => {
+        if (cancelled || !ytContainerRef.current) return;
+        const origin = window.location.origin;
+        ytPlayerRef.current = new YT.Player(ytContainerRef.current, {
+          videoId: youTubeId,
+          playerVars: {
+            playsinline: 1,
+            rel: 0,
+            modestbranding: 1,
+            enablejsapi: 1,
+            origin,
+          },
+          events: {
+            onReady: () => {
+              if (cancelled) return;
+              pollId = window.setInterval(() => {
+                const p = ytPlayerRef.current;
+                if (!p || typeof p.getCurrentTime !== "function") return;
+                try {
+                  const dur = p.getDuration?.() ?? 0;
+                  const cur = p.getCurrentTime?.() ?? 0;
+                  if (dur > 0) {
+                    const pct = cur / dur;
+                    setWatchedPct((prev) => (pct > prev ? pct : prev));
+                  }
+                } catch { /* noop */ }
+              }, 1000);
+            },
+            onStateChange: (e: any) => {
+              // 0 = ended
+              if (e?.data === 0) setEnded(true);
+            },
+          },
+        });
+      })
+      .catch(() => { /* fallback = manual button appears after 15s */ });
 
     return () => {
-      window.removeEventListener("message", onMessage);
-      window.clearInterval(poll);
-      window.clearTimeout(kick);
+      cancelled = true;
+      if (pollId) window.clearInterval(pollId);
+      try { ytPlayerRef.current?.destroy?.(); } catch { /* noop */ }
+      ytPlayerRef.current = null;
     };
-  }, [videoUrl, storagePath]);
+  }, [youTubeId]);
 
   if (!storagePath && !videoUrl) {
     return (
@@ -237,13 +285,17 @@ function ListeningPlayer({
             ref={videoRef}
             src={supabase.storage.from(CONTENT_BUCKET).getPublicUrl(storagePath).data.publicUrl}
             controls
+            playsInline
             className="w-full rounded-lg border max-h-[60vh] bg-black"
           />
+        ) : youTubeId ? (
+          <div className="rounded-lg border overflow-hidden aspect-video bg-muted max-h-[60vh]">
+            <div ref={ytContainerRef} className="w-full h-full" />
+          </div>
         ) : (
           <div className="rounded-lg border overflow-hidden aspect-video bg-muted max-h-[60vh]">
             <iframe
-              ref={iframeRef}
-              src={`${toYouTubeEmbed(videoUrl!)}?enablejsapi=1`}
+              src={toYouTubeEmbed(videoUrl!)}
               title="Lesson video"
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -257,6 +309,17 @@ function ListeningPlayer({
           ? "You can now continue to Learn."
           : `Watch at least 90% of the video to unlock Learn (${pctShown}%).`}
       </div>
+      {!unlocked && showManual && !storagePath && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setManualOverride(true)}
+            className="text-xs text-primary underline underline-offset-2"
+          >
+            I've finished watching — unlock Learn
+          </button>
+        </div>
+      )}
       <div className="flex justify-center">
         <Button
           onClick={onContinue}
@@ -270,6 +333,7 @@ function ListeningPlayer({
     </div>
   );
 }
+
 
 export default function IntermediateUnit() {
   const { slug } = useParams<{ slug: string }>();
