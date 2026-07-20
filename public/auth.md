@@ -1,65 +1,102 @@
-# Agent Authentication — ArabiyaPath
+# Auth.md
 
-ArabiyaPath exposes an MCP server for AI agents (ChatGPT, Claude, Cursor,
-Codex, and other MCP-compatible clients). All per-user tools run as the
-signed-in ArabiyaPath user under row-level security.
+## Purpose
 
-## Endpoints
+This document describes how AI agents and MCP clients (ChatGPT, Claude, Cursor,
+Codex, and other MCP-compatible tools) authenticate with the ArabiyaPath MCP
+server. All per-user tools execute as the signed-in ArabiyaPath user under
+row-level security.
 
-- **MCP server:** `https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp`
-- **Server Card:** <https://arabiyapath.com/.well-known/mcp/server-card.json>
-- **Agent Skills Index:** <https://arabiyapath.com/.well-known/agent-skills/index.json>
+- **MCP endpoint:** `https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp`
+- **MCP Server Card:** <https://arabiyapath.com/.well-known/mcp/server-card.json>
 - **API Catalog (RFC 9727):** <https://arabiyapath.com/.well-known/api-catalog>
+- **Agent Skills index:** <https://arabiyapath.com/.well-known/agent-skills/index.json>
 
-## Authentication
+## Authentication method
 
-ArabiyaPath uses **OAuth 2.1 with PKCE** and supports **Dynamic Client
-Registration (RFC 7591)**. Discovery is standards-compliant:
+ArabiyaPath uses **OAuth 2.1 authorization code flow with PKCE (S256)**. Bearer
+access tokens are presented on every MCP request via the standard header:
 
-- **Protected Resource metadata (RFC 9728):**
-  <https://arabiyapath.com/.well-known/oauth-protected-resource>
-- **Authorization Server metadata (RFC 8414):**
-  <https://wruizzwgevxdsaiblmsd.supabase.co/.well-known/oauth-authorization-server>
-- **OpenID Configuration:**
+```
+Authorization: Bearer <access_token>
+```
+
+Only OAuth-issued tokens are accepted. Copied browser/session tokens are
+rejected — they lack the `client_id` claim required for OAuth verification.
+
+## OAuth discovery
+
+Standards-compliant discovery is published at the following URLs:
+
+- **OpenID Connect discovery:**
   <https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1/.well-known/openid-configuration>
+- **OAuth 2.0 Authorization Server metadata (RFC 8414):**
+  <https://wruizzwgevxdsaiblmsd.supabase.co/.well-known/oauth-authorization-server>
 - **Issuer:** `https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1`
-- **Accepted audiences:** `authenticated`
-- **Supported scopes:** `openid`, `email`, `profile`
-- **PKCE:** `S256` required
-- **Consent screen:** <https://arabiyapath.com/.lovable/oauth/consent>
+- **Authorization endpoint:** `https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1/authorize`
+- **Token endpoint:** `https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1/token`
+- **JWKS URI:** `https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1/.well-known/jwks.json`
+- **Consent page:** <https://arabiyapath.com/.lovable/oauth/consent>
 
-### Flow (for MCP clients)
+The `arabiyapath.com` origin also publishes pointer copies of these documents
+under `/.well-known/openid-configuration` and
+`/.well-known/oauth-authorization-server` for agents that crawl the app origin
+first.
 
-1. Client discovers the MCP endpoint and receives a `401 Unauthorized` with a
-   `WWW-Authenticate: Bearer` challenge referencing the protected-resource
-   metadata URL above.
-2. Client fetches the protected-resource metadata, then the authorization
-   server metadata.
-3. Client registers dynamically at the `registration_endpoint` (RFC 7591).
-4. Client runs the standard authorization code + PKCE flow. The user signs in
-   at arabiyapath.com and approves the ArabiyaPath consent screen.
-5. Client presents the access token as `Authorization: Bearer <token>` to the
-   MCP endpoint. Tokens are Supabase-issued JWTs; verification is enforced by
-   the MCP server against the issuer's JWKS.
+## Protected resource
 
-Do **not** use raw Supabase session tokens copied from a browser. Only OAuth
-tokens issued through the flow above are accepted by the MCP server (they
-carry the `client_id` claim required for OAuth-client verification).
+The MCP endpoint's Protected Resource metadata (RFC 9728) is published at:
 
-## Tool inventory
+<https://arabiyapath.com/.well-known/oauth-protected-resource>
 
-The full list is served from
-<https://arabiyapath.com/.well-known/agent-skills/index.json>. All tools are
-read-only, idempotent, and closed-world (no external side effects).
+```
+resource:                https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp
+authorization_servers:   https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1
+bearer_methods_supported: header
+scopes_supported:        openid, email, profile
+```
 
-| Tool | Purpose |
+Unauthenticated requests to the MCP endpoint receive `401 Unauthorized` with a
+`WWW-Authenticate: Bearer` challenge referencing this metadata URL, per the MCP
+spec.
+
+## Registration instructions
+
+- **Dynamic Client Registration (RFC 7591) is supported.** MCP clients should
+  POST their client metadata to the `registration_endpoint` returned by
+  authorization server metadata:
+  `https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1/oauth/clients/register`
+- **PKCE (S256) is required.** `code_challenge_method=S256`.
+- **Redirect URIs** must match exactly (scheme, host, port, path). Localhost
+  loopback and custom scheme redirects (e.g. `cursor://`) are accepted.
+- **Manual registration** is not required for compatible clients — dynamic
+  registration is the recommended path.
+
+Recommended client flow:
+
+1. Attempt to call the MCP endpoint; receive `401` with a `WWW-Authenticate`
+   challenge pointing to the protected-resource metadata.
+2. Fetch protected-resource metadata → authorization-server metadata.
+3. Register dynamically at the `registration_endpoint`.
+4. Run OAuth 2.1 authorization code + PKCE. The user signs in on
+   arabiyapath.com and approves the ArabiyaPath consent screen.
+5. Exchange the authorization code for an access token and refresh token.
+6. Call the MCP endpoint with `Authorization: Bearer <access_token>`.
+
+## Supported scopes
+
+| Scope | Meaning |
 | --- | --- |
-| `whoami` | Signed-in user's profile, preferred dialect, admin flag. |
-| `list_courses` | Dialects → levels → units catalog. |
-| `my_progress` | Recently completed lessons for the user. |
-| `my_purchases` | User's purchases (courses, bundles, memberships). |
-| `my_certificates` | User's completion certificates with public URLs. |
+| `openid` | Issue an OIDC ID token identifying the ArabiyaPath user. |
+| `email` | Include the user's email address in the ID token. |
+| `profile` | Include basic profile fields (name, preferred dialect). |
+
+Scopes are identity scopes only. Access to app data is governed by
+row-level-security policies on the ArabiyaPath backend, not by OAuth scope
+strings. Requesting additional non-identity scopes is not required and will be
+ignored.
 
 ## Contact
 
-For agent-integration issues email **admin@arabiyapath.com**.
+For agent-integration issues, protocol questions, or to report a bug in the
+MCP server, email **admin@arabiyapath.com**.
