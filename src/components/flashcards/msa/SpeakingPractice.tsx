@@ -278,7 +278,6 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   const isFirst = safeIdx === 0;
   const isLast = safeIdx === total - 1;
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
 
   return (
     <Card
