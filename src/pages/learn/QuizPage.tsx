@@ -233,6 +233,23 @@ export default function QuizPage() {
                               {r.correctAnswer}
                             </span>
                           </div>
+                          {r.card && (
+                            <div className="pl-6 pt-1">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                onClick={() => {
+                                  setReviewCard(r.card ?? null);
+                                  setReviewOpen(true);
+                                }}
+                              >
+                                <BookOpen className="h-4 w-4" />
+                                Review card
+                              </Button>
+                            </div>
+                          )}
                           {r.explanation && (
                             <div className="text-sm pl-6 pt-1 border-t border-red-200/60 dark:border-red-900/40 mt-2">
                               <span className="text-muted-foreground">Why: </span>
