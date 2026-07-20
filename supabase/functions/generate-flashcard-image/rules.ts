@@ -216,7 +216,7 @@ export async function validateGrammarImage(
     if (!match) return { valid: true, issues: [] };
     const parsed = JSON.parse(match[0]);
     const issues: string[] = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 8) : [];
-    const checks: Array<[keyof typeof parsed, string]> = [
+    const checks: Array<[string, string]> = [
       ["photoreal", "not photorealistic"],
       ["noText", "contains visible text"],
       ["oneScene", "more than one scene / collage / split"],
@@ -225,6 +225,9 @@ export async function validateGrammarImage(
       ["teachesGrammar", "scene does not teach the grammar function"],
       ["unambiguous", "scene is ambiguous — could teach the wrong meaning"],
     ];
+    if (isQuestionWord(vocabulary)) {
+      checks.push(["momentOfAsking", "does not capture a live moment of asking / curiosity / inquiry"]);
+    }
     let valid = true;
     for (const [key, msg] of checks) {
       if (parsed[key] !== true) {
