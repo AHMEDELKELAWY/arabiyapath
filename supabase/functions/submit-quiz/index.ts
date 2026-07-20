@@ -61,7 +61,7 @@ serve(async (req) => {
 
     const { data: allQuestions, error: questionsError } = await adminClient
       .from("quiz_questions")
-      .select("id, correct_answer, order_index")
+      .select("id, prompt, correct_answer, order_index, metadata")
       .eq("quiz_id", quizId)
       .order("order_index");
 
@@ -72,11 +72,34 @@ serve(async (req) => {
       });
     }
 
-    // Build results depending on payload shape.
+    type IdResult = {
+      questionId: string;
+      correct: boolean;
+      correctAnswer: string;
+      userAnswer: string | null;
+      prompt: string;
+      explanation: string | null;
+    };
+    type LegacyResult = {
+      questionIndex: number;
+      correct: boolean;
+      correctAnswer: string;
+      userAnswer: string | null;
+      prompt: string;
+      explanation: string | null;
+    };
+
     let correctCount = 0;
     let totalQuestions = 0;
-    const idResults: { questionId: string; correct: boolean; correctAnswer: string }[] = [];
-    const legacyResults: { questionIndex: number; correct: boolean; correctAnswer: string }[] = [];
+    const idResults: IdResult[] = [];
+    const legacyResults: LegacyResult[] = [];
+
+    const explanationOf = (q: { metadata?: Record<string, unknown> | null }): string | null => {
+      const raw = q.metadata && typeof q.metadata === "object"
+        ? (q.metadata as Record<string, unknown>).explanation
+        : null;
+      return typeof raw === "string" && raw.trim().length > 0 ? raw : null;
+    };
 
     if (isIdKeyed) {
       // Score only the questions the server served this attempt.
