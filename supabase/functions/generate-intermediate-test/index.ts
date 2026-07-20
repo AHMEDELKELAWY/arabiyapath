@@ -492,6 +492,31 @@ function normalizeDifficulty(d: any): string {
   return ["easy", "medium", "hard"].includes(v) ? v : "medium";
 }
 
+const OBJECTIVES = new Set([
+  "vocabulary_recognition","vocabulary_usage","grammar_recognition","grammar_usage",
+  "listening_comprehension","listening_inference","reading_comprehension","reading_inference",
+  "sentence_construction","word_order","image_interpretation","context_understanding",
+  "everyday_communication",
+]);
+function normalizeObjective(v: any): string | null {
+  if (!v) return null;
+  const s = String(v).toLowerCase().replace(/\s+/g, "_");
+  return OBJECTIVES.has(s) ? s : null;
+}
+function normalizeCognitiveLevel(v: any): number | null {
+  const n = Math.round(Number(v));
+  return n >= 1 && n <= 4 ? n : null;
+}
+function normalizeEstimatedTime(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(10, Math.min(300, n));
+}
+function normalizeQualityScore(v: any): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, n));
+
 function toStrArr(v: any): string[] {
   if (!v) return [];
   if (Array.isArray(v)) return v.map((x) => String(x)).filter(Boolean).slice(0, 20);
