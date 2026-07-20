@@ -188,8 +188,6 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
   const isFirst = safeIdx === 0;
   const isLast = safeIdx === total - 1;
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
-
   return (
     <Card
       ref={cardRef}
@@ -199,7 +197,7 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
         {current && (
-          <div key={fadeKey} className="space-y-3 animate-in fade-in duration-200">
+          <div className="space-y-3">
             <button
               type="button"
               onClick={playAudio}
