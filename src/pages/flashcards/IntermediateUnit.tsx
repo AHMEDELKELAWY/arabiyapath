@@ -285,6 +285,23 @@ export default function IntermediateUnit() {
 
   const { data: hasAccess } = useFlashcardUnitAccess(unit?.id);
 
+  // Count published Grammar cards in this unit — if none exist, Grammar is
+  // treated as auto-completed so it can never permanently block Test.
+  const { data: grammarCount } = useQuery({
+    queryKey: ["fc-intermediate-grammar-count", unit?.id],
+    enabled: !!unit?.id,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("flashcards")
+        .select("id", { count: "exact", head: true })
+        .eq("unit_id", unit!.id)
+        .eq("kind", "grammar")
+        .eq("published", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const { data: progress } = useQuery<ProgressRow | null>({
     queryKey: ["fc-intermediate-progress", user?.id, unit?.id],
     enabled: !!user?.id && !!unit?.id,
@@ -300,28 +317,34 @@ export default function IntermediateUnit() {
     },
   });
 
+  const hasGrammar = (grammarCount ?? 0) > 0;
+
   const done = useMemo(() => ({
     listening: !!progress?.listening_completed_at,
     learn: !!progress?.learn_completed_at,
-    grammar: !!progress?.grammar_completed_at,
+    // If the unit has no Grammar cards, treat Grammar as done so it never
+    // permanently blocks Test. DB-persisted completion still wins when present.
+    grammar: !!progress?.grammar_completed_at || !hasGrammar,
     test: !!progress?.test_completed_at,
-  }), [progress]);
+  }), [progress, hasGrammar]);
 
   const unlocked = useMemo(() => ({
     listening: true,
     learn: done.listening,
-    grammar: done.listening && done.learn,
+    grammar: done.listening && done.learn && hasGrammar,
     test: done.listening && done.learn && done.grammar,
-  }), [done]);
+  }), [done, hasGrammar]);
 
   // If the user has never made progress, keep them on Listening. If they refresh,
   // land on the first unlocked-not-yet-done tab.
   useEffect(() => {
     if (!progress) return;
-    const next = TAB_ORDER.find((t) => unlocked[t] && !done[t]) ?? "test";
+    const order = TAB_ORDER.filter((t) => !(t === "grammar" && !hasGrammar));
+    const next = order.find((t) => unlocked[t] && !done[t]) ?? "test";
     setActiveTab(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unit?.id]);
+  }, [unit?.id, hasGrammar]);
+
 
   async function markCompleted(field: keyof ProgressRow) {
     if (!user?.id || !unit?.id) return;
@@ -428,11 +451,11 @@ export default function IntermediateUnit() {
             className="w-full"
           >
             <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
-              <TabsList className="grid w-full h-auto grid-cols-2 md:grid-cols-4">
+              <TabsList className={cn("grid w-full h-auto grid-cols-2", hasGrammar ? "md:grid-cols-4" : "md:grid-cols-3")}>
                 {([
                   { v: "listening", label: "Listening", icon: Headphones },
                   { v: "learn", label: "Learn", icon: BookOpen },
-                  { v: "grammar", label: "Grammar", icon: ScrollText },
+                  ...(hasGrammar ? [{ v: "grammar", label: "Grammar", icon: ScrollText }] : []),
                   { v: "test", label: "Test", icon: GraduationCap },
                 ] as const).map((t) => (
                   <TabsTrigger
@@ -475,11 +498,12 @@ export default function IntermediateUnit() {
                   unitId={unit.id}
                   onComplete={async () => {
                     if (!done.learn) await markCompleted("learn_completed_at");
-                    setActiveTab("grammar");
+                    setActiveTab(hasGrammar ? "grammar" : "test");
                   }}
-                  nextLabel="Continue to Grammar"
-                  nextIcon={ScrollText}
+                  nextLabel={hasGrammar ? "Continue to Grammar" : "Continue to Test"}
+                  nextIcon={hasGrammar ? ScrollText : GraduationCap}
                 />
+
               ) : (
                 <LockedCard icon={BookOpen} title="Learn" body="Study each vocabulary card with Arabic, transliteration, English, image and audio." />
               )}
