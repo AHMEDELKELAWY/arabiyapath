@@ -30,7 +30,8 @@ interface TestQuestion {
   passage: string | null;
   options: any;
   correct_answer: any;
-  explanation: string | null;
+ explanation: string | null;
+ teaching_explanation?: string | null;
   audio_url: string | null;
   image_url: string | null;
   order_index: number;
