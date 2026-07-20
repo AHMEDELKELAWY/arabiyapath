@@ -224,7 +224,6 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
 
   const tryAgain = () => setPicked(null);
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
 
   return (
     <Card
