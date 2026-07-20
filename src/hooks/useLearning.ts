@@ -272,8 +272,22 @@ export interface QuizSubmitResult {
   passed: boolean;
   correctCount: number;
   totalQuestions: number;
-  idResults: { questionId: string; correct: boolean; correctAnswer: string }[];
-  results: { questionIndex: number; correct: boolean; correctAnswer: string }[];
+  idResults: {
+    questionId: string;
+    correct: boolean;
+    correctAnswer: string;
+    userAnswer: string | null;
+    prompt: string;
+    explanation: string | null;
+  }[];
+  results: {
+    questionIndex: number;
+    correct: boolean;
+    correctAnswer: string;
+    userAnswer: string | null;
+    prompt: string;
+    explanation: string | null;
+  }[];
   certificateAwarded: boolean;
 }
 
