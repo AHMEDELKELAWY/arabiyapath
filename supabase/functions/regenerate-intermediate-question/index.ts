@@ -29,7 +29,7 @@ const BodySchema = z.object({
   target_type: z.enum(ALLOWED_TYPES).optional(),
 });
 
-const AI_VERSION = "int-test/v2-adaptive";
+const AI_VERSION = "int-test/v3-pedagogical";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
