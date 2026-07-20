@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
+import { useImagePreload } from "@/hooks/useImagePreload";
 
 interface CardRow {
   id: string;
@@ -154,6 +155,14 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
   }, [slug, prompts.length, user?.id]);
 
   const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
+  // Preload the next prompt's choice images (3 tiles) so the grid never flashes.
+  const nextPrompt = prompts[i + 1];
+  const nextNextPrompt = prompts[i + 2];
+  useImagePreload([
+    ...(nextPrompt?.choices.map((c) => c.image) ?? []),
+    ...(nextNextPrompt?.choices.map((c) => c.image) ?? []),
+  ]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;

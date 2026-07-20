@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
+import { useImagePreload } from "@/hooks/useImagePreload";
 
 
 interface CardRow {
@@ -233,6 +234,13 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
   };
 
   const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
+
+  // Preload adjacent card images so Next/Previous is instant.
+  useImagePreload([
+    cards?.[safeIdx + 1]?.image_url,
+    cards?.[safeIdx + 2]?.image_url,
+    cards?.[safeIdx - 1]?.image_url,
+  ]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading cards…</CardContent></Card>;
