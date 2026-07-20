@@ -310,8 +310,14 @@ Return "quality_score" as your final self-assessment (an integer 0–100). Only 
       return q;
     };
 
-    // Enforce "no more than 2 consecutive same-type" after AI order.
-    const spaced = spaceConsecutiveTypes(shuffle(questions));
+    // Drop low-quality questions the AI self-flagged, then enforce spacing.
+    const passed = questions.filter((q: any) => {
+      const s = Number(q?.quality_score);
+      return !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
+    });
+    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6) ? passed : questions;
+
+    const spaced = spaceConsecutiveTypes(shuffle(pool));
     const finalQuestions = spaced.map(shuffleOptions);
 
     // Wipe existing draft
@@ -328,8 +334,13 @@ Return "quality_score" as your final self-assessment (an integer 0–100). Only 
       options: q.options ?? null,
       correct_answer: q.correct_answer ?? "",
       explanation: q.explanation ?? null,
+      teaching_explanation: q.teaching_explanation ?? null,
       image_url: q.image_url ?? null,
       difficulty: normalizeDifficulty(q.difficulty),
+      learning_objective: normalizeObjective(q.learning_objective),
+      cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
+      estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
+      quality_score: normalizeQualityScore(q.quality_score),
       skills_tested: toStrArr(q.skills_tested),
       lesson_concepts: toStrArr(q.lesson_concepts),
       vocabulary_used: toStrArr(q.vocabulary_used),
