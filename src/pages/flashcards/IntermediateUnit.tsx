@@ -100,20 +100,46 @@ function TabLocked({ prevLabel }: { prevLabel: string }) {
 const REQUIRED_WATCH_PCT = 0.9;
 
 function ListeningPlayer({
-  videoUrl, storagePath, alreadyDone, onContinue,
+  videoUrl, storagePath, alreadyDone, onContinue, userId, unitId,
 }: {
   videoUrl: string | null;
   storagePath: string | null;
   alreadyDone: boolean;
   onContinue: () => void;
+  userId: string | null;
+  unitId: string | null;
 }) {
   const [watchedPct, setWatchedPct] = useState(alreadyDone ? 1 : 0);
   const [ended, setEnded] = useState(alreadyDone);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const iframeReadyRef = useRef(false);
+  const endedLoggedRef = useRef(false);
 
   const unlocked = alreadyDone || ended || watchedPct >= REQUIRED_WATCH_PCT;
+
+  // Log video progress + ended (throttled inside logUnitEvent).
+  useEffect(() => {
+    if (!userId || !unitId) return;
+    logUnitEvent({
+      userId, unitId,
+      eventType: "video_progress",
+      step: "listening",
+      watchedPct: watchedPct * 100,
+    });
+  }, [watchedPct, userId, unitId]);
+
+  useEffect(() => {
+    if (!ended || endedLoggedRef.current || !userId || !unitId) return;
+    endedLoggedRef.current = true;
+    logUnitEvent({
+      userId, unitId,
+      eventType: "video_ended",
+      step: "listening",
+      watchedPct: 100,
+    });
+  }, [ended, userId, unitId]);
+
 
   // Native <video> tracking.
   useEffect(() => {
