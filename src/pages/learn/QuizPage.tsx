@@ -21,6 +21,10 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { getRenderer } from "@/components/quiz/questionTypes";
+import { ReviewCardDialog } from "@/components/quiz/ReviewCardDialog";
+import { getQuizFeedback } from "@/lib/quizFeedback";
+import type { QuizReviewCard } from "@/hooks/useLearning";
+import { BookOpen } from "lucide-react";
 
 export default function QuizPage() {
   const { quizId } = useParams();
