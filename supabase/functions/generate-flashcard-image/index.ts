@@ -3,6 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   buildVocabularyImagePrompt,
   buildGrammarImagePrompt,
+  buildVocabularyValidatorPrompt,
+  buildGrammarValidatorPrompt,
   validateVocabularyConcept,
   validateGeneratedImage,
   validateGrammarImage,
@@ -56,11 +58,42 @@ serve(async (req) => {
     if (!vocab) throw new Error("english_translation is empty");
 
     const isGrammar = String(card.kind ?? "").toLowerCase() === "grammar";
+    const kindLabel = isGrammar ? "grammar" : "vocab";
+
+    const imagePrompt = isGrammar ? buildGrammarImagePrompt(vocab) : buildVocabularyImagePrompt(vocab);
+    const validatorPrompt = isGrammar ? buildGrammarValidatorPrompt(vocab) : buildVocabularyValidatorPrompt(vocab);
+
+    const logDebug = async (row: {
+      status: number;
+      outcome: string;
+      reason?: string | null;
+      issues?: unknown;
+      attempts?: number;
+    }) => {
+      try {
+        await supabase.from("image_gen_debug_log").insert({
+          card_id: cardId,
+          user_id: userId,
+          kind: kindLabel,
+          vocabulary: vocab,
+          status: row.status,
+          outcome: row.outcome,
+          reason: row.reason ?? null,
+          issues: row.issues ?? null,
+          image_prompt: imagePrompt,
+          validator_prompt: validatorPrompt,
+          attempts: row.attempts ?? null,
+        });
+      } catch (e) {
+        console.warn("[debug-log] insert failed:", e);
+      }
+    };
 
     // --- Rule 1: pre-generation concept validation (vocabulary only) -------
     if (!isGrammar) {
       const conceptCheck = validateVocabularyConcept(vocab);
       if (!conceptCheck.valid && !force) {
+        await logDebug({ status: 422, outcome: "vocab_rule_violation", reason: conceptCheck.reason });
         return json({
           error: "vocab_rule_violation",
           rule: "one-concept",
@@ -82,10 +115,12 @@ serve(async (req) => {
       (r: any) =>
         normalizeVocabulary(r.english_translation) === normalized &&
         r.image_url &&
-        String(r.kind ?? "").toLowerCase() === (isGrammar ? "grammar" : String(r.kind ?? "").toLowerCase()) &&
-        (isGrammar ? String(r.kind ?? "").toLowerCase() === "grammar" : String(r.kind ?? "").toLowerCase() !== "grammar")
+        (isGrammar
+          ? String(r.kind ?? "").toLowerCase() === "grammar"
+          : String(r.kind ?? "").toLowerCase() !== "grammar")
     );
     if (canonical && !force) {
+      await logDebug({ status: 200, outcome: "reused_canonical" });
       return json({
         reused: true,
         canonicalCardId: canonical.id,
@@ -104,21 +139,21 @@ serve(async (req) => {
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
-    const prompt = isGrammar
-      ? buildGrammarImagePrompt(vocab)
-      : buildVocabularyImagePrompt(vocab);
     const MAX_ATTEMPTS = 3;
     let lastValidation: { valid: boolean; issues: string[] } | null = null;
     let b64: string | null = null;
+    let attemptsUsed = 0;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      attemptsUsed = attempt;
       const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "openai/gpt-image-2", prompt, size: "1024x1024", quality: "low", n: 1 }),
+        body: JSON.stringify({ model: "openai/gpt-image-2", prompt: imagePrompt, size: "1024x1024", quality: "low", n: 1 }),
       });
       if (!aiRes.ok) {
         const t = await aiRes.text();
+        await logDebug({ status: aiRes.status, outcome: "ai_gateway_error", reason: t.slice(0, 500), attempts: attempt });
         throw new Error(`AI gateway: ${aiRes.status} ${t}`);
       }
       const aiJson = await aiRes.json();
@@ -133,10 +168,17 @@ serve(async (req) => {
         b64 = candidate;
         break;
       }
-      console.warn(`[image-rules] attempt ${attempt} failed for "${vocab}" (${isGrammar ? "grammar" : "vocab"}):`, validation.issues);
+      console.warn(`[image-rules] attempt ${attempt} failed for "${vocab}" (${kindLabel}):`, validation.issues);
     }
 
     if (!b64) {
+      await logDebug({
+        status: 422,
+        outcome: "image_rule_violation",
+        reason: (lastValidation?.issues ?? []).join("; ") || "unknown",
+        issues: lastValidation?.issues ?? [],
+        attempts: attemptsUsed,
+      });
       return json({
         error: "image_rule_violation",
         rule: "post-generation-validation",
@@ -145,6 +187,7 @@ serve(async (req) => {
       }, 422);
     }
 
+    await logDebug({ status: 200, outcome: "generated", attempts: attemptsUsed });
     return json({ pngBase64: b64, validated: true });
   } catch (e) {
     console.error("generate-flashcard-image error:", e);
