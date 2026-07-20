@@ -375,6 +375,51 @@ export function TestEditor({ unit }: { unit: any }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Student Preview — uses the real Test Runner */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Student Preview</DialogTitle>
+            <DialogDescription>
+              This renders the test using the exact same runner learners use. Only published questions appear.
+            </DialogDescription>
+          </DialogHeader>
+          {previewOpen && (
+            <div className="pt-2">
+              <IntermediateTestRunner unitId={unit.id} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Change type dialog */}
+      <Dialog open={!!changeTypeFor} onOpenChange={(o) => !o && setChangeTypeFor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change question type</DialogTitle>
+            <DialogDescription>
+              The AI will convert this question to another supported type while testing a similar concept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            {TYPE_OPTIONS.filter((o) => o.value !== "audio" && o.value !== changeTypeFor?.question_type).map((o) => (
+              <Button
+                key={o.value}
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  const target = changeTypeFor;
+                  setChangeTypeFor(null);
+                  if (target) regenerateOne(target, "change_type", o.value);
+                }}
+              >
+                <Repeat className="w-4 h-4 mr-2" /> {o.label}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
