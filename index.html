@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="keywords" content="learn Arabic, Arabic online, Gulf Arabic, Egyptian Arabic, MSA, Arabic lessons, Arabic for foreigners">
     <link rel="icon" type="image/png" href="/logo.png">
+
+    <!-- RFC 8288 discovery links (HTML fallback for Link headers) -->
+    <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json">
+    <link rel="mcp-server-card" href="/.well-known/mcp/server-card.json" type="application/json">
+    <link rel="agent-skills" href="/.well-known/agent-skills/index.json" type="application/json">
+    <link rel="openid-configuration" href="/.well-known/openid-configuration" type="application/json">
+    <link rel="oauth-authorization-server" href="/.well-known/oauth-authorization-server" type="application/json">
+    <link rel="oauth-protected-resource" href="/.well-known/oauth-protected-resource" type="application/json">
+    <link rel="service-doc" href="/auth.md" type="text/markdown">
     
     <!-- Analytics + Pixel loaded lazily after first paint to protect LCP.
          Stubs preserve any early calls so nothing throws. -->

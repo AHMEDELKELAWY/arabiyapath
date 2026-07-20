@@ -1,0 +1,16 @@
+/*
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"
+  Link: </.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"
+  Link: </.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"
+  Link: </.well-known/openid-configuration>; rel="openid-configuration"; type="application/json"
+  Link: </.well-known/oauth-authorization-server>; rel="oauth-authorization-server"; type="application/json"
+  Link: </.well-known/oauth-protected-resource>; rel="oauth-protected-resource"; type="application/json"
+  Link: </auth.md>; rel="service-doc"; type="text/markdown"
+
+/.well-known/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300
+
+/auth.md
+  Access-Control-Allow-Origin: *
+  Content-Type: text/markdown; charset=utf-8
