@@ -204,7 +204,7 @@ Return STRICT JSON only:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only." },
+          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessment items. Every question must measure a clear learning objective with realistic distractors and prefer understanding/application over rote recall. Silently self-review before returning. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
