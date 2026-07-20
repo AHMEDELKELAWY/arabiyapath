@@ -427,12 +427,12 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
           />
         )}
 
-        <div className="flex items-center justify-between gap-2 pt-2">
+        <div className="mobile-action-bar flex items-center justify-between gap-2">
           <Button
             variant="outline"
             onClick={() => setI((n) => Math.max(0, n - 1))}
             disabled={i === 0}
-            className="gap-1 min-h-[44px]"
+            className="gap-1 min-h-[44px] flex-1 md:flex-none"
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </Button>
@@ -440,7 +440,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
             <Button
               onClick={() => setSubmitted(true)}
               disabled={!answered}
-              className="gap-1 min-h-[44px]"
+              className="gap-1 min-h-[44px] flex-1 md:flex-none"
             >
               Submit <Check className="w-4 h-4" />
             </Button>
@@ -448,7 +448,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
             <Button
               onClick={() => setI((n) => Math.min(total - 1, n + 1))}
               disabled={!answered}
-              className="gap-1 min-h-[44px]"
+              className="gap-1 min-h-[44px] flex-1 md:flex-none"
             >
               Next <ChevronRight className="w-4 h-4" />
             </Button>

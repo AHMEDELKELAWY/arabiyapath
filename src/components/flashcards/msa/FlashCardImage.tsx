@@ -26,10 +26,10 @@ export function FlashCardImage({ src, alt, className, capped, imageCount = 1 }: 
     // Multi-image cards get a tighter cap so the grid still fits.
     const heightCap =
       imageCount >= 3
-        ? "max-h-[clamp(120px,22vh,200px)] md:max-h-[26vh]"
+        ? "max-h-[clamp(100px,18vh,180px)] md:max-h-[26vh]"
         : imageCount === 2
-          ? "max-h-[clamp(150px,26vh,240px)] md:max-h-[30vh]"
-          : "max-h-[clamp(180px,32vh,320px)] md:max-h-[38vh]";
+          ? "max-h-[clamp(130px,22vh,220px)] md:max-h-[30vh]"
+          : "max-h-[clamp(150px,28vh,300px)] md:max-h-[38vh]";
 
     return (
       <div
