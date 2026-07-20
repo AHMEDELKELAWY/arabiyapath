@@ -172,21 +172,8 @@ export async function validateGrammarImage(
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text:
-                  `Arabic grammar word being taught: "${vocabulary}".\n` +
-                  `Judge the image against these rules:\n` +
-                  `1. Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting).\n` +
-                  `2. Contains NO visible text, letters, numbers, captions, signs, logos, watermarks, or writing in any language.\n` +
-                  `3. Shows ONE clear scene of people interacting — no split screens, no multi-panel, no collage.\n` +
-                  `4. The interaction/expressions plausibly teach a grammatical function to a beginner.\n` +
-                  `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"teachesGrammar":bool,"issues":[string]}`,
-              },
-              {
-                type: "image_url",
-                image_url: { url: `data:image/png;base64,${b64Png}` },
-              },
+              { type: "text", text: buildGrammarValidatorPrompt(vocabulary) },
+              { type: "image_url", image_url: { url: `data:image/png;base64,${b64Png}` } },
             ],
           },
         ],
@@ -199,17 +186,22 @@ export async function validateGrammarImage(
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) return { valid: true, issues: [] };
     const parsed = JSON.parse(match[0]);
-    const issues: string[] = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 5) : [];
-    const valid =
-      parsed.photoreal === true &&
-      parsed.noText === true &&
-      parsed.oneScene === true &&
-      parsed.teachesGrammar === true;
-    if (!valid) {
-      if (parsed.photoreal === false) issues.push("not photorealistic");
-      if (parsed.noText === false) issues.push("contains visible text");
-      if (parsed.oneScene === false) issues.push("more than one scene");
-      if (parsed.teachesGrammar === false) issues.push("scene does not teach the grammar function");
+    const issues: string[] = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 8) : [];
+    const checks: Array<[keyof typeof parsed, string]> = [
+      ["photoreal", "not photorealistic"],
+      ["noText", "contains visible text"],
+      ["oneScene", "more than one scene / collage / split"],
+      ["arabPeople", "people are not clearly Arab / culturally inappropriate"],
+      ["notLiteral", "literally depicts the grammar word instead of its usage"],
+      ["teachesGrammar", "scene does not teach the grammar function"],
+      ["unambiguous", "scene is ambiguous — could teach the wrong meaning"],
+    ];
+    let valid = true;
+    for (const [key, msg] of checks) {
+      if (parsed[key] !== true) {
+        valid = false;
+        if (parsed[key] === false) issues.push(msg);
+      }
     }
     return { valid, issues };
   } catch {
