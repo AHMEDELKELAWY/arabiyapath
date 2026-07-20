@@ -161,7 +161,20 @@ ${modeInstruction}
 - reading_comprehension: include a 2–4 sentence Arabic "passage"; 4 options; correct_answer is one option.
 - image_question / choose_correct_sentence: set "image_url" to one of the listed image URLs above.
 
-Fully vowelized Arabic (tashkeel). Plausible distractors. Brief English explanation.
+## Pedagogy (mandatory)
+Write this like an experienced Arabic teacher, not a random generator.
+- Before writing, silently answer: "What specific learning outcome does this question measure?" Pick ONE learning_objective from:
+  vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
+  listening_comprehension | listening_inference | reading_comprehension | reading_inference |
+  sentence_construction | word_order | image_interpretation | context_understanding |
+  everyday_communication
+- Classify cognitive_level (1=Recognition, 2=Recall, 3=Understanding, 4=Application). Prefer 3–4 whenever possible.
+- Distractors must model realistic learner mistakes (near-synonyms, wrong gender/plural/tense/preposition, similar-sounding word, grammatical-but-wrong-meaning). Never nonsense or obvious.
+- Do not test pure memorization when the lesson supports understanding.
+- Do not duplicate any sibling question's concept or wording.
+- Arabic must be fully vowelized (tashkeel) and sound natural.
+- Provide a "teaching_explanation" (2–4 English sentences) that explains WHY the answer is correct AND why each key distractor is wrong. This is shown after submission.
+- Silently self-score 0–100 (educational_value, clarity, authenticity, distractor_quality, alignment, naturalness). If below 70, rewrite before returning.
 
 Return STRICT JSON only:
 {
@@ -171,8 +184,13 @@ Return STRICT JSON only:
   "options": [...],
   "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
   "explanation": "string",
+  "teaching_explanation": "string",
   "image_url": "string or null",
   "difficulty": "easy" | "medium" | "hard",
+  "learning_objective": "<one of the objectives>",
+  "cognitive_level": 1 | 2 | 3 | 4,
+  "estimated_time_seconds": 20-180,
+  "quality_score": 0-100,
   "skills_tested": ["..."],
   "lesson_concepts": ["..."],
   "vocabulary_used": ["..."],
