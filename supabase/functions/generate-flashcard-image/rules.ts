@@ -95,6 +95,32 @@ export function buildVocabularyImagePrompt(vocabulary: string): string {
   ].join(" ");
 }
 
+/** The exact text sent to the vision validator for vocabulary images. */
+export function buildVocabularyValidatorPrompt(vocabulary: string): string {
+  return (
+    `Vocabulary word: "${vocabulary}".\n` +
+    `Judge the image against these rules:\n` +
+    `1. Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting).\n` +
+    `2. Contains NO visible text, letters, numbers, captions, signs, logos, or watermarks.\n` +
+    `3. Depicts exactly ONE clear subject — no split screens, no multi-panel, no collage.\n` +
+    `4. The subject unambiguously represents the vocabulary word.\n` +
+    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneConcept":bool,"matchesVocab":bool,"issues":[string]}`
+  );
+}
+
+/** The exact text sent to the vision validator for grammar images. */
+export function buildGrammarValidatorPrompt(vocabulary: string): string {
+  return (
+    `Arabic grammar word being taught: "${vocabulary}".\n` +
+    `Judge the image against these rules:\n` +
+    `1. Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting).\n` +
+    `2. Contains NO visible text, letters, numbers, captions, signs, logos, watermarks, or writing in any language.\n` +
+    `3. Shows ONE clear scene of people interacting — no split screens, no multi-panel, no collage.\n` +
+    `4. The interaction/expressions plausibly teach a grammatical function to a beginner.\n` +
+    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"teachesGrammar":bool,"issues":[string]}`
+  );
+}
+
 /**
  * Build the enforced prompt for a GRAMMAR image.
  *
