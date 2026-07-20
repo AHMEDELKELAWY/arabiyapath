@@ -72,7 +72,8 @@ export default function QuizPage() {
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
   const handleAnswer = (answer: string) => {
-    setAnswers(prev => ({ ...prev, [currentQuestion]: answer }));
+    if (!question) return;
+    setAnswers(prev => ({ ...prev, [question.id]: answer }));
   };
 
   const handleNext = () => {
