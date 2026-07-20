@@ -417,7 +417,6 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
       ? Array.isArray(userAnswer) && userAnswer.length > 0
       : userAnswer !== undefined && userAnswer !== "";
 
-  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
 
   return (
     <Card
