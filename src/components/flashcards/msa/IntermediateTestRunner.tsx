@@ -152,7 +152,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_unit_tests")
-        .select("id,question_type,question,passage,options,correct_answer,explanation,audio_url,image_url,order_index")
+        .select("id,question_type,question,passage,options,correct_answer,explanation,teaching_explanation,audio_url,image_url,order_index")
         .eq("unit_id", unitId)
         .eq("published", true)
         .order("order_index");
