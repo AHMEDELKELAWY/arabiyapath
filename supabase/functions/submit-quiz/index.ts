@@ -109,19 +109,40 @@ serve(async (req) => {
     const score = Math.round((correctCount / totalQuestions) * 100);
     const passed = score >= 70;
 
-    const { error: insertError } = await adminClient.from("quiz_attempts").insert({
-      user_id: user.id,
-      quiz_id: quizId,
-      score,
-      passed,
-    });
+    const { data: attemptRow, error: insertError } = await adminClient
+      .from("quiz_attempts")
+      .insert({
+        user_id: user.id,
+        quiz_id: quizId,
+        score,
+        passed,
+      })
+      .select("id")
+      .single();
 
-    if (insertError) {
+    if (insertError || !attemptRow) {
       console.error("Failed to insert quiz attempt:", insertError);
       return new Response(JSON.stringify({ error: "Failed to record quiz attempt" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Log per-question history for adaptive selection. Best-effort; failures don't block scoring.
+    try {
+      const rows = (isIdKeyed ? idResults : []).map((r) => ({
+        attempt_id: attemptRow.id,
+        question_id: r.questionId,
+        was_correct: r.correct,
+      }));
+      if (rows.length > 0) {
+        const { error: logErr } = await adminClient
+          .from("quiz_attempt_questions")
+          .insert(rows);
+        if (logErr) console.warn("quiz_attempt_questions insert failed:", logErr);
+      }
+    } catch (e) {
+      console.warn("quiz_attempt_questions logging error:", e);
     }
 
     // Certificate eligibility (unchanged)

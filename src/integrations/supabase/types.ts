@@ -1819,6 +1819,45 @@ export type Database = {
           },
         ]
       }
+      quiz_attempt_questions: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          id: string
+          question_id: string
+          was_correct: boolean
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          was_correct: boolean
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          was_correct?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempt_questions_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempt_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_attempts: {
         Row: {
           created_at: string
@@ -1859,10 +1898,13 @@ export type Database = {
           audio_url: string | null
           correct_answer: string
           created_at: string
+          difficulty: string | null
           id: string
+          metadata: Json
           options_json: Json
           order_index: number
           prompt: string
+          question_type: string
           quiz_id: string
           type: string
         }
@@ -1870,10 +1912,13 @@ export type Database = {
           audio_url?: string | null
           correct_answer: string
           created_at?: string
+          difficulty?: string | null
           id?: string
+          metadata?: Json
           options_json?: Json
           order_index?: number
           prompt: string
+          question_type?: string
           quiz_id: string
           type?: string
         }
@@ -1881,10 +1926,13 @@ export type Database = {
           audio_url?: string | null
           correct_answer?: string
           created_at?: string
+          difficulty?: string | null
           id?: string
+          metadata?: Json
           options_json?: Json
           order_index?: number
           prompt?: string
+          question_type?: string
           quiz_id?: string
           type?: string
         }
@@ -2196,10 +2244,13 @@ export type Database = {
           audio_url: string | null
           correct_answer: string
           created_at: string
+          difficulty: string | null
           id: string
+          metadata: Json
           options_json: Json
           order_index: number
           prompt: string
+          question_type: string
           quiz_id: string
           type: string
         }[]

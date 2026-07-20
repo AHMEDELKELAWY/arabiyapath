@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
   Check,
   X,
   Trophy,
   RotateCcw,
   Home,
-  Volume2,
-  Award
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { getRenderer } from "@/components/quiz/questionTypes";
 
 export default function QuizPage() {
   const { quizId } = useParams();
@@ -257,55 +257,24 @@ export default function QuizPage() {
         <div className="container max-w-3xl py-8">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-8 space-y-8">
-              {/* Question */}
-              <div className="text-center space-y-4">
-                {/* Audio play button for listening comprehension */}
-                {question.audio_url && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="gap-2 mb-4"
-                    onClick={() => {
-                      const audio = new Audio(question.audio_url);
-                      audio.play();
-                    }}
-                  >
-                    <Volume2 className="h-5 w-5" />
-                    Listen to Arabic
-                  </Button>
-                )}
-                <h2 className="text-2xl font-bold text-foreground">
-                  {question.prompt}
-                </h2>
-              </div>
-
-              {/* Options */}
-              <div className="grid gap-3">
-                {question.options.map((option: string, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswer(option)}
-                    className={cn(
-                      "w-full p-4 text-left rounded-xl border-2 transition-all",
-                      answers[currentQuestion] === option
-                        ? "border-primary bg-primary/10"
-                        : "border-muted hover:border-muted-foreground/50 hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                        answers[currentQuestion] === option
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        {String.fromCharCode(65 + index)}
-                      </div>
-                      <span className="text-foreground">{option}</span>
+              {(() => {
+                const Renderer = getRenderer(question.question_type);
+                if (!Renderer) {
+                  return (
+                    <div className="text-center text-muted-foreground py-8">
+                      This question type ({question.question_type}) is not yet supported in this
+                      version of the app. Please update to continue.
                     </div>
-                  </button>
-                ))}
-              </div>
+                  );
+                }
+                return (
+                  <Renderer
+                    question={question}
+                    answer={answers[question.id]}
+                    onAnswer={handleAnswer}
+                  />
+                );
+              })()}
 
               {/* Navigation */}
               <div className="flex items-center justify-between pt-4">
@@ -331,7 +300,7 @@ export default function QuizPage() {
                 ) : (
                   <Button
                     onClick={handleNext}
-                    disabled={!answers[currentQuestion]}
+                    disabled={!answers[question.id]}
                     className="gap-2"
                   >
                     Next
@@ -342,15 +311,15 @@ export default function QuizPage() {
 
               {/* Question Dots */}
               <div className="flex justify-center gap-2 pt-4">
-                {questions.map((_, index) => (
+                {questions.map((q, index) => (
                   <button
-                    key={index}
+                    key={q.id}
                     onClick={() => setCurrentQuestion(index)}
                     className={cn(
                       "w-3 h-3 rounded-full transition-all",
                       index === currentQuestion
                         ? "bg-primary scale-125"
-                        : answers[index]
+                        : answers[q.id]
                         ? "bg-primary/50"
                         : "bg-muted"
                     )}
