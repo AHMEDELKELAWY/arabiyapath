@@ -949,13 +949,17 @@ export type Database = {
       }
       flashcard_unit_tests: {
         Row: {
+          ai_version: string | null
           audio_url: string | null
           correct_answer: Json
           created_at: string
           difficulty: string | null
           explanation: string | null
+          generated_at: string | null
+          grammar_concepts_used: string[] | null
           id: string
           image_url: string | null
+          lesson_concepts: string[] | null
           options: Json | null
           order_index: number
           passage: string | null
@@ -963,17 +967,23 @@ export type Database = {
           published: boolean
           question: string
           question_type: string
+          skills_tested: string[] | null
           unit_id: string
           updated_at: string
+          vocabulary_used: string[] | null
         }
         Insert: {
+          ai_version?: string | null
           audio_url?: string | null
           correct_answer: Json
           created_at?: string
           difficulty?: string | null
           explanation?: string | null
+          generated_at?: string | null
+          grammar_concepts_used?: string[] | null
           id?: string
           image_url?: string | null
+          lesson_concepts?: string[] | null
           options?: Json | null
           order_index?: number
           passage?: string | null
@@ -981,17 +991,23 @@ export type Database = {
           published?: boolean
           question: string
           question_type: string
+          skills_tested?: string[] | null
           unit_id: string
           updated_at?: string
+          vocabulary_used?: string[] | null
         }
         Update: {
+          ai_version?: string | null
           audio_url?: string | null
           correct_answer?: Json
           created_at?: string
           difficulty?: string | null
           explanation?: string | null
+          generated_at?: string | null
+          grammar_concepts_used?: string[] | null
           id?: string
           image_url?: string | null
+          lesson_concepts?: string[] | null
           options?: Json | null
           order_index?: number
           passage?: string | null
@@ -999,8 +1015,10 @@ export type Database = {
           published?: boolean
           question?: string
           question_type?: string
+          skills_tested?: string[] | null
           unit_id?: string
           updated_at?: string
+          vocabulary_used?: string[] | null
         }
         Relationships: [
           {

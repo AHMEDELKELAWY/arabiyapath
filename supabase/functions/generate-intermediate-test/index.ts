@@ -1,18 +1,16 @@
 // Generate an Intermediate-level Test using Lovable AI Gateway (Gemini 2.5 Pro).
 //
-// Reference inputs:
-//   1. flashcard_units.lesson_topic  — primary topic reference (30% of questions)
-//   2. flashcards where kind='learn'  — vocabulary (30% of questions)
-//   3. flashcards where kind='grammar' — grammar rules (20% of questions)
-//   4. original AI-authored inference questions using all context (20%)
+// ARCHITECTURE
+// ------------
+// Adaptive Blueprint: analyze the lesson first, then decide which question
+// types best fit. Vocabulary-heavy → more vocab questions, grammar-heavy →
+// more grammar questions, image-rich → more image questions, listening-rich
+// → more listening/reading. No rigid template; no more than 2 consecutive
+// same-type questions.
 //
-// Question types the runner supports (must be one of these):
-//   multiple_choice, grammar_selection, conversation_completion,
-//   vocab_in_context, audio, fill_in_blank, sentence_ordering, matching,
-//   reading_comprehension.
-//
-// Output: rows in `flashcard_unit_tests`. Existing rows for the unit are wiped
-// so the admin gets a clean regenerated set.
+// Every question is stored with admin-only metadata: skills_tested,
+// lesson_concepts, vocabulary_used, grammar_concepts_used, difficulty,
+// ai_version, generated_at. Learners never see this metadata.
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -20,6 +18,7 @@ import { z } from "npm:zod";
 
 const BodySchema = z.object({ unit_id: z.string().uuid() });
 
+/** Native question types the runner supports. */
 const ALLOWED_TYPES = [
   "multiple_choice",
   "grammar_selection",
@@ -27,11 +26,18 @@ const ALLOWED_TYPES = [
   "vocab_in_context",
   "fill_in_blank",
   "sentence_ordering",
+  "word_ordering",
   "matching",
   "reading_comprehension",
-  "audio",
+  "listening_comprehension",
+  "true_false",
+  "image_question",
+  "choose_correct_sentence",
+  "find_the_mistake",
 ] as const;
 
+const AI_VERSION = "int-test/v2-adaptive";
+const TARGET_QUESTIONS = 10;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -43,12 +49,10 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
 
     const parsed = BodySchema.safeParse(await req.json());
-    if (!parsed.success) {
-      return json({ error: parsed.error.flatten().fieldErrors }, 400);
-    }
+    if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { unit_id } = parsed.data;
 
-    // Verify caller is admin
+    // Admin check
     const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
     if (!jwt) return json({ error: "auth required" }, 401);
     const authClient = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -72,7 +76,7 @@ Deno.serve(async (req) => {
 
     const { data: learnCards } = await admin
       .from("flashcards")
-      .select("arabic_text, transliteration, english_translation, notes")
+      .select("arabic_text, transliteration, english_translation, notes, image_url")
       .eq("unit_id", unit_id).eq("kind", "learn").eq("published", true).limit(120);
 
     const { data: grammarCards } = await admin
@@ -80,86 +84,116 @@ Deno.serve(async (req) => {
       .select("arabic_text, english_translation, notes")
       .eq("unit_id", unit_id).eq("kind", "grammar").eq("published", true).limit(60);
 
-    // Fetch previous questions so the AI can avoid repeating them on regenerate.
     const { data: previousQs } = await admin
       .from("flashcard_unit_tests")
       .select("question")
       .eq("unit_id", unit_id)
       .limit(50);
-    const previousList = (previousQs ?? [])
-      .map((r: any, i: number) => `${i + 1}. ${r.question}`)
-      .join("\n");
 
-    const vocabList = (learnCards ?? []).map((c: any) =>
-      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}`
+    const learn = learnCards ?? [];
+    const grammar = grammarCards ?? [];
+    const cardsWithImages = learn.filter((c: any) => !!c.image_url);
+    const hasVideo = !!(unit.video_url || unit.video_storage_path);
+
+    /* ---------- Adaptive blueprint ---------- */
+    const blueprint = buildBlueprint({
+      vocabCount: learn.length,
+      grammarCount: grammar.length,
+      imageCount: cardsWithImages.length,
+      hasListening: hasVideo,
+      hasLessonTopic: !!(unit.lesson_topic && unit.lesson_topic.trim().length > 20),
+    });
+
+    const previousList = (previousQs ?? [])
+      .map((r: any, i: number) => `${i + 1}. ${r.question}`).join("\n");
+
+    const vocabList = learn.map((c: any) =>
+      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}${c.image_url ? ` [image]` : ""}`
     ).join("\n");
-    const grammarList = (grammarCards ?? []).map((c: any) =>
+    const grammarList = grammar.map((c: any) =>
       `- ${c.arabic_text} — ${c.english_translation}${c.notes ? `\n  Note: ${c.notes}` : ""}`
     ).join("\n");
+    const imageList = cardsWithImages.slice(0, 12).map((c: any) =>
+      `- "${c.english_translation}" (${c.arabic_text}) → ${c.image_url}`
+    ).join("\n");
 
-    const prompt = `You are a senior Arabic language curriculum designer creating an INTERMEDIATE-level assessment (CEFR B1). Learners have already mastered vocabulary drills at the beginner level — this test must feel meaningfully harder than a beginner quiz.
+    const blueprintText = blueprint
+      .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
+
+    const prompt = `You are a senior Arabic language curriculum designer creating an INTERMEDIATE (CEFR B1) assessment. Learners have mastered beginner drills — this test must feel meaningfully harder.
 
 ## Unit
 Title (EN): ${unit.title_en}
 Title (AR): ${unit.title_ar ?? ""}
 
-## Lesson Topic (primary reference)
+## Lesson Topic
 ${unit.lesson_topic ?? "(none provided)"}
 
-## Listening resource (context only — do NOT include audio questions unless audio content is provided)
-${unit.video_url ? `YouTube: ${unit.video_url}` : "(none)"}${unit.video_storage_path ? `\nUploaded video: yes` : ""}
+## Listening resource
+${hasVideo ? (unit.video_url ? `YouTube: ${unit.video_url}` : "Uploaded video attached") : "(no video)"}
 
-## Learn vocabulary
+## Learn vocabulary (${learn.length} cards, ${cardsWithImages.length} with images)
 ${vocabList || "(none)"}
 
-## Grammar
+## Vocabulary cards that have images (use these for image_question / choose_correct_sentence / true_false about an image)
+${imageList || "(none available)"}
+
+## Grammar (${grammar.length} concepts)
 ${grammarList || "(none)"}
 
-${previousList ? `## Previously generated questions (DO NOT REPEAT)
-The following questions have been used before. NEVER repeat them. Generate NEW questions that assess the same concepts using different wording, contexts, and examples. Do not simply shuffle or paraphrase these.
-
+${previousList ? `## Previously generated questions (DO NOT REPEAT — vary wording, distractors, and framing)
 ${previousList}
 ` : ""}
-## Task
-Produce EXACTLY 10 diverse questions with this distribution:
-- 3 questions grounded in the LESSON TOPIC (comprehension, inference, event ordering).
-- 3 questions grounded in LEARN VOCABULARY (vocab_in_context, matching, sentence_ordering — not simple recall).
-- 2 questions grounded in GRAMMAR (grammar_selection, identifying incorrect usage, sentence_ordering).
-- 2 ORIGINAL reasoning questions combining topic + vocab + grammar (best-response, conversation_completion, inference).
+## Adaptive blueprint — produce EXACTLY ${TARGET_QUESTIONS} questions in this mix
+${blueprintText}
 
-Question type must be one of:
-  multiple_choice, grammar_selection, conversation_completion, vocab_in_context,
-  fill_in_blank, sentence_ordering, matching, reading_comprehension.
-Do NOT use "audio" — no audio files are attached.
-Use at least 5 DIFFERENT question types across the 10 questions.
+## Hard rules
+- Allowed question_type values: ${ALLOWED_TYPES.join(", ")}.
+- Use at least 5 DIFFERENT question types across the ${TARGET_QUESTIONS} questions.
+- Never place more than 2 consecutive questions of the same type.
+- Never repeat wording, distractors, or the same "correct answer" pattern across questions.
+- Test understanding and inference. Never test single-word recall.
+- Distractors must be plausible (near-synonyms, close grammar forms, sentences grammatical but wrong-meaning). Never obviously wrong.
+- Do NOT quote lesson sentences verbatim unless testing listening or reading comprehension.
+- Arabic must be fully vowelized (tashkeel).
+- Every question ends with a brief English "explanation" giving the reasoning.
 
-Intermediate difficulty rules (critical):
-- Never test single-word recall. Always require understanding in context.
-- Distractors must be plausible (near-synonyms, close grammar forms, sentences that are grammatical but wrong-meaning).
-- Include at least one "identify the INCORRECT usage" question phrased as multiple_choice.
-- Include at least one reading_comprehension with a 2–4 sentence Arabic passage inferring meaning (not stated verbatim).
-- Include at least one conversation_completion where the learner picks the best natural reply.
-- Arabic text MUST have full tashkeel (harakat).
-- Every question ends with a brief English "explanation" giving the reasoning, not just the answer.
-
-Format rules per type:
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context: 4 options, correct_answer is a string that matches ONE option exactly.
-- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is the correct fill string.
-- sentence_ordering: options is the shuffled tokens (array of strings); correct_answer is the tokens in correct order (array of strings).
-- matching: options is an array of 4 {left,right} pairs shown to the learner shuffled; correct_answer is the SAME object as {"left":"right", ...} mapping.
+## Type formats
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is an array of 4 strings; correct_answer is one option string.
+- true_false: options is exactly ["True","False"]; correct_answer is "True" or "False".
+- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
+- sentence_ordering / word_ordering: options is the shuffled tokens (array of strings); correct_answer is the tokens in correct order (array of strings).
+- matching: options is an array of 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
 - reading_comprehension: include "passage" (Arabic, 2–4 sentences); options is 4; correct_answer is one option string.
+- image_question / choose_correct_sentence: set "image_url" to one of the URLs listed above.
+- listening_comprehension: reference the lesson video content in "question" only (no audio file).
 
-Return STRICT JSON only, no prose, no markdown fences:
+## Internal AI review before returning
+Before finalizing each question, silently check:
+  1. Is it too similar to another question in this test? If yes, rewrite.
+  2. Does it test the same skill as the previous question? If yes, swap type.
+  3. Are the distractors weak or obvious? If yes, strengthen.
+  4. Does it test memorization instead of understanding? If yes, rewrite for inference.
+  5. Does it duplicate a lesson sentence? If yes, paraphrase.
+Return ONLY the final polished set.
+
+## Output — STRICT JSON, no prose, no markdown fences
 {
   "questions": [
     {
       "order_index": 1,
-      "question_type": "multiple_choice" | "grammar_selection" | "conversation_completion" | "vocab_in_context" | "fill_in_blank" | "sentence_ordering" | "matching" | "reading_comprehension",
+      "question_type": "<one of the allowed types>",
       "question": "string",
       "passage": "string or null",
-      "options": ["...","..."] | [{"left":"...","right":"..."}, ...],
+      "options": [...] ,
       "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
-      "explanation": "string"
+      "explanation": "string",
+      "image_url": "string or null",
+      "difficulty": "easy" | "medium" | "hard",
+      "skills_tested": ["reading","vocabulary","grammar","listening","inference","writing"],
+      "lesson_concepts": ["..."],
+      "vocabulary_used": ["..."],
+      "grammar_concepts_used": ["..."]
     }
   ]
 }`;
@@ -174,7 +208,7 @@ Return STRICT JSON only, no prose, no markdown fences:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only." },
+          { role: "system", content: "You are a precise Arabic-language test author. Output valid JSON only. Follow the adaptive blueprint exactly." },
           { role: "user", content: prompt },
         ],
       }),
@@ -189,19 +223,15 @@ Return STRICT JSON only, no prose, no markdown fences:
     const gwJson = await gwRes.json();
     const raw = gwJson.choices?.[0]?.message?.content ?? "";
     let parsedOutput: any;
-    try {
-      parsedOutput = JSON.parse(raw);
-    } catch {
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      parsedOutput = JSON.parse(cleaned);
-    }
+    try { parsedOutput = JSON.parse(raw); }
+    catch { parsedOutput = JSON.parse(raw.replace(/```json|```/g, "").trim()); }
+
     const questions: any[] = parsedOutput?.questions ?? [];
     if (!Array.isArray(questions) || questions.length === 0) {
       return json({ error: "AI returned no questions", raw }, 502);
     }
 
-    // Wipe existing generated set so admin has a clean list.
-    await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
+    /* ---------- Post-processing ---------- */
 
     // Fisher–Yates shuffle
     const shuffle = <T,>(arr: T[]): T[] => {
@@ -213,29 +243,45 @@ Return STRICT JSON only, no prose, no markdown fences:
       return a;
     };
 
-    // Shuffle answer options for each question while preserving correct_answer mapping.
-    // Only shuffle simple array-of-strings options (multiple_choice-style). Leave
-    // matching / sentence_ordering / structured options alone since order encodes meaning.
+    // Shuffle answer options for question types where option order is not meaningful.
+    const optionOrderIsAnswer = new Set(["sentence_ordering", "word_ordering"]);
     const shuffleOptions = (q: any) => {
-      if (Array.isArray(q.options) && q.options.every((o: any) => typeof o === "string")) {
-        if (q.question_type === "sentence_ordering") return q; // order is the answer
+      if (
+        !optionOrderIsAnswer.has(q.question_type) &&
+        Array.isArray(q.options) &&
+        q.options.every((o: any) => typeof o === "string")
+      ) {
         q.options = shuffle(q.options);
       }
       return q;
     };
 
-    // Shuffle question order every generation, then re-index.
-    const shuffledQuestions = shuffle(questions).map(shuffleOptions);
+    // Enforce "no more than 2 consecutive same-type" after AI order.
+    const spaced = spaceConsecutiveTypes(shuffle(questions));
+    const finalQuestions = spaced.map(shuffleOptions);
 
-    const rows = shuffledQuestions.map((q, i) => ({
+    // Wipe existing draft
+    await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
+
+    const nowIso = new Date().toISOString();
+    const rows = finalQuestions.map((q, i) => ({
       unit_id,
       order_index: i + 1,
-      question_type: ALLOWED_TYPES.includes(q.question_type) ? q.question_type : "multiple_choice",
+      question_type: (ALLOWED_TYPES as readonly string[]).includes(q.question_type)
+        ? q.question_type : "multiple_choice",
       question: String(q.question ?? "").slice(0, 2000),
       passage: q.passage ?? null,
       options: q.options ?? null,
       correct_answer: q.correct_answer ?? "",
       explanation: q.explanation ?? null,
+      image_url: q.image_url ?? null,
+      difficulty: normalizeDifficulty(q.difficulty),
+      skills_tested: toStrArr(q.skills_tested),
+      lesson_concepts: toStrArr(q.lesson_concepts),
+      vocabulary_used: toStrArr(q.vocabulary_used),
+      grammar_concepts_used: toStrArr(q.grammar_concepts_used),
+      ai_version: AI_VERSION,
+      generated_at: nowIso,
       published: true,
     }));
 
@@ -245,12 +291,147 @@ Return STRICT JSON only, no prose, no markdown fences:
       return json({ error: insErr.message }, 500);
     }
 
-    return json({ inserted: rows.length });
+    return json({ inserted: rows.length, blueprint });
   } catch (e: any) {
     console.error("generate-intermediate-test crashed", e);
     return json({ error: e?.message ?? "internal error" }, 500);
   }
 });
+
+/* ============================ helpers ============================ */
+
+interface BlueprintEntry { type: string; count: number; rationale: string; }
+
+/**
+ * Adaptive blueprint. Weight question types by what the lesson actually
+ * contains, then normalize to TARGET_QUESTIONS with at least 5 types.
+ */
+function buildBlueprint(ctx: {
+  vocabCount: number;
+  grammarCount: number;
+  imageCount: number;
+  hasListening: boolean;
+  hasLessonTopic: boolean;
+}): BlueprintEntry[] {
+  const weights: Record<string, { w: number; rationale: string }> = {};
+  const add = (t: string, w: number, r: string) => {
+    if (w <= 0) return;
+    weights[t] = { w: (weights[t]?.w ?? 0) + w, rationale: weights[t]?.rationale ?? r };
+  };
+
+  // Vocabulary
+  if (ctx.vocabCount >= 5) {
+    add("vocab_in_context", Math.min(3, Math.ceil(ctx.vocabCount / 8)), "vocab-heavy lesson");
+    add("matching", 1, "match vocab ↔ meaning");
+    add("fill_in_blank", 1, "vocab recall in context");
+  }
+
+  // Grammar
+  if (ctx.grammarCount >= 1) {
+    add("grammar_selection", Math.min(3, Math.max(1, ctx.grammarCount)), "grammar concepts present");
+    add("find_the_mistake", 1, "identify grammar mistake");
+  }
+
+  // Reading / topic
+  if (ctx.hasLessonTopic) {
+    add("reading_comprehension", 2, "lesson topic available");
+    add("conversation_completion", 1, "inference from topic");
+  } else {
+    add("reading_comprehension", 1, "generic comprehension");
+  }
+
+  // Listening
+  if (ctx.hasListening) {
+    add("listening_comprehension", 2, "video content available");
+  }
+
+  // Images
+  if (ctx.imageCount >= 2) {
+    add("image_question", Math.min(2, Math.ceil(ctx.imageCount / 4)), "vocab has images");
+    add("choose_correct_sentence", 1, "image → sentence match");
+  }
+
+  // Universal
+  add("true_false", 1, "quick true/false check");
+  add("sentence_ordering", 1, "sentence construction");
+  add("multiple_choice", 1, "inference reasoning");
+
+  // Normalize to TARGET_QUESTIONS
+  const entries = Object.entries(weights).map(([type, v]) => ({
+    type, count: v.w, rationale: v.rationale,
+  }));
+  entries.sort((a, b) => b.count - a.count);
+
+  const totalWeight = entries.reduce((s, e) => s + e.count, 0);
+  const scaled = entries.map((e) => ({
+    ...e,
+    count: Math.max(1, Math.round((e.count / totalWeight) * TARGET_QUESTIONS)),
+  }));
+
+  // Adjust to exactly TARGET_QUESTIONS
+  let sum = scaled.reduce((s, e) => s + e.count, 0);
+  while (sum > TARGET_QUESTIONS) {
+    // Trim from lowest-priority entries with count > 1
+    for (let i = scaled.length - 1; i >= 0 && sum > TARGET_QUESTIONS; i--) {
+      if (scaled[i].count > 1) { scaled[i].count--; sum--; }
+    }
+    if (scaled.every((e) => e.count === 1) && sum > TARGET_QUESTIONS) {
+      scaled.pop(); sum = scaled.reduce((s, e) => s + e.count, 0);
+    }
+  }
+  while (sum < TARGET_QUESTIONS) {
+    scaled[0].count++; sum++;
+  }
+
+  // Guarantee ≥ 5 distinct types
+  if (scaled.length < 5) {
+    const fillers = ["true_false", "sentence_ordering", "multiple_choice", "matching", "fill_in_blank"]
+      .filter((t) => !scaled.some((e) => e.type === t));
+    while (scaled.length < 5 && fillers.length) {
+      scaled.push({ type: fillers.shift()!, count: 1, rationale: "diversity filler" });
+      // Rebalance: steal from the largest bucket
+      scaled.sort((a, b) => b.count - a.count);
+      if (scaled[0].count > 1) scaled[0].count--;
+    }
+  }
+
+  return scaled;
+}
+
+/** Reorder so no more than 2 consecutive same-type questions appear. */
+function spaceConsecutiveTypes<T extends { question_type?: string }>(list: T[]): T[] {
+  const arr = list.slice();
+  const MAX_RUN = 2;
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false;
+    for (let i = MAX_RUN; i < arr.length; i++) {
+      const t = arr[i].question_type;
+      const same =
+        arr[i - 1]?.question_type === t &&
+        arr[i - 2]?.question_type === t;
+      if (!same) continue;
+      // find a later item with a different type
+      const j = arr.findIndex((q, k) => k > i && q.question_type !== t);
+      if (j > i) {
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return arr;
+}
+
+function normalizeDifficulty(d: any): string {
+  const v = String(d ?? "medium").toLowerCase();
+  return ["easy", "medium", "hard"].includes(v) ? v : "medium";
+}
+
+function toStrArr(v: any): string[] {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map((x) => String(x)).filter(Boolean).slice(0, 20);
+  return [String(v)];
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

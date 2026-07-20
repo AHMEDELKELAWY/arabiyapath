@@ -39,15 +39,18 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Sparkles, Loader2, Plus, MoreVertical, GripVertical, Pencil, Copy, Trash2,
-  ArrowUp, ArrowDown, RotateCcw, Check,
+  ArrowUp, ArrowDown, RotateCcw, Check, Eye, ArrowDownCircle, ArrowUpCircle, Wand2, Shuffle, Repeat,
 } from "lucide-react";
+import { IntermediateTestRunner } from "@/components/flashcards/msa/IntermediateTestRunner";
 
 /* ---------- Types ---------- */
 
 export type QuestionType =
   | "multiple_choice" | "grammar_selection" | "conversation_completion"
-  | "vocab_in_context" | "fill_in_blank" | "sentence_ordering"
-  | "matching" | "reading_comprehension" | "audio";
+  | "vocab_in_context" | "fill_in_blank" | "sentence_ordering" | "word_ordering"
+  | "matching" | "reading_comprehension" | "listening_comprehension"
+  | "true_false" | "image_question" | "choose_correct_sentence" | "find_the_mistake"
+  | "audio";
 
 export interface TestQuestion {
   id: string;
@@ -64,17 +67,28 @@ export interface TestQuestion {
   difficulty: string | null;
   points: number;
   published: boolean;
+  skills_tested?: string[] | null;
+  lesson_concepts?: string[] | null;
+  vocabulary_used?: string[] | null;
+  grammar_concepts_used?: string[] | null;
+  ai_version?: string | null;
+  generated_at?: string | null;
 }
 
 const TYPE_OPTIONS: { value: QuestionType; label: string }[] = [
   { value: "multiple_choice", label: "Multiple Choice" },
-  { value: "grammar_selection", label: "Grammar Selection" },
+  { value: "true_false", label: "True / False" },
+  { value: "grammar_selection", label: "Grammar in Context" },
   { value: "conversation_completion", label: "Conversation Completion" },
-  { value: "vocab_in_context", label: "Vocabulary in Context" },
+  { value: "vocab_in_context", label: "Vocabulary Meaning" },
   { value: "fill_in_blank", label: "Fill in the Blank" },
-  { value: "sentence_ordering", label: "Sentence Ordering" },
+  { value: "sentence_ordering", label: "Word Ordering" },
   { value: "matching", label: "Matching" },
   { value: "reading_comprehension", label: "Reading Comprehension" },
+  { value: "listening_comprehension", label: "Listening Comprehension" },
+  { value: "image_question", label: "Image Question" },
+  { value: "choose_correct_sentence", label: "Choose the Correct Sentence" },
+  { value: "find_the_mistake", label: "Find the Mistake" },
   { value: "audio", label: "Audio" },
 ];
 
@@ -83,6 +97,8 @@ const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"];
 function typeLabel(t: string) {
   return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t.replace(/_/g, " ");
 }
+
+type RegenMode = "regenerate" | "easier" | "harder" | "improve_distractors" | "rewrite" | "change_type";
 
 /* ---------- Root ---------- */
 
@@ -94,6 +110,8 @@ export function TestEditor({ unit }: { unit: any }) {
   const [pendingDelete, setPendingDelete] = useState<TestQuestion | null>(null);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [changeTypeFor, setChangeTypeFor] = useState<TestQuestion | null>(null);
 
   const { data: questions } = useQuery<TestQuestion[]>({
     queryKey: ["admin-intermediate-tests", unit.id],
@@ -135,15 +153,22 @@ export function TestEditor({ unit }: { unit: any }) {
     invalidate();
   };
 
-  /* ---------- Regenerate one ---------- */
-  const regenerateOne = async (q: TestQuestion) => {
+  /* ---------- Regenerate one (with modes) ---------- */
+  const regenerateOne = async (q: TestQuestion, mode: RegenMode = "regenerate", target_type?: QuestionType) => {
     setRegenId(q.id);
     const { error } = await supabase.functions.invoke("regenerate-intermediate-question", {
-      body: { question_id: q.id },
+      body: { question_id: q.id, mode, target_type },
     });
     setRegenId(null);
     if (error) return toast({ title: "Regenerate failed", description: error.message, variant: "destructive" });
-    toast({ title: "Question regenerated" });
+    const label = mode === "regenerate" ? "regenerated"
+      : mode === "easier" ? "made easier"
+      : mode === "harder" ? "made harder"
+      : mode === "improve_distractors" ? "distractors improved"
+      : mode === "rewrite" ? "rewritten"
+      : mode === "change_type" ? `converted to ${typeLabel(target_type ?? "")}`
+      : "updated";
+    toast({ title: `Question ${label}` });
     invalidate();
   };
 
@@ -263,6 +288,11 @@ export function TestEditor({ unit }: { unit: any }) {
               {hasQuestions ? "Regenerate test" : "Generate test"}
             </Button>
             {hasQuestions && (
+              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                <Eye className="w-4 h-4 mr-1" /> Student Preview
+              </Button>
+            )}
+            {hasQuestions && (
               allPublished ? (
                 <Button variant="outline" size="sm" onClick={unpublishAll} disabled={publishing}>
                   Move to draft
@@ -298,7 +328,12 @@ export function TestEditor({ unit }: { unit: any }) {
                   onDelete={() => setPendingDelete(q)}
                   onMoveUp={() => moveBy(q, -1)}
                   onMoveDown={() => moveBy(q, 1)}
-                  onRegenerate={() => regenerateOne(q)}
+                  onRegenerate={() => regenerateOne(q, "regenerate")}
+                  onEasier={() => regenerateOne(q, "easier")}
+                  onHarder={() => regenerateOne(q, "harder")}
+                  onImproveDistractors={() => regenerateOne(q, "improve_distractors")}
+                  onRewrite={() => regenerateOne(q, "rewrite")}
+                  onChangeType={() => setChangeTypeFor(q)}
                 />
               ))}
             </div>
@@ -340,6 +375,51 @@ export function TestEditor({ unit }: { unit: any }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Student Preview — uses the real Test Runner */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Student Preview</DialogTitle>
+            <DialogDescription>
+              This renders the test using the exact same runner learners use. Only published questions appear.
+            </DialogDescription>
+          </DialogHeader>
+          {previewOpen && (
+            <div className="pt-2">
+              <IntermediateTestRunner unitId={unit.id} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Change type dialog */}
+      <Dialog open={!!changeTypeFor} onOpenChange={(o) => !o && setChangeTypeFor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change question type</DialogTitle>
+            <DialogDescription>
+              The AI will convert this question to another supported type while testing a similar concept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            {TYPE_OPTIONS.filter((o) => o.value !== "audio" && o.value !== changeTypeFor?.question_type).map((o) => (
+              <Button
+                key={o.value}
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  const target = changeTypeFor;
+                  setChangeTypeFor(null);
+                  if (target) regenerateOne(target, "change_type", o.value);
+                }}
+              >
+                <Repeat className="w-4 h-4 mr-2" /> {o.label}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -348,7 +428,8 @@ export function TestEditor({ unit }: { unit: any }) {
 
 function SortableQuestionRow({
   q, index, count, regenerating,
-  onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown, onRegenerate,
+  onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown,
+  onRegenerate, onEasier, onHarder, onImproveDistractors, onRewrite, onChangeType,
 }: {
   q: TestQuestion;
   index: number;
@@ -360,6 +441,11 @@ function SortableQuestionRow({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRegenerate: () => void;
+  onEasier: () => void;
+  onHarder: () => void;
+  onImproveDistractors: () => void;
+  onRewrite: () => void;
+  onChangeType: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: q.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
@@ -407,10 +493,16 @@ function SortableQuestionRow({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onClick={onEdit}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
               <DropdownMenuItem onClick={onDuplicate}><Copy className="w-4 h-4 mr-2" />Duplicate</DropdownMenuItem>
-              <DropdownMenuItem onClick={onRegenerate}><RotateCcw className="w-4 h-4 mr-2" />Regenerate this question</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onRegenerate}><RotateCcw className="w-4 h-4 mr-2" />Regenerate</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEasier}><ArrowDownCircle className="w-4 h-4 mr-2" />Make easier</DropdownMenuItem>
+              <DropdownMenuItem onClick={onHarder}><ArrowUpCircle className="w-4 h-4 mr-2" />Make harder</DropdownMenuItem>
+              <DropdownMenuItem onClick={onImproveDistractors}><Shuffle className="w-4 h-4 mr-2" />Improve distractors</DropdownMenuItem>
+              <DropdownMenuItem onClick={onRewrite}><Wand2 className="w-4 h-4 mr-2" />Rewrite question</DropdownMenuItem>
+              <DropdownMenuItem onClick={onChangeType}><Repeat className="w-4 h-4 mr-2" />Change type…</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onMoveUp} disabled={index === 0}><ArrowUp className="w-4 h-4 mr-2" />Move up</DropdownMenuItem>
               <DropdownMenuItem onClick={onMoveDown} disabled={index === count - 1}><ArrowDown className="w-4 h-4 mr-2" />Move down</DropdownMenuItem>
