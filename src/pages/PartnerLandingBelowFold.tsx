@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/lib/partnerConfig";
-import logoImage from "@/assets/logo.svg";
+import logoImage from "@/assets/logo.png";
 
 const TESTIMONIALS = [
   { stars: "★★★★★", text: "“Finally a vocabulary course that doesn't feel like a textbook. The native audio and real photos make every word stick — I retained more in 2 weeks than I did in 6 months of apps.”", initial: "L", name: "Léa M.", place: "Paris, France", cls: "ph-a1" },
