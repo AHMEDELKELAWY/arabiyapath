@@ -61,7 +61,7 @@ serve(async (req) => {
 
     const { data: allQuestions, error: questionsError } = await adminClient
       .from("quiz_questions")
-      .select("id, correct_answer, order_index")
+      .select("id, prompt, correct_answer, order_index, metadata")
       .eq("quiz_id", quizId)
       .order("order_index");
 
@@ -72,11 +72,34 @@ serve(async (req) => {
       });
     }
 
-    // Build results depending on payload shape.
+    type IdResult = {
+      questionId: string;
+      correct: boolean;
+      correctAnswer: string;
+      userAnswer: string | null;
+      prompt: string;
+      explanation: string | null;
+    };
+    type LegacyResult = {
+      questionIndex: number;
+      correct: boolean;
+      correctAnswer: string;
+      userAnswer: string | null;
+      prompt: string;
+      explanation: string | null;
+    };
+
     let correctCount = 0;
     let totalQuestions = 0;
-    const idResults: { questionId: string; correct: boolean; correctAnswer: string }[] = [];
-    const legacyResults: { questionIndex: number; correct: boolean; correctAnswer: string }[] = [];
+    const idResults: IdResult[] = [];
+    const legacyResults: LegacyResult[] = [];
+
+    const explanationOf = (q: { metadata?: Record<string, unknown> | null }): string | null => {
+      const raw = q.metadata && typeof q.metadata === "object"
+        ? (q.metadata as Record<string, unknown>).explanation
+        : null;
+      return typeof raw === "string" && raw.trim().length > 0 ? raw : null;
+    };
 
     if (isIdKeyed) {
       // Score only the questions the server served this attempt.
@@ -86,7 +109,14 @@ serve(async (req) => {
         if (!q) continue;
         const isCorrect = userAnswer === q.correct_answer;
         if (isCorrect) correctCount++;
-        idResults.push({ questionId: qid, correct: isCorrect, correctAnswer: q.correct_answer });
+        idResults.push({
+          questionId: qid,
+          correct: isCorrect,
+          correctAnswer: q.correct_answer,
+          userAnswer: userAnswer ?? null,
+          prompt: q.prompt,
+          explanation: explanationOf(q),
+        });
         totalQuestions++;
       }
       if (totalQuestions === 0) {
@@ -102,7 +132,14 @@ serve(async (req) => {
         const userAnswer = (answers as Record<number, string>)[index];
         const isCorrect = userAnswer === q.correct_answer;
         if (isCorrect) correctCount++;
-        legacyResults.push({ questionIndex: index, correct: isCorrect, correctAnswer: q.correct_answer });
+        legacyResults.push({
+          questionIndex: index,
+          correct: isCorrect,
+          correctAnswer: q.correct_answer,
+          userAnswer: userAnswer ?? null,
+          prompt: q.prompt,
+          explanation: explanationOf(q),
+        });
       });
     }
 
@@ -217,7 +254,16 @@ serve(async (req) => {
         totalQuestions,
         // Preferred: id-keyed results. Legacy consumers still get results[].
         idResults,
-        results: isIdKeyed ? idResults.map((r, i) => ({ questionIndex: i, correct: r.correct, correctAnswer: r.correctAnswer })) : legacyResults,
+        results: isIdKeyed
+          ? idResults.map((r, i) => ({
+              questionIndex: i,
+              correct: r.correct,
+              correctAnswer: r.correctAnswer,
+              userAnswer: r.userAnswer,
+              prompt: r.prompt,
+              explanation: r.explanation,
+            }))
+          : legacyResults,
         certificateAwarded,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

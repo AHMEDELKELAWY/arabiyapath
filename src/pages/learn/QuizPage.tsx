@@ -189,40 +189,65 @@ export default function QuizPage() {
                 )}
               </div>
 
-              {/* Answer Review - now with correct answers from server */}
-              <div className="pt-6 border-t text-left">
-                <h3 className="font-semibold mb-4">Answer Review</h3>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {questions.map((q, index) => {
-                    const result = quizResult.idResults?.find((r) => r.questionId === q.id);
-                    return (
-                      <div 
-                        key={index}
-                        className={cn(
-                          "p-3 rounded-lg text-sm",
-                          result?.correct ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"
-                        )}
-                      >
-                        <div className="flex items-start gap-2">
-                          {result?.correct ? (
-                            <Check className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                          ) : (
-                            <X className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                          )}
-                          <div>
-                            <p className="font-medium">{q.prompt}</p>
-                            {!result?.correct && result?.correctAnswer && (
-                              <p className="text-muted-foreground mt-1">
-                                Correct: {result.correctAnswer}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+              {/* Wrong-answer review */}
+              {(() => {
+                const missed = (quizResult.idResults ?? []).filter((r) => !r.correct);
+                if (missed.length === 0) {
+                  return (
+                    <div className="pt-6 border-t text-left">
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <Check className="h-5 w-5" />
+                        <span className="font-medium">Perfect — every question correct.</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="pt-6 border-t text-left">
+                    <h3 className="font-semibold mb-1">Review missed questions</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {missed.length} of {totalQuestions} to review.
+                    </p>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                      {missed.map((r) => (
+                        <div
+                          key={r.questionId}
+                          className="p-4 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/30 space-y-2"
+                        >
+                          <div className="flex items-start gap-2">
+                            <X className="h-4 w-4 text-red-600 shrink-0 mt-1" />
+                            <p className="font-medium text-foreground">{r.prompt}</p>
+                          </div>
+                          {r.userAnswer ? (
+                            <div className="text-sm pl-6">
+                              <span className="text-muted-foreground">Your answer: </span>
+                              <span className="text-red-700 dark:text-red-400 line-through">
+                                {r.userAnswer}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-sm pl-6 text-muted-foreground italic">
+                              No answer submitted
+                            </div>
+                          )}
+                          <div className="text-sm pl-6">
+                            <span className="text-muted-foreground">Correct answer: </span>
+                            <span className="font-medium text-green-700 dark:text-green-400">
+                              {r.correctAnswer}
+                            </span>
+                          </div>
+                          {r.explanation && (
+                            <div className="text-sm pl-6 pt-1 border-t border-red-200/60 dark:border-red-900/40 mt-2">
+                              <span className="text-muted-foreground">Why: </span>
+                              <span className="text-foreground">{r.explanation}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
