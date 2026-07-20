@@ -21,5 +21,16 @@ Disallow: /verify-email
 Disallow: /payment/
 Disallow: /checkout
 
+# Content-Signal directives (Cloudflare / IETF draft-ietf-aipref content-signal)
+# Applies to all user-agents above. Public content may be crawled for search
+# and AI-search answers, but must not be used to train foundation models.
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+
 # Sitemap
 Sitemap: https://arabiyapath.com/sitemap.xml
+
+# Agent / AI discovery
+# API Catalog:      https://arabiyapath.com/.well-known/api-catalog
+# MCP Server Card:  https://arabiyapath.com/.well-known/mcp/server-card.json
+# Agent Skills:     https://arabiyapath.com/.well-known/agent-skills/index.json
+# Auth guide:       https://arabiyapath.com/auth.md

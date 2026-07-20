@@ -1,0 +1,11 @@
+{
+  "resource": "https://wruizzwgevxdsaiblmsd.supabase.co/functions/v1/mcp",
+  "authorization_servers": [
+    "https://wruizzwgevxdsaiblmsd.supabase.co/auth/v1"
+  ],
+  "bearer_methods_supported": ["header"],
+  "scopes_supported": ["openid", "email", "profile"],
+  "resource_name": "ArabiyaPath MCP",
+  "resource_documentation": "https://arabiyapath.com/auth.md",
+  "resource_signing_alg_values_supported": ["RS256", "ES256"]
+}
