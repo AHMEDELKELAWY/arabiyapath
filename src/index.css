@@ -288,4 +288,35 @@
       animation: none !important;
     }
   }
+
+  /* ---- Mobile learning UX helpers ---- */
+
+  /* Sticky bottom action bar for learning screens on mobile.
+     Sits above safe-area, subtle blur, and only sticks on small screens. */
+  .mobile-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: hsl(var(--background) / 0.92);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid hsl(var(--border) / 0.6);
+  }
+  @media (min-width: 768px) {
+    .mobile-action-bar {
+      position: static;
+      margin: 0;
+      padding: 0.5rem 0 0;
+      background: transparent;
+      backdrop-filter: none;
+      border-top: 0;
+    }
+  }
+
+  /* Safe area padding for phones with home-indicator */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

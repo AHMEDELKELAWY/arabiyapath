@@ -398,11 +398,8 @@ export function SpeakingPractice({ unitId, onComplete, nextLabel, nextTarget = "
           </div>
         </div>
 
-        {/* Navigation — same row on all sizes */}
-        <div
-          className="flex flex-row justify-between gap-2 pt-2"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
+        {/* Sticky bottom navigation on mobile */}
+        <div className="mobile-action-bar flex flex-row justify-between gap-2">
           <Button
             variant="outline"
             onClick={() => setIdx((i) => Math.max(0, i - 1))}

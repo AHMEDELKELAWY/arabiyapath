@@ -531,12 +531,12 @@ export default function IntermediateUnit() {
         canonicalPath={`/flashcards/intermediate/unit/${unit.slug}`}
         noindex
       />
-      <section className="container max-w-3xl py-4 md:py-8 px-4">
-        <div className="mb-2 md:mb-3">
+      <section className="container max-w-3xl py-3 md:py-8 px-4">
+        <div className="mb-1 md:mb-3">
           <Button
             variant="ghost"
             size="sm"
-            className="-ml-2"
+            className="-ml-2 h-8 md:h-9"
             onClick={() => {
               if (window.history.length > 1) navigate(-1);
               else navigate("/flashcards/level/intermediate");
@@ -545,20 +545,20 @@ export default function IntermediateUnit() {
             <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Units
           </Button>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold mb-1">{unit.title_en}</h1>
+        <h1 className="text-xl md:text-3xl font-bold mb-0.5 md:mb-1 leading-tight">{unit.title_en}</h1>
         {unit.title_ar && (
-          <p className="text-base md:text-xl text-muted-foreground mb-1" dir="rtl" lang="ar">
+          <p className="text-sm md:text-xl text-muted-foreground mb-1" dir="rtl" lang="ar">
             {unit.title_ar}
           </p>
         )}
 
-        <div className="mt-3 md:mt-4">
+        <div className="mt-2 md:mt-4">
           <Tabs
             value={activeTab}
             onValueChange={(v) => tryChangeTab(v as Tab)}
             className="w-full"
           >
-            <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
+            <div className="sticky top-12 md:top-16 z-30 -mx-4 px-4 py-2 bg-background/90 backdrop-blur border-b border-border/40">
               <TabsList className={cn("grid w-full h-auto grid-cols-2", hasGrammar ? "md:grid-cols-4" : "md:grid-cols-3")}>
                 {([
                   { v: "listening", label: "Listening", icon: Headphones },
@@ -571,7 +571,7 @@ export default function IntermediateUnit() {
                     value={t.v}
                     disabled={!unlocked[t.v as Tab]}
                     className={cn(
-                      "flex flex-col md:flex-row gap-1 md:gap-2 py-3 min-h-[44px]",
+                      "flex flex-row md:flex-row gap-1.5 md:gap-2 py-2 md:py-3 min-h-[40px] md:min-h-[44px] text-xs md:text-sm",
                       !unlocked[t.v as Tab] && "opacity-50 cursor-not-allowed"
                     )}
                   >

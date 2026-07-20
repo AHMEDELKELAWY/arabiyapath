@@ -244,10 +244,7 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
               </Button>
             </div>
 
-            <div
-              className="flex flex-row justify-between gap-2 pt-2"
-              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-            >
+            <div className="mobile-action-bar flex flex-row justify-between gap-2">
               <Button
                 variant="outline"
                 onClick={goPrev}

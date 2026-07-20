@@ -237,7 +237,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
           {q.choices.map((c, n) => {
             const isPicked = picked === n;
             const showCorrect = isPicked && c.correct;
@@ -249,7 +249,7 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
                 onClick={() => pick(n)}
                 disabled={completing || (picked !== null && q.choices[picked].correct)}
                 className={cn(
-                  "relative aspect-[4/3] rounded-xl overflow-hidden border-4 transition-all",
+                  "relative aspect-square md:aspect-[4/3] rounded-xl overflow-hidden border-4 transition-all",
                   showCorrect && "border-green-500 ring-2 ring-green-500/40",
                   showWrong && "border-destructive ring-2 ring-destructive/40",
                   !isPicked && "border-transparent hover:border-primary/50"
@@ -258,13 +258,13 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
               >
                 <img src={c.image} alt={c.alt} className="absolute inset-0 w-full h-full object-cover" />
                 {showCorrect && (
-                  <span className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                    <Check className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 bg-green-500 text-white rounded-full p-1">
+                    <Check className="w-4 h-4 md:w-5 md:h-5" />
                   </span>
                 )}
                 {showWrong && (
-                  <span className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1">
-                    <X className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1">
+                    <X className="w-4 h-4 md:w-5 md:h-5" />
                   </span>
                 )}
               </button>
