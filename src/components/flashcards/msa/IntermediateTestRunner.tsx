@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 import { ActivityProgress } from "./ActivityProgress";
 import { Check, X, ChevronLeft, ChevronRight, RotateCcw, Play, Trophy, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -413,8 +414,13 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
       ? Array.isArray(userAnswer) && userAnswer.length > 0
       : userAnswer !== undefined && userAnswer !== "";
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
   return (
-    <Card className="rounded-2xl border-border/60 shadow-sm">
+    <Card
+      ref={cardRef}
+      className="rounded-2xl border-border/60 shadow-sm scroll-mt-[112px] md:scroll-mt-24"
+    >
       <CardContent className="p-4 md:p-6 space-y-4">
         <ActivityProgress current={i + 1} total={total} label="Question" />
 

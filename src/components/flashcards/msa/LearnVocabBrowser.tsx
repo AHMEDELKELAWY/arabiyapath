@@ -12,6 +12,7 @@ import { LEARN_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
+import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 
 interface CardRow {
   id: string;
@@ -185,8 +186,13 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
   const isFirst = safeIdx === 0;
   const isLast = safeIdx === total - 1;
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
+
   return (
-    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+    <Card
+      ref={cardRef}
+      className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow scroll-mt-[112px] md:scroll-mt-24"
+    >
       <CardContent className="p-4 md:p-5 space-y-3">
         <ActivityProgress current={safeIdx + 1} total={total} label="Card" />
 
