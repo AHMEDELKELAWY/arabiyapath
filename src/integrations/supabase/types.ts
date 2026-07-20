@@ -1184,6 +1184,54 @@ export type Database = {
         }
         Relationships: []
       }
+      image_gen_debug_log: {
+        Row: {
+          attempts: number | null
+          card_id: string | null
+          created_at: string
+          id: string
+          image_prompt: string | null
+          issues: Json | null
+          kind: string
+          outcome: string
+          reason: string | null
+          status: number
+          user_id: string | null
+          validator_prompt: string | null
+          vocabulary: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          image_prompt?: string | null
+          issues?: Json | null
+          kind: string
+          outcome: string
+          reason?: string | null
+          status: number
+          user_id?: string | null
+          validator_prompt?: string | null
+          vocabulary?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          image_prompt?: string | null
+          issues?: Json | null
+          kind?: string
+          outcome?: string
+          reason?: string | null
+          status?: number
+          user_id?: string | null
+          validator_prompt?: string | null
+          vocabulary?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           arabic_text: string | null
