@@ -40,7 +40,6 @@ interface Props {
 export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to Listening", nextIcon: NextIcon = Headphones }: Props) {
   const [idx, setIdx] = useState(0);
   const [completed, setCompleted] = useState(false);
-  const [fadeKey, setFadeKey] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
@@ -67,10 +66,6 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
   const total = cards?.length ?? 0;
   const safeIdx = total > 0 ? Math.min(idx, total - 1) : 0;
   const current = cards?.[safeIdx];
-
-  useEffect(() => {
-    setFadeKey((k) => k + 1);
-  }, [safeIdx]);
 
   // Hydrate the exact card position from the saved resume state (DB → cache).
   useEffect(() => {
