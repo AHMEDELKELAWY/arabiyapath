@@ -285,6 +285,23 @@ export default function IntermediateUnit() {
 
   const { data: hasAccess } = useFlashcardUnitAccess(unit?.id);
 
+  // Count published Grammar cards in this unit — if none exist, Grammar is
+  // treated as auto-completed so it can never permanently block Test.
+  const { data: grammarCount } = useQuery({
+    queryKey: ["fc-intermediate-grammar-count", unit?.id],
+    enabled: !!unit?.id,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("flashcards")
+        .select("id", { count: "exact", head: true })
+        .eq("unit_id", unit!.id)
+        .eq("kind", "grammar")
+        .eq("published", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const { data: progress } = useQuery<ProgressRow | null>({
     queryKey: ["fc-intermediate-progress", user?.id, unit?.id],
     enabled: !!user?.id && !!unit?.id,
@@ -300,19 +317,23 @@ export default function IntermediateUnit() {
     },
   });
 
+  const hasGrammar = (grammarCount ?? 0) > 0;
+
   const done = useMemo(() => ({
     listening: !!progress?.listening_completed_at,
     learn: !!progress?.learn_completed_at,
-    grammar: !!progress?.grammar_completed_at,
+    // If the unit has no Grammar cards, treat Grammar as done so it never
+    // permanently blocks Test. DB-persisted completion still wins when present.
+    grammar: !!progress?.grammar_completed_at || !hasGrammar,
     test: !!progress?.test_completed_at,
-  }), [progress]);
+  }), [progress, hasGrammar]);
 
   const unlocked = useMemo(() => ({
     listening: true,
     learn: done.listening,
-    grammar: done.listening && done.learn,
+    grammar: done.listening && done.learn && hasGrammar,
     test: done.listening && done.learn && done.grammar,
-  }), [done]);
+  }), [done, hasGrammar]);
 
   // If the user has never made progress, keep them on Listening. If they refresh,
   // land on the first unlocked-not-yet-done tab.
