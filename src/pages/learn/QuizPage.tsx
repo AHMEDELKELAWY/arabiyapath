@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuiz, useSubmitQuiz, QuizSubmitResult } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,26 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
+  const [attemptSeed, setAttemptSeed] = useState(() => Date.now());
+
+  function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  const rawQuestions = data?.questions;
+  const questions = useMemo(() => {
+    if (!rawQuestions) return [];
+    return shuffle(rawQuestions).map((q) => ({
+      ...q,
+      options: shuffle(q.options as string[]),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawQuestions, attemptSeed]);
 
   if (isLoading) {
     return (
@@ -60,7 +80,7 @@ export default function QuizPage() {
     );
   }
 
-  const { quiz, questions, unit, level, dialect } = data;
+  const { quiz, unit, level, dialect } = data;
   const totalQuestions = questions.length;
   const question = questions[currentQuestion];
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
@@ -83,8 +103,13 @@ export default function QuizPage() {
 
   const handleSubmit = async () => {
     try {
-      // Send answers to server for validation
-      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers });
+      // Map shuffled display answers back to server's original question order.
+      const payload: Record<number, string> = {};
+      questions.forEach((q, displayIdx) => {
+        const a = answers[displayIdx];
+        if (a !== undefined) payload[q.originalIndex] = a;
+      });
+      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers: payload });
       setQuizResult(result);
       setShowResults(true);
       
@@ -106,6 +131,7 @@ export default function QuizPage() {
     setAnswers({});
     setShowResults(false);
     setQuizResult(null);
+    setAttemptSeed(Date.now());
   };
 
   const allAnswered = Object.keys(answers).length === totalQuestions;
@@ -186,7 +212,7 @@ export default function QuizPage() {
                 <h3 className="font-semibold mb-4">Answer Review</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {questions.map((q, index) => {
-                    const result = results[index];
+                    const result = results[q.originalIndex];
                     return (
                       <div 
                         key={index}

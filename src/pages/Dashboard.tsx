@@ -210,7 +210,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {isPaidActive ? (
+        {(isPaidActive || hasAnyProduct) ? (
           <ContinueLearningCard
             lastActivity={lastActivity}
             hasAnyProgress={hasAnyProgress}
