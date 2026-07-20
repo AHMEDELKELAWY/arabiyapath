@@ -48,6 +48,7 @@ type ImportRow = {
   example_english?: string;
   image_url?: string;
   image_alt?: string;
+  image_prompt?: string;
   audio_url?: string;
   audio_example_url?: string;
   notes?: string;
@@ -146,6 +147,7 @@ export default function AdminFlashcardCards({
   const [form, setForm] = useState<any>({
     arabic_text: "", english_translation: "", transliteration: "",
     example_arabic: "", example_english: "", image_url: "", image_alt: "",
+    image_prompt: "",
     audio_url: "", audio_example_url: "", notes: "", published: false, order_index: 0,
   });
 
@@ -266,6 +268,7 @@ export default function AdminFlashcardCards({
     setForm({
       arabic_text: "", english_translation: "", transliteration: "",
       example_arabic: "", example_english: "", image_url: "", image_alt: "",
+      image_prompt: "",
       audio_url: "", audio_example_url: "", notes: "", published: false,
       order_index: totalCards + 1,
     });
@@ -376,6 +379,7 @@ export default function AdminFlashcardCards({
           example_english: r.example_english ?? null,
           image_url: r.image_url ?? null,
           image_alt: r.image_alt ?? null,
+          image_prompt: r.image_prompt ?? null,
           audio_url: r.audio_url ?? null,
           audio_example_url: r.audio_example_url ?? null,
           notes: r.notes ?? null,
@@ -488,6 +492,7 @@ export default function AdminFlashcardCards({
         example_english: c.example_english ?? null,
         image_url: c.image_url ?? null,
         image_alt: c.image_alt ?? null,
+        image_prompt: c.image_prompt ?? null,
         audio_url: c.audio_url ?? null,
         audio_example_url: c.audio_example_url ?? null,
         notes: c.notes ?? null,
@@ -566,6 +571,7 @@ export default function AdminFlashcardCards({
       audio_url: null,
       audio_example_url: null,
       image_alt: c.image_alt ?? null,
+      image_prompt: c.image_prompt ?? null,
       notes: c.notes ?? null,
       published: false,
       order_index: maxOrder + 1,
@@ -980,6 +986,14 @@ export default function AdminFlashcardCards({
               <Input value={form.arabic_text} dir="rtl" onChange={(e) => setForm({ ...form, arabic_text: e.target.value })} /></div>
             <div className="space-y-1"><Label>English translation</Label>
               <Input value={form.english_translation} onChange={(e) => setForm({ ...form, english_translation: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Image Prompt</Label>
+              <Textarea
+                value={form.image_prompt ?? ""}
+                rows={4}
+                placeholder="Describe the exact scene that should be generated for this vocabulary card."
+                onChange={(e) => setForm({ ...form, image_prompt: e.target.value })}
+              />
+            </div>
             <div className="space-y-1"><Label>Transliteration</Label>
               <Input value={form.transliteration ?? ""} onChange={(e) => setForm({ ...form, transliteration: e.target.value })} /></div>
             <div className="space-y-1"><Label>Example (Arabic with tashkeel)</Label>

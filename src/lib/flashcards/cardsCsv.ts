@@ -12,6 +12,7 @@ export const CARD_CSV_COLUMNS = [
   "english_translation",
   "transliteration",
   "notes",
+  "image_prompt",
   "image_url",
   "audio_url",
   "published",

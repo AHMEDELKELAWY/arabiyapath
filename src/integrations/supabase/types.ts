@@ -1125,6 +1125,7 @@ export type Database = {
           id: string
           image_alt: string | null
           image_height: number | null
+          image_prompt: string | null
           image_size_kb: number | null
           image_url: string | null
           image_width: number | null
@@ -1148,6 +1149,7 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_height?: number | null
+          image_prompt?: string | null
           image_size_kb?: number | null
           image_url?: string | null
           image_width?: number | null
@@ -1171,6 +1173,7 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_height?: number | null
+          image_prompt?: string | null
           image_size_kb?: number | null
           image_url?: string | null
           image_width?: number | null
