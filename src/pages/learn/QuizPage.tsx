@@ -90,13 +90,8 @@ export default function QuizPage() {
 
   const handleSubmit = async () => {
     try {
-      // Map shuffled display answers back to server's original question order.
-      const payload: Record<number, string> = {};
-      questions.forEach((q, displayIdx) => {
-        const a = answers[displayIdx];
-        if (a !== undefined) payload[q.originalIndex] = a;
-      });
-      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers: payload });
+      // Answers are keyed by question ID; server scores against the served subset.
+      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers });
       setQuizResult(result);
       setShowResults(true);
       
