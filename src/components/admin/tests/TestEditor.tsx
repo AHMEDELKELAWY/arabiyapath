@@ -46,8 +46,10 @@ import {
 
 export type QuestionType =
   | "multiple_choice" | "grammar_selection" | "conversation_completion"
-  | "vocab_in_context" | "fill_in_blank" | "sentence_ordering"
-  | "matching" | "reading_comprehension" | "audio";
+  | "vocab_in_context" | "fill_in_blank" | "sentence_ordering" | "word_ordering"
+  | "matching" | "reading_comprehension" | "listening_comprehension"
+  | "true_false" | "image_question" | "choose_correct_sentence" | "find_the_mistake"
+  | "audio";
 
 export interface TestQuestion {
   id: string;
@@ -64,17 +66,28 @@ export interface TestQuestion {
   difficulty: string | null;
   points: number;
   published: boolean;
+  skills_tested?: string[] | null;
+  lesson_concepts?: string[] | null;
+  vocabulary_used?: string[] | null;
+  grammar_concepts_used?: string[] | null;
+  ai_version?: string | null;
+  generated_at?: string | null;
 }
 
 const TYPE_OPTIONS: { value: QuestionType; label: string }[] = [
   { value: "multiple_choice", label: "Multiple Choice" },
-  { value: "grammar_selection", label: "Grammar Selection" },
+  { value: "true_false", label: "True / False" },
+  { value: "grammar_selection", label: "Grammar in Context" },
   { value: "conversation_completion", label: "Conversation Completion" },
-  { value: "vocab_in_context", label: "Vocabulary in Context" },
+  { value: "vocab_in_context", label: "Vocabulary Meaning" },
   { value: "fill_in_blank", label: "Fill in the Blank" },
-  { value: "sentence_ordering", label: "Sentence Ordering" },
+  { value: "sentence_ordering", label: "Word Ordering" },
   { value: "matching", label: "Matching" },
   { value: "reading_comprehension", label: "Reading Comprehension" },
+  { value: "listening_comprehension", label: "Listening Comprehension" },
+  { value: "image_question", label: "Image Question" },
+  { value: "choose_correct_sentence", label: "Choose the Correct Sentence" },
+  { value: "find_the_mistake", label: "Find the Mistake" },
   { value: "audio", label: "Audio" },
 ];
 
@@ -83,6 +96,8 @@ const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"];
 function typeLabel(t: string) {
   return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t.replace(/_/g, " ");
 }
+
+type RegenMode = "regenerate" | "easier" | "harder" | "improve_distractors" | "rewrite" | "change_type";
 
 /* ---------- Root ---------- */
 
