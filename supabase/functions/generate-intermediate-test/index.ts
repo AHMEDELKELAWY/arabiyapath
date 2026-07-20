@@ -36,7 +36,8 @@ const ALLOWED_TYPES = [
   "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v2-adaptive";
+const AI_VERSION = "int-test/v3-pedagogical";
+const MIN_QUALITY_SCORE = 70;
 const TARGET_QUESTIONS = 10;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
