@@ -300,7 +300,7 @@ export default function QuizPage() {
                 ) : (
                   <Button
                     onClick={handleNext}
-                    disabled={!answers[currentQuestion]}
+                    disabled={!answers[question.id]}
                     className="gap-2"
                   >
                     Next
@@ -311,15 +311,15 @@ export default function QuizPage() {
 
               {/* Question Dots */}
               <div className="flex justify-center gap-2 pt-4">
-                {questions.map((_, index) => (
+                {questions.map((q, index) => (
                   <button
-                    key={index}
+                    key={q.id}
                     onClick={() => setCurrentQuestion(index)}
                     className={cn(
                       "w-3 h-3 rounded-full transition-all",
                       index === currentQuestion
                         ? "bg-primary scale-125"
-                        : answers[index]
+                        : answers[q.id]
                         ? "bg-primary/50"
                         : "bg-muted"
                     )}
