@@ -72,6 +72,14 @@ serve(async (req) => {
       });
     }
 
+    type ReviewCard = {
+      lessonId: string;
+      title: string;
+      arabic_text: string | null;
+      transliteration: string | null;
+      image_url: string | null;
+      audio_url: string | null;
+    };
     type IdResult = {
       questionId: string;
       correct: boolean;
@@ -79,6 +87,7 @@ serve(async (req) => {
       userAnswer: string | null;
       prompt: string;
       explanation: string | null;
+      card: ReviewCard | null;
     };
     type LegacyResult = {
       questionIndex: number;
@@ -87,6 +96,7 @@ serve(async (req) => {
       userAnswer: string | null;
       prompt: string;
       explanation: string | null;
+      card: ReviewCard | null;
     };
 
     let correctCount = 0;
