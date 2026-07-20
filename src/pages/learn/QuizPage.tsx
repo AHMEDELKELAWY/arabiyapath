@@ -40,6 +40,8 @@ export default function QuizPage() {
   const [showResults, setShowResults] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
   const [attemptSeed, setAttemptSeed] = useState(() => Date.now());
+  const [reviewCard, setReviewCard] = useState<QuizReviewCard | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Server serves a random subset per attempt; attemptSeed forces refetch on retry.
   const { data, isLoading } = useQuiz(quizId, attemptSeed);
