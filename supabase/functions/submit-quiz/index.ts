@@ -254,7 +254,16 @@ serve(async (req) => {
         totalQuestions,
         // Preferred: id-keyed results. Legacy consumers still get results[].
         idResults,
-        results: isIdKeyed ? idResults.map((r, i) => ({ questionIndex: i, correct: r.correct, correctAnswer: r.correctAnswer })) : legacyResults,
+        results: isIdKeyed
+          ? idResults.map((r, i) => ({
+              questionIndex: i,
+              correct: r.correct,
+              correctAnswer: r.correctAnswer,
+              userAnswer: r.userAnswer,
+              prompt: r.prompt,
+              explanation: r.explanation,
+            }))
+          : legacyResults,
         certificateAwarded,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
