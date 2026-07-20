@@ -111,13 +111,17 @@ export function buildVocabularyValidatorPrompt(vocabulary: string): string {
 /** The exact text sent to the vision validator for grammar images. */
 export function buildGrammarValidatorPrompt(vocabulary: string): string {
   return (
-    `Arabic grammar word being taught: "${vocabulary}".\n` +
-    `Judge the image against these rules:\n` +
-    `1. Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting).\n` +
-    `2. Contains NO visible text, letters, numbers, captions, signs, logos, watermarks, or writing in any language.\n` +
-    `3. Shows ONE clear scene of people interacting — no split screens, no multi-panel, no collage.\n` +
-    `4. The interaction/expressions plausibly teach a grammatical function to a beginner.\n` +
-    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"teachesGrammar":bool,"issues":[string]}`
+    `Arabic grammar item being taught: "${vocabulary}".\n` +
+    `This image must TEACH the grammatical function through an everyday conversational scene — not depict the word literally.\n` +
+    `Judge the image against ALL of these rules. Any single failure = invalid.\n` +
+    `1. photoreal: Photorealistic real-life photograph (NOT illustration, cartoon, drawing, 3D render, painting, clipart, icon, infographic, screenshot, UI element).\n` +
+    `2. noText: Contains NO visible text of any kind — no Arabic letters, no English letters, no numbers, no captions, no subtitles, no signs, no labels, no logos, no watermarks, no writing on objects or clothing, no speech bubbles with writing.\n` +
+    `3. oneScene: Shows ONE clear scene (2–3 Arab people unless the concept genuinely needs more) — no split screens, no multi-panel, no collage, no unrelated objects.\n` +
+    `4. arabPeople: The people depicted are clearly Arab; women wear modest clothing / hijab where appropriate; clothing and setting are culturally authentic.\n` +
+    `5. notLiteral: The image does NOT try to literally depict the grammar word itself (e.g. for "when?" it does not show a giant clock as the subject; for "who?" it does not show a question mark).\n` +
+    `6. teachesGrammar: The interaction, gestures, and facial expressions clearly communicate the grammatical function so a beginner can INFER the meaning from the situation alone.\n` +
+    `7. unambiguous: The scene could not reasonably teach a DIFFERENT grammar meaning; the communicative situation is immediately obvious.\n` +
+    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"arabPeople":bool,"notLiteral":bool,"teachesGrammar":bool,"unambiguous":bool,"issues":[string]}`
   );
 }
 
@@ -127,16 +131,18 @@ export function buildGrammarValidatorPrompt(vocabulary: string): string {
  * Grammar cards teach function words (pronouns, question words, particles,
  * prepositions, connectors). A literal depiction rarely conveys meaning, so
  * we ask for an educational everyday scene where a learner can infer the
- * grammatical function from the interaction between people.
+ * grammatical function from the interaction between Arab people.
  */
 export function buildGrammarImagePrompt(vocabulary: string): string {
   return [
-    `Ultra-realistic photograph of a friendly Arab family or Arab people in a simple everyday scene that teaches the meaning and conversational use of the Arabic grammar word: "${vocabulary}".`,
-    `Do NOT depict the word literally. Instead show a natural situation where a beginner can infer the grammatical function from the interaction, gestures, and facial expressions of the people.`,
-    `Exactly ONE clear educational concept, focused on the interaction between the people. Expressions must clearly communicate the grammatical meaning.`,
-    `Realistic photography style, bright natural lighting, clean uncluttered background, professional DSLR look, culturally appropriate Middle Eastern context, modest clothing.`,
-    `Absolutely NO text of any kind: no Arabic letters, no English letters, no numbers, no captions, no subtitles, no signs, no labels, no logos, no watermarks, no speech bubbles containing writing, no writing on objects or clothing.`,
-    `NO illustrations, NO cartoons, NO 3D renders, NO drawings, NO paintings, NO clip art, NO collages, NO split screens, NO multi-panel compositions.`,
+    `Ultra-realistic photograph — a single frame from a real-life conversation — that teaches the MEANING and CONVERSATIONAL USAGE of the Arabic grammar item: "${vocabulary}".`,
+    `The image must illustrate the GRAMMATICAL FUNCTION of this item, not its translation, and MUST NOT literally depict the word itself. A learner should infer the meaning from the situation alone.`,
+    `Scene: 2–3 Arab people (a friendly Arab family or Arab friends) in a simple everyday setting. Communicate the grammar meaning entirely through facial expressions, body language, gestures, and the interaction between the people.`,
+    `Examples of the required approach: for "who?" a person asks about another person; for "where?" someone searches for or asks about an object; for "what?" someone points to and asks about an object or action; for "when?" someone asks about time (may glance at a clock while speaking, but the clock is NOT the subject); for "how?" someone asks about the way something is done; for "why?" someone expresses curiosity about a reason.`,
+    `Visual style: photorealistic, professional DSLR photography, bright natural daylight, warm educational atmosphere, clean uncluttered background, authentic Arab clothing, modest clothing and hijab for women where appropriate, natural expressions, family-safe.`,
+    `Composition: focus on the interaction; the main communicative action must be immediately obvious; no visual distractions; no unrelated objects.`,
+    `Absolutely NO text of any kind anywhere in the image: no Arabic letters, no English letters, no numbers, no captions, no subtitles, no signs, no road signs, no labels, no logos, no watermarks, no speech bubbles containing writing, no writing on objects or clothing.`,
+    `NO illustrations, NO cartoons, NO 3D renders, NO drawings, NO paintings, NO clipart, NO icons, NO infographics, NO screenshots, NO UI elements, NO symbolic or abstract art, NO collages, NO split screens, NO multi-panel compositions.`,
   ].join(" ");
 }
 
