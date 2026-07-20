@@ -14,6 +14,7 @@ import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenA
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 import { useImagePreload } from "@/hooks/useImagePreload";
+import { useAudioPreload } from "@/hooks/useAudioPreload";
 
 interface CardRow {
   id: string;
@@ -163,6 +164,8 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     ...(nextPrompt?.choices.map((c) => c.image) ?? []),
     ...(nextNextPrompt?.choices.map((c) => c.image) ?? []),
   ]);
+  // Preload upcoming prompt audio so playback is instant on question change.
+  useAudioPreload([nextPrompt?.audio, nextNextPrompt?.audio]);
 
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;

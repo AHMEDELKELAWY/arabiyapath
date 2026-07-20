@@ -14,6 +14,7 @@ import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenA
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 import { useImagePreload } from "@/hooks/useImagePreload";
+import { useAudioPreload } from "@/hooks/useAudioPreload";
 
 interface CardRow {
   id: string;
@@ -131,6 +132,12 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
     cards?.[safeIdx + 1]?.image_url,
     cards?.[safeIdx + 2]?.image_url,
     cards?.[safeIdx - 1]?.image_url,
+  ]);
+  // Preload adjacent card audio so playback is instant on slow networks.
+  useAudioPreload([
+    cards?.[safeIdx + 1]?.audio_url,
+    cards?.[safeIdx + 2]?.audio_url,
+    cards?.[safeIdx - 1]?.audio_url,
   ]);
 
   if (isLoading) {
