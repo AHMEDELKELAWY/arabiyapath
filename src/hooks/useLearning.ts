@@ -227,10 +227,13 @@ export function useMarkLessonComplete() {
 
 export interface StartQuizQuestion {
   id: string;
-  type: string;
+  question_type: string;
+  difficulty: "easy" | "medium" | "hard";
+  type: string | null;
   prompt: string;
   audio_url: string | null;
   options: string[];
+  metadata: Record<string, unknown>;
 }
 
 export function useQuiz(quizId?: string, attemptSeed?: number) {
@@ -279,12 +282,12 @@ export function useSubmitQuiz() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ 
-      quizId, 
-      answers 
-    }: { 
-      quizId: string; 
-      answers: Record<number, string>; 
+    mutationFn: async ({
+      quizId,
+      answers,
+    }: {
+      quizId: string;
+      answers: Record<string, string>;
     }): Promise<QuizSubmitResult> => {
       if (!user) throw new Error("Not authenticated");
       
