@@ -138,7 +138,7 @@ serve(async (req) => {
           ? String(r.kind ?? "").toLowerCase() === "grammar"
           : String(r.kind ?? "").toLowerCase() !== "grammar")
     );
-    if (canonical && !force) {
+    if (canonical && !force && !useCustom) {
       await logDebug({ status: 200, outcome: "reused_canonical" });
       return json({
         reused: true,
