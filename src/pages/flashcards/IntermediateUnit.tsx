@@ -33,6 +33,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logUnitEvent } from "@/lib/unitAnalytics";
+
 
 const CONTENT_BUCKET = "content";
 
