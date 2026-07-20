@@ -388,7 +388,23 @@ export default function IntermediateUnit() {
       return;
     }
     qc.invalidateQueries({ queryKey: ["fc-intermediate-progress", user.id, unit.id] });
+    const stepMap: Record<string, UnitStep> = {
+      listening_completed_at: "listening",
+      learn_completed_at: "learn",
+      grammar_completed_at: "grammar",
+      test_completed_at: "test",
+    };
+    const step = stepMap[field as string];
+    if (step) {
+      void logUnitEvent({
+        userId: user.id,
+        unitId: unit.id,
+        eventType: "step_completed",
+        step,
+      });
+    }
   }
+
 
   function tryChangeTab(next: Tab) {
     if (!unlocked[next]) {
