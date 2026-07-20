@@ -23,27 +23,61 @@ export function normalizeVocabulary(input: string): string {
 }
 
 /**
- * Pre-generation: reject inputs that clearly encode multiple concepts,
- * sentences, or ambiguous phrases. Learn cards must be a single vocabulary
- * item ("apple", "to run", "red car"), not a sentence or list.
+ * Pre-generation: reject only inputs that clearly encode multiple concepts,
+ * complete sentences, or lists. The rule is "one concept" — semantic, not
+ * purely textual.
+ *
+ * ACCEPTED (single concept):
+ *   - single nouns, proper nouns, adjectives, pronouns ("this", "that")
+ *   - occupations ("police officer"), locations ("living room")
+ *   - short noun phrases for ONE object ("car keys", "coffee cup",
+ *     "credit card", "bus stop", "dining table", "mobile phone")
+ *   - question words with a trailing "?"  ("Who?", "Where?", "How many?")
+ *
+ * REJECTED:
+ *   - complete sentences (conjugated verbs joining subject+object,
+ *     sentence-ending ".", "!")
+ *   - lists: commas, slashes, semicolons
+ *   - conjunctions joining separate concepts: " and ", " or ", "&"
+ *   - obviously long strings (> 60 chars or > 8 words)
  */
 export function validateVocabularyConcept(raw: string): { valid: boolean; reason?: string } {
   const v = String(raw ?? "").trim();
-  if (!v) return { valid: false, reason: "empty vocabulary" };
-  if (v.length > 60) return { valid: false, reason: "too long — vocabulary items should be short (<60 chars)" };
+  if (!v) return { valid: false, reason: "Vocabulary is empty." };
+  if (v.length > 60) {
+    return { valid: false, reason: `Too long (${v.length} chars). Vocabulary items should be under 60 characters — write a single concept, not a sentence.` };
+  }
 
-  // Sentence terminators or question marks
-  if (/[.?!;:]/.test(v)) return { valid: false, reason: "contains sentence punctuation" };
+  // Lists / separators clearly encode multiple concepts.
+  if (/,/.test(v)) return { valid: false, reason: "Comma detected — looks like a list of multiple concepts. Enter one vocabulary item per card." };
+  if (/;/.test(v)) return { valid: false, reason: "Semicolon detected — looks like multiple concepts. Enter one vocabulary item per card." };
+  if (/\//.test(v)) return { valid: false, reason: "Slash detected — looks like alternative concepts. Pick one vocabulary item per card." };
+  if (/&/.test(v)) return { valid: false, reason: "Ampersand detected — looks like two concepts joined. Enter one vocabulary item per card." };
 
-  // Multi-concept separators: comma, slash, ' and ', ' or ', ' & '
-  const normalized = ` ${v.toLowerCase()} `;
-  if (/[,/]/.test(v)) return { valid: false, reason: "comma or slash suggests multiple concepts" };
-  if (/\s(and|or)\s/.test(normalized)) return { valid: false, reason: "conjunction suggests multiple concepts" };
-  if (/&/.test(v)) return { valid: false, reason: "ampersand suggests multiple concepts" };
+  const lower = ` ${v.toLowerCase()} `;
+  if (/\s(and|or)\s/.test(lower)) {
+    return { valid: false, reason: 'Conjunction ("and" / "or") joins separate concepts. Enter one vocabulary item per card.' };
+  }
 
-  // Too many words = likely a sentence, not a vocab item
+  // Allow a single trailing "?" for question words. Reject other sentence punctuation.
+  const withoutTrailingQ = v.replace(/\?+\s*$/, "");
+  if (/[.!;:]/.test(withoutTrailingQ)) {
+    return { valid: false, reason: "Sentence punctuation (. ! ; :) suggests a full sentence. Vocabulary should be a single word or short noun phrase." };
+  }
+  if (/\?/.test(withoutTrailingQ)) {
+    return { valid: false, reason: "Question mark in the middle of the phrase — only a trailing '?' is allowed (e.g. 'Who?', 'Where?')." };
+  }
+
+  // Sentence structure: conjugated verbs signal a full sentence, not a vocab item.
+  // Allow infinitives ("to be", "to have", "to run").
+  if (!/^to\s/i.test(v) && /\b(is|are|was|were|has|have|had|will|would|do|does|did)\b/i.test(v)) {
+    return { valid: false, reason: "Looks like a full sentence (contains a conjugated verb). Use a single word or noun phrase — e.g. 'coffee cup' instead of 'the cup is on the table'." };
+  }
+
   const words = v.split(/\s+/).filter(Boolean);
-  if (words.length > 6) return { valid: false, reason: `too many words (${words.length}) — likely a sentence` };
+  if (words.length > 8) {
+    return { valid: false, reason: `Too many words (${words.length}). Vocabulary items are usually 1–4 words describing one concept.` };
+  }
 
   return { valid: true };
 }
