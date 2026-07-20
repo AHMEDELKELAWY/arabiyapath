@@ -72,6 +72,14 @@ serve(async (req) => {
       });
     }
 
+    type ReviewCard = {
+      lessonId: string;
+      title: string;
+      arabic_text: string | null;
+      transliteration: string | null;
+      image_url: string | null;
+      audio_url: string | null;
+    };
     type IdResult = {
       questionId: string;
       correct: boolean;
@@ -79,6 +87,7 @@ serve(async (req) => {
       userAnswer: string | null;
       prompt: string;
       explanation: string | null;
+      card: ReviewCard | null;
     };
     type LegacyResult = {
       questionIndex: number;
@@ -87,6 +96,7 @@ serve(async (req) => {
       userAnswer: string | null;
       prompt: string;
       explanation: string | null;
+      card: ReviewCard | null;
     };
 
     let correctCount = 0;
@@ -116,6 +126,7 @@ serve(async (req) => {
           userAnswer: userAnswer ?? null,
           prompt: q.prompt,
           explanation: explanationOf(q),
+          card: null,
         });
         totalQuestions++;
       }
@@ -139,6 +150,7 @@ serve(async (req) => {
           userAnswer: userAnswer ?? null,
           prompt: q.prompt,
           explanation: explanationOf(q),
+          card: null,
         });
       });
     }
@@ -243,6 +255,78 @@ serve(async (req) => {
           }
         }
       }
+    }
+
+    // Enrich wrong answers with the original learning card (best-effort, non-blocking).
+    // Match by normalized text against lessons in this quiz's unit.
+    try {
+      const missed = [
+        ...idResults.filter((r) => !r.correct),
+        ...legacyResults.filter((r) => !r.correct),
+      ];
+      if (missed.length > 0) {
+        const { data: quizRow } = await adminClient
+          .from("quizzes")
+          .select("unit_id")
+          .eq("id", quizId)
+          .maybeSingle();
+        const unitId = quizRow?.unit_id;
+        if (unitId) {
+          const { data: lessons } = await adminClient
+            .from("lessons")
+            .select("id, title, arabic_text, transliteration, image_url, audio_url")
+            .eq("unit_id", unitId);
+          if (lessons && lessons.length > 0) {
+            const stripTashkeel = (s: string) =>
+              (s ?? "").replace(/[\u064B-\u065F\u0670]/g, "");
+            const norm = (s: string | null | undefined) =>
+              stripTashkeel(String(s ?? ""))
+                .toLowerCase()
+                .replace(/[\p{P}\p{S}]/gu, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const toCard = (l: (typeof lessons)[number]) => ({
+              lessonId: l.id,
+              title: l.title,
+              arabic_text: l.arabic_text,
+              transliteration: l.transliteration,
+              image_url: l.image_url,
+              audio_url: l.audio_url,
+            });
+
+            const findMatch = (r: { correctAnswer: string; prompt: string }) => {
+              const targets = [norm(r.correctAnswer), norm(r.prompt)].filter(Boolean);
+              // Exact normalized match against title/arabic_text/transliteration first.
+              for (const l of lessons) {
+                const fields = [norm(l.arabic_text), norm(l.title), norm(l.transliteration)];
+                if (targets.some((t) => fields.includes(t))) return toCard(l);
+              }
+              // Substring fallback: correctAnswer contained in lesson field or vice versa.
+              for (const l of lessons) {
+                const fields = [norm(l.arabic_text), norm(l.title), norm(l.transliteration)]
+                  .filter(Boolean);
+                for (const t of targets) {
+                  if (!t) continue;
+                  if (fields.some((f) => f && (f.includes(t) || t.includes(f)))) {
+                    return toCard(l);
+                  }
+                }
+              }
+              return null;
+            };
+
+            for (const r of idResults) {
+              if (!r.correct) r.card = findMatch(r);
+            }
+            for (const r of legacyResults) {
+              if (!r.correct) r.card = findMatch(r);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Review card enrichment failed:", e);
     }
 
     return new Response(

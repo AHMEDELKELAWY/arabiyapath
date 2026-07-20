@@ -266,6 +266,15 @@ export function useQuiz(quizId?: string, attemptSeed?: number) {
   });
 }
 
+export interface QuizReviewCard {
+  lessonId: string;
+  title: string;
+  arabic_text: string | null;
+  transliteration: string | null;
+  image_url: string | null;
+  audio_url: string | null;
+}
+
 export interface QuizSubmitResult {
   success: boolean;
   score: number;
@@ -279,6 +288,7 @@ export interface QuizSubmitResult {
     userAnswer: string | null;
     prompt: string;
     explanation: string | null;
+    card?: QuizReviewCard | null;
   }[];
   results: {
     questionIndex: number;
@@ -287,6 +297,7 @@ export interface QuizSubmitResult {
     userAnswer: string | null;
     prompt: string;
     explanation: string | null;
+    card?: QuizReviewCard | null;
   }[];
   certificateAwarded: boolean;
 }

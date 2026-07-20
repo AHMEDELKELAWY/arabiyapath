@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Check,
   X,
-  Trophy,
+  Trophy as _Trophy,
   RotateCcw,
   Home,
   Award,
@@ -21,6 +21,10 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { getRenderer } from "@/components/quiz/questionTypes";
+import { ReviewCardDialog } from "@/components/quiz/ReviewCardDialog";
+import { getQuizFeedback } from "@/lib/quizFeedback";
+import type { QuizReviewCard } from "@/hooks/useLearning";
+import { BookOpen } from "lucide-react";
 
 export default function QuizPage() {
   const { quizId } = useParams();
@@ -36,6 +40,8 @@ export default function QuizPage() {
   const [showResults, setShowResults] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
   const [attemptSeed, setAttemptSeed] = useState(() => Date.now());
+  const [reviewCard, setReviewCard] = useState<QuizReviewCard | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Server serves a random subset per attempt; attemptSeed forces refetch on retry.
   const { data, isLoading } = useQuiz(quizId, attemptSeed);
@@ -127,40 +133,31 @@ export default function QuizPage() {
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center py-12">
           <Card className="w-full max-w-lg mx-4">
             <CardContent className="p-8 text-center space-y-6">
-              <div className={cn(
-                "w-24 h-24 rounded-full mx-auto flex items-center justify-center",
-                passed ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"
-              )}>
-                {passed ? (
-                  <Trophy className="h-12 w-12 text-green-600 dark:text-green-400" />
-                ) : (
-                  <X className="h-12 w-12 text-red-600 dark:text-red-400" />
-                )}
-              </div>
-
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {passed ? "Congratulations!" : "Keep Practicing!"}
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                  {passed 
-                    ? "You've passed the quiz and completed this unit!"
-                    : "You need 70% to pass. Review the lessons and try again."}
-                </p>
-                {certificateAwarded && (
-                  <div className="flex items-center justify-center gap-2 mt-4 p-3 bg-primary/10 rounded-lg">
-                    <Award className="h-5 w-5 text-primary" />
-                    <span className="text-primary font-medium">Level Certificate Earned!</span>
+              {(() => {
+                const feedback = getQuizFeedback(score);
+                return (
+                  <div className="space-y-2">
+                    <div className="text-6xl leading-none" aria-hidden="true">
+                      {feedback.emoji}
+                    </div>
+                    <h1 className="text-3xl font-bold text-foreground">
+                      {feedback.headline}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      You answered {correctCount} out of {totalQuestions} questions correctly ({score}%).
+                    </p>
+                    {feedback.body && (
+                      <p className="text-muted-foreground">{feedback.body}</p>
+                    )}
+                    {certificateAwarded && (
+                      <div className="flex items-center justify-center gap-2 mt-4 p-3 bg-primary/10 rounded-lg">
+                        <Award className="h-5 w-5 text-primary" />
+                        <span className="text-primary font-medium">Level Certificate Earned!</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-
-              <div className="py-6">
-                <div className="text-6xl font-bold text-foreground">{score}%</div>
-                <p className="text-muted-foreground">
-                  {correctCount} of {totalQuestions} correct
-                </p>
-              </div>
+                );
+              })()}
 
               <div className="flex flex-col gap-3">
                 {!passed && (
@@ -236,6 +233,23 @@ export default function QuizPage() {
                               {r.correctAnswer}
                             </span>
                           </div>
+                          {r.card && (
+                            <div className="pl-6 pt-1">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                onClick={() => {
+                                  setReviewCard(r.card ?? null);
+                                  setReviewOpen(true);
+                                }}
+                              >
+                                <BookOpen className="h-4 w-4" />
+                                Review card
+                              </Button>
+                            </div>
+                          )}
                           {r.explanation && (
                             <div className="text-sm pl-6 pt-1 border-t border-red-200/60 dark:border-red-900/40 mt-2">
                               <span className="text-muted-foreground">Why: </span>
@@ -251,6 +265,14 @@ export default function QuizPage() {
             </CardContent>
           </Card>
         </div>
+        <ReviewCardDialog
+          card={reviewCard}
+          open={reviewOpen}
+          onOpenChange={(open) => {
+            setReviewOpen(open);
+            if (!open) setReviewCard(null);
+          }}
+        />
       </FocusLayout>
     );
   }
