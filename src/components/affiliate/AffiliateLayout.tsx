@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAffiliateCoupon } from "@/hooks/useAffiliateData";
 import { toast } from "sonner";
-import logoImage from "@/assets/logo.png";
+import logoImage from "@/assets/logo.svg";
 
 interface AffiliateLayoutProps {
   children: ReactNode;

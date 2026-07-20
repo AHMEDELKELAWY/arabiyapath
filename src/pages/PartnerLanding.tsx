@@ -6,7 +6,7 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { setPartnerCoupon } from "@/lib/partnerCoupon";
 import { buildPartnerConfig, formatPrice } from "@/lib/partnerConfig";
-import logoImage from "@/assets/logo.png";
+import logoImage from "@/assets/logo.svg";
 
 const BelowFold = lazy(() => import("./PartnerLandingBelowFold"));
 
