@@ -288,6 +288,11 @@ export function TestEditor({ unit }: { unit: any }) {
               {hasQuestions ? "Regenerate test" : "Generate test"}
             </Button>
             {hasQuestions && (
+              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                <Eye className="w-4 h-4 mr-1" /> Student Preview
+              </Button>
+            )}
+            {hasQuestions && (
               allPublished ? (
                 <Button variant="outline" size="sm" onClick={unpublishAll} disabled={publishing}>
                   Move to draft
