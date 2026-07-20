@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Check,
   X,
-  Trophy,
+  Trophy as _Trophy,
   RotateCcw,
   Home,
   Award,
