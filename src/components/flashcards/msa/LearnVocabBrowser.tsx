@@ -128,6 +128,8 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safeIdx, total, completed]);
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
+
   if (isLoading) {
     return (
       <Card className="rounded-2xl border-border/60 shadow-sm">
