@@ -150,6 +150,7 @@ serve(async (req) => {
           userAnswer: userAnswer ?? null,
           prompt: q.prompt,
           explanation: explanationOf(q),
+          card: null,
         });
       });
     }
