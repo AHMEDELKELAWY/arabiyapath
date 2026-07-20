@@ -30,9 +30,8 @@ export function useAudioPreload(urls: Array<string | null | undefined>) {
         cache: "force-cache",
         credentials: "omit",
         signal: controller.signal,
-        // @ts-expect-error non-standard but widely supported hint
-        priority: "low",
-      })
+        ...({ priority: "low" } as Record<string, unknown>),
+      } as RequestInit)
         .then((res) => {
           // Drain body so the cache entry is committed.
           if (res.ok) return res.blob().then(() => undefined);
