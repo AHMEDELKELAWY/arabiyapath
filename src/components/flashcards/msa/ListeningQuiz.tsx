@@ -153,6 +153,8 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
     });
   }, [slug, prompts.length, user?.id]);
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
   if (isLoading) {
     return <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>;
   }
