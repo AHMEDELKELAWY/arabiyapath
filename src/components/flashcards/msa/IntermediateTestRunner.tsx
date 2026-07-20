@@ -315,6 +315,12 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
                             {qq.explanation}
                           </p>
                         )}
+                        {qq.teaching_explanation && (
+                          <div className="mt-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                            <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">Teacher's note</p>
+                            <p className="text-sm text-foreground/90 whitespace-pre-wrap">{qq.teaching_explanation}</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
