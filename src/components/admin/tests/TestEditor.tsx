@@ -39,8 +39,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Sparkles, Loader2, Plus, MoreVertical, GripVertical, Pencil, Copy, Trash2,
-  ArrowUp, ArrowDown, RotateCcw, Check,
+  ArrowUp, ArrowDown, RotateCcw, Check, Eye, ArrowDownCircle, ArrowUpCircle, Wand2, Shuffle, Repeat,
 } from "lucide-react";
+import { IntermediateTestRunner } from "@/components/flashcards/msa/IntermediateTestRunner";
 
 /* ---------- Types ---------- */
 
@@ -109,6 +110,8 @@ export function TestEditor({ unit }: { unit: any }) {
   const [pendingDelete, setPendingDelete] = useState<TestQuestion | null>(null);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [changeTypeFor, setChangeTypeFor] = useState<TestQuestion | null>(null);
 
   const { data: questions } = useQuery<TestQuestion[]>({
     queryKey: ["admin-intermediate-tests", unit.id],
@@ -150,15 +153,22 @@ export function TestEditor({ unit }: { unit: any }) {
     invalidate();
   };
 
-  /* ---------- Regenerate one ---------- */
-  const regenerateOne = async (q: TestQuestion) => {
+  /* ---------- Regenerate one (with modes) ---------- */
+  const regenerateOne = async (q: TestQuestion, mode: RegenMode = "regenerate", target_type?: QuestionType) => {
     setRegenId(q.id);
     const { error } = await supabase.functions.invoke("regenerate-intermediate-question", {
-      body: { question_id: q.id },
+      body: { question_id: q.id, mode, target_type },
     });
     setRegenId(null);
     if (error) return toast({ title: "Regenerate failed", description: error.message, variant: "destructive" });
-    toast({ title: "Question regenerated" });
+    const label = mode === "regenerate" ? "regenerated"
+      : mode === "easier" ? "made easier"
+      : mode === "harder" ? "made harder"
+      : mode === "improve_distractors" ? "distractors improved"
+      : mode === "rewrite" ? "rewritten"
+      : mode === "change_type" ? `converted to ${typeLabel(target_type ?? "")}`
+      : "updated";
+    toast({ title: `Question ${label}` });
     invalidate();
   };
 
