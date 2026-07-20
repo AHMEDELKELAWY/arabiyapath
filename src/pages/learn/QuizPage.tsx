@@ -265,6 +265,14 @@ export default function QuizPage() {
             </CardContent>
           </Card>
         </div>
+        <ReviewCardDialog
+          card={reviewCard}
+          open={reviewOpen}
+          onOpenChange={(open) => {
+            setReviewOpen(open);
+            if (!open) setReviewCard(null);
+          }}
+        />
       </FocusLayout>
     );
   }
