@@ -190,8 +190,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
 
   const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
 
-
-
+  if (isLoading) {
     return (
       <Card className="rounded-2xl">
         <CardContent className="p-6 space-y-4">
