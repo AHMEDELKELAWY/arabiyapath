@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuiz, useSubmitQuiz, QuizSubmitResult } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
