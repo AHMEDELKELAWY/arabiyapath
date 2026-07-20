@@ -108,8 +108,27 @@ export function buildVocabularyValidatorPrompt(vocabulary: string): string {
   );
 }
 
+/**
+ * Detect whether a grammar item is a question word (interrogative).
+ * Matches trailing "?" plus common English question words used in the
+ * curriculum (who / what / where / when / why / how / which / whose / whom
+ * and multi-word variants like "how many", "how much").
+ */
+export function isQuestionWord(vocabulary: string): boolean {
+  const v = String(vocabulary ?? "").trim().toLowerCase();
+  if (!v) return false;
+  if (/\?\s*$/.test(v)) return true;
+  const stripped = v.replace(/[^a-z\s]/g, "").trim();
+  return /^(who|whom|whose|what|where|when|why|how|which|how many|how much|how long|how often)\b/.test(stripped);
+}
+
 /** The exact text sent to the vision validator for grammar images. */
 export function buildGrammarValidatorPrompt(vocabulary: string): string {
+  const questionWord = isQuestionWord(vocabulary);
+  const askingRule = questionWord
+    ? `\n8. momentOfAsking: Because "${vocabulary}" is a question word, the image MUST capture a live moment of ASKING — visible inquiry through open mouth mid-speech, raised eyebrows, curious/puzzled expression, hand gesture of inquiry (open palm, pointing, or shrug), or leaning forward toward the listener. A static portrait, posed smile, or still object scene = INVALID.`
+    : "";
+  const askingKey = questionWord ? `,"momentOfAsking":bool` : "";
   return (
     `Arabic grammar item being taught: "${vocabulary}".\n` +
     `This image must TEACH the grammatical function through an everyday conversational scene — not depict the word literally.\n` +
@@ -120,8 +139,9 @@ export function buildGrammarValidatorPrompt(vocabulary: string): string {
     `4. arabPeople: The people depicted are clearly Arab; women wear modest clothing / hijab where appropriate; clothing and setting are culturally authentic.\n` +
     `5. notLiteral: The image does NOT try to literally depict the grammar word itself (e.g. for "when?" it does not show a giant clock as the subject; for "who?" it does not show a question mark).\n` +
     `6. teachesGrammar: The interaction, gestures, and facial expressions clearly communicate the grammatical function so a beginner can INFER the meaning from the situation alone.\n` +
-    `7. unambiguous: The scene could not reasonably teach a DIFFERENT grammar meaning; the communicative situation is immediately obvious.\n` +
-    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"arabPeople":bool,"notLiteral":bool,"teachesGrammar":bool,"unambiguous":bool,"issues":[string]}`
+    `7. unambiguous: The scene could not reasonably teach a DIFFERENT grammar meaning; the communicative situation is immediately obvious.` +
+    askingRule + `\n` +
+    `Reply with strict JSON: {"photoreal":bool,"noText":bool,"oneScene":bool,"arabPeople":bool,"notLiteral":bool,"teachesGrammar":bool,"unambiguous":bool${askingKey},"issues":[string]}`
   );
 }
 
@@ -132,18 +152,27 @@ export function buildGrammarValidatorPrompt(vocabulary: string): string {
  * prepositions, connectors). A literal depiction rarely conveys meaning, so
  * we ask for an educational everyday scene where a learner can infer the
  * grammatical function from the interaction between Arab people.
+ *
+ * Question words receive an extra "moment of asking / curiosity / inquiry"
+ * directive so the scene captures the act of questioning rather than a
+ * static portrait or object.
  */
 export function buildGrammarImagePrompt(vocabulary: string): string {
+  const questionWord = isQuestionWord(vocabulary);
+  const askingDirective = questionWord
+    ? `CRITICAL — QUESTION WORD: "${vocabulary}" is an interrogative. The image MUST capture a live moment of ASKING, curiosity, or inquiry — never a static object, still-life, or posed portrait. Show one person actively asking another: mouth slightly open mid-speech, raised eyebrows, a puzzled or curious expression, and an inquiry gesture (open palm up, pointing, a light shrug, or leaning forward toward the listener). The listener should be visibly attending to the question. Frame the scene as a candid mid-conversation moment, not a smiling group photo.`
+    : "";
   return [
     `Ultra-realistic photograph — a single frame from a real-life conversation — that teaches the MEANING and CONVERSATIONAL USAGE of the Arabic grammar item: "${vocabulary}".`,
     `The image must illustrate the GRAMMATICAL FUNCTION of this item, not its translation, and MUST NOT literally depict the word itself. A learner should infer the meaning from the situation alone.`,
+    askingDirective,
     `Scene: 2–3 Arab people (a friendly Arab family or Arab friends) in a simple everyday setting. Communicate the grammar meaning entirely through facial expressions, body language, gestures, and the interaction between the people.`,
-    `Examples of the required approach: for "who?" a person asks about another person; for "where?" someone searches for or asks about an object; for "what?" someone points to and asks about an object or action; for "when?" someone asks about time (may glance at a clock while speaking, but the clock is NOT the subject); for "how?" someone asks about the way something is done; for "why?" someone expresses curiosity about a reason.`,
-    `Visual style: photorealistic, professional DSLR photography, bright natural daylight, warm educational atmosphere, clean uncluttered background, authentic Arab clothing, modest clothing and hijab for women where appropriate, natural expressions, family-safe.`,
+    `Examples of the required approach: for "who?" one person asks another about a third person's identity with a curious expression and open-palm gesture; for "where?" someone asks with a searching look while gesturing outward; for "what?" someone points to an object mid-question with raised eyebrows; for "when?" someone asks about time with an inquiring expression (a clock may appear in the background, but the clock is NEVER the subject); for "how?" someone gestures for an explanation; for "why?" someone shows curiosity with a slight shrug or puzzled look.`,
+    `Visual style: photorealistic, professional DSLR photography, bright natural daylight, warm educational atmosphere, clean uncluttered background, authentic Arab clothing, modest clothing and hijab for women where appropriate, natural candid expressions (not posed studio smiles), family-safe.`,
     `Composition: focus on the interaction; the main communicative action must be immediately obvious; no visual distractions; no unrelated objects.`,
     `Absolutely NO text of any kind anywhere in the image: no Arabic letters, no English letters, no numbers, no captions, no subtitles, no signs, no road signs, no labels, no logos, no watermarks, no speech bubbles containing writing, no writing on objects or clothing.`,
     `NO illustrations, NO cartoons, NO 3D renders, NO drawings, NO paintings, NO clipart, NO icons, NO infographics, NO screenshots, NO UI elements, NO symbolic or abstract art, NO collages, NO split screens, NO multi-panel compositions.`,
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 /**
@@ -187,7 +216,7 @@ export async function validateGrammarImage(
     if (!match) return { valid: true, issues: [] };
     const parsed = JSON.parse(match[0]);
     const issues: string[] = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 8) : [];
-    const checks: Array<[keyof typeof parsed, string]> = [
+    const checks: Array<[string, string]> = [
       ["photoreal", "not photorealistic"],
       ["noText", "contains visible text"],
       ["oneScene", "more than one scene / collage / split"],
@@ -196,6 +225,9 @@ export async function validateGrammarImage(
       ["teachesGrammar", "scene does not teach the grammar function"],
       ["unambiguous", "scene is ambiguous — could teach the wrong meaning"],
     ];
+    if (isQuestionWord(vocabulary)) {
+      checks.push(["momentOfAsking", "does not capture a live moment of asking / curiosity / inquiry"]);
+    }
     let valid = true;
     for (const [key, msg] of checks) {
       if (parsed[key] !== true) {
