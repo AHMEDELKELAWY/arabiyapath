@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
 import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
+import { useImagePreload } from "@/hooks/useImagePreload";
 
 interface CardRow {
   id: string;
@@ -124,6 +125,13 @@ export function LearnVocabBrowser({ unitId, onComplete, nextLabel = "Continue to
   }, [safeIdx, total, completed]);
 
   const cardRef = useScrollToTopOnChange<HTMLDivElement>(safeIdx);
+
+  // Preload adjacent card images so Next/Previous is instant.
+  useImagePreload([
+    cards?.[safeIdx + 1]?.image_url,
+    cards?.[safeIdx + 2]?.image_url,
+    cards?.[safeIdx - 1]?.image_url,
+  ]);
 
   if (isLoading) {
     return (
