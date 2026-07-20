@@ -49,6 +49,8 @@ import { AudioUploader } from "../AudioUploader";
 interface QuestionForm {
   prompt: string;
   type: string;
+  question_type: string;
+  difficulty: "easy" | "medium" | "hard";
   correct_answer: string;
   options_json: string[];
   order_index: number;
@@ -77,6 +79,8 @@ export function QuizzesTab() {
   const [questionForm, setQuestionForm] = useState<QuestionForm>({
     prompt: "",
     type: "multiple_choice",
+    question_type: "multiple_choice",
+    difficulty: "medium",
     correct_answer: "",
     options_json: ["", "", "", ""],
     order_index: 0,
@@ -164,6 +168,8 @@ export function QuizzesTab() {
     setQuestionForm({
       prompt: "",
       type: "multiple_choice",
+      question_type: "multiple_choice",
+      difficulty: "medium",
       correct_answer: "",
       options_json: ["", "", "", ""],
       order_index: 0,
@@ -176,6 +182,8 @@ export function QuizzesTab() {
     setQuestionForm({
       prompt: "",
       type: "multiple_choice",
+      question_type: "multiple_choice",
+      difficulty: "medium",
       correct_answer: "",
       options_json: ["", "", "", ""],
       order_index: (questions?.length || 0) + 1,
@@ -187,12 +195,14 @@ export function QuizzesTab() {
   const openEditQuestion = (question: any) => {
     setEditingQuestion(question);
     setCurrentQuizId(question.quiz_id);
-    const options = Array.isArray(question.options_json) 
-      ? question.options_json 
+    const options = Array.isArray(question.options_json)
+      ? question.options_json
       : [];
     setQuestionForm({
       prompt: question.prompt,
       type: question.type,
+      question_type: question.question_type || "multiple_choice",
+      difficulty: (question.difficulty as any) || "medium",
       correct_answer: question.correct_answer,
       options_json: [...options, "", "", "", ""].slice(0, 4),
       order_index: question.order_index,
