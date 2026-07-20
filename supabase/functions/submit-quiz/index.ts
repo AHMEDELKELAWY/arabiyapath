@@ -109,7 +109,14 @@ serve(async (req) => {
         if (!q) continue;
         const isCorrect = userAnswer === q.correct_answer;
         if (isCorrect) correctCount++;
-        idResults.push({ questionId: qid, correct: isCorrect, correctAnswer: q.correct_answer });
+        idResults.push({
+          questionId: qid,
+          correct: isCorrect,
+          correctAnswer: q.correct_answer,
+          userAnswer: userAnswer ?? null,
+          prompt: q.prompt,
+          explanation: explanationOf(q),
+        });
         totalQuestions++;
       }
       if (totalQuestions === 0) {
