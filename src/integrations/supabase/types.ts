@@ -1902,16 +1902,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          question_count: number | null
           unit_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          question_count?: number | null
           unit_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          question_count?: number | null
           unit_id?: string
         }
         Relationships: [

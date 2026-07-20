@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuiz, useSubmitQuiz, QuizSubmitResult } from "@/hooks/useLearning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,34 +26,20 @@ export default function QuizPage() {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data, isLoading } = useQuiz(quizId);
+  // useQuiz is called below with attemptSeed.
   const submitQuiz = useSubmitQuiz();
   const { playSound } = useSoundEffects();
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  // Keyed by question ID from the server-selected subset.
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizSubmitResult | null>(null);
   const [attemptSeed, setAttemptSeed] = useState(() => Date.now());
 
-  function shuffle<T>(arr: T[]): T[] {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  const rawQuestions = data?.questions;
-  const questions = useMemo(() => {
-    if (!rawQuestions) return [];
-    return shuffle(rawQuestions).map((q) => ({
-      ...q,
-      options: shuffle(q.options as string[]),
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawQuestions, attemptSeed]);
+  // Server serves a random subset per attempt; attemptSeed forces refetch on retry.
+  const { data, isLoading } = useQuiz(quizId, attemptSeed);
+  const questions = data?.questions ?? [];
 
   if (isLoading) {
     return (
@@ -86,7 +72,8 @@ export default function QuizPage() {
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
   const handleAnswer = (answer: string) => {
-    setAnswers(prev => ({ ...prev, [currentQuestion]: answer }));
+    if (!question) return;
+    setAnswers(prev => ({ ...prev, [question.id]: answer }));
   };
 
   const handleNext = () => {
@@ -103,13 +90,8 @@ export default function QuizPage() {
 
   const handleSubmit = async () => {
     try {
-      // Map shuffled display answers back to server's original question order.
-      const payload: Record<number, string> = {};
-      questions.forEach((q, displayIdx) => {
-        const a = answers[displayIdx];
-        if (a !== undefined) payload[q.originalIndex] = a;
-      });
-      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers: payload });
+      // Answers are keyed by question ID; server scores against the served subset.
+      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers });
       setQuizResult(result);
       setShowResults(true);
       
@@ -212,7 +194,7 @@ export default function QuizPage() {
                 <h3 className="font-semibold mb-4">Answer Review</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {questions.map((q, index) => {
-                    const result = results[q.originalIndex];
+                    const result = quizResult.idResults?.find((r) => r.questionId === q.id);
                     return (
                       <div 
                         key={index}

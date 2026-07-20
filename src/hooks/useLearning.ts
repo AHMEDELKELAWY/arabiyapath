@@ -225,42 +225,41 @@ export function useMarkLessonComplete() {
   });
 }
 
-export function useQuiz(quizId?: string) {
+export interface StartQuizQuestion {
+  id: string;
+  type: string;
+  prompt: string;
+  audio_url: string | null;
+  options: string[];
+}
+
+export function useQuiz(quizId?: string, attemptSeed?: number) {
   return useQuery({
-    queryKey: ["quiz", quizId],
+    queryKey: ["quiz", quizId, attemptSeed],
     queryFn: async () => {
       if (!quizId) return null;
-      
-      const { data: quiz, error: quizError } = await supabase
-        .from("quizzes")
-        .select("*, units(*, levels(*, dialects(*)))")
-        .eq("id", quizId)
-        .single();
-      
-      if (quizError) throw quizError;
-      
-      // Only fetch public question data - no correct_answer
-      const { data: questions, error: questionsError } = await supabase
-        .from("quiz_questions")
-        .select("id, quiz_id, type, prompt, options_json, audio_url, order_index, created_at")
-        .eq("quiz_id", quizId)
-        .order("order_index");
-      
-      if (questionsError) throw questionsError;
-      
+
+      const { data, error } = await supabase.functions.invoke("start-quiz", {
+        body: { quizId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
       return {
-        quiz,
-        questions: questions.map((q, idx) => ({
-          ...q,
-          options: q.options_json as string[],
-          originalIndex: idx,
-        })),
-        unit: quiz.units,
-        level: quiz.units?.levels,
-        dialect: quiz.units?.levels?.dialects,
+        quiz: data.quiz,
+        questions: data.questions as StartQuizQuestion[],
+        unit: data.unit,
+        level: data.level,
+        dialect: data.dialect,
+        totalPool: data.totalPool as number,
       };
     },
     enabled: !!quizId,
+    // Every mount / attempt should get a fresh random subset from the server.
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -270,6 +269,7 @@ export interface QuizSubmitResult {
   passed: boolean;
   correctCount: number;
   totalQuestions: number;
+  idResults: { questionId: string; correct: boolean; correctAnswer: string }[];
   results: { questionIndex: number; correct: boolean; correctAnswer: string }[];
   certificateAwarded: boolean;
 }

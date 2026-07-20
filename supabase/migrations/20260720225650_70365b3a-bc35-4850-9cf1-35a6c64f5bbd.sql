@@ -1,0 +1,2 @@
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS question_count integer;
+COMMENT ON COLUMN public.quizzes.question_count IS 'Optional target number of questions to serve per attempt from the quiz''s question pool. NULL means serve all questions.';
