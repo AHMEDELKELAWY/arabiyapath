@@ -383,7 +383,8 @@ export function TestEditor({ unit }: { unit: any }) {
 
 function SortableQuestionRow({
   q, index, count, regenerating,
-  onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown, onRegenerate,
+  onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown,
+  onRegenerate, onEasier, onHarder, onImproveDistractors, onRewrite, onChangeType,
 }: {
   q: TestQuestion;
   index: number;
@@ -395,6 +396,11 @@ function SortableQuestionRow({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRegenerate: () => void;
+  onEasier: () => void;
+  onHarder: () => void;
+  onImproveDistractors: () => void;
+  onRewrite: () => void;
+  onChangeType: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: q.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
