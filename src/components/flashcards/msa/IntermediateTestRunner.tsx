@@ -188,7 +188,8 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     return questions.reduce((n, qq) => (isCorrect(qq, answers[qq.id]) ? n + 1 : n), 0);
   }, [questions, answers]);
 
-  if (isLoading) {
+  const [i, setIState] = [null, null] as any; // placeholder to prevent accidental usage
+
     return (
       <Card className="rounded-2xl">
         <CardContent className="p-6 space-y-4">
