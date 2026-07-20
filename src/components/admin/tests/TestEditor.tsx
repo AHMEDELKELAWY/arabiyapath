@@ -328,7 +328,12 @@ export function TestEditor({ unit }: { unit: any }) {
                   onDelete={() => setPendingDelete(q)}
                   onMoveUp={() => moveBy(q, -1)}
                   onMoveDown={() => moveBy(q, 1)}
-                  onRegenerate={() => regenerateOne(q)}
+                  onRegenerate={() => regenerateOne(q, "regenerate")}
+                  onEasier={() => regenerateOne(q, "easier")}
+                  onHarder={() => regenerateOne(q, "harder")}
+                  onImproveDistractors={() => regenerateOne(q, "improve_distractors")}
+                  onRewrite={() => regenerateOne(q, "rewrite")}
+                  onChangeType={() => setChangeTypeFor(q)}
                 />
               ))}
             </div>
