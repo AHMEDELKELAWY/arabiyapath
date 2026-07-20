@@ -298,7 +298,25 @@ export default function AdminFlashcardCards({
     try {
       if (!unitSlug) throw new Error("Unit has no slug");
       const { data, error } = await supabase.functions.invoke("generate-flashcard-image", { body: { cardId: c.id } });
-      if (error) throw error;
+      if (error) {
+        // Extract the actual validator/edge-function reason from the response body
+        // (supabase-js exposes it via error.context.response for non-2xx replies).
+        let detail = error.message;
+        try {
+          const resp = (error as any)?.context?.response;
+          if (resp && typeof resp.json === "function") {
+            const body = await resp.clone().json();
+            if (body?.error === "vocab_rule_violation" && body?.reason) {
+              detail = `Rejected: ${body.reason}${body.vocabulary ? ` (item: "${body.vocabulary}")` : ""}`;
+            } else if (body?.reason) {
+              detail = body.reason;
+            } else if (body?.error) {
+              detail = typeof body.error === "string" ? body.error : JSON.stringify(body.error);
+            }
+          }
+        } catch { /* fall back to error.message */ }
+        throw new Error(detail);
+      }
       const b64 = (data as any)?.pngBase64;
       if (!b64) throw new Error("No image returned from generator");
       const bin = atob(b64);
