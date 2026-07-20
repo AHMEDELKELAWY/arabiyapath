@@ -12,6 +12,7 @@ import { LISTENING_SOURCE_KINDS } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
+import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 
 interface CardRow {
   id: string;
@@ -221,8 +222,13 @@ export function ListeningQuiz({ unitId, onComplete }: Props) {
 
   const tryAgain = () => setPicked(null);
 
+  const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
+
   return (
-    <Card className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow">
+    <Card
+      ref={cardRef}
+      className="rounded-2xl border-border/60 shadow-sm hover:shadow-md transition-shadow scroll-mt-[112px] md:scroll-mt-24"
+    >
       <CardContent className="p-4 md:p-5 space-y-4 md:space-y-5">
         <div className="space-y-2">
           <ActivityProgress current={i + 1} total={total} label="Question" />
