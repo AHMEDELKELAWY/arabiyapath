@@ -449,11 +449,11 @@ export default function IntermediateUnit() {
             className="w-full"
           >
             <div className="md:sticky md:top-16 md:z-30 -mx-4 px-4 py-2 md:bg-background/85 md:backdrop-blur md:border-b md:border-border/40">
-              <TabsList className="grid w-full h-auto grid-cols-2 md:grid-cols-4">
+              <TabsList className={cn("grid w-full h-auto grid-cols-2", hasGrammar ? "md:grid-cols-4" : "md:grid-cols-3")}>
                 {([
                   { v: "listening", label: "Listening", icon: Headphones },
                   { v: "learn", label: "Learn", icon: BookOpen },
-                  { v: "grammar", label: "Grammar", icon: ScrollText },
+                  ...(hasGrammar ? [{ v: "grammar", label: "Grammar", icon: ScrollText }] : []),
                   { v: "test", label: "Test", icon: GraduationCap },
                 ] as const).map((t) => (
                   <TabsTrigger
