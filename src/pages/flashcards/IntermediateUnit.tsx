@@ -496,11 +496,12 @@ export default function IntermediateUnit() {
                   unitId={unit.id}
                   onComplete={async () => {
                     if (!done.learn) await markCompleted("learn_completed_at");
-                    setActiveTab("grammar");
+                    setActiveTab(hasGrammar ? "grammar" : "test");
                   }}
-                  nextLabel="Continue to Grammar"
-                  nextIcon={ScrollText}
+                  nextLabel={hasGrammar ? "Continue to Grammar" : "Continue to Test"}
+                  nextIcon={hasGrammar ? ScrollText : GraduationCap}
                 />
+
               ) : (
                 <LockedCard icon={BookOpen} title="Learn" body="Study each vocabulary card with Arabic, transliteration, English, image and audio." />
               )}
