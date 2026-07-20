@@ -12,6 +12,7 @@ import { LEARN_KIND } from "./unitTemplate";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveSpokenArabicResume, resolveSpokenArabicResume } from "@/lib/spokenArabicResume";
 import { markCardsReviewed } from "@/lib/flashcards/markReviewed";
+import { useScrollToTopOnChange } from "@/hooks/useScrollToTopOnChange";
 
 interface CardRow {
   id: string;
