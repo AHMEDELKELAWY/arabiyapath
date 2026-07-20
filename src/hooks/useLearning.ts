@@ -250,9 +250,10 @@ export function useQuiz(quizId?: string) {
       
       return {
         quiz,
-        questions: questions.map(q => ({
+        questions: questions.map((q, idx) => ({
           ...q,
-          options: shuffleArray(q.options_json as string[]),
+          options: q.options_json as string[],
+          originalIndex: idx,
         })),
         unit: quiz.units,
         level: quiz.units?.levels,
