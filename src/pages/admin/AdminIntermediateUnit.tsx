@@ -20,8 +20,9 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
+import { TestEditor } from "@/components/admin/tests/TestEditor";
 import {
-  Headphones, BookOpen, ScrollText, ClipboardCheck, Sparkles,
+  Headphones, BookOpen, ScrollText, ClipboardCheck,
   Video, Youtube, Loader2, Trash2, Upload,
 } from "lucide-react";
 
@@ -100,7 +101,7 @@ export default function AdminIntermediateUnit() {
         </TabsContent>
 
         <TabsContent value="test" className="mt-4">
-          <TestTab unit={unit} />
+          <TestEditor unit={unit} />
         </TabsContent>
       </Tabs>
     </AdminLayout>
@@ -246,103 +247,6 @@ function toYouTubeEmbed(url: string): string {
 }
 
 
-/* ---------------------------------- Test ---------------------------------- */
+/* Test tab moved to <TestEditor /> — see src/components/admin/tests/TestEditor.tsx */
 
-function TestTab({ unit }: { unit: any }) {
-  const qc = useQueryClient();
-  const [generating, setGenerating] = useState(false);
-
-  const { data: questions } = useQuery<TestQuestion[]>({
-    queryKey: ["admin-intermediate-tests", unit.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("flashcard_unit_tests")
-        .select("*")
-        .eq("unit_id", unit.id)
-        .order("order_index");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const hasQuestions = (questions?.length ?? 0) > 0;
-
-  const generate = async () => {
-    if (!unit.lesson_topic || unit.lesson_topic.trim().length < 10) {
-      return toast({
-        title: "Add a Lesson Topic first",
-        description: "The AI uses the Lesson Topic as its main reference. Edit the unit and fill it in.",
-        variant: "destructive",
-      });
-    }
-    if (hasQuestions && !confirm("Regenerate will delete the current test and create a new one. Continue?")) return;
-
-    setGenerating(true);
-    const { data, error } = await supabase.functions.invoke("generate-intermediate-test", {
-      body: { unit_id: unit.id },
-    });
-    setGenerating(false);
-    if (error) return toast({ title: "Generation failed", description: error.message, variant: "destructive" });
-    toast({ title: `Generated ${data?.inserted ?? 0} questions` });
-    qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
-  };
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
-          <div>
-            <p className="text-sm font-medium">AI-generated Test</p>
-            <p className="text-xs text-muted-foreground">
-              Auto-generated from Lesson Topic, Learn vocabulary and Grammar. No manual authoring needed —
-              just click Generate. Regenerate replaces the existing set.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={generate} disabled={generating}>
-              {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              {hasQuestions ? "Regenerate Test" : "Generate Test"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {!hasQuestions && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          No questions yet. Click <strong>Generate Test</strong> to create a full Intermediate assessment.
-        </p>
-      )}
-
-      <div className="grid gap-2">
-        {questions?.map((q) => (
-          <Card key={q.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs px-2 py-0.5 rounded bg-muted">{q.question_type.replace(/_/g, " ")}</span>
-                <span className="text-xs text-muted-foreground">#{q.order_index}</span>
-              </div>
-              <p className="text-sm font-medium">{q.question}</p>
-              {q.passage && (
-                <p className="text-xs text-muted-foreground mt-1 italic" dir="rtl" lang="ar">
-                  {q.passage}
-                </p>
-              )}
-              {q.options && Array.isArray(q.options) && (
-                <ul className="mt-1 text-xs text-muted-foreground list-disc list-inside">
-                  {q.options.map((o: any, i: number) => (
-                    <li key={i}>{typeof o === "string" ? o : JSON.stringify(o)}</li>
-                  ))}
-                </ul>
-              )}
-              <p className="text-xs mt-1"><strong>Answer:</strong> {typeof q.correct_answer === "string" ? q.correct_answer : JSON.stringify(q.correct_answer)}</p>
-              {q.explanation && (
-                <p className="text-xs mt-1 text-muted-foreground"><strong>Why:</strong> {q.explanation}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
 

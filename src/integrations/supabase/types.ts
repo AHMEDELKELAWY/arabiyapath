@@ -952,11 +952,14 @@ export type Database = {
           audio_url: string | null
           correct_answer: Json
           created_at: string
+          difficulty: string | null
           explanation: string | null
           id: string
+          image_url: string | null
           options: Json | null
           order_index: number
           passage: string | null
+          points: number
           published: boolean
           question: string
           question_type: string
@@ -967,11 +970,14 @@ export type Database = {
           audio_url?: string | null
           correct_answer: Json
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
+          image_url?: string | null
           options?: Json | null
           order_index?: number
           passage?: string | null
+          points?: number
           published?: boolean
           question: string
           question_type: string
@@ -982,11 +988,14 @@ export type Database = {
           audio_url?: string | null
           correct_answer?: Json
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
+          image_url?: string | null
           options?: Json | null
           order_index?: number
           passage?: string | null
+          points?: number
           published?: boolean
           question?: string
           question_type?: string
