@@ -80,7 +80,7 @@ export default function QuizPage() {
     );
   }
 
-  const { quiz, questions, unit, level, dialect } = data;
+  const { quiz, unit, level, dialect } = data;
   const totalQuestions = questions.length;
   const question = questions[currentQuestion];
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
@@ -103,8 +103,13 @@ export default function QuizPage() {
 
   const handleSubmit = async () => {
     try {
-      // Send answers to server for validation
-      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers });
+      // Map shuffled display answers back to server's original question order.
+      const payload: Record<number, string> = {};
+      questions.forEach((q, displayIdx) => {
+        const a = answers[displayIdx];
+        if (a !== undefined) payload[q.originalIndex] = a;
+      });
+      const result = await submitQuiz.mutateAsync({ quizId: quizId!, answers: payload });
       setQuizResult(result);
       setShowResults(true);
       
@@ -126,6 +131,7 @@ export default function QuizPage() {
     setAnswers({});
     setShowResults(false);
     setQuizResult(null);
+    setAttemptSeed(Date.now());
   };
 
   const allAnswered = Object.keys(answers).length === totalQuestions;
