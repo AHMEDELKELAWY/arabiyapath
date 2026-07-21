@@ -216,7 +216,7 @@ Return STRICT JSON only:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessment items. Every question must measure a clear learning objective with realistic distractors and prefer understanding/application over rote recall. Silently self-review before returning. Output valid JSON only." },
+          { role: "system", content: "You are an experienced Arabic teacher regenerating one item for a LESSON REVIEW. You may only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Match the plain Beginner-style tone. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
