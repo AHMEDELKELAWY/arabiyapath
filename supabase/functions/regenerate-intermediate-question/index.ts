@@ -16,9 +16,8 @@ import { z } from "npm:zod";
 
 const ALLOWED_TYPES = [
   "multiple_choice","grammar_selection","conversation_completion",
-  "vocab_in_context","fill_in_blank","sentence_ordering","word_ordering",
-  "matching","reading_comprehension","listening_comprehension",
-  "true_false","image_question","choose_correct_sentence","find_the_mistake",
+  "vocab_in_context","fill_in_blank","matching",
+  "image_question","choose_correct_sentence",
 ] as const;
 
 const MODES = ["regenerate","easier","harder","improve_distractors","rewrite","change_type"] as const;
@@ -29,7 +28,7 @@ const BodySchema = z.object({
   target_type: z.enum(ALLOWED_TYPES).optional(),
 });
 
-const AI_VERSION = "int-test/v4-beginner-style";
+const AI_VERSION = "int-test/v6-restricted-types";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
