@@ -29,7 +29,7 @@ const BodySchema = z.object({
   target_type: z.enum(ALLOWED_TYPES).optional(),
 });
 
-const AI_VERSION = "int-test/v3-pedagogical";
+const AI_VERSION = "int-test/v4-beginner-style";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -106,37 +106,36 @@ Deno.serve(async (req) => {
     const modeInstruction = (() => {
       switch (mode) {
         case "easier":
-          return `Rewrite as an EASIER version of the same question (difficulty="easy"). Keep the same question_type. Use simpler vocabulary, more obvious context, and clearer distractors. Still test understanding — not pure recall.`;
+          return `Rewrite as an EASIER version of the same question (difficulty="easy"). Keep the same question_type. Use the most obvious taught vocabulary, very clear context, and clearly wrong distractors. Pure recognition is fine.`;
         case "harder":
-          return `Rewrite as a HARDER version of the same question (difficulty="hard"). Keep the same question_type. Require inference, subtler distinctions, or combined grammar+vocabulary reasoning. Distractors must be very close to the correct answer.`;
+          return `Rewrite as a slightly firmer version of the same question (difficulty="medium"). Keep the same question_type. Stay in the plain Beginner style — do NOT add inference, trick wording, near-identical distractors, or multi-step reasoning. "Harder" here just means the correct answer is not immediately obvious at a glance, while the question itself remains simple and lesson-anchored.`;
         case "improve_distractors":
-          return `KEEP the original question text and correct_answer EXACTLY the same. ONLY replace the distractor options with more plausible ones (near-synonyms, close grammar forms, sentences that are grammatical but wrong-meaning). Do not weaken. correct_answer must remain in the options array.
+          return `KEEP the original question text and correct_answer EXACTLY the same. ONLY replace the distractor options with plausible ones drawn from the SAME lesson (other taught vocab items, other taught forms). Distractors should be clearly wrong on reflection, not near-identical traps. correct_answer must remain in the options array.
 Original question: ${JSON.stringify(existing.question)}
 Original correct_answer: ${JSON.stringify(existing.correct_answer)}`;
         case "rewrite":
-          return `Rewrite the question in a fresh way (new wording, new example sentence, new distractors) but keep the SAME question_type and the SAME underlying skill being tested. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
+          return `Rewrite the question in a fresh way (new wording, new example, new distractors) but keep the SAME question_type and the SAME underlying skill being tested. Stay in plain Beginner style. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
         case "change_type":
-          return `Convert the question to a DIFFERENT type: "${finalType}". Test a similar concept but adapt to that type's formatting rules. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
+          return `Convert the question to a DIFFERENT type: "${finalType}". Test the same taught item, adapted to that type's formatting rules. Stay in plain Beginner style. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
         case "regenerate":
         default:
-          return `Produce a NEW question of type "${finalType}" testing the same skill (or a related one) at difficulty="${existing.difficulty ?? "medium"}". Vary the wording, example, and distractors — do not repeat the previous version.`;
+          return `Produce a NEW question of type "${finalType}" testing the same taught item (or a closely related one) at difficulty="${existing.difficulty ?? "medium"}". Vary the wording, example, and distractors — do not repeat the previous version. Stay in plain Beginner style.`;
       }
     })();
 
-    const prompt = `You are an experienced Arabic language TEACHER regenerating ONE question for a LESSON REVIEW. You are NOT inventing a new exam. You are checking whether the learner remembers WHAT WAS TAUGHT IN THIS LESSON.
+    const prompt = `You are regenerating ONE question for a SIMPLE lesson review. This is not an exam. It is a friendly, confidence-building check that the learner remembers what was just taught.
+
+Match the style of Beginner-level assessments on this platform: short, plain, direct, one idea per question, no clever framing, no trick wording, no multi-step reasoning. The learner should feel "this is exactly what I just learned".
 
 ============================================================
-## SOURCE OF TRUTH (ABSOLUTE)
+## SOURCE OF TRUTH (ABSOLUTE — DO NOT REMOVE)
 ============================================================
 The ONLY allowed source is this lesson's materials below (transcript, Learn vocabulary, Grammar cards, Listening/video). If a concept, word, meaning, rule, name, or fact is NOT present below, you MUST NOT ask about it.
 
-Every question must be traceable to a specific item from the materials (a specific vocab card, grammar card, sentence, or listening segment). If you cannot map it to a specific item, DO NOT return it.
-
-## Beginner style is the reference
-Match the plain, direct style of Beginner-level assessments: short, unambiguous, checking recognition or correct usage of taught items. No clever framing, no trick wording, no inference beyond the lesson.
+Every question must be traceable to a specific item from the materials (a specific vocab card, grammar card, sentence, or listening segment). Record it in "lesson_concepts" / "vocabulary_used" / "grammar_concepts_used" using strings that appear in the materials exactly.
 
 ## Forbidden
-Never ask about: information not taught, hidden details, character motivations, future events, general knowledge, cultural trivia not in the lesson, "why do you think…", or anything requiring guessing outside the lesson.
+Never ask about: information not taught, hidden details, character motivations, future events, general knowledge, cultural trivia not in the lesson, "why do you think…", opinion questions, "which is NOT…" traps, or anything requiring guessing beyond the lesson.
 
 ============================================================
 ## LESSON MATERIALS (the ONLY allowed source)
@@ -179,10 +178,10 @@ ${modeInstruction}
 - image_question / choose_correct_sentence: "image_url" MUST be one of the listed URLs above.
 
 ## Distractors
-Draw distractors from the SAME lesson pool where possible (near-meaning taught vocab, wrong gender/plural/tense/preposition of a taught form, grammatically valid but wrong-meaning sentence). Never nonsense, never unrelated, never obvious. Fully vowelize Arabic.
+Simple, plausible, drawn from the SAME lesson pool (other taught vocab items, other taught forms of the same word, a short taught phrase that doesn't fit). Never nonsense, never unrelated. Do NOT craft near-identical distractors designed to trick the learner — this is a fair check, not a discrimination task. Fully vowelize Arabic.
 
 ## Teaching explanation
-"teaching_explanation" (2–4 English sentences) must point to the specific lesson item and explain why each key distractor models a realistic learner mistake.
+"teaching_explanation" (1–2 short English sentences) points to the specific lesson item and plainly says why the correct answer is right. Friendly tone, no jargon.
 
 ## Final validation (silent)
 Before returning: (1) the question maps to a specific item in the materials above; (2) the correct answer is verifiable from those materials; (3) no outside knowledge or inference is required; (4) the tone matches plain Beginner-style assessment wording. If any check fails, rewrite.
@@ -216,7 +215,7 @@ Return STRICT JSON only:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are an experienced Arabic teacher regenerating one item for a LESSON REVIEW. You may only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Match the plain Beginner-style tone. Output valid JSON only." },
+          { role: "system", content: "You regenerate ONE Beginner-style question for a simple Arabic lesson review. Only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Keep the question short, plain, and confidence-building — no clever framing, no inference, no tricky distractors. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
