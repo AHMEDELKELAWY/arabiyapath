@@ -287,6 +287,9 @@ function normalizeQualityScore(v: any): number | null {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.min(100, n));
+}
+
+
 
 function toStrArr(v: any): string[] {
   if (!v) return [];
