@@ -281,7 +281,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
               </span>
             </div>
             <div className="space-y-3">
-              {questions.map((qq, idx) => {
+              {sessionQuestions.map((qq, idx) => {
                 const ua = answers[qq.id];
                 const ok = isCorrect(qq, ua);
                 const correctDisplay = formatAnswer(qq.correct_answer);
