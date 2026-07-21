@@ -123,22 +123,39 @@ Original correct_answer: ${JSON.stringify(existing.correct_answer)}`;
       }
     })();
 
-    const prompt = `You are a senior Arabic curriculum designer regenerating ONE INTERMEDIATE (CEFR B1) test question.
+    const prompt = `You are an experienced Arabic language TEACHER regenerating ONE question for a LESSON REVIEW. You are NOT inventing a new exam. You are checking whether the learner remembers WHAT WAS TAUGHT IN THIS LESSON.
+
+============================================================
+## SOURCE OF TRUTH (ABSOLUTE)
+============================================================
+The ONLY allowed source is this lesson's materials below (transcript, Learn vocabulary, Grammar cards, Listening/video). If a concept, word, meaning, rule, name, or fact is NOT present below, you MUST NOT ask about it.
+
+Every question must be traceable to a specific item from the materials (a specific vocab card, grammar card, sentence, or listening segment). If you cannot map it to a specific item, DO NOT return it.
+
+## Beginner style is the reference
+Match the plain, direct style of Beginner-level assessments: short, unambiguous, checking recognition or correct usage of taught items. No clever framing, no trick wording, no inference beyond the lesson.
+
+## Forbidden
+Never ask about: information not taught, hidden details, character motivations, future events, general knowledge, cultural trivia not in the lesson, "why do you think…", or anything requiring guessing outside the lesson.
+
+============================================================
+## LESSON MATERIALS (the ONLY allowed source)
+============================================================
 
 ## Unit
 Title (EN): ${unit?.title_en ?? ""}
 Title (AR): ${unit?.title_ar ?? ""}
-Lesson topic: ${unit?.lesson_topic ?? "(none)"}
-Video attached: ${unit?.video_url || unit?.video_storage_path ? "yes" : "no"}
+Lesson topic / transcript: ${unit?.lesson_topic ?? "(none — do not invent one)"}
+Video attached: ${unit?.video_url || unit?.video_storage_path ? "yes" : "no (do NOT produce listening_comprehension)"}
 
 ## Learn vocabulary
 ${vocabList || "(none)"}
 
-## Vocabulary with images
+## Vocabulary with images (only these image URLs may be used)
 ${imageList || "(none)"}
 
 ## Grammar
-${grammarList || "(none)"}
+${grammarList || "(none — do NOT invent grammar rules)"}
 
 ${sibList ? `## Other questions already in this test (DO NOT REPEAT)
 ${sibList}
@@ -158,23 +175,17 @@ ${modeInstruction}
 - fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is the correct fill.
 - sentence_ordering / word_ordering: options is shuffled tokens array; correct_answer is tokens in correct order.
 - matching: options is 4 {"left","right"} pairs; correct_answer is {"left":"right",...}.
-- reading_comprehension: include a 2–4 sentence Arabic "passage"; 4 options; correct_answer is one option.
-- image_question / choose_correct_sentence: set "image_url" to one of the listed image URLs above.
+- reading_comprehension: 2–4 Arabic-sentence "passage" built ONLY from taught vocabulary/grammar; 4 options; correct_answer is one option.
+- image_question / choose_correct_sentence: "image_url" MUST be one of the listed URLs above.
 
-## Pedagogy (mandatory)
-Write this like an experienced Arabic teacher, not a random generator.
-- Before writing, silently answer: "What specific learning outcome does this question measure?" Pick ONE learning_objective from:
-  vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
-  listening_comprehension | listening_inference | reading_comprehension | reading_inference |
-  sentence_construction | word_order | image_interpretation | context_understanding |
-  everyday_communication
-- Classify cognitive_level (1=Recognition, 2=Recall, 3=Understanding, 4=Application). Prefer 3–4 whenever possible.
-- Distractors must model realistic learner mistakes (near-synonyms, wrong gender/plural/tense/preposition, similar-sounding word, grammatical-but-wrong-meaning). Never nonsense or obvious.
-- Do not test pure memorization when the lesson supports understanding.
-- Do not duplicate any sibling question's concept or wording.
-- Arabic must be fully vowelized (tashkeel) and sound natural.
-- Provide a "teaching_explanation" (2–4 English sentences) that explains WHY the answer is correct AND why each key distractor is wrong. This is shown after submission.
-- Silently self-score 0–100 (educational_value, clarity, authenticity, distractor_quality, alignment, naturalness). If below 70, rewrite before returning.
+## Distractors
+Draw distractors from the SAME lesson pool where possible (near-meaning taught vocab, wrong gender/plural/tense/preposition of a taught form, grammatically valid but wrong-meaning sentence). Never nonsense, never unrelated, never obvious. Fully vowelize Arabic.
+
+## Teaching explanation
+"teaching_explanation" (2–4 English sentences) must point to the specific lesson item and explain why each key distractor models a realistic learner mistake.
+
+## Final validation (silent)
+Before returning: (1) the question maps to a specific item in the materials above; (2) the correct answer is verifiable from those materials; (3) no outside knowledge or inference is required; (4) the tone matches plain Beginner-style assessment wording. If any check fails, rewrite.
 
 Return STRICT JSON only:
 {
@@ -187,15 +198,16 @@ Return STRICT JSON only:
   "teaching_explanation": "string",
   "image_url": "string or null",
   "difficulty": "easy" | "medium" | "hard",
-  "learning_objective": "<one of the objectives>",
+  "learning_objective": "<one of: vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage | listening_comprehension | reading_comprehension | sentence_construction | word_order | image_interpretation | context_understanding | everyday_communication>",
   "cognitive_level": 1 | 2 | 3 | 4,
   "estimated_time_seconds": 20-180,
   "quality_score": 0-100,
   "skills_tested": ["..."],
-  "lesson_concepts": ["..."],
-  "vocabulary_used": ["..."],
-  "grammar_concepts_used": ["..."]
+  "lesson_concepts": ["<exact string(s) from the materials above>"],
+  "vocabulary_used": ["<exact Arabic word(s) from the Learn vocabulary above>"],
+  "grammar_concepts_used": ["<exact string(s) from the Grammar section above>"]
 }`;
+
 
     const gwRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -204,7 +216,7 @@ Return STRICT JSON only:
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessment items. Every question must measure a clear learning objective with realistic distractors and prefer understanding/application over rote recall. Silently self-review before returning. Output valid JSON only." },
+          { role: "system", content: "You are an experienced Arabic teacher regenerating one item for a LESSON REVIEW. You may only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Match the plain Beginner-style tone. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
       }),
@@ -287,6 +299,9 @@ function normalizeQualityScore(v: any): number | null {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.min(100, n));
+}
+
+
 
 function toStrArr(v: any): string[] {
   if (!v) return [];
