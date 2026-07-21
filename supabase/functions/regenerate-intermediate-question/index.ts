@@ -144,7 +144,7 @@ Never ask about: information not taught, hidden details, character motivations, 
 Title (EN): ${unit?.title_en ?? ""}
 Title (AR): ${unit?.title_ar ?? ""}
 Lesson topic / transcript: ${unit?.lesson_topic ?? "(none — do not invent one)"}
-Video attached: ${unit?.video_url || unit?.video_storage_path ? "yes" : "no (do NOT produce listening_comprehension)"}
+Video attached: ${unit?.video_url || unit?.video_storage_path ? "yes" : "no"}
 
 ## Learn vocabulary
 ${vocabList || "(none)"}
@@ -167,14 +167,19 @@ Correct answer: ${JSON.stringify(existing.correct_answer)}
 ## Mode: ${mode}
 ${modeInstruction}
 
-## Formatting rules (must follow for type "${finalType}")
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
-- true_false: options = ["True","False"]; correct_answer = "True" or "False".
-- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is the correct fill.
-- sentence_ordering / word_ordering: options is shuffled tokens array; correct_answer is tokens in correct order.
-- matching: options is 4 {"left","right"} pairs; correct_answer is {"left":"right",...}.
-- reading_comprehension: 2–4 Arabic-sentence "passage" built ONLY from taught vocabulary/grammar; 4 options; correct_answer is one option.
-- image_question / choose_correct_sentence: "image_url" MUST be one of the listed URLs above.
+## ALLOWED question types (use ONLY these — nothing else is permitted)
+multiple_choice, grammar_selection, conversation_completion, vocab_in_context,
+fill_in_blank, matching, image_question, choose_correct_sentence.
+
+FORBIDDEN types (never generate): true_false, reading_comprehension, listening_comprehension,
+sentence_ordering, word_ordering, find_the_mistake, "why" / inference / prediction /
+explanation questions, open-ended / short-answer / essay, select-all / multi-select.
+
+## Formatting rules (must follow for type "${finalType}") — MC-style types use EXACTLY 3 options
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / choose_correct_sentence / image_question: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
+- fill_in_blank: question contains "____"; options is EXACTLY 3 candidate fills; correct_answer is the correct fill.
+- matching: options is 3 {"left","right"} pairs; correct_answer is {"left":"right",...}.
+- image_question: "image_url" MUST be one of the listed URLs above.
 
 ## Distractors
 Simple, plausible, drawn from the SAME lesson pool (other taught vocab items, other taught forms of the same word, a short taught phrase that doesn't fit). Never nonsense, never unrelated. Do NOT craft near-identical distractors designed to trick the learner — this is a fair check, not a discrimination task. Fully vowelize Arabic.
