@@ -389,30 +389,39 @@ For every question, verify:
       });
     };
 
-    // Drop low-quality AND ungrounded questions, then enforce spacing.
+    // Drop low-quality AND ungrounded questions.
     const passed = questions.filter((q: any) => {
       const s = Number(q?.quality_score);
       const qualityOk = !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
       return qualityOk && isGrounded(q);
     });
     const grounded = questions.filter(isGrounded);
-    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6)
+    const rawPool = passed.length >= Math.min(TARGET_QUESTIONS, 12)
       ? passed
-      : (grounded.length >= Math.min(TARGET_QUESTIONS, 6) ? grounded : questions);
+      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions);
 
-    const spaced = spaceConsecutiveTypes(shuffle(pool));
-    const finalQuestions = spaced.map(shuffleOptions);
+    // Tag category (fallback from question_type if AI omitted it) and clamp MC to 3 options.
+    const tagged = rawPool.map((q: any) => {
+      const cat = normalizeCategory(q.category) ?? inferCategoryFromType(q.question_type);
+      const clamped = clampMcOptions(q);
+      return { ...clamped, category: cat };
+    });
 
+    // Enforce the target distribution: pick exactly N per category, fill from other
+    // categories if a bucket is short (redistribute rule).
+    const finalQuestions = pickByDistribution(tagged, distribution);
+    finalQuestions.forEach(shuffleOptions);
 
     // Wipe existing draft
     await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
 
     const nowIso = new Date().toISOString();
-    const rows = finalQuestions.map((q, i) => ({
+    const rows = finalQuestions.map((q: any, i: number) => ({
       unit_id,
       order_index: i + 1,
       question_type: (ALLOWED_TYPES as readonly string[]).includes(q.question_type)
         ? q.question_type : "multiple_choice",
+      category: q.category ?? "vocabulary",
       question: String(q.question ?? "").slice(0, 2000),
       passage: q.passage ?? null,
       options: q.options ?? null,
@@ -420,7 +429,7 @@ For every question, verify:
       explanation: q.explanation ?? null,
       teaching_explanation: q.teaching_explanation ?? null,
       image_url: q.image_url ?? null,
-      difficulty: normalizeDifficulty(q.difficulty),
+      difficulty: "easy",
       learning_objective: normalizeObjective(q.learning_objective),
       cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
       estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
@@ -440,7 +449,7 @@ For every question, verify:
       return json({ error: insErr.message }, 500);
     }
 
-    return json({ inserted: rows.length, blueprint });
+    return json({ inserted: rows.length, distribution });
   } catch (e: any) {
     console.error("generate-intermediate-test crashed", e);
     return json({ error: e?.message ?? "internal error" }, 500);
