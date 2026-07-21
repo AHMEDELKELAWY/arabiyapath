@@ -212,24 +212,28 @@ If in doubt, drop the question and pick a simpler one about the same lesson item
 ============================================================
 ## QUESTION DESIGN
 ============================================================
-Produce EXACTLY ${TARGET_QUESTIONS} questions.
+Produce EXACTLY ${TARGET_QUESTIONS} questions in total.
+
+Category distribution (MUST match exactly):
+${distributionText}
+
+Tag every question with a "category" field, one of:
+  • "listening"   — the question is answered from the lesson VIDEO (what was said, what was heard).
+  • "vocabulary"  — the question tests a taught vocabulary word / meaning / image / usage.
+  • "grammar"     — the question tests a taught grammar rule / form / pattern.
 
 For each question:
-  1. Pick ONE specific lesson item (vocab card / grammar card / sentence / listening line).
-  2. Write a plain, Beginner-style question that checks whether the learner recognizes or can correctly use that exact item.
+  1. Pick ONE specific lesson item (vocab card / grammar card / listening line).
+  2. Write a plain, Beginner-style question that checks whether the learner recognizes that exact item.
   3. The correct answer must be directly verifiable from the materials.
 
-Blueprint (target mix, adapt only to what the lesson supports):
-${blueprintText}
-
-Skip any blueprint type whose required source material is missing (e.g. no images → skip image_question; no video → skip listening_comprehension; no grammar cards → skip grammar_selection).
+Suggested question types per category (pick the simplest that fits):
+  • listening  → listening_comprehension (preferred), true_false about what was said
+  • vocabulary → multiple_choice, matching, fill_in_blank, vocab_in_context, image_question, choose_correct_sentence
+  • grammar    → grammar_selection, fill_in_blank (grammar form), word_ordering, sentence_ordering
 
 ## Distractors
-Simple, plausible, drawn from the SAME lesson pool:
-  • another taught vocab item,
-  • a wrong but taught form of the same word,
-  • a short taught phrase that doesn't fit.
-Never nonsense, never unrelated, never obvious joke options. Do NOT craft "very close" or minimally-different distractors designed to trick the learner. The goal is a fair, clear check — not a difficult discrimination task.
+Simple, plausible, drawn from the SAME lesson pool. Never nonsense, never unrelated. Do NOT craft "very close" or minimally-different distractors designed to trick the learner.
 
 ## Quality rules
   • Arabic must be fully vowelized (tashkeel) and sound natural.
@@ -237,20 +241,19 @@ Never nonsense, never unrelated, never obvious joke options. Do NOT craft "very 
   • Do not reuse question stems.
   • Every correct answer must be defensible strictly from the lesson materials.
 
-## Type formats (strict)
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
+## Type formats (STRICT — note: multiple-choice types use exactly 3 options)
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question / reading_comprehension: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
 - true_false: options is ["True","False"]; correct_answer is "True" or "False".
-- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
+- fill_in_blank: question contains "____"; options is EXACTLY 3 candidate fills; correct_answer is one option string.
 - sentence_ordering / word_ordering: options is shuffled tokens; correct_answer is tokens in correct order.
-- matching: options is 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- reading_comprehension: "passage" is 1–3 short Arabic sentences BUILT ONLY from taught vocabulary/grammar; options 4; correct_answer one option. Ask a direct comprehension question (who/what/where), not inference.
+- matching: options is 3 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
 - image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above.
 
 ## Explanation
-"explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item. Keep "teaching_explanation" short and friendly — no jargon, no cognitive-science framing.
+"explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item.
 
 ## Difficulty
-Almost all questions should be "easy" or "medium". Do NOT produce "hard" questions unless the lesson content itself is unavoidably complex. Intermediate here means the vocabulary is more advanced than Beginner — the QUESTION STYLE stays plain and lesson-anchored.
+ALL questions must be "easy". No trick, analytical, inference, "why", or multi-step reasoning questions. The learner answers based only on what was explicitly taught.
 
 ## Learning objective (pick ONE, informational only)
 vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
@@ -263,14 +266,13 @@ image_interpretation | context_understanding | everyday_communication
 For every question, verify:
   ✓ It maps to a specific item in the materials above.
   ✓ The correct answer can be found or directly derived from those materials.
-  ✓ It does not depend on guessing, outside knowledge, or inference beyond the lesson.
-  ✓ Its style matches the plain, direct Beginner tone described above — a learner who just finished the lesson should feel confident, not tested.
-If any check fails, DISCARD the question and write a simpler one.
+  ✓ Its category tag matches what it actually tests.
+  ✓ Multiple-choice-style questions have exactly 3 options.
+  ✓ Its style matches the plain, direct Beginner tone above.
 
 ## Final set constraints
   • EXACTLY ${TARGET_QUESTIONS} questions.
-  • Use only question types whose source material exists in this lesson.
-  • No more than 2 consecutive questions of the same type.
+  • Category counts match the distribution above EXACTLY.
   • No two questions may share the same primary vocabulary item or grammar rule.
 
 ## Output — STRICT JSON only, no prose, no markdown fences
@@ -278,6 +280,7 @@ If any check fails, DISCARD the question and write a simpler one.
   "questions": [
     {
       "order_index": 1,
+      "category": "listening" | "vocabulary" | "grammar",
       "question_type": "<one of the allowed types>",
       "question": "string",
       "passage": "string or null",
@@ -286,10 +289,10 @@ If any check fails, DISCARD the question and write a simpler one.
       "explanation": "string",
       "teaching_explanation": "string",
       "image_url": "string or null",
-      "difficulty": "easy" | "medium",
+      "difficulty": "easy",
       "learning_objective": "<one of the objectives listed above>",
-      "cognitive_level": 1 | 2,
-      "estimated_time_seconds": 15-90,
+      "cognitive_level": 1,
+      "estimated_time_seconds": 15-60,
       "quality_score": 0-100,
       "skills_tested": ["reading","vocabulary","grammar","listening","writing"],
       "lesson_concepts": ["<exact string(s) from the materials>"],
