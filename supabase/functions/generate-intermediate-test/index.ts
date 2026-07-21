@@ -36,9 +36,22 @@ const ALLOWED_TYPES = [
   "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v4-beginner-style";
+const AI_VERSION = "int-test/v5-pool-of-20";
 const MIN_QUALITY_SCORE = 70;
-const TARGET_QUESTIONS = 10;
+const TARGET_QUESTIONS = 20;
+// Pool distribution (must sum to TARGET_QUESTIONS when all categories present).
+const POOL_MIX = { listening: 8, vocabulary: 6, grammar: 6 } as const;
+const MC_OPTION_TYPES = new Set([
+  "multiple_choice",
+  "grammar_selection",
+  "conversation_completion",
+  "vocab_in_context",
+  "listening_comprehension",
+  "reading_comprehension",
+  "choose_correct_sentence",
+  "image_question",
+  "fill_in_blank",
+]);
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
