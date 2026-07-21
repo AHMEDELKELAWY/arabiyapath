@@ -36,9 +36,22 @@ const ALLOWED_TYPES = [
   "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v4-beginner-style";
+const AI_VERSION = "int-test/v5-pool-of-20";
 const MIN_QUALITY_SCORE = 70;
-const TARGET_QUESTIONS = 10;
+const TARGET_QUESTIONS = 20;
+// Pool distribution (must sum to TARGET_QUESTIONS when all categories present).
+const POOL_MIX = { listening: 8, vocabulary: 6, grammar: 6 } as const;
+const MC_OPTION_TYPES = new Set([
+  "multiple_choice",
+  "grammar_selection",
+  "conversation_completion",
+  "vocab_in_context",
+  "listening_comprehension",
+  "reading_comprehension",
+  "choose_correct_sentence",
+  "image_question",
+  "fill_in_blank",
+]);
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -96,13 +109,11 @@ Deno.serve(async (req) => {
     const cardsWithImages = learn.filter((c: any) => !!c.image_url);
     const hasVideo = !!(unit.video_url || unit.video_storage_path);
 
-    /* ---------- Adaptive blueprint ---------- */
-    const blueprint = buildBlueprint({
-      vocabCount: learn.length,
-      grammarCount: grammar.length,
-      imageCount: cardsWithImages.length,
+    /* ---------- Fixed pool distribution (8/6/6, redistribute if missing) ---------- */
+    const distribution = buildDistribution({
       hasListening: hasVideo,
-      hasLessonTopic: !!(unit.lesson_topic && unit.lesson_topic.trim().length > 20),
+      hasGrammar: grammar.length >= 1,
+      hasVocabulary: learn.length >= 1,
     });
 
     const previousList = (previousQs ?? [])
@@ -118,8 +129,10 @@ Deno.serve(async (req) => {
       `- "${c.english_translation}" (${c.arabic_text}) → ${c.image_url}`
     ).join("\n");
 
-    const blueprintText = blueprint
-      .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
+    const distributionText =
+      `- ${distribution.listening} listening question(s)\n` +
+      `- ${distribution.vocabulary} vocabulary question(s)\n` +
+      `- ${distribution.grammar} grammar question(s)`;
 
     const prompt = `You are writing a SIMPLE lesson review for students who just finished this specific lesson. This is NOT an exam. It is a friendly, confidence-building check that the learner remembers what was just taught.
 
@@ -199,24 +212,28 @@ If in doubt, drop the question and pick a simpler one about the same lesson item
 ============================================================
 ## QUESTION DESIGN
 ============================================================
-Produce EXACTLY ${TARGET_QUESTIONS} questions.
+Produce EXACTLY ${TARGET_QUESTIONS} questions in total.
+
+Category distribution (MUST match exactly):
+${distributionText}
+
+Tag every question with a "category" field, one of:
+  • "listening"   — the question is answered from the lesson VIDEO (what was said, what was heard).
+  • "vocabulary"  — the question tests a taught vocabulary word / meaning / image / usage.
+  • "grammar"     — the question tests a taught grammar rule / form / pattern.
 
 For each question:
-  1. Pick ONE specific lesson item (vocab card / grammar card / sentence / listening line).
-  2. Write a plain, Beginner-style question that checks whether the learner recognizes or can correctly use that exact item.
+  1. Pick ONE specific lesson item (vocab card / grammar card / listening line).
+  2. Write a plain, Beginner-style question that checks whether the learner recognizes that exact item.
   3. The correct answer must be directly verifiable from the materials.
 
-Blueprint (target mix, adapt only to what the lesson supports):
-${blueprintText}
-
-Skip any blueprint type whose required source material is missing (e.g. no images → skip image_question; no video → skip listening_comprehension; no grammar cards → skip grammar_selection).
+Suggested question types per category (pick the simplest that fits):
+  • listening  → listening_comprehension (preferred), true_false about what was said
+  • vocabulary → multiple_choice, matching, fill_in_blank, vocab_in_context, image_question, choose_correct_sentence
+  • grammar    → grammar_selection, fill_in_blank (grammar form), word_ordering, sentence_ordering
 
 ## Distractors
-Simple, plausible, drawn from the SAME lesson pool:
-  • another taught vocab item,
-  • a wrong but taught form of the same word,
-  • a short taught phrase that doesn't fit.
-Never nonsense, never unrelated, never obvious joke options. Do NOT craft "very close" or minimally-different distractors designed to trick the learner. The goal is a fair, clear check — not a difficult discrimination task.
+Simple, plausible, drawn from the SAME lesson pool. Never nonsense, never unrelated. Do NOT craft "very close" or minimally-different distractors designed to trick the learner.
 
 ## Quality rules
   • Arabic must be fully vowelized (tashkeel) and sound natural.
@@ -224,20 +241,19 @@ Never nonsense, never unrelated, never obvious joke options. Do NOT craft "very 
   • Do not reuse question stems.
   • Every correct answer must be defensible strictly from the lesson materials.
 
-## Type formats (strict)
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
+## Type formats (STRICT — note: multiple-choice types use exactly 3 options)
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question / reading_comprehension: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
 - true_false: options is ["True","False"]; correct_answer is "True" or "False".
-- fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
+- fill_in_blank: question contains "____"; options is EXACTLY 3 candidate fills; correct_answer is one option string.
 - sentence_ordering / word_ordering: options is shuffled tokens; correct_answer is tokens in correct order.
-- matching: options is 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- reading_comprehension: "passage" is 1–3 short Arabic sentences BUILT ONLY from taught vocabulary/grammar; options 4; correct_answer one option. Ask a direct comprehension question (who/what/where), not inference.
+- matching: options is 3 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
 - image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above.
 
 ## Explanation
-"explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item. Keep "teaching_explanation" short and friendly — no jargon, no cognitive-science framing.
+"explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item.
 
 ## Difficulty
-Almost all questions should be "easy" or "medium". Do NOT produce "hard" questions unless the lesson content itself is unavoidably complex. Intermediate here means the vocabulary is more advanced than Beginner — the QUESTION STYLE stays plain and lesson-anchored.
+ALL questions must be "easy". No trick, analytical, inference, "why", or multi-step reasoning questions. The learner answers based only on what was explicitly taught.
 
 ## Learning objective (pick ONE, informational only)
 vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
@@ -250,14 +266,13 @@ image_interpretation | context_understanding | everyday_communication
 For every question, verify:
   ✓ It maps to a specific item in the materials above.
   ✓ The correct answer can be found or directly derived from those materials.
-  ✓ It does not depend on guessing, outside knowledge, or inference beyond the lesson.
-  ✓ Its style matches the plain, direct Beginner tone described above — a learner who just finished the lesson should feel confident, not tested.
-If any check fails, DISCARD the question and write a simpler one.
+  ✓ Its category tag matches what it actually tests.
+  ✓ Multiple-choice-style questions have exactly 3 options.
+  ✓ Its style matches the plain, direct Beginner tone above.
 
 ## Final set constraints
   • EXACTLY ${TARGET_QUESTIONS} questions.
-  • Use only question types whose source material exists in this lesson.
-  • No more than 2 consecutive questions of the same type.
+  • Category counts match the distribution above EXACTLY.
   • No two questions may share the same primary vocabulary item or grammar rule.
 
 ## Output — STRICT JSON only, no prose, no markdown fences
@@ -265,6 +280,7 @@ If any check fails, DISCARD the question and write a simpler one.
   "questions": [
     {
       "order_index": 1,
+      "category": "listening" | "vocabulary" | "grammar",
       "question_type": "<one of the allowed types>",
       "question": "string",
       "passage": "string or null",
@@ -273,10 +289,10 @@ If any check fails, DISCARD the question and write a simpler one.
       "explanation": "string",
       "teaching_explanation": "string",
       "image_url": "string or null",
-      "difficulty": "easy" | "medium",
+      "difficulty": "easy",
       "learning_objective": "<one of the objectives listed above>",
-      "cognitive_level": 1 | 2,
-      "estimated_time_seconds": 15-90,
+      "cognitive_level": 1,
+      "estimated_time_seconds": 15-60,
       "quality_score": 0-100,
       "skills_tested": ["reading","vocabulary","grammar","listening","writing"],
       "lesson_concepts": ["<exact string(s) from the materials>"],
@@ -373,30 +389,39 @@ If any check fails, DISCARD the question and write a simpler one.
       });
     };
 
-    // Drop low-quality AND ungrounded questions, then enforce spacing.
+    // Drop low-quality AND ungrounded questions.
     const passed = questions.filter((q: any) => {
       const s = Number(q?.quality_score);
       const qualityOk = !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
       return qualityOk && isGrounded(q);
     });
     const grounded = questions.filter(isGrounded);
-    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6)
+    const rawPool = passed.length >= Math.min(TARGET_QUESTIONS, 12)
       ? passed
-      : (grounded.length >= Math.min(TARGET_QUESTIONS, 6) ? grounded : questions);
+      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions);
 
-    const spaced = spaceConsecutiveTypes(shuffle(pool));
-    const finalQuestions = spaced.map(shuffleOptions);
+    // Tag category (fallback from question_type if AI omitted it) and clamp MC to 3 options.
+    const tagged = rawPool.map((q: any) => {
+      const cat = normalizeCategory(q.category) ?? inferCategoryFromType(q.question_type);
+      const clamped = clampMcOptions(q);
+      return { ...clamped, category: cat };
+    });
 
+    // Enforce the target distribution: pick exactly N per category, fill from other
+    // categories if a bucket is short (redistribute rule).
+    const finalQuestions = pickByDistribution(tagged, distribution);
+    finalQuestions.forEach(shuffleOptions);
 
     // Wipe existing draft
     await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
 
     const nowIso = new Date().toISOString();
-    const rows = finalQuestions.map((q, i) => ({
+    const rows = finalQuestions.map((q: any, i: number) => ({
       unit_id,
       order_index: i + 1,
       question_type: (ALLOWED_TYPES as readonly string[]).includes(q.question_type)
         ? q.question_type : "multiple_choice",
+      category: q.category ?? "vocabulary",
       question: String(q.question ?? "").slice(0, 2000),
       passage: q.passage ?? null,
       options: q.options ?? null,
@@ -404,7 +429,7 @@ If any check fails, DISCARD the question and write a simpler one.
       explanation: q.explanation ?? null,
       teaching_explanation: q.teaching_explanation ?? null,
       image_url: q.image_url ?? null,
-      difficulty: normalizeDifficulty(q.difficulty),
+      difficulty: "easy",
       learning_objective: normalizeObjective(q.learning_objective),
       cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
       estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
@@ -424,7 +449,7 @@ If any check fails, DISCARD the question and write a simpler one.
       return json({ error: insErr.message }, 500);
     }
 
-    return json({ inserted: rows.length, blueprint });
+    return json({ inserted: rows.length, distribution });
   } catch (e: any) {
     console.error("generate-intermediate-test crashed", e);
     return json({ error: e?.message ?? "internal error" }, 500);
@@ -433,130 +458,117 @@ If any check fails, DISCARD the question and write a simpler one.
 
 /* ============================ helpers ============================ */
 
-interface BlueprintEntry { type: string; count: number; rationale: string; }
+type Category = "listening" | "vocabulary" | "grammar";
+interface Distribution { listening: number; vocabulary: number; grammar: number; }
 
 /**
- * Adaptive blueprint. Weight question types by what the lesson actually
- * contains, then normalize to TARGET_QUESTIONS with at least 5 types.
+ * Build the 20-question distribution. Default is 8 listening / 6 vocab / 6 grammar.
+ * If the lesson lacks a category, redistribute its share proportionally to the
+ * available categories, keeping the total at TARGET_QUESTIONS.
  */
-function buildBlueprint(ctx: {
-  vocabCount: number;
-  grammarCount: number;
-  imageCount: number;
+function buildDistribution(ctx: {
   hasListening: boolean;
-  hasLessonTopic: boolean;
-}): BlueprintEntry[] {
-  const weights: Record<string, { w: number; rationale: string }> = {};
-  const add = (t: string, w: number, r: string) => {
-    if (w <= 0) return;
-    weights[t] = { w: (weights[t]?.w ?? 0) + w, rationale: weights[t]?.rationale ?? r };
+  hasVocabulary: boolean;
+  hasGrammar: boolean;
+}): Distribution {
+  const base = { listening: POOL_MIX.listening, vocabulary: POOL_MIX.vocabulary, grammar: POOL_MIX.grammar };
+  const availability: Record<Category, boolean> = {
+    listening: ctx.hasListening,
+    vocabulary: ctx.hasVocabulary || (!ctx.hasGrammar && !ctx.hasListening),
+    grammar: ctx.hasGrammar,
   };
-
-  // Vocabulary — favor plain recognition
-  if (ctx.vocabCount >= 3) {
-    add("multiple_choice", 2, "vocabulary meaning");
-    add("matching", 1, "match vocab ↔ meaning");
-    add("fill_in_blank", 1, "vocab recall in context");
-    if (ctx.vocabCount >= 6) add("vocab_in_context", 1, "vocab used in a short sentence");
+  // Zero out unavailable categories.
+  let orphan = 0;
+  for (const k of ["listening", "vocabulary", "grammar"] as Category[]) {
+    if (!availability[k]) { orphan += base[k]; base[k] = 0; }
   }
-
-  // Grammar — simple recognition, no "find the mistake" traps
-  if (ctx.grammarCount >= 1) {
-    add("grammar_selection", Math.min(2, Math.max(1, ctx.grammarCount)), "grammar concepts present");
-    add("fill_in_blank", 1, "apply a taught grammar form");
+  const availableKeys = (["listening", "vocabulary", "grammar"] as Category[]).filter((k) => availability[k]);
+  if (availableKeys.length === 0) {
+    // Degenerate — force vocabulary
+    return { listening: 0, vocabulary: TARGET_QUESTIONS, grammar: 0 };
   }
-
-  // Reading / topic — short and direct
-  if (ctx.hasLessonTopic) {
-    add("reading_comprehension", 1, "direct comprehension of lesson text");
-    add("true_false", 1, "true/false about lesson text");
+  // Distribute the orphan share proportionally.
+  const totalAvailable = availableKeys.reduce((s, k) => s + base[k], 0) || 1;
+  for (const k of availableKeys) {
+    base[k] += Math.round((base[k] / totalAvailable) * orphan);
   }
-
-  // Listening
-  if (ctx.hasListening) {
-    add("listening_comprehension", 2, "video content available");
+  // Correct rounding drift.
+  let sum = base.listening + base.vocabulary + base.grammar;
+  let i = 0;
+  while (sum !== TARGET_QUESTIONS && i < 100) {
+    const key = availableKeys[i % availableKeys.length];
+    if (sum < TARGET_QUESTIONS) { base[key]++; sum++; }
+    else if (base[key] > 0) { base[key]--; sum--; }
+    i++;
   }
-
-  // Images
-  if (ctx.imageCount >= 2) {
-    add("image_question", Math.min(2, Math.ceil(ctx.imageCount / 4)), "vocab has images");
-    add("choose_correct_sentence", 1, "image → sentence match");
-  }
-
-  // Universal
-  add("true_false", 1, "quick true/false check");
-  add("word_ordering", 1, "arrange taught words");
-  add("multiple_choice", 1, "direct recognition");
-
-  // Normalize to TARGET_QUESTIONS
-  const entries = Object.entries(weights).map(([type, v]) => ({
-    type, count: v.w, rationale: v.rationale,
-  }));
-  entries.sort((a, b) => b.count - a.count);
-
-  const totalWeight = entries.reduce((s, e) => s + e.count, 0);
-  const scaled = entries.map((e) => ({
-    ...e,
-    count: Math.max(1, Math.round((e.count / totalWeight) * TARGET_QUESTIONS)),
-  }));
-
-  // Adjust to exactly TARGET_QUESTIONS
-  let sum = scaled.reduce((s, e) => s + e.count, 0);
-  while (sum > TARGET_QUESTIONS) {
-    // Trim from lowest-priority entries with count > 1
-    for (let i = scaled.length - 1; i >= 0 && sum > TARGET_QUESTIONS; i--) {
-      if (scaled[i].count > 1) { scaled[i].count--; sum--; }
-    }
-    if (scaled.every((e) => e.count === 1) && sum > TARGET_QUESTIONS) {
-      scaled.pop(); sum = scaled.reduce((s, e) => s + e.count, 0);
-    }
-  }
-  while (sum < TARGET_QUESTIONS) {
-    scaled[0].count++; sum++;
-  }
-
-  // Guarantee ≥ 5 distinct types
-  if (scaled.length < 5) {
-    const fillers = ["true_false", "sentence_ordering", "multiple_choice", "matching", "fill_in_blank"]
-      .filter((t) => !scaled.some((e) => e.type === t));
-    while (scaled.length < 5 && fillers.length) {
-      scaled.push({ type: fillers.shift()!, count: 1, rationale: "diversity filler" });
-      // Rebalance: steal from the largest bucket
-      scaled.sort((a, b) => b.count - a.count);
-      if (scaled[0].count > 1) scaled[0].count--;
-    }
-  }
-
-  return scaled;
+  return base;
 }
 
-/** Reorder so no more than 2 consecutive same-type questions appear. */
-function spaceConsecutiveTypes<T extends { question_type?: string }>(list: T[]): T[] {
-  const arr = list.slice();
-  const MAX_RUN = 2;
-  for (let pass = 0; pass < 3; pass++) {
-    let moved = false;
-    for (let i = MAX_RUN; i < arr.length; i++) {
-      const t = arr[i].question_type;
-      const same =
-        arr[i - 1]?.question_type === t &&
-        arr[i - 2]?.question_type === t;
-      if (!same) continue;
-      // find a later item with a different type
-      const j = arr.findIndex((q, k) => k > i && q.question_type !== t);
-      if (j > i) {
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-        moved = true;
-      }
-    }
-    if (!moved) break;
-  }
-  return arr;
+function normalizeCategory(v: any): Category | null {
+  const s = String(v ?? "").toLowerCase().trim();
+  return s === "listening" || s === "vocabulary" || s === "grammar" ? s : null;
 }
 
-function normalizeDifficulty(d: any): string {
-  const v = String(d ?? "medium").toLowerCase();
-  return ["easy", "medium", "hard"].includes(v) ? v : "medium";
+/** Fallback category from question_type when the AI omitted the tag. */
+function inferCategoryFromType(qt: any): Category {
+  const t = String(qt ?? "");
+  if (t === "listening_comprehension") return "listening";
+  if (t === "grammar_selection" || t === "find_the_mistake") return "grammar";
+  return "vocabulary";
+}
+
+/** Enforce exactly 3 options on multiple-choice-style types (1 correct + 2 distractors). */
+function clampMcOptions(q: any): any {
+  if (!MC_OPTION_TYPES.has(q.question_type)) return q;
+  const opts = Array.isArray(q.options) ? q.options.map((o: any) => String(o)) : [];
+  const correct = String(q.correct_answer ?? "");
+  if (opts.length <= 3) return q;
+  const distractors = opts.filter((o: string) => o !== correct);
+  // shuffle distractors, keep first 2
+  for (let i = distractors.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+  }
+  const kept = [correct, ...distractors.slice(0, 2)];
+  return { ...q, options: kept };
+}
+
+/** Pick exactly the target distribution; if a bucket is short, fill from others. */
+function pickByDistribution(pool: any[], dist: Distribution): any[] {
+  const shuf = <T,>(arr: T[]): T[] => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const buckets: Record<Category, any[]> = { listening: [], vocabulary: [], grammar: [] };
+  for (const q of pool) {
+    const c: Category = normalizeCategory(q.category) ?? "vocabulary";
+    buckets[c].push(q);
+  }
+  const chosen: any[] = [];
+  const used = new Set<any>();
+  const takeFrom = (cat: Category, n: number) => {
+    const src = shuf(buckets[cat].filter((x) => !used.has(x)));
+    const picked = src.slice(0, n);
+    for (const p of picked) { chosen.push(p); used.add(p); }
+    return picked.length;
+  };
+  const targets: Record<Category, number> = { ...dist };
+  for (const cat of ["listening", "vocabulary", "grammar"] as Category[]) {
+    if (targets[cat] > 0) takeFrom(cat, targets[cat]);
+  }
+  // Fill any remaining slots from the whole pool.
+  if (chosen.length < TARGET_QUESTIONS) {
+    const rest = shuf(pool.filter((x) => !used.has(x)));
+    for (const p of rest) {
+      if (chosen.length >= TARGET_QUESTIONS) break;
+      chosen.push(p);
+    }
+  }
+  return shuf(chosen).slice(0, TARGET_QUESTIONS);
 }
 
 const OBJECTIVES = new Set([

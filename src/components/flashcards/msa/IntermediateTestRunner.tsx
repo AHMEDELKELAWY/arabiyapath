@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 interface TestQuestion {
   id: string;
   question_type: string;
+  category?: string | null;
   question: string;
   passage: string | null;
   options: any;
@@ -62,6 +63,40 @@ function shuffle<T>(a: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+/**
+ * Randomly select a 10-question session from the pool with a 4/3/3 split
+ * (listening/vocabulary/grammar). Missing buckets are backfilled from the
+ * remaining pool. Falls back to a plain 10-question sample if pool < 10.
+ */
+function pickSession(pool: TestQuestion[]): TestQuestion[] {
+  const TARGET = 10;
+  if (pool.length <= TARGET) return shuffle(pool);
+  const targets: Record<string, number> = { listening: 4, vocabulary: 3, grammar: 3 };
+  const buckets: Record<string, TestQuestion[]> = { listening: [], vocabulary: [], grammar: [] };
+  const inferCat = (q: TestQuestion): string => {
+    const c = String(q.category ?? "").toLowerCase();
+    if (c === "listening" || c === "vocabulary" || c === "grammar") return c;
+    if (q.question_type === "listening_comprehension") return "listening";
+    if (q.question_type === "grammar_selection") return "grammar";
+    return "vocabulary";
+  };
+  for (const q of pool) buckets[inferCat(q)].push(q);
+  const chosen: TestQuestion[] = [];
+  const used = new Set<string>();
+  for (const cat of ["listening", "vocabulary", "grammar"]) {
+    const picks = shuffle(buckets[cat]).slice(0, targets[cat]);
+    for (const p of picks) { chosen.push(p); used.add(p.id); }
+  }
+  if (chosen.length < TARGET) {
+    const rest = shuffle(pool.filter((p) => !used.has(p.id)));
+    for (const p of rest) {
+      if (chosen.length >= TARGET) break;
+      chosen.push(p);
+    }
+  }
+  return shuffle(chosen).slice(0, TARGET);
 }
 
 function norm(s: string): string {
@@ -153,7 +188,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("flashcard_unit_tests")
-        .select("id,question_type,question,passage,options,correct_answer,explanation,teaching_explanation,audio_url,image_url,order_index")
+        .select("id,question_type,category,question,passage,options,correct_answer,explanation,teaching_explanation,audio_url,image_url,order_index")
         .eq("unit_id", unitId)
         .eq("published", true)
         .order("order_index");
@@ -179,14 +214,20 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
     recordedRef.current = false;
   }, [unitId, resetKey]);
 
+  // Random 10-question session (4 listening / 3 vocabulary / 3 grammar) drawn
+  // from the 20-question pool. Re-picks on every retake via resetKey.
+  const sessionQuestions = useMemo<TestQuestion[]>(() => {
+    if (!questions?.length) return [];
+    return pickSession(questions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, unitId, resetKey]);
 
-  const total = questions?.length ?? 0;
-  const q = questions?.[i];
+  const total = sessionQuestions.length;
+  const q = sessionQuestions[i];
 
   const score = useMemo(() => {
-    if (!questions) return 0;
-    return questions.reduce((n, qq) => (isCorrect(qq, answers[qq.id]) ? n + 1 : n), 0);
-  }, [questions, answers]);
+    return sessionQuestions.reduce((n, qq) => (isCorrect(qq, answers[qq.id]) ? n + 1 : n), 0);
+  }, [sessionQuestions, answers]);
 
   const cardRef = useScrollToTopOnChange<HTMLDivElement>(i);
 
@@ -274,7 +315,7 @@ export function IntermediateTestRunner({ unitId, onPassed, nextUnitSlug, nextUni
               </span>
             </div>
             <div className="space-y-3">
-              {questions.map((qq, idx) => {
+              {sessionQuestions.map((qq, idx) => {
                 const ua = answers[qq.id];
                 const ok = isCorrect(qq, ua);
                 const correctDisplay = formatAnswer(qq.correct_answer);
