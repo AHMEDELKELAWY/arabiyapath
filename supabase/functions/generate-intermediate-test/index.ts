@@ -295,9 +295,10 @@ If any check fails, DISCARD the question and write another. Return only question
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are an experienced Arabic teacher writing high-quality classroom assessments. You care about pedagogy: every question must measure a specific learning objective, use realistic distractors, and prefer understanding/application over recall. Silently self-review and drop any question scoring below the required quality bar. Output valid JSON only." },
+          { role: "system", content: "You are an experienced Arabic teacher preparing a LESSON REVIEW. You may only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything that was not explicitly taught. Match the plain, direct style of Beginner-level assessments — no clever framing, no inference beyond the lesson. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
+
       }),
     });
 
