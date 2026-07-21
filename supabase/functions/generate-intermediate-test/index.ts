@@ -344,15 +344,47 @@ If any check fails, DISCARD the question and write another. Return only question
       return q;
     };
 
-    // Drop low-quality questions the AI self-flagged, then enforce spacing.
+    // Build a normalized haystack of everything actually taught in this lesson.
+    // A question is only kept if it can be traced to at least one token from
+    // this haystack via vocabulary_used / grammar_concepts_used / lesson_concepts.
+    const stripTashkeel = (s: string) => (s ?? "").replace(/[\u064B-\u065F\u0670]/g, "");
+    const norm = (s: string) => stripTashkeel(String(s ?? "")).toLowerCase().trim();
+    const lessonHaystackParts: string[] = [];
+    for (const c of learn) {
+      lessonHaystackParts.push(c.arabic_text ?? "", c.english_translation ?? "", c.transliteration ?? "", c.notes ?? "");
+    }
+    for (const c of grammar) {
+      lessonHaystackParts.push(c.arabic_text ?? "", c.english_translation ?? "", c.notes ?? "");
+    }
+    lessonHaystackParts.push(unit.title_en ?? "", unit.title_ar ?? "", unit.lesson_topic ?? "");
+    const lessonHaystack = norm(lessonHaystackParts.join(" \n "));
+    const isGrounded = (q: any) => {
+      const tokens: string[] = [
+        ...toStrArr(q.vocabulary_used),
+        ...toStrArr(q.grammar_concepts_used),
+        ...toStrArr(q.lesson_concepts),
+      ];
+      if (tokens.length === 0) return false;
+      return tokens.some((t) => {
+        const n = norm(t);
+        return n.length >= 2 && lessonHaystack.includes(n);
+      });
+    };
+
+    // Drop low-quality AND ungrounded questions, then enforce spacing.
     const passed = questions.filter((q: any) => {
       const s = Number(q?.quality_score);
-      return !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
+      const qualityOk = !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
+      return qualityOk && isGrounded(q);
     });
-    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6) ? passed : questions;
+    const grounded = questions.filter(isGrounded);
+    const pool = passed.length >= Math.min(TARGET_QUESTIONS, 6)
+      ? passed
+      : (grounded.length >= Math.min(TARGET_QUESTIONS, 6) ? grounded : questions);
 
     const spaced = spaceConsecutiveTypes(shuffle(pool));
     const finalQuestions = spaced.map(shuffleOptions);
+
 
     // Wipe existing draft
     await admin.from("flashcard_unit_tests").delete().eq("unit_id", unit_id);
