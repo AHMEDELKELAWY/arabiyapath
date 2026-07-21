@@ -951,6 +951,7 @@ export type Database = {
         Row: {
           ai_version: string | null
           audio_url: string | null
+          category: string | null
           cognitive_level: number | null
           correct_answer: Json
           created_at: string
@@ -980,6 +981,7 @@ export type Database = {
         Insert: {
           ai_version?: string | null
           audio_url?: string | null
+          category?: string | null
           cognitive_level?: number | null
           correct_answer: Json
           created_at?: string
@@ -1009,6 +1011,7 @@ export type Database = {
         Update: {
           ai_version?: string | null
           audio_url?: string | null
+          category?: string | null
           cognitive_level?: number | null
           correct_answer?: Json
           created_at?: string
