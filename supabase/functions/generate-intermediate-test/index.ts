@@ -25,18 +25,12 @@ const ALLOWED_TYPES = [
   "conversation_completion",
   "vocab_in_context",
   "fill_in_blank",
-  "sentence_ordering",
-  "word_ordering",
   "matching",
-  "reading_comprehension",
-  "listening_comprehension",
-  "true_false",
   "image_question",
   "choose_correct_sentence",
-  "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v5-pool-of-20";
+const AI_VERSION = "int-test/v6-restricted-types";
 const MIN_QUALITY_SCORE = 70;
 const TARGET_QUESTIONS = 20;
 // Pool distribution (must sum to TARGET_QUESTIONS when all categories present).
@@ -46,8 +40,6 @@ const MC_OPTION_TYPES = new Set([
   "grammar_selection",
   "conversation_completion",
   "vocab_in_context",
-  "listening_comprehension",
-  "reading_comprehension",
   "choose_correct_sentence",
   "image_question",
   "fill_in_blank",
@@ -227,10 +219,25 @@ For each question:
   2. Write a plain, Beginner-style question that checks whether the learner recognizes that exact item.
   3. The correct answer must be directly verifiable from the materials.
 
-Suggested question types per category (pick the simplest that fits):
-  • listening  → listening_comprehension (preferred), true_false about what was said
-  • vocabulary → multiple_choice, matching, fill_in_blank, vocab_in_context, image_question, choose_correct_sentence
-  • grammar    → grammar_selection, fill_in_blank (grammar form), word_ordering, sentence_ordering
+ALLOWED question types (use ONLY these — nothing else is permitted):
+  • multiple_choice          — 3 options, 1 correct + 2 lesson-based distractors.
+  • grammar_selection        — Choose the correct grammar form inside a sentence.
+  • conversation_completion  — Complete a short taught dialogue with the correct word/sentence.
+  • vocab_in_context         — Vocabulary meaning shown inside a short sentence.
+  • fill_in_blank            — Sentence with "____"; pick the missing word/expression.
+  • matching                 — Match words↔meanings, words↔images, or Q↔A pairs from the lesson.
+  • image_question           — Choose the correct image for a taught word.
+  • choose_correct_sentence  — Pick the grammatically/contextually correct sentence from the lesson.
+
+Suggested types per category:
+  • listening  → multiple_choice or fill_in_blank about EXACTLY what was said in the video.
+  • vocabulary → multiple_choice, matching, fill_in_blank, vocab_in_context, image_question, choose_correct_sentence.
+  • grammar    → grammar_selection, fill_in_blank (grammar form), choose_correct_sentence.
+
+FORBIDDEN — do NOT generate any of these:
+  true_false, reading_comprehension, listening_comprehension, sentence_ordering, word_ordering,
+  find_the_mistake, "why" questions, inference / prediction / explanation questions,
+  open-ended / short-answer / essay, select-all / multi-select, or any type not in the ALLOWED list above.
 
 ## Distractors
 Simple, plausible, drawn from the SAME lesson pool. Never nonsense, never unrelated. Do NOT craft "very close" or minimally-different distractors designed to trick the learner.
@@ -240,14 +247,13 @@ Simple, plausible, drawn from the SAME lesson pool. Never nonsense, never unrela
   • Do not test the same vocabulary item or grammar rule twice.
   • Do not reuse question stems.
   • Every correct answer must be defensible strictly from the lesson materials.
+  • Question stems must be SHORT and DIRECT. One clear objective per question.
 
-## Type formats (STRICT — note: multiple-choice types use exactly 3 options)
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question / reading_comprehension: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
-- true_false: options is ["True","False"]; correct_answer is "True" or "False".
+## Type formats (STRICT — all multiple-choice-style types use EXACTLY 3 options)
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / choose_correct_sentence / image_question: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
 - fill_in_blank: question contains "____"; options is EXACTLY 3 candidate fills; correct_answer is one option string.
-- sentence_ordering / word_ordering: options is shuffled tokens; correct_answer is tokens in correct order.
 - matching: options is 3 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above.
+- image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above (image_question) or null (choose_correct_sentence).
 
 ## Explanation
 "explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item.
@@ -389,16 +395,19 @@ For every question, verify:
       });
     };
 
-    // Drop low-quality AND ungrounded questions.
+    const isAllowedType = (q: any) =>
+      (ALLOWED_TYPES as readonly string[]).includes(String(q?.question_type ?? ""));
+
+    // Drop low-quality, ungrounded, or forbidden-type questions.
     const passed = questions.filter((q: any) => {
       const s = Number(q?.quality_score);
       const qualityOk = !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
-      return qualityOk && isGrounded(q);
+      return qualityOk && isGrounded(q) && isAllowedType(q);
     });
-    const grounded = questions.filter(isGrounded);
+    const grounded = questions.filter((q: any) => isGrounded(q) && isAllowedType(q));
     const rawPool = passed.length >= Math.min(TARGET_QUESTIONS, 12)
       ? passed
-      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions);
+      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions.filter(isAllowedType));
 
     // Tag category (fallback from question_type if AI omitted it) and clamp MC to 3 options.
     const tagged = rawPool.map((q: any) => {
