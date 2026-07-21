@@ -109,13 +109,11 @@ Deno.serve(async (req) => {
     const cardsWithImages = learn.filter((c: any) => !!c.image_url);
     const hasVideo = !!(unit.video_url || unit.video_storage_path);
 
-    /* ---------- Adaptive blueprint ---------- */
-    const blueprint = buildBlueprint({
-      vocabCount: learn.length,
-      grammarCount: grammar.length,
-      imageCount: cardsWithImages.length,
+    /* ---------- Fixed pool distribution (8/6/6, redistribute if missing) ---------- */
+    const distribution = buildDistribution({
       hasListening: hasVideo,
-      hasLessonTopic: !!(unit.lesson_topic && unit.lesson_topic.trim().length > 20),
+      hasGrammar: grammar.length >= 1,
+      hasVocabulary: learn.length >= 1,
     });
 
     const previousList = (previousQs ?? [])
@@ -131,8 +129,10 @@ Deno.serve(async (req) => {
       `- "${c.english_translation}" (${c.arabic_text}) → ${c.image_url}`
     ).join("\n");
 
-    const blueprintText = blueprint
-      .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
+    const distributionText =
+      `- ${distribution.listening} listening question(s)\n` +
+      `- ${distribution.vocabulary} vocabulary question(s)\n` +
+      `- ${distribution.grammar} grammar question(s)`;
 
     const prompt = `You are writing a SIMPLE lesson review for students who just finished this specific lesson. This is NOT an exam. It is a friendly, confidence-building check that the learner remembers what was just taught.
 
