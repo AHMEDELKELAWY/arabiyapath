@@ -25,18 +25,12 @@ const ALLOWED_TYPES = [
   "conversation_completion",
   "vocab_in_context",
   "fill_in_blank",
-  "sentence_ordering",
-  "word_ordering",
   "matching",
-  "reading_comprehension",
-  "listening_comprehension",
-  "true_false",
   "image_question",
   "choose_correct_sentence",
-  "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v5-pool-of-20";
+const AI_VERSION = "int-test/v6-restricted-types";
 const MIN_QUALITY_SCORE = 70;
 const TARGET_QUESTIONS = 20;
 // Pool distribution (must sum to TARGET_QUESTIONS when all categories present).
@@ -46,8 +40,6 @@ const MC_OPTION_TYPES = new Set([
   "grammar_selection",
   "conversation_completion",
   "vocab_in_context",
-  "listening_comprehension",
-  "reading_comprehension",
   "choose_correct_sentence",
   "image_question",
   "fill_in_blank",
