@@ -121,112 +121,144 @@ Deno.serve(async (req) => {
     const blueprintText = blueprint
       .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
 
-    const prompt = `You are an experienced Arabic language TEACHER (not a question generator) authoring an INTERMEDIATE (CEFR B1) assessment. Every question must feel like it was intentionally designed by a human teacher to measure a specific learning outcome — not randomly produced from available data.
+    const prompt = `You are an experienced Arabic language TEACHER preparing a LESSON REVIEW for students who just finished this specific lesson. You are NOT inventing a new exam. You are checking whether the learner remembers and can use WHAT WAS TAUGHT IN THIS LESSON — nothing else.
+
+============================================================
+## SOURCE OF TRUTH (ABSOLUTE)
+============================================================
+The ONLY source for generating questions is THIS lesson's materials, listed below:
+  • Lesson topic / transcript (if provided)
+  • Learn vocabulary cards
+  • Grammar cards
+  • Listening content (the lesson video)
+
+If a concept, word, meaning, rule, fact, name, or idea is NOT present in the materials below, you MUST NOT ask about it. No exceptions.
+
+Every question you produce MUST be traceable to a specific lesson item. Internally you must be able to name:
+  - which vocabulary card it came from, OR
+  - which grammar card it came from, OR
+  - which sentence / example it came from, OR
+  - which listening segment it came from.
+If you cannot map a question to a specific item from the materials, DELETE it and write a different one.
+
+============================================================
+## LESSON MATERIALS (the ONLY allowed source)
+============================================================
 
 ## Unit
 Title (EN): ${unit.title_en}
 Title (AR): ${unit.title_ar ?? ""}
 
-## Lesson Topic
-${unit.lesson_topic ?? "(none provided)"}
+## Lesson topic / transcript
+${unit.lesson_topic ?? "(none provided — do not invent one)"}
 
 ## Listening resource
-${hasVideo ? (unit.video_url ? `YouTube: ${unit.video_url}` : "Uploaded video attached") : "(no video)"}
+${hasVideo ? (unit.video_url ? `YouTube: ${unit.video_url}` : "Uploaded video attached") : "(no video — do NOT produce listening_comprehension questions)"}
 
 ## Learn vocabulary (${learn.length} cards, ${cardsWithImages.length} with images)
 ${vocabList || "(none)"}
 
-## Vocabulary cards that have images (use these for image_question / choose_correct_sentence / true_false about an image)
-${imageList || "(none available)"}
+## Vocabulary cards with images (only these image URLs may be used)
+${imageList || "(none available — do NOT produce image_question / choose_correct_sentence)"}
 
 ## Grammar (${grammar.length} concepts)
-${grammarList || "(none)"}
+${grammarList || "(none — do NOT invent grammar rules)"}
 
-${previousList ? `## Previously generated questions (DO NOT REPEAT — vary wording, distractors, framing, and concept)
+${previousList ? `## Previously generated questions for this unit (DO NOT REPEAT — vary wording and target different items)
 ${previousList}
 ` : ""}
-## Adaptive blueprint — produce EXACTLY ${TARGET_QUESTIONS} questions in this mix
+============================================================
+## BEGINNER IS THE REFERENCE — MATCH ITS STYLE
+============================================================
+Before writing, imagine the Beginner-level assessments on this platform. They are:
+  - Short, plain, and direct ("What does X mean?", "Choose the correct word", "Complete the sentence with the right form").
+  - Focused on recognition and correct usage of items the learner just studied.
+  - Free of trick wording, riddles, or clever framing.
+  - Free of cultural/general-knowledge trivia.
+
+Match that tone. Do NOT invent a new, more literary, or more "creative" assessment style. This is Intermediate, so the vocabulary and grammar are more advanced, but the QUESTION STYLE stays plain and lesson-anchored.
+
+============================================================
+## FORBIDDEN — never ask about
+============================================================
+  ✗ Anything not present in the materials above.
+  ✗ Hidden or implied details ("what is the speaker really thinking?").
+  ✗ Character motivations, feelings, or backstory not stated in the lesson.
+  ✗ Future events / "what happens next?".
+  ✗ General knowledge, world facts, geography, history.
+  ✗ Cultural knowledge that was not explicitly taught in this lesson.
+  ✗ Logical inference beyond the lesson content.
+  ✗ "Why do you think ...?" or opinion questions.
+  ✗ Any fact the learner would have to guess or bring from outside.
+
+If in doubt, drop the question.
+
+============================================================
+## QUESTION DESIGN
+============================================================
+Produce EXACTLY ${TARGET_QUESTIONS} questions.
+
+For each question:
+  1. Pick ONE specific lesson item (vocab card / grammar card / sentence / listening line).
+  2. Write a plain, Beginner-style question that checks whether the learner recognizes or can correctly use that exact item.
+  3. Record which item it came from in "lesson_concepts" and (as applicable) "vocabulary_used" / "grammar_concepts_used". These fields MUST contain strings that appear in the materials above — exactly, not paraphrased.
+  4. The correct answer must be verifiable directly from the materials.
+
+Blueprint (target mix, adapt only to what the lesson supports):
 ${blueprintText}
 
-## CORE TEACHING PHILOSOPHY
-Before writing each question, silently ask yourself:
-  "What specific learning outcome does this measure?"
-If you cannot answer in one sentence, DO NOT write the question.
-Never generate a question simply because information exists in the lesson.
+Skip any blueprint type whose required source material is missing (e.g. no images → skip image_question; no video → skip listening_comprehension; no grammar cards → skip grammar_selection / find_the_mistake).
 
-## Learning objective (pick ONE per question)
-Classify each question's primary objective as EXACTLY one of:
-  vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
-  listening_comprehension | listening_inference | reading_comprehension | reading_inference |
-  sentence_construction | word_order | image_interpretation | context_understanding |
-  everyday_communication
-Do not mix multiple unrelated objectives into one question.
-
-## Cognitive level (Bloom-style, 1–4)
-  1 = Recognition, 2 = Recall, 3 = Understanding, 4 = Application
-Whenever the lesson allows, PREFER levels 3 and 4. An assessment mostly at levels 1–2 is unacceptable — the final set MUST have at least 60% of questions at level 3 or 4.
-
-## Distractor intelligence (mandatory)
-Every wrong option must model a REALISTIC learner mistake. Examples:
-  - a near-synonym with a subtly wrong nuance
-  - similar-sounding word (تشابه صوتي)
-  - wrong gender (مذكر/مؤنث)
-  - wrong plural pattern
-  - wrong verb tense or aspect
-  - wrong preposition (حرف جر)
-  - wrong location within a sentence
-  - grammatically valid sentence with the wrong meaning
-  - wrong register (فصحى vs. عامية) if relevant
-Never use nonsense, obviously unrelated words, or joke options. Never make the correct answer noticeably longer or more detailed than distractors.
-
-## Question diversity
-- Do not test the same vocabulary item or grammar rule more than once directly. If a concept must reappear, assess it from a different angle (e.g. usage after recognition).
-- Do not reuse question stems or answer patterns across questions.
+## Distractors
+Distractors must model realistic learner mistakes drawn from the SAME lesson pool when possible:
+  - another vocab item from this lesson with a close but different meaning,
+  - wrong gender / plural / tense / preposition of a taught form,
+  - a grammatically valid but wrong-meaning sentence built from taught words.
+Never use nonsense, unrelated words, or joke options. Never make the correct answer noticeably longer than the distractors.
 
 ## Quality rules
-- Test understanding, not memorization. Avoid asking learners to recall a sentence they already saw verbatim.
-- Arabic must be fully vowelized (tashkeel) and sound natural — the way an educated Arab writes, not a literal translation from English.
-- Do NOT quote lesson sentences verbatim unless testing listening/reading comprehension.
-- Distractors must be believable, not obviously wrong.
-- The correct answer must be defensible on linguistic grounds — no ambiguity.
+  - Arabic must be fully vowelized (tashkeel) and sound natural.
+  - Do not test the same vocabulary item or grammar rule more than once directly.
+  - Do not reuse question stems.
+  - The correct answer must be defensible strictly from the lesson materials.
 
 ## Type formats (strict)
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is an array of 4 strings; correct_answer is one option string.
-- true_false: options is exactly ["True","False"]; correct_answer is "True" or "False".
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
+- true_false: options is ["True","False"]; correct_answer is "True" or "False".
 - fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
-- sentence_ordering / word_ordering: options is the shuffled tokens (array of strings); correct_answer is the tokens in correct order (array of strings).
-- matching: options is an array of 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- reading_comprehension: include "passage" (Arabic, 2–4 sentences); options is 4; correct_answer is one option string.
-- image_question / choose_correct_sentence: set "image_url" to one of the URLs listed above.
-- listening_comprehension: reference the lesson video content in "question" only (no audio file).
+- sentence_ordering / word_ordering: options is shuffled tokens; correct_answer is tokens in correct order.
+- matching: options is 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
+- reading_comprehension: "passage" is 2–4 Arabic sentences BUILT ONLY from taught vocabulary/grammar; options 4; correct_answer one option.
+- image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above.
 
 ## Teaching explanation
-For every question write a "teaching_explanation" (English, 2–4 sentences) that:
-  - states WHY the correct answer is correct (rule/nuance),
-  - states WHY each key distractor is wrong (name the mistake it models),
-  - names the relevant grammar or vocabulary point when applicable.
-This is a teaching moment shown ONLY after the learner submits. Do not repeat the answer verbatim without explaining.
-Also keep the shorter "explanation" field (one sentence, plain answer justification).
+"teaching_explanation" (2–4 English sentences): state why the correct answer is right by pointing to the specific lesson item, and why each key distractor is wrong. Keep the short "explanation" as a one-sentence justification.
 
-## Self-review + quality score (mandatory, silent)
-For each question you drafted, silently score it 1–100 using: educational_value, clarity, authenticity, distractor_quality, lesson_alignment, language_naturalness.
-REJECT and regenerate any question where:
-  - the correct answer is obvious at a glance,
-  - a distractor is weak, silly, or unrelated,
-  - wording is unnatural or translated-sounding,
-  - it duplicates another question's concept or stem,
-  - it tests only memorization when the lesson supports higher-order thinking,
-  - overall score < ${MIN_QUALITY_SCORE}.
-Return "quality_score" as your final self-assessment (an integer 0–100). Only return questions that pass.
+## Learning objective (pick ONE)
+vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
+listening_comprehension | reading_comprehension | sentence_construction | word_order |
+image_interpretation | context_understanding | everyday_communication
+
+## Cognitive level
+1=Recognition, 2=Recall, 3=Understanding, 4=Application. Intermediate should lean 2–3. Do NOT force higher-order inference if the lesson doesn't support it — recognition and correct usage of taught items is perfectly acceptable.
+
+============================================================
+## FINAL VALIDATION (do this silently before returning)
+============================================================
+For every question, verify:
+  ✓ It maps to a specific item in the materials above.
+  ✓ The correct answer can be found or directly derived from those materials.
+  ✓ It does not depend on guessing, outside knowledge, or inference beyond the lesson.
+  ✓ Its style matches the plain, direct Beginner tone described above.
+If any check fails, DISCARD the question and write another. Return only questions that pass all four checks.
 
 ## Final set constraints
-- EXACTLY ${TARGET_QUESTIONS} questions.
-- At least 5 DIFFERENT question types across the set.
-- No more than 2 consecutive questions of the same type.
-- At least 60% of questions at cognitive_level 3 or 4.
-- No two questions may share the same primary learning_objective + vocabulary_used pair.
+  - EXACTLY ${TARGET_QUESTIONS} questions.
+  - Use only question types whose source material exists in this lesson.
+  - No more than 2 consecutive questions of the same type.
+  - No two questions may share the same primary vocabulary item or grammar rule.
 
-## Output — STRICT JSON, no prose, no markdown fences
+## Output — STRICT JSON only, no prose, no markdown fences
 {
   "questions": [
     {
@@ -244,13 +276,14 @@ Return "quality_score" as your final self-assessment (an integer 0–100). Only 
       "cognitive_level": 1 | 2 | 3 | 4,
       "estimated_time_seconds": 20-180,
       "quality_score": 0-100,
-      "skills_tested": ["reading","vocabulary","grammar","listening","inference","writing"],
-      "lesson_concepts": ["..."],
-      "vocabulary_used": ["..."],
-      "grammar_concepts_used": ["..."]
+      "skills_tested": ["reading","vocabulary","grammar","listening","writing"],
+      "lesson_concepts": ["<exact string(s) from the materials>"],
+      "vocabulary_used": ["<exact Arabic word(s) from the Learn vocabulary above>"],
+      "grammar_concepts_used": ["<exact string(s) from the Grammar section above>"]
     }
   ]
 }`;
+
 
     const gwRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
