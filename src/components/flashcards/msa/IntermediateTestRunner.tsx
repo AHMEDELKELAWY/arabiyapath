@@ -65,6 +65,40 @@ function shuffle<T>(a: T[]): T[] {
   return arr;
 }
 
+/**
+ * Randomly select a 10-question session from the pool with a 4/3/3 split
+ * (listening/vocabulary/grammar). Missing buckets are backfilled from the
+ * remaining pool. Falls back to a plain 10-question sample if pool < 10.
+ */
+function pickSession(pool: TestQuestion[]): TestQuestion[] {
+  const TARGET = 10;
+  if (pool.length <= TARGET) return shuffle(pool);
+  const targets: Record<string, number> = { listening: 4, vocabulary: 3, grammar: 3 };
+  const buckets: Record<string, TestQuestion[]> = { listening: [], vocabulary: [], grammar: [] };
+  const inferCat = (q: TestQuestion): string => {
+    const c = String(q.category ?? "").toLowerCase();
+    if (c === "listening" || c === "vocabulary" || c === "grammar") return c;
+    if (q.question_type === "listening_comprehension") return "listening";
+    if (q.question_type === "grammar_selection") return "grammar";
+    return "vocabulary";
+  };
+  for (const q of pool) buckets[inferCat(q)].push(q);
+  const chosen: TestQuestion[] = [];
+  const used = new Set<string>();
+  for (const cat of ["listening", "vocabulary", "grammar"]) {
+    const picks = shuffle(buckets[cat]).slice(0, targets[cat]);
+    for (const p of picks) { chosen.push(p); used.add(p.id); }
+  }
+  if (chosen.length < TARGET) {
+    const rest = shuffle(pool.filter((p) => !used.has(p.id)));
+    for (const p of rest) {
+      if (chosen.length >= TARGET) break;
+      chosen.push(p);
+    }
+  }
+  return shuffle(chosen).slice(0, TARGET);
+}
+
 function norm(s: string): string {
   return (s ?? "")
     .toString()
