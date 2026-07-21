@@ -36,7 +36,7 @@ const ALLOWED_TYPES = [
   "find_the_mistake",
 ] as const;
 
-const AI_VERSION = "int-test/v3-pedagogical";
+const AI_VERSION = "int-test/v4-beginner-style";
 const MIN_QUALITY_SCORE = 70;
 const TARGET_QUESTIONS = 10;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -121,25 +121,26 @@ Deno.serve(async (req) => {
     const blueprintText = blueprint
       .map((b) => `- ${b.count}× ${b.type} (${b.rationale})`).join("\n");
 
-    const prompt = `You are an experienced Arabic language TEACHER preparing a LESSON REVIEW for students who just finished this specific lesson. You are NOT inventing a new exam. You are checking whether the learner remembers and can use WHAT WAS TAUGHT IN THIS LESSON — nothing else.
+    const prompt = `You are writing a SIMPLE lesson review for students who just finished this specific lesson. This is NOT an exam. It is a friendly, confidence-building check that the learner remembers what was just taught.
+
+Match the style of Beginner-level assessments on this platform:
+  • Short, plain, and direct.
+  • One idea per question. No multi-step reasoning.
+  • No clever framing, no trick wording, no "gotchas".
+  • The learner should finish thinking "these questions are exactly about what I just learned" — not "this was a hard language exam".
 
 ============================================================
-## SOURCE OF TRUTH (ABSOLUTE)
+## SOURCE OF TRUTH (ABSOLUTE — DO NOT REMOVE)
 ============================================================
-The ONLY source for generating questions is THIS lesson's materials, listed below:
+The ONLY source for questions is THIS lesson's materials below:
   • Lesson topic / transcript (if provided)
   • Learn vocabulary cards
   • Grammar cards
   • Listening content (the lesson video)
 
-If a concept, word, meaning, rule, fact, name, or idea is NOT present in the materials below, you MUST NOT ask about it. No exceptions.
+If a concept, word, meaning, rule, fact, or name is NOT present in the materials below, you MUST NOT ask about it.
 
-Every question you produce MUST be traceable to a specific lesson item. Internally you must be able to name:
-  - which vocabulary card it came from, OR
-  - which grammar card it came from, OR
-  - which sentence / example it came from, OR
-  - which listening segment it came from.
-If you cannot map a question to a specific item from the materials, DELETE it and write a different one.
+Every question MUST be traceable to a specific lesson item (a specific vocab card, grammar card, sentence, or listening segment). Record that item in "lesson_concepts" / "vocabulary_used" / "grammar_concepts_used" using strings that appear in the materials exactly.
 
 ============================================================
 ## LESSON MATERIALS (the ONLY allowed source)
@@ -164,34 +165,36 @@ ${imageList || "(none available — do NOT produce image_question / choose_corre
 ## Grammar (${grammar.length} concepts)
 ${grammarList || "(none — do NOT invent grammar rules)"}
 
-${previousList ? `## Previously generated questions for this unit (DO NOT REPEAT — vary wording and target different items)
+${previousList ? `## Previously generated questions for this unit (vary wording, target different items)
 ${previousList}
 ` : ""}
 ============================================================
-## BEGINNER IS THE REFERENCE — MATCH ITS STYLE
+## WHAT TO ASK (Beginner-style question bank)
 ============================================================
-Before writing, imagine the Beginner-level assessments on this platform. They are:
-  - Short, plain, and direct ("What does X mean?", "Choose the correct word", "Complete the sentence with the right form").
-  - Focused on recognition and correct usage of items the learner just studied.
-  - Free of trick wording, riddles, or clever framing.
-  - Free of cultural/general-knowledge trivia.
-
-Match that tone. Do NOT invent a new, more literary, or more "creative" assessment style. This is Intermediate, so the vocabulary and grammar are more advanced, but the QUESTION STYLE stays plain and lesson-anchored.
+Prefer these plain, direct question styles:
+  • Vocabulary meaning ("What does X mean?")
+  • Choose the correct image for a word
+  • Listening: what did the speaker say / which word did you hear
+  • Reading: a very short sentence from the lesson, one direct comprehension question
+  • Fill in the blank with a taught word or taught grammar form
+  • Word order / sentence order using taught words
+  • True / False about something explicitly taught
+  • Choose the correct sentence
+  • Matching word ↔ meaning (or word ↔ image)
 
 ============================================================
-## FORBIDDEN — never ask about
+## FORBIDDEN
 ============================================================
   ✗ Anything not present in the materials above.
-  ✗ Hidden or implied details ("what is the speaker really thinking?").
-  ✗ Character motivations, feelings, or backstory not stated in the lesson.
+  ✗ Hidden or implied details, character motivations, "why do you think…", opinion questions.
   ✗ Future events / "what happens next?".
   ✗ General knowledge, world facts, geography, history.
   ✗ Cultural knowledge that was not explicitly taught in this lesson.
-  ✗ Logical inference beyond the lesson content.
-  ✗ "Why do you think ...?" or opinion questions.
-  ✗ Any fact the learner would have to guess or bring from outside.
+  ✗ Multi-step reasoning or inference chains.
+  ✗ Clever wording, riddles, double negatives, "which is NOT…" traps.
+  ✗ Making the correct answer noticeably longer than the distractors.
 
-If in doubt, drop the question.
+If in doubt, drop the question and pick a simpler one about the same lesson item.
 
 ============================================================
 ## QUESTION DESIGN
@@ -201,62 +204,61 @@ Produce EXACTLY ${TARGET_QUESTIONS} questions.
 For each question:
   1. Pick ONE specific lesson item (vocab card / grammar card / sentence / listening line).
   2. Write a plain, Beginner-style question that checks whether the learner recognizes or can correctly use that exact item.
-  3. Record which item it came from in "lesson_concepts" and (as applicable) "vocabulary_used" / "grammar_concepts_used". These fields MUST contain strings that appear in the materials above — exactly, not paraphrased.
-  4. The correct answer must be verifiable directly from the materials.
+  3. The correct answer must be directly verifiable from the materials.
 
 Blueprint (target mix, adapt only to what the lesson supports):
 ${blueprintText}
 
-Skip any blueprint type whose required source material is missing (e.g. no images → skip image_question; no video → skip listening_comprehension; no grammar cards → skip grammar_selection / find_the_mistake).
+Skip any blueprint type whose required source material is missing (e.g. no images → skip image_question; no video → skip listening_comprehension; no grammar cards → skip grammar_selection).
 
 ## Distractors
-Distractors must model realistic learner mistakes drawn from the SAME lesson pool when possible:
-  - another vocab item from this lesson with a close but different meaning,
-  - wrong gender / plural / tense / preposition of a taught form,
-  - a grammatically valid but wrong-meaning sentence built from taught words.
-Never use nonsense, unrelated words, or joke options. Never make the correct answer noticeably longer than the distractors.
+Simple, plausible, drawn from the SAME lesson pool:
+  • another taught vocab item,
+  • a wrong but taught form of the same word,
+  • a short taught phrase that doesn't fit.
+Never nonsense, never unrelated, never obvious joke options. Do NOT craft "very close" or minimally-different distractors designed to trick the learner. The goal is a fair, clear check — not a difficult discrimination task.
 
 ## Quality rules
-  - Arabic must be fully vowelized (tashkeel) and sound natural.
-  - Do not test the same vocabulary item or grammar rule more than once directly.
-  - Do not reuse question stems.
-  - The correct answer must be defensible strictly from the lesson materials.
+  • Arabic must be fully vowelized (tashkeel) and sound natural.
+  • Do not test the same vocabulary item or grammar rule twice.
+  • Do not reuse question stems.
+  • Every correct answer must be defensible strictly from the lesson materials.
 
 ## Type formats (strict)
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / find_the_mistake / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
+- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / listening_comprehension / choose_correct_sentence / image_question: options is 4 strings; correct_answer is one option string.
 - true_false: options is ["True","False"]; correct_answer is "True" or "False".
 - fill_in_blank: question contains "____"; options is 4 candidate fills; correct_answer is one option string.
 - sentence_ordering / word_ordering: options is shuffled tokens; correct_answer is tokens in correct order.
 - matching: options is 4 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- reading_comprehension: "passage" is 2–4 Arabic sentences BUILT ONLY from taught vocabulary/grammar; options 4; correct_answer one option.
+- reading_comprehension: "passage" is 1–3 short Arabic sentences BUILT ONLY from taught vocabulary/grammar; options 4; correct_answer one option. Ask a direct comprehension question (who/what/where), not inference.
 - image_question / choose_correct_sentence: "image_url" MUST be one of the URLs listed above.
 
-## Teaching explanation
-"teaching_explanation" (2–4 English sentences): state why the correct answer is right by pointing to the specific lesson item, and why each key distractor is wrong. Keep the short "explanation" as a one-sentence justification.
+## Explanation
+"explanation" (1–2 short English sentences): plainly state why the correct answer is right by pointing to the specific lesson item. Keep "teaching_explanation" short and friendly — no jargon, no cognitive-science framing.
 
-## Learning objective (pick ONE)
+## Difficulty
+Almost all questions should be "easy" or "medium". Do NOT produce "hard" questions unless the lesson content itself is unavoidably complex. Intermediate here means the vocabulary is more advanced than Beginner — the QUESTION STYLE stays plain and lesson-anchored.
+
+## Learning objective (pick ONE, informational only)
 vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage |
 listening_comprehension | reading_comprehension | sentence_construction | word_order |
 image_interpretation | context_understanding | everyday_communication
 
-## Cognitive level
-1=Recognition, 2=Recall, 3=Understanding, 4=Application. Intermediate should lean 2–3. Do NOT force higher-order inference if the lesson doesn't support it — recognition and correct usage of taught items is perfectly acceptable.
-
 ============================================================
-## FINAL VALIDATION (do this silently before returning)
+## FINAL VALIDATION (silent, before returning)
 ============================================================
 For every question, verify:
   ✓ It maps to a specific item in the materials above.
   ✓ The correct answer can be found or directly derived from those materials.
   ✓ It does not depend on guessing, outside knowledge, or inference beyond the lesson.
-  ✓ Its style matches the plain, direct Beginner tone described above.
-If any check fails, DISCARD the question and write another. Return only questions that pass all four checks.
+  ✓ Its style matches the plain, direct Beginner tone described above — a learner who just finished the lesson should feel confident, not tested.
+If any check fails, DISCARD the question and write a simpler one.
 
 ## Final set constraints
-  - EXACTLY ${TARGET_QUESTIONS} questions.
-  - Use only question types whose source material exists in this lesson.
-  - No more than 2 consecutive questions of the same type.
-  - No two questions may share the same primary vocabulary item or grammar rule.
+  • EXACTLY ${TARGET_QUESTIONS} questions.
+  • Use only question types whose source material exists in this lesson.
+  • No more than 2 consecutive questions of the same type.
+  • No two questions may share the same primary vocabulary item or grammar rule.
 
 ## Output — STRICT JSON only, no prose, no markdown fences
 {
@@ -271,10 +273,10 @@ If any check fails, DISCARD the question and write another. Return only question
       "explanation": "string",
       "teaching_explanation": "string",
       "image_url": "string or null",
-      "difficulty": "easy" | "medium" | "hard",
+      "difficulty": "easy" | "medium",
       "learning_objective": "<one of the objectives listed above>",
-      "cognitive_level": 1 | 2 | 3 | 4,
-      "estimated_time_seconds": 20-180,
+      "cognitive_level": 1 | 2,
+      "estimated_time_seconds": 15-90,
       "quality_score": 0-100,
       "skills_tested": ["reading","vocabulary","grammar","listening","writing"],
       "lesson_concepts": ["<exact string(s) from the materials>"],
@@ -295,7 +297,7 @@ If any check fails, DISCARD the question and write another. Return only question
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are an experienced Arabic teacher preparing a LESSON REVIEW. You may only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything that was not explicitly taught. Match the plain, direct style of Beginner-level assessments — no clever framing, no inference beyond the lesson. Output valid JSON only." },
+          { role: "system", content: "You write SIMPLE, Beginner-style lesson reviews for Arabic learners. Only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Keep questions short, plain, and confidence-building — no clever framing, no inference beyond the lesson, no tricky distractors. Output valid JSON only." },
           { role: "user", content: prompt },
         ],
 
@@ -450,25 +452,24 @@ function buildBlueprint(ctx: {
     weights[t] = { w: (weights[t]?.w ?? 0) + w, rationale: weights[t]?.rationale ?? r };
   };
 
-  // Vocabulary
-  if (ctx.vocabCount >= 5) {
-    add("vocab_in_context", Math.min(3, Math.ceil(ctx.vocabCount / 8)), "vocab-heavy lesson");
+  // Vocabulary — favor plain recognition
+  if (ctx.vocabCount >= 3) {
+    add("multiple_choice", 2, "vocabulary meaning");
     add("matching", 1, "match vocab ↔ meaning");
     add("fill_in_blank", 1, "vocab recall in context");
+    if (ctx.vocabCount >= 6) add("vocab_in_context", 1, "vocab used in a short sentence");
   }
 
-  // Grammar
+  // Grammar — simple recognition, no "find the mistake" traps
   if (ctx.grammarCount >= 1) {
-    add("grammar_selection", Math.min(3, Math.max(1, ctx.grammarCount)), "grammar concepts present");
-    add("find_the_mistake", 1, "identify grammar mistake");
+    add("grammar_selection", Math.min(2, Math.max(1, ctx.grammarCount)), "grammar concepts present");
+    add("fill_in_blank", 1, "apply a taught grammar form");
   }
 
-  // Reading / topic
+  // Reading / topic — short and direct
   if (ctx.hasLessonTopic) {
-    add("reading_comprehension", 2, "lesson topic available");
-    add("conversation_completion", 1, "inference from topic");
-  } else {
-    add("reading_comprehension", 1, "generic comprehension");
+    add("reading_comprehension", 1, "direct comprehension of lesson text");
+    add("true_false", 1, "true/false about lesson text");
   }
 
   // Listening
@@ -484,8 +485,8 @@ function buildBlueprint(ctx: {
 
   // Universal
   add("true_false", 1, "quick true/false check");
-  add("sentence_ordering", 1, "sentence construction");
-  add("multiple_choice", 1, "inference reasoning");
+  add("word_ordering", 1, "arrange taught words");
+  add("multiple_choice", 1, "direct recognition");
 
   // Normalize to TARGET_QUESTIONS
   const entries = Object.entries(weights).map(([type, v]) => ({
