@@ -395,16 +395,19 @@ For every question, verify:
       });
     };
 
-    // Drop low-quality AND ungrounded questions.
+    const isAllowedType = (q: any) =>
+      (ALLOWED_TYPES as readonly string[]).includes(String(q?.question_type ?? ""));
+
+    // Drop low-quality, ungrounded, or forbidden-type questions.
     const passed = questions.filter((q: any) => {
       const s = Number(q?.quality_score);
       const qualityOk = !Number.isFinite(s) || s >= MIN_QUALITY_SCORE;
-      return qualityOk && isGrounded(q);
+      return qualityOk && isGrounded(q) && isAllowedType(q);
     });
-    const grounded = questions.filter(isGrounded);
+    const grounded = questions.filter((q: any) => isGrounded(q) && isAllowedType(q));
     const rawPool = passed.length >= Math.min(TARGET_QUESTIONS, 12)
       ? passed
-      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions);
+      : (grounded.length >= Math.min(TARGET_QUESTIONS, 12) ? grounded : questions.filter(isAllowedType));
 
     // Tag category (fallback from question_type if AI omitted it) and clamp MC to 3 options.
     const tagged = rawPool.map((q: any) => {
