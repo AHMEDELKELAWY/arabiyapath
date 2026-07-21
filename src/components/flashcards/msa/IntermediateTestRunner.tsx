@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 interface TestQuestion {
   id: string;
   question_type: string;
+  category?: string | null;
   question: string;
   passage: string | null;
   options: any;
