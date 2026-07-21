@@ -458,130 +458,117 @@ For every question, verify:
 
 /* ============================ helpers ============================ */
 
-interface BlueprintEntry { type: string; count: number; rationale: string; }
+type Category = "listening" | "vocabulary" | "grammar";
+interface Distribution { listening: number; vocabulary: number; grammar: number; }
 
 /**
- * Adaptive blueprint. Weight question types by what the lesson actually
- * contains, then normalize to TARGET_QUESTIONS with at least 5 types.
+ * Build the 20-question distribution. Default is 8 listening / 6 vocab / 6 grammar.
+ * If the lesson lacks a category, redistribute its share proportionally to the
+ * available categories, keeping the total at TARGET_QUESTIONS.
  */
-function buildBlueprint(ctx: {
-  vocabCount: number;
-  grammarCount: number;
-  imageCount: number;
+function buildDistribution(ctx: {
   hasListening: boolean;
-  hasLessonTopic: boolean;
-}): BlueprintEntry[] {
-  const weights: Record<string, { w: number; rationale: string }> = {};
-  const add = (t: string, w: number, r: string) => {
-    if (w <= 0) return;
-    weights[t] = { w: (weights[t]?.w ?? 0) + w, rationale: weights[t]?.rationale ?? r };
+  hasVocabulary: boolean;
+  hasGrammar: boolean;
+}): Distribution {
+  const base = { listening: POOL_MIX.listening, vocabulary: POOL_MIX.vocabulary, grammar: POOL_MIX.grammar };
+  const availability: Record<Category, boolean> = {
+    listening: ctx.hasListening,
+    vocabulary: ctx.hasVocabulary || (!ctx.hasGrammar && !ctx.hasListening),
+    grammar: ctx.hasGrammar,
   };
-
-  // Vocabulary — favor plain recognition
-  if (ctx.vocabCount >= 3) {
-    add("multiple_choice", 2, "vocabulary meaning");
-    add("matching", 1, "match vocab ↔ meaning");
-    add("fill_in_blank", 1, "vocab recall in context");
-    if (ctx.vocabCount >= 6) add("vocab_in_context", 1, "vocab used in a short sentence");
+  // Zero out unavailable categories.
+  let orphan = 0;
+  for (const k of ["listening", "vocabulary", "grammar"] as Category[]) {
+    if (!availability[k]) { orphan += base[k]; base[k] = 0; }
   }
-
-  // Grammar — simple recognition, no "find the mistake" traps
-  if (ctx.grammarCount >= 1) {
-    add("grammar_selection", Math.min(2, Math.max(1, ctx.grammarCount)), "grammar concepts present");
-    add("fill_in_blank", 1, "apply a taught grammar form");
+  const availableKeys = (["listening", "vocabulary", "grammar"] as Category[]).filter((k) => availability[k]);
+  if (availableKeys.length === 0) {
+    // Degenerate — force vocabulary
+    return { listening: 0, vocabulary: TARGET_QUESTIONS, grammar: 0 };
   }
-
-  // Reading / topic — short and direct
-  if (ctx.hasLessonTopic) {
-    add("reading_comprehension", 1, "direct comprehension of lesson text");
-    add("true_false", 1, "true/false about lesson text");
+  // Distribute the orphan share proportionally.
+  const totalAvailable = availableKeys.reduce((s, k) => s + base[k], 0) || 1;
+  for (const k of availableKeys) {
+    base[k] += Math.round((base[k] / totalAvailable) * orphan);
   }
-
-  // Listening
-  if (ctx.hasListening) {
-    add("listening_comprehension", 2, "video content available");
+  // Correct rounding drift.
+  let sum = base.listening + base.vocabulary + base.grammar;
+  let i = 0;
+  while (sum !== TARGET_QUESTIONS && i < 100) {
+    const key = availableKeys[i % availableKeys.length];
+    if (sum < TARGET_QUESTIONS) { base[key]++; sum++; }
+    else if (base[key] > 0) { base[key]--; sum--; }
+    i++;
   }
-
-  // Images
-  if (ctx.imageCount >= 2) {
-    add("image_question", Math.min(2, Math.ceil(ctx.imageCount / 4)), "vocab has images");
-    add("choose_correct_sentence", 1, "image → sentence match");
-  }
-
-  // Universal
-  add("true_false", 1, "quick true/false check");
-  add("word_ordering", 1, "arrange taught words");
-  add("multiple_choice", 1, "direct recognition");
-
-  // Normalize to TARGET_QUESTIONS
-  const entries = Object.entries(weights).map(([type, v]) => ({
-    type, count: v.w, rationale: v.rationale,
-  }));
-  entries.sort((a, b) => b.count - a.count);
-
-  const totalWeight = entries.reduce((s, e) => s + e.count, 0);
-  const scaled = entries.map((e) => ({
-    ...e,
-    count: Math.max(1, Math.round((e.count / totalWeight) * TARGET_QUESTIONS)),
-  }));
-
-  // Adjust to exactly TARGET_QUESTIONS
-  let sum = scaled.reduce((s, e) => s + e.count, 0);
-  while (sum > TARGET_QUESTIONS) {
-    // Trim from lowest-priority entries with count > 1
-    for (let i = scaled.length - 1; i >= 0 && sum > TARGET_QUESTIONS; i--) {
-      if (scaled[i].count > 1) { scaled[i].count--; sum--; }
-    }
-    if (scaled.every((e) => e.count === 1) && sum > TARGET_QUESTIONS) {
-      scaled.pop(); sum = scaled.reduce((s, e) => s + e.count, 0);
-    }
-  }
-  while (sum < TARGET_QUESTIONS) {
-    scaled[0].count++; sum++;
-  }
-
-  // Guarantee ≥ 5 distinct types
-  if (scaled.length < 5) {
-    const fillers = ["true_false", "sentence_ordering", "multiple_choice", "matching", "fill_in_blank"]
-      .filter((t) => !scaled.some((e) => e.type === t));
-    while (scaled.length < 5 && fillers.length) {
-      scaled.push({ type: fillers.shift()!, count: 1, rationale: "diversity filler" });
-      // Rebalance: steal from the largest bucket
-      scaled.sort((a, b) => b.count - a.count);
-      if (scaled[0].count > 1) scaled[0].count--;
-    }
-  }
-
-  return scaled;
+  return base;
 }
 
-/** Reorder so no more than 2 consecutive same-type questions appear. */
-function spaceConsecutiveTypes<T extends { question_type?: string }>(list: T[]): T[] {
-  const arr = list.slice();
-  const MAX_RUN = 2;
-  for (let pass = 0; pass < 3; pass++) {
-    let moved = false;
-    for (let i = MAX_RUN; i < arr.length; i++) {
-      const t = arr[i].question_type;
-      const same =
-        arr[i - 1]?.question_type === t &&
-        arr[i - 2]?.question_type === t;
-      if (!same) continue;
-      // find a later item with a different type
-      const j = arr.findIndex((q, k) => k > i && q.question_type !== t);
-      if (j > i) {
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-        moved = true;
-      }
-    }
-    if (!moved) break;
-  }
-  return arr;
+function normalizeCategory(v: any): Category | null {
+  const s = String(v ?? "").toLowerCase().trim();
+  return s === "listening" || s === "vocabulary" || s === "grammar" ? s : null;
 }
 
-function normalizeDifficulty(d: any): string {
-  const v = String(d ?? "medium").toLowerCase();
-  return ["easy", "medium", "hard"].includes(v) ? v : "medium";
+/** Fallback category from question_type when the AI omitted the tag. */
+function inferCategoryFromType(qt: any): Category {
+  const t = String(qt ?? "");
+  if (t === "listening_comprehension") return "listening";
+  if (t === "grammar_selection" || t === "find_the_mistake") return "grammar";
+  return "vocabulary";
+}
+
+/** Enforce exactly 3 options on multiple-choice-style types (1 correct + 2 distractors). */
+function clampMcOptions(q: any): any {
+  if (!MC_OPTION_TYPES.has(q.question_type)) return q;
+  const opts = Array.isArray(q.options) ? q.options.map((o: any) => String(o)) : [];
+  const correct = String(q.correct_answer ?? "");
+  if (opts.length <= 3) return q;
+  const distractors = opts.filter((o: string) => o !== correct);
+  // shuffle distractors, keep first 2
+  for (let i = distractors.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+  }
+  const kept = [correct, ...distractors.slice(0, 2)];
+  return { ...q, options: kept };
+}
+
+/** Pick exactly the target distribution; if a bucket is short, fill from others. */
+function pickByDistribution(pool: any[], dist: Distribution): any[] {
+  const shuf = <T,>(arr: T[]): T[] => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const buckets: Record<Category, any[]> = { listening: [], vocabulary: [], grammar: [] };
+  for (const q of pool) {
+    const c: Category = normalizeCategory(q.category) ?? "vocabulary";
+    buckets[c].push(q);
+  }
+  const chosen: any[] = [];
+  const used = new Set<any>();
+  const takeFrom = (cat: Category, n: number) => {
+    const src = shuf(buckets[cat].filter((x) => !used.has(x)));
+    const picked = src.slice(0, n);
+    for (const p of picked) { chosen.push(p); used.add(p); }
+    return picked.length;
+  };
+  const targets: Record<Category, number> = { ...dist };
+  for (const cat of ["listening", "vocabulary", "grammar"] as Category[]) {
+    if (targets[cat] > 0) takeFrom(cat, targets[cat]);
+  }
+  // Fill any remaining slots from the whole pool.
+  if (chosen.length < TARGET_QUESTIONS) {
+    const rest = shuf(pool.filter((x) => !used.has(x)));
+    for (const p of rest) {
+      if (chosen.length >= TARGET_QUESTIONS) break;
+      chosen.push(p);
+    }
+  }
+  return shuf(chosen).slice(0, TARGET_QUESTIONS);
 }
 
 const OBJECTIVES = new Set([
