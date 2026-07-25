@@ -347,27 +347,51 @@ export type Database = {
       }
       email_campaigns: {
         Row: {
+          audience: string
           content: string
           created_at: string | null
+          exclude_purchasers: boolean
+          failed_emails: string[]
           id: string
+          manual_emails: string[]
           recipients_count: number | null
           sent_at: string | null
+          sent_by: string | null
+          sent_failed: number
+          sent_success: number
+          status: string
           subject: string
         }
         Insert: {
+          audience?: string
           content: string
           created_at?: string | null
+          exclude_purchasers?: boolean
+          failed_emails?: string[]
           id?: string
+          manual_emails?: string[]
           recipients_count?: number | null
           sent_at?: string | null
+          sent_by?: string | null
+          sent_failed?: number
+          sent_success?: number
+          status?: string
           subject: string
         }
         Update: {
+          audience?: string
           content?: string
           created_at?: string | null
+          exclude_purchasers?: boolean
+          failed_emails?: string[]
           id?: string
+          manual_emails?: string[]
           recipients_count?: number | null
           sent_at?: string | null
+          sent_by?: string | null
+          sent_failed?: number
+          sent_success?: number
+          status?: string
           subject?: string
         }
         Relationships: []
