@@ -370,13 +370,30 @@ export function normalizeQualityScore(v: unknown): number | null {
   return Math.max(0, Math.min(100, n));
 }
 
-/**
- * Admin-only traceability label stored in `learning_objective`-adjacent metadata.
- * Prepended to `lesson_concepts` so the Test Editor can display it. Students
- * never read these columns.
- */
-export function sourceLabel(source: LessonSource, index: number): string {
-  return source === "listening"
-    ? SOURCE_LABEL.listening
-    : `${SOURCE_LABEL[source]} #${Math.max(1, Math.round(index || 1))}`;
+/** Internal-only traceability metadata stored in `source_metadata` (jsonb). */
+export interface SourceMetadata {
+  source_type: LessonSource;
+  source_id: number;
+  source_snippet: string;
 }
+
+/**
+ * Build the admin-only traceability object for a generated question.
+ * `snippet` should be the exact sentence/fragment the question came from;
+ * if the model omits it we fall back to the raw item text passed in.
+ */
+export function buildSourceMetadata(
+  source: LessonSource,
+  index: unknown,
+  snippet: unknown,
+  fallbackSnippet?: unknown,
+): SourceMetadata {
+  const id = Math.max(0, Math.round(Number(index) || 0));
+  const text = String(snippet ?? "").trim() || String(fallbackSnippet ?? "").trim();
+  return {
+    source_type: source,
+    source_id: id,
+    source_snippet: text.slice(0, 1000),
+  };
+}
+
