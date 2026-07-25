@@ -145,6 +145,7 @@ function optionList(raw: any): any[] {
 function isCorrect(q: TestQuestion, userAnswer: any): boolean {
   const c = q.correct_answer;
   switch (q.question_type) {
+    case "word_ordering":
     case "sentence_ordering": {
       const correctArr = Array.isArray(c) ? c : optionList(c);
       const user = Array.isArray(userAnswer) ? userAnswer : [];
