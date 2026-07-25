@@ -255,7 +255,7 @@ function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
           <Textarea
             dir="auto"
             rows={12}
-            className="font-arabic text-base leading-relaxed"
+            className="text-base leading-relaxed"
             placeholder={"اُكْتُبْ الْحِوَارَ كَامِلًا هُنَا…\nالأب: مَنْ هَذَا؟\nنَدَى: هَذَا أَخِي."}
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
