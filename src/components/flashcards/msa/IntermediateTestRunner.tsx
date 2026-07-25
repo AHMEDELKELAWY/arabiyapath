@@ -66,14 +66,15 @@ function shuffle<T>(a: T[]): T[] {
 }
 
 /**
- * Randomly select a 10-question session from the pool with a 4/3/3 split
- * (listening/vocabulary/grammar). Missing buckets are backfilled from the
- * remaining pool. Falls back to a plain 10-question sample if pool < 10.
+ * Randomly select a 10-question session from the pool. The per-category split is
+ * derived from the pool's own composition (pools are now generated dynamically
+ * from the lesson, so a lesson without a listening transcript simply has no
+ * listening questions). Missing slots are backfilled from the remaining pool.
  */
 function pickSession(pool: TestQuestion[]): TestQuestion[] {
   const TARGET = 10;
   if (pool.length <= TARGET) return shuffle(pool);
-  const targets: Record<string, number> = { listening: 4, vocabulary: 3, grammar: 3 };
+  const CATS = ["listening", "vocabulary", "grammar"] as const;
   const buckets: Record<string, TestQuestion[]> = { listening: [], vocabulary: [], grammar: [] };
   const inferCat = (q: TestQuestion): string => {
     const c = String(q.category ?? "").toLowerCase();
@@ -83,11 +84,23 @@ function pickSession(pool: TestQuestion[]): TestQuestion[] {
     return "vocabulary";
   };
   for (const q of pool) buckets[inferCat(q)].push(q);
+
+  // Proportional targets: each category keeps its share of the pool.
+  const targets: Record<string, number> = { listening: 0, vocabulary: 0, grammar: 0 };
+  for (const cat of CATS) {
+    if (buckets[cat].length === 0) continue;
+    targets[cat] = Math.max(1, Math.round((buckets[cat].length / pool.length) * TARGET));
+  }
+
   const chosen: TestQuestion[] = [];
   const used = new Set<string>();
-  for (const cat of ["listening", "vocabulary", "grammar"]) {
-    const picks = shuffle(buckets[cat]).slice(0, targets[cat]);
-    for (const p of picks) { chosen.push(p); used.add(p.id); }
+  for (const cat of CATS) {
+    const picks = shuffle(buckets[cat]).slice(0, Math.min(targets[cat], buckets[cat].length));
+    for (const p of picks) {
+      if (chosen.length >= TARGET) break;
+      chosen.push(p);
+      used.add(p.id);
+    }
   }
   if (chosen.length < TARGET) {
     const rest = shuffle(pool.filter((p) => !used.has(p.id)));
@@ -98,6 +111,7 @@ function pickSession(pool: TestQuestion[]): TestQuestion[] {
   }
   return shuffle(chosen).slice(0, TARGET);
 }
+
 
 function norm(s: string): string {
   return (s ?? "")
