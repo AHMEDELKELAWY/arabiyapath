@@ -44,6 +44,10 @@ import {
   shuffle,
   shuffleOptions,
   buildSourceMetadata,
+  normalizeWordOrdering,
+  verifyImageUrl,
+  downgradeImageQuestion,
+
   toStrArr,
   type LessonSource,
 } from "../_shared/assessment-rules.ts";
