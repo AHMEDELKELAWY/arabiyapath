@@ -1,0 +1,1 @@
+ALTER TABLE public.flashcard_units ADD COLUMN IF NOT EXISTS listening_transcript text;
