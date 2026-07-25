@@ -333,10 +333,52 @@ For every question verify:
 
     const deduped = dedupeQuestions(validated).map((q: any) => clampMcOptions(q));
 
+    /* ---------- word_ordering shape + image reachability enforcement ------- */
+
+    const allowedImageUrls = new Set<string>(
+      cardsWithImages.map((c: any) => String(c.image_url)),
+    );
+    const imageCache = new Map<string, boolean>();
+    const checkImage = async (url: string): Promise<boolean> => {
+      if (imageCache.has(url)) return imageCache.get(url)!;
+      const ok = await verifyImageUrl(url, allowedImageUrls);
+      imageCache.set(url, ok);
+      return ok;
+    };
+
+    const repaired: any[] = [];
+    for (const q of deduped) {
+      if (q.question_type === "word_ordering") {
+        const wo = normalizeWordOrdering(q);
+        if (!wo) { reject("word_ordering_invalid"); continue; }
+        repaired.push({ ...q, options: wo.options, correct_answer: wo.correct_answer, image_url: null });
+        continue;
+      }
+      if (q.question_type === "image_question") {
+        const ok = await checkImage(String(q.image_url ?? ""));
+        if (ok) { repaired.push(q); continue; }
+        // Never publish a broken image question — fall back to multiple choice.
+        const downgraded = downgradeImageQuestion(q);
+        if (!downgraded) { reject("image_unreachable_and_undowngradable"); continue; }
+        reject("image_unreachable_downgraded_to_mc");
+        repaired.push({ ...downgraded, __source: q.__source });
+        continue;
+      }
+      // Any non-image question must never carry a stale/unverified image URL.
+      repaired.push({ ...q, image_url: null });
+    }
+
+    if (repaired.length === 0) {
+      return json({ error: "No question survived validation. Check the lesson content and try again.", rejected }, 422);
+    }
+
     /* ------------------ Pick per source, honour distribution --------------- */
 
-    const finalQuestions = pickBySource(deduped, distribution, poolTarget);
-    finalQuestions.forEach(shuffleOptions);
+    const finalQuestions = pickBySource(repaired, distribution, poolTarget);
+    finalQuestions.forEach((q: any) => {
+      if (q.question_type !== "word_ordering") shuffleOptions(q);
+    });
+
 
     /* ------------------------------- Persist ------------------------------- */
 
