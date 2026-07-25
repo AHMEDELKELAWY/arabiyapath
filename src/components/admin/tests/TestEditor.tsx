@@ -422,6 +422,36 @@ export function TestEditor({ unit }: { unit: any }) {
         </CardContent>
       </Card>
 
+      {/* Bulk actions toolbar */}
+      {selectedCount > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium mr-1">
+              {selectedCount} question{selectedCount === 1 ? "" : "s"} selected
+            </span>
+            <Button variant="outline" size="sm" onClick={() => bulkSetPublished(true)} disabled={bulkBusy}>
+              <Check className="w-4 h-4 mr-1" /> Publish selected
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => bulkSetPublished(false)} disabled={bulkBusy}>
+              Move selected to draft
+            </Button>
+            <Button variant="outline" size="sm" onClick={bulkDuplicate} disabled={bulkBusy}>
+              <Copy className="w-4 h-4 mr-1" /> Duplicate selected
+            </Button>
+            <Button variant="outline" size="sm" onClick={bulkRegenerate} disabled={bulkBusy}>
+              {bulkBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+              Regenerate selected
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} disabled={bulkBusy}>
+              <Trash2 className="w-4 h-4 mr-1" /> Delete selected
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearSelection} disabled={bulkBusy}>
+              Deselect all
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {!hasQuestions ? (
         <p className="text-sm text-muted-foreground text-center py-8">
           No questions yet. Click <strong>Generate test</strong> or <strong>Add question</strong> to start.
@@ -437,6 +467,8 @@ export function TestEditor({ unit }: { unit: any }) {
                   index={i}
                   count={list.length}
                   regenerating={regenId === q.id}
+                  selected={selectedSet.has(q.id)}
+                  onToggleSelect={(shift) => toggleOne(q, shift)}
                   onEdit={() => setEditing(q)}
                   onDuplicate={() => duplicate(q)}
                   onDelete={() => setPendingDelete(q)}
