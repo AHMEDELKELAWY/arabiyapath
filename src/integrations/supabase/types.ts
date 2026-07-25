@@ -1057,6 +1057,7 @@ export type Database = {
           id: string
           is_free: boolean
           lesson_topic: string | null
+          listening_transcript: string | null
           order_index: number
           published: boolean
           seo_description: string | null
@@ -1076,6 +1077,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           lesson_topic?: string | null
+          listening_transcript?: string | null
           order_index?: number
           published?: boolean
           seo_description?: string | null
@@ -1095,6 +1097,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           lesson_topic?: string | null
+          listening_transcript?: string | null
           order_index?: number
           published?: boolean
           seo_description?: string | null

@@ -1,83 +1,94 @@
-# Future-Proof Quiz Engine
+# Assessment Generation Redesign — `int-test/v7-source-grounded`
 
-Scope: `quiz_questions` (legacy Gulf/Fusha lesson quizzes served by `start-quiz` / `submit-quiz`). The Intermediate `flashcard_unit_tests` engine is untouched.
+Only the generation pipeline and its lesson inputs change. Test Editor, Student Preview, draft/publish, manual editing, regeneration UI, the assessment runner, question types, answer validation, and RLS all keep working exactly as today.
 
-## 1. Schema changes (single migration)
+## 1. Listening Transcript (the one schema change)
 
-`quiz_questions`
-- add `difficulty text` with CHECK in (`easy`,`medium`,`hard`), default `medium`, nullable-tolerant (treated as `medium`).
-- add `question_type text not null default 'multiple_choice'` (rename intent of existing `type` — see Technical Notes).
-- add `metadata jsonb not null default '{}'::jsonb` for per-type extras (image_url, audio_url variants, blanks, etc.) so future types don't require schema changes.
+Add nullable `listening_transcript text` to `flashcard_units`. Nothing else in the database is touched.
 
-New table `public.quiz_attempt_questions`
-- columns: `id uuid pk`, `attempt_id uuid fk → quiz_attempts(id) on delete cascade`, `question_id uuid fk → quiz_questions(id) on delete cascade`, `was_correct boolean`, `created_at`.
-- unique(`attempt_id`,`question_id`).
-- GRANTs: `authenticated` select/insert on own rows via `quiz_attempts.user_id`; `service_role` all. RLS: users can read rows where their attempt; only edge function (service role) writes.
-- Indexes: `(attempt_id)`, `(question_id)`.
+Admin: a **Listening Transcript** textarea inside the existing Listening tab, in the same card style and same save pattern as the YouTube URL field.
 
-New view/materialization is not needed — we derive per-user history with SQL.
+Generation rules:
+- Listening questions are generated **only** from this transcript.
+- `lesson_topic` is demoted to context only — never a listening source, never used to guess dialogue.
+- Empty transcript → zero listening questions, its share redistributed to the other sources, generation still succeeds.
 
-## 2. `start-quiz` — adaptive selection
+## 2. Lesson sources (only these)
 
-Replace the current "shuffle and slice" with a weighted, layered picker:
+| Source | Data |
+|---|---|
+| Listening Transcript | `flashcard_units.listening_transcript` |
+| Learn | `flashcards` where `kind = 'learn'`, published |
+| Grammar | `flashcards` where `kind = 'grammar'`, published |
+| Speaking | `flashcards` where `kind = 'speaking'`, published (newly added; auto-skipped when absent) |
+
+Any empty source is skipped silently.
+
+## 3. Dynamic distribution — no fixed numbers
+
+The current hardcoded 8/6/6 pool of 20 is removed entirely. Instead the generator computes a *weight* per source from the actual lesson content:
 
 ```text
-Step A  Fetch pool (all questions for quiz_id) with difficulty + question_type.
-Step B  Fetch last attempt's question IDs for this user+quiz (recentIds).
-Step C  Fetch per-user history for these questions:
-        wrongCount, correctCount from quiz_attempt_questions
-        joined with quiz_attempts.user_id = auth user.
-Step D  Split pool into "fresh" (id not in recentIds) and "recent".
-Step E  Score every candidate:
-        base = 1
-        +0.6 per prior wrong answer (cap +1.8)
-        -0.25 per prior correct answer (floor 0.2)
-        recent questions get their score * 0.15 (only used if fresh runs out)
-Step F  Build target mix from question_count (default 10):
-        easy 40%, medium 40%, hard 20% — rounded, remainder filled by medium then any.
-Step G  For each difficulty bucket:
-          take from fresh first, weighted-random sample without replacement,
-          fall back to recent bucket if short,
-          fall back to other difficulties if still short.
-Step H  Final Fisher–Yates shuffle for display order; shuffle options per question.
+learnWeight    = learnCards      x questionsPerCard
+grammarWeight  = grammarCards    x questionsPerCard
+speakingWeight = speakingCards   x questionsPerCard
+listenWeight   = transcript utterance/sentence count x questionsPerUtterance
+
+poolTarget = clamp(sum(weights), 20, 40)
+share(source) = round(poolTarget * weight / totalWeight)
 ```
 
-Response gains: `question_type`, `difficulty`, `metadata` per question. `correct_answer` still never leaves the server.
+Small lessons naturally produce small pools; content-rich lessons approach 40. Sources with weight 0 drop out and their share is redistributed proportionally. No constant anywhere states "8 listening" or similar — only the 20–40 safety clamp the brief specifies.
 
-## 3. `submit-quiz` — record per-question history
+## 4. Multiple questions per lesson item
 
-After scoring the id-keyed answers, insert one row per answered question into `quiz_attempt_questions` with `was_correct`. Wrap in the same request; failure to log does not fail the submission (logged warning). Continue returning `idResults` unchanged.
+The prompt explicitly asks for several angles per item: a Learn card may yield meaning / vocabulary / fill-blank / image / context questions; a Grammar card several rule checks; the transcript several comprehension questions; a Speaking card several simple prompts. Existing question types only — nothing new introduced.
 
-## 4. Question-type architecture (no new types yet)
+## 5. Teacher-style wording (hard gate)
 
-Server side (`start-quiz`): a `serializers` map keyed by `question_type` shapes the public payload. Default `multiple_choice` serializer returns `{ id, question_type, difficulty, prompt, audio_url, options, metadata }`. Adding a new type = add one serializer entry; no engine changes.
+Enforced twice: in the prompt, and by a post-generation filter that discards violations **before** saving.
 
-Client side: introduce `src/components/quiz/questionTypes/` with:
-- `types.ts` — `QuizQuestion` union + `QuestionTypeRenderer` interface `{ Render, isAnswered, getAnswerPayload }`.
-- `registry.ts` — `registerQuestionType(type, renderer)` + `getRenderer(type)`.
-- `MultipleChoice.tsx` — extracted from current `QuizPage` render block, registered as `multiple_choice`.
-- `index.ts` — imports side-effect registers all built-ins.
+- One short sentence, target ≤ 8 Arabic words.
+- Rejected stems: `أكمل`, `اقرأ الحوار`, `استمع ثم`, `اختر الإجابة الصحيحة`, `أكمل الجملة التالية`, `انظر إلى الصورة`, plus the English equivalents ("Complete the dialogue", "Listen and answer", "Read then answer").
+- Target shapes: `مَنْ هَذَا؟` · `أَيْنَ الْوَلَدُ؟` · `مَاذَا قَالَ الْأَبُ؟` · `مَا مَعْنَى …؟`
 
-`QuizPage.tsx` becomes a thin controller: pick renderer by `question.question_type`, delegate rendering + answer capture. Unknown type → friendly "Unsupported question type" fallback (never crashes engine). No behavior change today.
+Fill-in-the-blank keeps its blank in the sentence but loses the instructional preamble.
 
-## 5. Admin editor
+## 6. Grounding + traceability
 
-Minimal additions to existing `AdminQuizQuestions` editor:
-- Difficulty select (Easy / Medium / Hard).
-- Read-only `question_type` badge (defaults to Multiple Choice) — a select is wired but locked to `multiple_choice` until new types ship.
+- Every question must be answerable from exactly one source; the grounding haystack is rebuilt from transcript + learn + grammar + speaking (title/`lesson_topic` no longer sufficient).
+- Each question carries an internal source label (`Listening Transcript`, `Learn Card #12`, `Grammar Card #4`, `Speaking Card #3`).
+- **No schema change for this:** the label is stored in the existing unused-by-students `learning_objective` text column, which the Test Editor already renders as an admin-only field. Students never see it — the runner does not read that column.
+- Improved dedupe: normalized-prompt similarity check removes near-duplicate questions so a 30-item pool is 30 distinct items.
 
-## 6. Verification
+## 7. Difficulty
 
-- Migration lint clean.
-- Manual: retake a quiz twice on a >10-question pool → Attempt 2 shows disjoint IDs from Attempt 1.
-- Manual: mark a question wrong, retake several times → that question reappears more often than a consistently-correct sibling.
-- Difficulty mix check on a pool with mixed tags: 10-question quiz returns ~4/4/2.
-- Existing quizzes with no difficulty set still work (treated as medium).
+Back to the original Beginner philosophy: easy, direct, confidence-building, lesson-based. No "why", no inference, no puzzles, no untaught vocabulary. Difficulty stays `easy`.
 
-## Technical Notes
+## 8. Randomization
 
-- `quiz_questions.type` already exists and stores the MCQ variant (e.g., `text`, `audio`). We keep it as-is and add `question_type` as the new engine-level discriminator so we don't break existing rows or admin code. `type` becomes an MCQ subvariant surfaced through `metadata` later if needed.
-- `metadata jsonb` is the extensibility hook: audio, image, blanks, ordering tokens all live here so future types need zero schema work.
-- Weight formulas are tunable constants in one file (`supabase/functions/start-quiz/weights.ts`) for future A/B.
-- Adaptive history is per user per quiz; global cross-quiz adaptation is out of scope.
-- No changes to `Intermediate` test engine.
+Each attempt draws a different subset from the pool, weighted across whichever categories exist, instead of assuming a fixed 8/6/6 pool of 20. Selection logic only — runner UI, scoring, review, and student workflow untouched.
+
+## 9. Files to change and why
+
+| File | Why |
+|---|---|
+| new migration | Add `listening_transcript` to `flashcard_units` |
+| `src/pages/admin/AdminIntermediateUnit.tsx` | Listening tab needs the transcript textarea + save |
+| `supabase/functions/_shared/assessment-rules.ts` (new) | Single home for lesson-source contract, wording rules, allowed types, grounding + validation — ends the current duplication between the two functions |
+| `supabase/functions/generate-intermediate-test/index.ts` | Fetch transcript & speaking cards, dynamic distribution, teacher-style prompt, source metadata, wording validation, better dedupe |
+| `supabase/functions/regenerate-intermediate-question/index.ts` | Same sources, same wording rules, and grounding validation it currently lacks |
+| `src/components/flashcards/msa/IntermediateTestRunner.tsx` | Pool selection only, so a 20–40 dynamic pool with variable categories still yields a full attempt |
+| `src/integrations/supabase/types.ts` | Regenerated after the migration |
+
+Version tag becomes `int-test/v7-source-grounded`.
+
+## 10. Verification
+
+- Unit with a transcript → listening questions quote the transcript only.
+- Blank transcript → zero listening questions, share redistributed, generation succeeds.
+- Unit with/without speaking cards → included / silently skipped.
+- Tiny lesson → small pool; rich lesson → approaches 40.
+- Every saved question shows its source label in the Test Editor; nothing new appears to students.
+- Two runner attempts on the same unit → different question sets.
+- Test Editor edit / reorder / add / delete / publish and Student Preview behave identically.

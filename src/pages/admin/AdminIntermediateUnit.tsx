@@ -17,14 +17,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
 import { TestEditor } from "@/components/admin/tests/TestEditor";
 import {
   Headphones, BookOpen, ScrollText, ClipboardCheck,
-  Video, Youtube, Loader2, Trash2, Upload,
+  Video, Youtube, Loader2, Trash2, Upload, FileText,
 } from "lucide-react";
+
 
 const CONTENT_BUCKET = "content";
 
@@ -112,8 +114,11 @@ export default function AdminIntermediateUnit() {
 
 function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
   const [videoUrl, setVideoUrl] = useState<string>(unit.video_url ?? "");
+  const [transcript, setTranscript] = useState<string>(unit.listening_transcript ?? "");
+  const [savingTranscript, setSavingTranscript] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
 
   const uploadedPath = unit.video_storage_path as string | null;
   const uploadedPublicUrl = uploadedPath
@@ -131,6 +136,19 @@ function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
     toast({ title: "YouTube URL saved" });
     onSaved();
   };
+
+  const saveTranscript = async () => {
+    setSavingTranscript(true);
+    const { error } = await (supabase as any)
+      .from("flashcard_units")
+      .update({ listening_transcript: transcript.trim() || null })
+      .eq("id", unit.id);
+    setSavingTranscript(false);
+    if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    toast({ title: "Listening transcript saved" });
+    onSaved();
+  };
+
 
   const uploadVideo = async (file: File) => {
     setUploading(true);
@@ -226,7 +244,40 @@ function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
           </p>
         </CardContent>
       </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" /> Listening Transcript
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            dir="auto"
+            rows={12}
+            className="text-base leading-relaxed"
+            placeholder={"اُكْتُبْ الْحِوَارَ كَامِلًا هُنَا…\nالأب: مَنْ هَذَا؟\nنَدَى: هَذَا أَخِي."}
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+          />
+          <div className="flex items-center gap-3">
+            <Button onClick={saveTranscript} disabled={savingTranscript}>
+              {savingTranscript && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save transcript
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {transcript.trim() ? `${transcript.trim().split(/\s+/).length} words` : "empty"}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Paste the complete dialogue/script of the video. This is the <strong>only</strong> source used
+            to generate listening questions — if it is empty, no listening questions are generated and the
+            share is redistributed to Learn, Grammar and Speaking automatically.
+          </p>
+        </CardContent>
+      </Card>
     </div>
+
   );
 }
 

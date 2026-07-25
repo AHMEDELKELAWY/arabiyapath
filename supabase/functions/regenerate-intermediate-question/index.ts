@@ -1,24 +1,42 @@
 // Regenerate / transform a single Intermediate-test question in place.
 //
-// Supports these modes:
+// Modes:
 //   regenerate           — new question of the same type
 //   easier               — same type, lower difficulty
-//   harder               — same type, higher difficulty
+//   harder               — same type, slightly firmer (still plain/easy style)
 //   improve_distractors  — keep question + correct answer, rewrite distractors
 //   rewrite              — same type, rephrase the question in a fresh way
 //   change_type          — convert to a different supported type (target_type)
 //
 // Preserves the row id and order_index. Does not touch other questions.
+// Uses the SAME lesson sources, wording rules and grounding validation as
+// full pool generation (../_shared/assessment-rules.ts, v7-source-grounded).
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod";
-
-const ALLOWED_TYPES = [
-  "multiple_choice","grammar_selection","conversation_completion",
-  "vocab_in_context","fill_in_blank","matching",
-  "image_question","choose_correct_sentence",
-] as const;
+import {
+  AI_VERSION,
+  ALLOWED_TYPES,
+  SOURCE_CONTRACT_PROMPT,
+  TYPE_RULES_PROMPT,
+  WORDING_RULES_PROMPT,
+  buildLessonHaystack,
+  checkWording,
+  clampMcOptions,
+  isAllowedType,
+  isGrounded,
+  isListeningGrounded,
+  normalizeCognitiveLevel,
+  normalizeEstimatedTime,
+  normalizeObjective,
+  normalizeQualityScore,
+  normalizeSource,
+  shuffleOptions,
+  sourceLabel,
+  toStrArr,
+  type LessonSource,
+} from "../_shared/assessment-rules.ts";
 
 const MODES = ["regenerate","easier","harder","improve_distractors","rewrite","change_type"] as const;
 
@@ -28,7 +46,7 @@ const BodySchema = z.object({
   target_type: z.enum(ALLOWED_TYPES).optional(),
 });
 
-const AI_VERSION = "int-test/v6-restricted-types";
+const MAX_ATTEMPTS = 2;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -59,101 +77,104 @@ Deno.serve(async (req) => {
     if (!roleRow) return json({ error: "admin required" }, 403);
 
     const { data: existing, error: qErr } = await admin
-      .from("flashcard_unit_tests")
-      .select("*")
-      .eq("id", question_id)
-      .single();
+      .from("flashcard_unit_tests").select("*").eq("id", question_id).single();
     if (qErr || !existing) return json({ error: "question not found" }, 404);
 
-    const finalType =
-      mode === "change_type" && target_type ? target_type : existing.question_type;
+    const finalType = mode === "change_type" && target_type ? target_type : existing.question_type;
+
+    /* ------------------------- Gather lesson sources ------------------------ */
 
     const { data: unit } = await admin
       .from("flashcard_units")
-      .select("id, title_en, title_ar, lesson_topic, video_url, video_storage_path")
+      .select("id, title_en, title_ar, lesson_topic, listening_transcript")
       .eq("id", existing.unit_id).single();
 
-    const { data: learnCards } = await admin
-      .from("flashcards")
-      .select("arabic_text, transliteration, english_translation, notes, image_url")
-      .eq("unit_id", existing.unit_id).eq("kind", "learn").eq("published", true).limit(80);
+    const [{ data: learnCards }, { data: grammarCards }, { data: speakingCards }, { data: siblings }] =
+      await Promise.all([
+        admin.from("flashcards")
+          .select("arabic_text, transliteration, english_translation, notes, image_url")
+          .eq("unit_id", existing.unit_id).eq("kind", "learn").eq("published", true).limit(80),
+        admin.from("flashcards")
+          .select("arabic_text, english_translation, notes")
+          .eq("unit_id", existing.unit_id).eq("kind", "grammar").eq("published", true).limit(40),
+        admin.from("flashcards")
+          .select("arabic_text, transliteration, english_translation, notes")
+          .eq("unit_id", existing.unit_id).eq("kind", "speaking").eq("published", true).limit(40),
+        admin.from("flashcard_unit_tests")
+          .select("question").eq("unit_id", existing.unit_id).neq("id", question_id).limit(30),
+      ]);
 
-    const { data: grammarCards } = await admin
-      .from("flashcards")
-      .select("arabic_text, english_translation, notes")
-      .eq("unit_id", existing.unit_id).eq("kind", "grammar").eq("published", true).limit(40);
+    const learn = learnCards ?? [];
+    const grammar = grammarCards ?? [];
+    const speaking = speakingCards ?? [];
+    const transcript = (unit?.listening_transcript ?? "").trim() || null;
 
-    const { data: siblings } = await admin
-      .from("flashcard_unit_tests")
-      .select("question")
-      .eq("unit_id", existing.unit_id)
-      .neq("id", question_id)
-      .limit(30);
-
-    const vocabList = (learnCards ?? []).map((c: any) =>
-      `- ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}${c.image_url ? ` [image]` : ""}`
+    const transcriptText = transcript
+      ? transcript.split(/\n+/).map((l: string, i: number) => `[L${i + 1}] ${l.trim()}`).filter(Boolean).join("\n")
+      : "(no transcript — do NOT produce a listening question)";
+    const vocabList = learn.map((c: any, i: number) =>
+      `[Learn #${i + 1}] ${c.arabic_text}${c.transliteration ? ` (${c.transliteration})` : ""} = ${c.english_translation}${c.notes ? ` — ${c.notes}` : ""}${c.image_url ? " [image]" : ""}`
     ).join("\n");
-    const grammarList = (grammarCards ?? []).map((c: any) =>
-      `- ${c.arabic_text} — ${c.english_translation}${c.notes ? `\n  Note: ${c.notes}` : ""}`
+    const grammarList = grammar.map((c: any, i: number) =>
+      `[Grammar #${i + 1}] ${c.arabic_text} — ${c.english_translation}${c.notes ? `\n  Note: ${c.notes}` : ""}`
     ).join("\n");
-    const sibList = (siblings ?? [])
-      .map((r: any, i: number) => `${i + 1}. ${r.question}`).join("\n");
-    const imageList = (learnCards ?? []).filter((c: any) => c.image_url)
-      .slice(0, 8).map((c: any) => `- "${c.english_translation}" → ${c.image_url}`).join("\n");
+    const speakingList = speaking.map((c: any, i: number) =>
+      `[Speaking #${i + 1}] ${c.arabic_text} — ${c.english_translation}`
+    ).join("\n");
+    const imageList = learn.filter((c: any) => c.image_url).slice(0, 8)
+      .map((c: any) => `- "${c.english_translation}" → ${c.image_url}`).join("\n");
+    const sibList = (siblings ?? []).map((r: any, i: number) => `${i + 1}. ${r.question}`).join("\n");
 
-    /* ---------- Mode-specific instructions ---------- */
+    /* ---------------------------- Mode instruction ------------------------- */
+
     const modeInstruction = (() => {
       switch (mode) {
         case "easier":
-          return `Rewrite as an EASIER version of the same question (difficulty="easy"). Keep the same question_type. Use the most obvious taught vocabulary, very clear context, and clearly wrong distractors. Pure recognition is fine.`;
+          return `Rewrite as an EASIER version of the same question. Keep the same question_type. Use the most obvious taught item and clearly wrong distractors. Pure recognition is fine.`;
         case "harder":
-          return `Rewrite as a slightly firmer version of the same question (difficulty="medium"). Keep the same question_type. Stay in the plain Beginner style — do NOT add inference, trick wording, near-identical distractors, or multi-step reasoning. "Harder" here just means the correct answer is not immediately obvious at a glance, while the question itself remains simple and lesson-anchored.`;
+          return `Rewrite as a slightly firmer version of the same question. Keep the same question_type. Stay in the plain teacher-check style — no inference, no trick wording, no near-identical distractors. "Firmer" only means the answer is not obvious at a glance.`;
         case "improve_distractors":
-          return `KEEP the original question text and correct_answer EXACTLY the same. ONLY replace the distractor options with plausible ones drawn from the SAME lesson (other taught vocab items, other taught forms). Distractors should be clearly wrong on reflection, not near-identical traps. correct_answer must remain in the options array.
+          return `KEEP the original question text and correct_answer EXACTLY the same. ONLY replace the distractors with plausible ones drawn from the SAME lesson. correct_answer must remain in the options array.
 Original question: ${JSON.stringify(existing.question)}
 Original correct_answer: ${JSON.stringify(existing.correct_answer)}`;
         case "rewrite":
-          return `Rewrite the question in a fresh way (new wording, new example, new distractors) but keep the SAME question_type and the SAME underlying skill being tested. Stay in plain Beginner style. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
+          return `Rewrite the question in a fresh way (new wording, new example, new distractors) but keep the SAME question_type and the SAME taught item being checked.`;
         case "change_type":
-          return `Convert the question to a DIFFERENT type: "${finalType}". Test the same taught item, adapted to that type's formatting rules. Stay in plain Beginner style. Preserve difficulty="${existing.difficulty ?? "medium"}".`;
+          return `Convert the question to type "${finalType}". Check the same taught item, adapted to that type's formatting rules.`;
         case "regenerate":
         default:
-          return `Produce a NEW question of type "${finalType}" testing the same taught item (or a closely related one) at difficulty="${existing.difficulty ?? "medium"}". Vary the wording, example, and distractors — do not repeat the previous version. Stay in plain Beginner style.`;
+          return `Produce a NEW question of type "${finalType}" checking the same taught item (or a closely related one from the same lesson). Vary wording and distractors — do not repeat the previous version.`;
       }
     })();
 
-    const prompt = `You are regenerating ONE question for a SIMPLE lesson review. This is not an exam. It is a friendly, confidence-building check that the learner remembers what was just taught.
+    const buildPrompt = (feedback?: string) => `You are a teacher asking a student ONE short question about the lesson they just finished.
+You are not writing new educational content — you only turn the lesson material below into a question.
 
-Match the style of Beginner-level assessments on this platform: short, plain, direct, one idea per question, no clever framing, no trick wording, no multi-step reasoning. The learner should feel "this is exactly what I just learned".
-
-============================================================
-## SOURCE OF TRUTH (ABSOLUTE — DO NOT REMOVE)
-============================================================
-The ONLY allowed source is this lesson's materials below (transcript, Learn vocabulary, Grammar cards, Listening/video). If a concept, word, meaning, rule, name, or fact is NOT present below, you MUST NOT ask about it.
-
-Every question must be traceable to a specific item from the materials (a specific vocab card, grammar card, sentence, or listening segment). Record it in "lesson_concepts" / "vocabulary_used" / "grammar_concepts_used" using strings that appear in the materials exactly.
-
-## Forbidden
-Never ask about: information not taught, hidden details, character motivations, future events, general knowledge, cultural trivia not in the lesson, "why do you think…", opinion questions, "which is NOT…" traps, or anything requiring guessing beyond the lesson.
+${SOURCE_CONTRACT_PROMPT}
 
 ============================================================
-## LESSON MATERIALS (the ONLY allowed source)
+## LESSON MATERIALS
 ============================================================
 
-## Unit
+## Unit (context only — never a question source)
 Title (EN): ${unit?.title_en ?? ""}
 Title (AR): ${unit?.title_ar ?? ""}
-Lesson topic / transcript: ${unit?.lesson_topic ?? "(none — do not invent one)"}
-Video attached: ${unit?.video_url || unit?.video_storage_path ? "yes" : "no"}
+Lesson topic: ${unit?.lesson_topic ?? "(none)"}
 
-## Learn vocabulary
+## Listening Transcript (the ONLY source for listening questions)
+${transcriptText}
+
+## Learn cards (${learn.length})
 ${vocabList || "(none)"}
 
-## Vocabulary with images (only these image URLs may be used)
-${imageList || "(none)"}
-
-## Grammar
+## Grammar cards (${grammar.length})
 ${grammarList || "(none — do NOT invent grammar rules)"}
+
+## Speaking cards (${speaking.length})
+${speakingList || "(none — skip speaking)"}
+
+## Images available (only these URLs may be used)
+${imageList || "(none — do NOT produce image_question)"}
 
 ${sibList ? `## Other questions already in this test (DO NOT REPEAT)
 ${sibList}
@@ -167,149 +188,147 @@ Correct answer: ${JSON.stringify(existing.correct_answer)}
 ## Mode: ${mode}
 ${modeInstruction}
 
-## ALLOWED question types (use ONLY these — nothing else is permitted)
-multiple_choice, grammar_selection, conversation_completion, vocab_in_context,
-fill_in_blank, matching, image_question, choose_correct_sentence.
+${WORDING_RULES_PROMPT}
 
-FORBIDDEN types (never generate): true_false, reading_comprehension, listening_comprehension,
-sentence_ordering, word_ordering, find_the_mistake, "why" / inference / prediction /
-explanation questions, open-ended / short-answer / essay, select-all / multi-select.
-
-## Formatting rules (must follow for type "${finalType}") — MC-style types use EXACTLY 3 options
-- multiple_choice / grammar_selection / conversation_completion / vocab_in_context / choose_correct_sentence / image_question: options is EXACTLY 3 strings (1 correct + 2 believable distractors); correct_answer is one option string.
-- fill_in_blank: question contains "____"; options is EXACTLY 3 candidate fills; correct_answer is the correct fill.
-- matching: options is 3 {"left","right"} pairs; correct_answer is {"left":"right",...}.
-- image_question: "image_url" MUST be one of the listed URLs above.
-
-## Distractors
-Simple, plausible, drawn from the SAME lesson pool (other taught vocab items, other taught forms of the same word, a short taught phrase that doesn't fit). Never nonsense, never unrelated. Do NOT craft near-identical distractors designed to trick the learner — this is a fair check, not a discrimination task. Fully vowelize Arabic.
+${TYPE_RULES_PROMPT}
 
 ## Teaching explanation
-"teaching_explanation" (1–2 short English sentences) points to the specific lesson item and plainly says why the correct answer is right. Friendly tone, no jargon.
-
-## Final validation (silent)
-Before returning: (1) the question maps to a specific item in the materials above; (2) the correct answer is verifiable from those materials; (3) no outside knowledge or inference is required; (4) the tone matches plain Beginner-style assessment wording. If any check fails, rewrite.
-
+"teaching_explanation" (1–2 short English sentences) points to the specific lesson item and plainly says why the correct answer is right.
+${feedback ? `\n## YOUR PREVIOUS ATTEMPT WAS REJECTED\nReason: ${feedback}\nFix it and return a valid question.\n` : ""}
 Return STRICT JSON only:
 {
+  "source": "listening" | "learn" | "grammar" | "speaking",
+  "source_index": 0,
   "question_type": "${finalType}",
-  "question": "string",
+  "question": "string (ONE short sentence)",
   "passage": "string or null",
   "options": [...],
-  "correct_answer": "string" | ["...","..."] | {"left":"right", ...},
+  "correct_answer": "string" | {"left":"right", ...},
   "explanation": "string",
   "teaching_explanation": "string",
   "image_url": "string or null",
-  "difficulty": "easy" | "medium" | "hard",
+  "difficulty": "easy",
   "learning_objective": "<one of: vocabulary_recognition | vocabulary_usage | grammar_recognition | grammar_usage | listening_comprehension | reading_comprehension | sentence_construction | word_order | image_interpretation | context_understanding | everyday_communication>",
-  "cognitive_level": 1 | 2 | 3 | 4,
-  "estimated_time_seconds": 20-180,
+  "cognitive_level": 1,
+  "estimated_time_seconds": 15-60,
   "quality_score": 0-100,
   "skills_tested": ["..."],
   "lesson_concepts": ["<exact string(s) from the materials above>"],
-  "vocabulary_used": ["<exact Arabic word(s) from the Learn vocabulary above>"],
-  "grammar_concepts_used": ["<exact string(s) from the Grammar section above>"]
+  "vocabulary_used": ["<exact Arabic word(s) from the materials above>"],
+  "grammar_concepts_used": ["<exact string(s) from the Grammar cards above>"]
 }`;
 
+    /* ------------------- Generate + validate (same gates) ------------------ */
 
-    const gwRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": LOVABLE_API_KEY },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: "You regenerate ONE Beginner-style question for a simple Arabic lesson review. Only ask about content that appears in the lesson materials the user provides. Never invent facts, never test general knowledge, never ask about anything not explicitly taught. Keep the question short, plain, and confidence-building — no clever framing, no inference, no tricky distractors. Output valid JSON only." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
+    const haystack = buildLessonHaystack({ transcript, learn, grammar, speaking });
+    let q: any = null;
+    let rejection = "";
 
-    if (!gwRes.ok) {
-      const body = await gwRes.text();
-      console.error(`AI Gateway error [${gwRes.status}]: ${body}`);
-      return json({ error: "AI generation failed", details: body }, gwRes.status);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const gwRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": LOVABLE_API_KEY },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You regenerate ONE short teacher-style question for an Arabic lesson review. Only ask about content that appears in the lesson materials the user provides (listening transcript, learn cards, grammar cards, speaking cards). Never invent facts, never test general knowledge, never use instructional wording like 'complete the dialogue' or 'listen then choose'. Output valid JSON only.",
+            },
+            { role: "user", content: buildPrompt(rejection || undefined) },
+          ],
+        }),
+      });
+
+      if (!gwRes.ok) {
+        const body = await gwRes.text();
+        console.error(`AI Gateway error [${gwRes.status}]: ${body}`);
+        return json({ error: "AI generation failed", details: body }, gwRes.status);
+      }
+
+      const gwJson = await gwRes.json();
+      const raw = gwJson.choices?.[0]?.message?.content ?? "";
+      let candidate: any;
+      try { candidate = JSON.parse(raw); }
+      catch { candidate = JSON.parse(raw.replace(/```json|```/g, "").trim()); }
+
+      const check = validate(candidate, { transcript, haystack, speaking, grammar });
+      if (check.ok) { q = candidate; break; }
+      rejection = check.reason!;
+      console.warn(`regenerate attempt ${attempt} rejected: ${rejection}`);
     }
 
-    const gwJson = await gwRes.json();
-    const raw = gwJson.choices?.[0]?.message?.content ?? "";
-    let q: any;
-    try { q = JSON.parse(raw); }
-    catch { q = JSON.parse(raw.replace(/```json|```/g, "").trim()); }
+    if (!q) {
+      return json({ error: `Regenerated question failed validation: ${rejection}`, reason: rejection }, 422);
+    }
+
+    /* ------------------------------- Persist ------------------------------- */
+
+    const src: LessonSource = normalizeSource(q.source) ?? "learn";
+    const clamped = shuffleOptions(clampMcOptions(q));
 
     const patch: Record<string, unknown> = {
-      question_type: (ALLOWED_TYPES as readonly string[]).includes(q.question_type)
-        ? q.question_type : finalType,
-      question: String(q.question ?? "").slice(0, 2000),
-      passage: q.passage ?? null,
-      options: q.options ?? null,
-      correct_answer: q.correct_answer ?? "",
-      explanation: q.explanation ?? null,
-      teaching_explanation: q.teaching_explanation ?? null,
-      image_url: q.image_url ?? existing.image_url ?? null,
-      difficulty: normalizeDifficulty(q.difficulty ?? existing.difficulty),
-      learning_objective: normalizeObjective(q.learning_objective),
-      cognitive_level: normalizeCognitiveLevel(q.cognitive_level),
-      estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
-      quality_score: normalizeQualityScore(q.quality_score),
-      skills_tested: toStrArr(q.skills_tested),
-      lesson_concepts: toStrArr(q.lesson_concepts),
-      vocabulary_used: toStrArr(q.vocabulary_used),
-      grammar_concepts_used: toStrArr(q.grammar_concepts_used),
+      question_type: isAllowedType(clamped.question_type) ? clamped.question_type : finalType,
+      question: String(clamped.question ?? "").slice(0, 2000),
+      passage: clamped.passage ?? null,
+      options: clamped.options ?? null,
+      correct_answer: clamped.correct_answer ?? "",
+      explanation: clamped.explanation ?? null,
+      teaching_explanation: clamped.teaching_explanation ?? null,
+      image_url: clamped.image_url ?? existing.image_url ?? null,
+      difficulty: "easy",
+      learning_objective: normalizeObjective(clamped.learning_objective),
+      cognitive_level: normalizeCognitiveLevel(clamped.cognitive_level),
+      estimated_time_seconds: normalizeEstimatedTime(clamped.estimated_time_seconds),
+      quality_score: normalizeQualityScore(clamped.quality_score),
+      skills_tested: toStrArr(clamped.skills_tested),
+      // Admin-only traceability: the source label is always the first concept.
+      lesson_concepts: [
+        `Source: ${sourceLabel(src, Number(clamped.source_index ?? 0))}`,
+        ...toStrArr(clamped.lesson_concepts),
+      ].slice(0, 20),
+      vocabulary_used: toStrArr(clamped.vocabulary_used),
+      grammar_concepts_used: toStrArr(clamped.grammar_concepts_used),
       ai_version: AI_VERSION,
       generated_at: new Date().toISOString(),
     };
 
     const { error: upErr } = await admin
-      .from("flashcard_unit_tests")
-      .update(patch)
-      .eq("id", question_id);
+      .from("flashcard_unit_tests").update(patch).eq("id", question_id);
     if (upErr) return json({ error: upErr.message }, 500);
 
-    return json({ ok: true, mode });
+    return json({ ok: true, mode, source: src });
   } catch (e: any) {
     console.error("regenerate-intermediate-question crashed", e);
     return json({ error: e?.message ?? "internal error" }, 500);
   }
 });
 
-function normalizeDifficulty(d: any): string {
-  const v = String(d ?? "medium").toLowerCase();
-  return ["easy", "medium", "hard"].includes(v) ? v : "medium";
-}
+/** Exactly the gates used by full pool generation. */
+function validate(
+  q: any,
+  ctx: { transcript: string | null; haystack: string; speaking: any[]; grammar: any[] },
+): { ok: boolean; reason?: string } {
+  if (!q || typeof q !== "object") return { ok: false, reason: "invalid JSON shape" };
+  if (!isAllowedType(q.question_type)) return { ok: false, reason: `forbidden question type "${q.question_type}"` };
 
-const OBJECTIVES = new Set([
-  "vocabulary_recognition","vocabulary_usage","grammar_recognition","grammar_usage",
-  "listening_comprehension","listening_inference","reading_comprehension","reading_inference",
-  "sentence_construction","word_order","image_interpretation","context_understanding",
-  "everyday_communication",
-]);
-function normalizeObjective(v: any): string | null {
-  if (!v) return null;
-  const s = String(v).toLowerCase().replace(/\s+/g, "_");
-  return OBJECTIVES.has(s) ? s : null;
-}
-function normalizeCognitiveLevel(v: any): number | null {
-  const n = Math.round(Number(v));
-  return n >= 1 && n <= 4 ? n : null;
-}
-function normalizeEstimatedTime(v: any): number | null {
-  const n = Math.round(Number(v));
-  if (!Number.isFinite(n)) return null;
-  return Math.max(10, Math.min(300, n));
-}
-function normalizeQualityScore(v: any): number | null {
-  const n = Math.round(Number(v));
-  if (!Number.isFinite(n)) return null;
-  return Math.max(0, Math.min(100, n));
-}
+  const wording = checkWording(q.question, q.question_type);
+  if (!wording.ok) return { ok: false, reason: `wording — ${wording.reason}` };
 
-
-
-function toStrArr(v: any): string[] {
-  if (!v) return [];
-  if (Array.isArray(v)) return v.map((x) => String(x)).filter(Boolean).slice(0, 20);
-  return [String(v)];
+  const src = normalizeSource(q.source) ?? "learn";
+  if (src === "listening") {
+    if (!ctx.transcript) return { ok: false, reason: "listening question but the lesson has no transcript" };
+    if (!isListeningGrounded(q, ctx.transcript)) {
+      return { ok: false, reason: "listening question not traceable to the transcript" };
+    }
+    return { ok: true };
+  }
+  if (src === "speaking" && ctx.speaking.length === 0) return { ok: false, reason: "no speaking cards in this lesson" };
+  if (src === "grammar" && ctx.grammar.length === 0) return { ok: false, reason: "no grammar cards in this lesson" };
+  if (!isGrounded(q, ctx.haystack)) return { ok: false, reason: "answer not traceable to the lesson materials" };
+  return { ok: true };
 }
 
 function json(body: unknown, status = 200) {
