@@ -17,14 +17,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFlashcardCards from "@/pages/admin/AdminFlashcardCards";
 import { TestEditor } from "@/components/admin/tests/TestEditor";
 import {
   Headphones, BookOpen, ScrollText, ClipboardCheck,
-  Video, Youtube, Loader2, Trash2, Upload,
+  Video, Youtube, Loader2, Trash2, Upload, FileText,
 } from "lucide-react";
+
 
 const CONTENT_BUCKET = "content";
 
