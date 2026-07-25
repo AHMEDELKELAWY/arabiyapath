@@ -307,10 +307,13 @@ ABSOLUTE RULES
   • No outside knowledge, no cultural trivia, no inference, no prediction, no invented
     situations, no untaught vocabulary.
   • Each question references EXACTLY ONE source. Report it in "source" as one of:
-    "listening" | "learn" | "grammar" | "speaking", and report the specific item index
-    in "source_index" (1-based card number; use 0 for the transcript).
+    "listening" | "learn" | "grammar" | "speaking", report the specific item index
+    in "source_index" (1-based card number; use 0 for the transcript), and report in
+    "source_snippet" the EXACT sentence or fragment from that item the question is
+    based on — copy it verbatim, never paraphrase, never write a label like "Learn Card #12".
   • Cite the exact strings you used in "lesson_concepts" / "vocabulary_used" /
-    "grammar_concepts_used" — they must appear verbatim in the materials.`;
+    "grammar_concepts_used" — they must appear verbatim in the materials.
+    "lesson_concepts" holds educational concepts ONLY — never source labels.`;
 
 export const TYPE_RULES_PROMPT = `## ALLOWED question types (ONLY these)
   • multiple_choice          — EXACTLY 3 options, 1 correct + 2 lesson-based distractors.
@@ -370,13 +373,30 @@ export function normalizeQualityScore(v: unknown): number | null {
   return Math.max(0, Math.min(100, n));
 }
 
-/**
- * Admin-only traceability label stored in `learning_objective`-adjacent metadata.
- * Prepended to `lesson_concepts` so the Test Editor can display it. Students
- * never read these columns.
- */
-export function sourceLabel(source: LessonSource, index: number): string {
-  return source === "listening"
-    ? SOURCE_LABEL.listening
-    : `${SOURCE_LABEL[source]} #${Math.max(1, Math.round(index || 1))}`;
+/** Internal-only traceability metadata stored in `source_metadata` (jsonb). */
+export interface SourceMetadata {
+  source_type: LessonSource;
+  source_id: number;
+  source_snippet: string;
 }
+
+/**
+ * Build the admin-only traceability object for a generated question.
+ * `snippet` should be the exact sentence/fragment the question came from;
+ * if the model omits it we fall back to the raw item text passed in.
+ */
+export function buildSourceMetadata(
+  source: LessonSource,
+  index: unknown,
+  snippet: unknown,
+  fallbackSnippet?: unknown,
+): SourceMetadata {
+  const id = Math.max(0, Math.round(Number(index) || 0));
+  const text = String(snippet ?? "").trim() || String(fallbackSnippet ?? "").trim();
+  return {
+    source_type: source,
+    source_id: id,
+    source_snippet: text.slice(0, 1000),
+  };
+}
+

@@ -43,7 +43,7 @@ import {
   normalizeSource,
   shuffle,
   shuffleOptions,
-  sourceLabel,
+  buildSourceMetadata,
   toStrArr,
   type LessonSource,
 } from "../_shared/assessment-rules.ts";
@@ -232,6 +232,7 @@ For every question verify:
       "order_index": 1,
       "source": "listening" | "learn" | "grammar" | "speaking",
       "source_index": 0,
+      "source_snippet": "<exact sentence/fragment copied verbatim from that source item>",
       "question_type": "<one of the allowed types>",
       "question": "string (ONE short sentence)",
       "passage": "string or null",
@@ -340,7 +341,9 @@ For every question verify:
     const nowIso = new Date().toISOString();
     const rows = finalQuestions.map((q: any, i: number) => {
       const src: LessonSource = q.__source ?? "learn";
-      const label = sourceLabel(src, Number(q.source_index ?? 0));
+      const idx = Number(q.source_index ?? 0);
+      const pool = src === "learn" ? learn : src === "grammar" ? grammar : src === "speaking" ? speaking : [];
+      const fallback = src === "listening" ? (transcript ?? "") : (pool[idx - 1]?.arabic_text ?? "");
       return {
         unit_id,
         order_index: i + 1,
@@ -359,8 +362,9 @@ For every question verify:
         estimated_time_seconds: normalizeEstimatedTime(q.estimated_time_seconds),
         quality_score: normalizeQualityScore(q.quality_score),
         skills_tested: toStrArr(q.skills_tested),
-        // Admin-only traceability: the source label is always the first concept.
-        lesson_concepts: [`Source: ${label}`, ...toStrArr(q.lesson_concepts)].slice(0, 20),
+        lesson_concepts: toStrArr(q.lesson_concepts).slice(0, 20),
+        // Admin-only traceability. Never surfaced to students.
+        source_metadata: buildSourceMetadata(src, idx, q.source_snippet, fallback),
         vocabulary_used: toStrArr(q.vocabulary_used),
         grammar_concepts_used: toStrArr(q.grammar_concepts_used),
         ai_version: AI_VERSION,

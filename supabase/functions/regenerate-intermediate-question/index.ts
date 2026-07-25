@@ -33,7 +33,7 @@ import {
   normalizeQualityScore,
   normalizeSource,
   shuffleOptions,
-  sourceLabel,
+  buildSourceMetadata,
   toStrArr,
   type LessonSource,
 } from "../_shared/assessment-rules.ts";
@@ -199,6 +199,7 @@ Return STRICT JSON only:
 {
   "source": "listening" | "learn" | "grammar" | "speaking",
   "source_index": 0,
+  "source_snippet": "<exact sentence/fragment copied verbatim from that source item>",
   "question_type": "${finalType}",
   "question": "string (ONE short sentence)",
   "passage": "string or null",
@@ -284,11 +285,18 @@ Return STRICT JSON only:
       estimated_time_seconds: normalizeEstimatedTime(clamped.estimated_time_seconds),
       quality_score: normalizeQualityScore(clamped.quality_score),
       skills_tested: toStrArr(clamped.skills_tested),
-      // Admin-only traceability: the source label is always the first concept.
-      lesson_concepts: [
-        `Source: ${sourceLabel(src, Number(clamped.source_index ?? 0))}`,
-        ...toStrArr(clamped.lesson_concepts),
-      ].slice(0, 20),
+      lesson_concepts: toStrArr(clamped.lesson_concepts).slice(0, 20),
+      // Admin-only traceability. Never surfaced to students.
+      source_metadata: buildSourceMetadata(
+        src,
+        clamped.source_index,
+        clamped.source_snippet,
+        src === "listening"
+          ? (transcript ?? "")
+          : ((src === "learn" ? learn : src === "grammar" ? grammar : speaking)[
+              Number(clamped.source_index ?? 0) - 1
+            ]?.arabic_text ?? ""),
+      ),
       vocabulary_used: toStrArr(clamped.vocabulary_used),
       grammar_concepts_used: toStrArr(clamped.grammar_concepts_used),
       ai_version: AI_VERSION,

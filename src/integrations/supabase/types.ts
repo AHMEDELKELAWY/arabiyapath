@@ -973,6 +973,7 @@ export type Database = {
           question: string
           question_type: string
           skills_tested: string[] | null
+          source_metadata: Json | null
           teaching_explanation: string | null
           unit_id: string
           updated_at: string
@@ -1003,6 +1004,7 @@ export type Database = {
           question: string
           question_type: string
           skills_tested?: string[] | null
+          source_metadata?: Json | null
           teaching_explanation?: string | null
           unit_id: string
           updated_at?: string
@@ -1033,6 +1035,7 @@ export type Database = {
           question?: string
           question_type?: string
           skills_tested?: string[] | null
+          source_metadata?: Json | null
           teaching_explanation?: string | null
           unit_id?: string
           updated_at?: string
