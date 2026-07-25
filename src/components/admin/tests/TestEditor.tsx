@@ -139,6 +139,103 @@ export function TestEditor({ unit }: { unit: any }) {
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
 
+  /* ---------- Bulk selection ---------- */
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedCount = list.filter((q) => selectedSet.has(q.id)).length;
+  const allSelected = hasQuestions && selectedCount === list.length;
+
+  const toggleSelectAll = () =>
+    setSelectedIds(allSelected ? [] : list.map((q) => q.id));
+
+  const toggleOne = (q: TestQuestion, shiftKey = false) => {
+    if (shiftKey && lastClickedId) {
+      const a = list.findIndex((x) => x.id === lastClickedId);
+      const b = list.findIndex((x) => x.id === q.id);
+      if (a >= 0 && b >= 0) {
+        const range = list.slice(Math.min(a, b), Math.max(a, b) + 1).map((x) => x.id);
+        setSelectedIds((prev) => Array.from(new Set([...prev, ...range])));
+        setLastClickedId(q.id);
+        return;
+      }
+    }
+    setSelectedIds((prev) =>
+      prev.includes(q.id) ? prev.filter((id) => id !== q.id) : [...prev, q.id],
+    );
+    setLastClickedId(q.id);
+  };
+
+  const clearSelection = () => { setSelectedIds([]); setLastClickedId(null); };
+
+  const bulkSetPublished = async (published: boolean) => {
+    setBulkBusy(true);
+    const { error } = await (supabase as any)
+      .from("flashcard_unit_tests")
+      .update({ published })
+      .in("id", selectedIds);
+    setBulkBusy(false);
+    if (error) return toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    toast({ title: published ? `${selectedCount} questions published` : `${selectedCount} questions moved to draft` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkDelete = async () => {
+    setBulkDeleteOpen(false);
+    setBulkBusy(true);
+    const ids = [...selectedIds];
+    const { error } = await (supabase as any)
+      .from("flashcard_unit_tests")
+      .delete()
+      .in("id", ids);
+    if (error) {
+      setBulkBusy(false);
+      return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    }
+    const remaining = list.filter((q) => !ids.includes(q.id));
+    for (let i = 0; i < remaining.length; i++) {
+      await (supabase as any)
+        .from("flashcard_unit_tests")
+        .update({ order_index: i + 1 })
+        .eq("id", remaining[i].id);
+    }
+    setBulkBusy(false);
+    toast({ title: `${ids.length} questions deleted` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkDuplicate = async () => {
+    setBulkBusy(true);
+    const picked = list.filter((q) => selectedSet.has(q.id));
+    const rows = picked.map((q, i) => {
+      const { id, created_at, updated_at, ...rest } = q as any;
+      return { ...rest, order_index: list.length + i + 1, published: false };
+    });
+    const { error } = await (supabase as any).from("flashcard_unit_tests").insert(rows);
+    setBulkBusy(false);
+    if (error) return toast({ title: "Duplicate failed", description: error.message, variant: "destructive" });
+    toast({ title: `${rows.length} questions duplicated` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkRegenerate = async () => {
+    setBulkBusy(true);
+    const ids = [...selectedIds];
+    let ok = 0;
+    for (const id of ids) {
+      const { error } = await supabase.functions.invoke("regenerate-intermediate-question", {
+        body: { question_id: id, mode: "regenerate" },
+      });
+      if (!error) ok++;
+    }
+    setBulkBusy(false);
+    toast({ title: `Regenerated ${ok} of ${ids.length} questions` });
+    clearSelection();
+    invalidate();
+  };
+
+
   /* ---------- Generate full test ---------- */
   const regenerateAll = async () => {
     if (!unit.lesson_topic || unit.lesson_topic.trim().length < 10) {
