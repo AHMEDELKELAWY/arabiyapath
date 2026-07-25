@@ -34,6 +34,9 @@ import {
   normalizeSource,
   shuffleOptions,
   buildSourceMetadata,
+  normalizeWordOrdering,
+  verifyImageUrl,
+  downgradeImageQuestion,
   toStrArr,
   type LessonSource,
 } from "../_shared/assessment-rules.ts";
@@ -268,7 +271,30 @@ Return STRICT JSON only:
     /* ------------------------------- Persist ------------------------------- */
 
     const src: LessonSource = normalizeSource(q.source) ?? "learn";
-    const clamped = shuffleOptions(clampMcOptions(q));
+    let clamped: any = clampMcOptions(q);
+
+    if (clamped.question_type === "word_ordering") {
+      const wo = normalizeWordOrdering(clamped);
+      if (!wo) return json({ error: "Regenerated word ordering question was invalid. Try again." }, 422);
+      clamped = { ...clamped, options: wo.options, correct_answer: wo.correct_answer, image_url: null };
+    } else {
+      clamped = shuffleOptions(clamped);
+      if (clamped.question_type === "image_question") {
+        const allowed = new Set<string>(
+          learn.filter((c: any) => c.image_url).map((c: any) => String(c.image_url)),
+        );
+        const ok = await verifyImageUrl(clamped.image_url, allowed);
+        if (!ok) {
+          const downgraded = downgradeImageQuestion(clamped);
+          if (!downgraded) {
+            return json({ error: "The generated image question had no usable image. Try again." }, 422);
+          }
+          clamped = downgraded;
+        }
+      } else {
+        clamped = { ...clamped, image_url: null };
+      }
+    }
 
     const patch: Record<string, unknown> = {
       question_type: isAllowedType(clamped.question_type) ? clamped.question_type : finalType,
@@ -278,7 +304,7 @@ Return STRICT JSON only:
       correct_answer: clamped.correct_answer ?? "",
       explanation: clamped.explanation ?? null,
       teaching_explanation: clamped.teaching_explanation ?? null,
-      image_url: clamped.image_url ?? existing.image_url ?? null,
+      image_url: clamped.image_url ?? null,
       difficulty: "easy",
       learning_objective: normalizeObjective(clamped.learning_objective),
       cognitive_level: normalizeCognitiveLevel(clamped.cognitive_level),

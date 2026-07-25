@@ -81,8 +81,10 @@ const TYPE_OPTIONS: { value: QuestionType; label: string }[] = [
   { value: "grammar_selection", label: "Grammar in Context" },
   { value: "conversation_completion", label: "Conversation Completion" },
   { value: "vocab_in_context", label: "Vocabulary Meaning" },
-  { value: "fill_in_blank", label: "Fill in the Blank" },
-  { value: "sentence_ordering", label: "Word Ordering" },
+  { value: "word_ordering", label: "Word Ordering" },
+  { value: "sentence_ordering", label: "Sentence Ordering (legacy)" },
+  { value: "fill_in_blank", label: "Fill in the Blank (legacy)" },
+
   { value: "matching", label: "Matching" },
   { value: "reading_comprehension", label: "Reading Comprehension" },
   { value: "listening_comprehension", label: "Listening Comprehension" },

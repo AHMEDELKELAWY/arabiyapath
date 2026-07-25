@@ -10,7 +10,7 @@
  * grounding rules, and validation helpers.
  */
 
-export const AI_VERSION = "int-test/v7-source-grounded";
+export const AI_VERSION = "int-test/v8-word-order-simple-grammar";
 
 /** Native question types the runner supports. Do NOT extend without runner work. */
 export const ALLOWED_TYPES = [
@@ -18,7 +18,7 @@ export const ALLOWED_TYPES = [
   "grammar_selection",
   "conversation_completion",
   "vocab_in_context",
-  "fill_in_blank",
+  "word_ordering",
   "matching",
   "image_question",
   "choose_correct_sentence",
@@ -33,8 +33,8 @@ export const MC_OPTION_TYPES = new Set<string>([
   "vocab_in_context",
   "choose_correct_sentence",
   "image_question",
-  "fill_in_blank",
 ]);
+
 
 /** DB-level categories (flashcard_unit_tests.category CHECK). */
 export type Category = "listening" | "vocabulary" | "grammar";
@@ -83,7 +83,9 @@ export function normalizeSource(v: unknown): LessonSource | null {
  */
 export const FORBIDDEN_STEMS: string[] = [
   // Arabic (tashkeel is stripped before matching)
-  "اكمل",
+  "اكمل الحوار",
+  "اكمل الجملة التالية",
+  "اكمل الجمله التاليه",
   "اقرا الحوار",
   "اقرا النص",
   "اقرا ثم",
@@ -99,8 +101,7 @@ export const FORBIDDEN_STEMS: string[] = [
   "لماذا",
   // English
   "complete the dialogue",
-  "complete the sentence",
-  "complete the following",
+  "complete the following sentence",
   "listen and answer",
   "listen then",
   "read then answer",
@@ -126,7 +127,7 @@ export function norm(s: unknown): string {
 
 /**
  * Teacher-style wording gate.
- * `fill_in_blank` is allowed to be a plain sentence containing "____".
+ * `word_ordering` prompts are short ordering instructions (e.g. "رتب الكلمات.").
  */
 export function checkWording(question: unknown, questionType?: unknown): { ok: boolean; reason?: string } {
   const raw = String(question ?? "").trim();
@@ -144,13 +145,75 @@ export function checkWording(question: unknown, questionType?: unknown): { ok: b
     return { ok: false, reason: "more than one sentence" };
   }
 
-  // Length budget. fill_in_blank sentences get a little more room.
-  const limit = String(questionType ?? "") === "fill_in_blank" ? MAX_QUESTION_WORDS + 4 : MAX_QUESTION_WORDS;
+  // Length budget.
+  const limit = MAX_QUESTION_WORDS;
   const words = raw.split(/\s+/).filter(Boolean);
   if (words.length > limit) return { ok: false, reason: `too long (${words.length} words > ${limit})` };
 
   return { ok: true };
 }
+
+/* --------------------------- word ordering ------------------------------ */
+
+/**
+ * Validate a word_ordering question: options are the scrambled tokens, and
+ * correct_answer is the ordered array (or the full sentence string).
+ * Returns a normalized {options, correct_answer} pair or null when unusable.
+ */
+export function normalizeWordOrdering(
+  q: any,
+): { options: string[]; correct_answer: string[] } | null {
+  const toTokens = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+    return String(v ?? "").trim().split(/\s+/).filter(Boolean);
+  };
+  const answer = toTokens(q?.correct_answer);
+  let options = toTokens(q?.options);
+  if (answer.length < 3 || answer.length > 6) return null;
+  // Options must be exactly the same multiset as the answer tokens.
+  if (options.length !== answer.length) options = answer.slice();
+  const sortKey = (a: string[]) => a.map((w) => norm(w)).sort().join("|");
+  if (sortKey(options) !== sortKey(answer)) options = answer.slice();
+  return { options: shuffle(options), correct_answer: answer };
+}
+
+/* ------------------------------ image checks ---------------------------- */
+
+/**
+ * Confirm an image URL is present, allowed and actually reachable.
+ * Any failure means the question must NOT be published as an image question.
+ */
+export async function verifyImageUrl(
+  url: unknown,
+  allowed: Set<string>,
+): Promise<boolean> {
+  const u = String(url ?? "").trim();
+  if (!u || !/^https?:\/\//i.test(u)) return false;
+  if (allowed.size > 0 && !allowed.has(u)) return false;
+  try {
+    let res = await fetch(u, { method: "HEAD" });
+    if (res.status === 405 || res.status === 501) {
+      res = await fetch(u, { method: "GET", headers: { Range: "bytes=0-0" } });
+    }
+    if (!res.ok) return false;
+    const ct = res.headers.get("content-type") ?? "";
+    return ct === "" || ct.startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Downgrade a would-be image question to a plain multiple-choice question.
+ * Returns null when the question cannot stand on its own without the image.
+ */
+export function downgradeImageQuestion(q: any): any | null {
+  const opts = Array.isArray(q?.options) ? q.options.map((o: any) => String(o)).filter(Boolean) : [];
+  const correct = String(q?.correct_answer ?? "");
+  if (opts.length < 2 || !correct || !opts.some((o: string) => norm(o) === norm(correct))) return null;
+  return { ...q, question_type: "multiple_choice", image_url: null };
+}
+
 
 /* ------------------------------ grounding ------------------------------- */
 
@@ -320,26 +383,44 @@ export const TYPE_RULES_PROMPT = `## ALLOWED question types (ONLY these)
   • grammar_selection        — correct grammar form inside a short taught sentence.
   • conversation_completion  — missing turn in a short taught dialogue.
   • vocab_in_context         — taught word's meaning inside a short taught sentence.
-  • fill_in_blank            — short sentence with "____", EXACTLY 3 candidate fills.
+  • word_ordering            — arrange 3–6 taught words into ONE correct short sentence.
   • matching                 — 3 {"left","right"} pairs from the lesson.
   • image_question           — pick the correct image for a taught word (listed URLs only).
   • choose_correct_sentence  — pick the correct taught sentence.
 
-FORBIDDEN types: true_false, reading_comprehension, listening_comprehension,
-sentence_ordering, word_ordering, find_the_mistake, open-ended/short-answer,
+FORBIDDEN types: true_false, fill_in_blank, reading_comprehension, listening_comprehension,
+sentence_ordering, find_the_mistake, open-ended/short-answer,
 select-all/multi-select, and anything not listed above.
+NEVER produce fill_in_blank — use word_ordering instead.
 
 ## FORMAT (strict)
 - MC-style types (multiple_choice, grammar_selection, conversation_completion, vocab_in_context,
-  choose_correct_sentence, image_question, fill_in_blank): options is EXACTLY 3 strings;
+  choose_correct_sentence, image_question): options is EXACTLY 3 strings;
   correct_answer is one of those strings.
 - matching: options is 3 {"left","right"} pairs; correct_answer is {"<left>":"<right>", ...}.
-- image_question: "image_url" MUST be one of the URLs listed in the materials.
+- word_ordering: "question" is a short ordering prompt (e.g. "رَتِّبِ الْكَلِمَاتِ."),
+  "options" is the scrambled word tokens (3–6 words, all taught in this lesson),
+  "correct_answer" is the SAME words as an array in the ONE correct order.
+  Example: options ["لَهُ","الْأَسَدُ","أَسْنَانٌ"] → correct_answer ["لِلْأَسَدِ","أَسْنَانٌ"]
+  is WRONG (tokens must match). Tokens in correct_answer must be exactly the tokens in options.
+  Only one correct order may be possible.
+- image_question: "image_url" MUST be one of the URLs listed in the materials. If no URLs are
+  listed, produce ZERO image_question items.
+
+## GRAMMAR QUESTIONS (A1 SIMPLICITY — HARD RULE)
+Grammar questions test ONLY the single grammar rule taught in this lesson.
+  • Use very short sentences (max ~6 words) built from taught words only.
+  • Allowed shapes: "اخْتَرِ الْكَلِمَةَ الصَّحِيحَةَ." (grammar_selection),
+    "رَتِّبِ الْكَلِمَاتِ." (word_ordering), "اخْتَرِ الْجُمْلَةَ الصَّحِيحَةَ."
+    (choose_correct_sentence), or a one-word completion.
+  • FORBIDDEN in grammar questions: linguistic analysis or terminology beyond the lesson,
+    advanced grammar, inference, long sentences, and more than ONE grammar rule per question.
 
 ## DIFFICULTY
 Every question is "easy": direct, confidence-building, lesson-based. No puzzles,
 no reasoning chains, no near-identical trap distractors. Distractors are plausible
 items drawn from the SAME lesson. Arabic must be fully vowelized (tashkeel).`;
+
 
 /* ----------------------------- normalizers ------------------------------ */
 
