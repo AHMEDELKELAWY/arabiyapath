@@ -45,6 +45,8 @@ const FreeGulfLessonThankYou = lazy(() => import("./pages/FreeGulfLessonThankYou
 const ThankYouFreeGulf = lazy(() => import("./pages/ThankYouFreeGulf"));
 const BecomeAffiliate = lazy(() => import("./pages/BecomeAffiliate"));
 const PartnerLanding = lazy(() => import("./pages/PartnerLanding"));
+const PreplyDeals = lazy(() => import("./pages/PreplyDeals"));
+const PreplyDealsThankYou = lazy(() => import("./pages/PreplyDealsThankYou"));
 const GulfArabicCourse = lazy(() => import("./pages/GulfArabicCourse"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -185,6 +187,8 @@ export default function FullAppRoutes() {
             <Route path="/start-free" element={<StartFree />} />
             <Route path="/become-affiliate" element={<BecomeAffiliate />} />
             <Route path="/partner/:slug" element={<PartnerLanding />} />
+            <Route path="/preply-deals" element={<PreplyDeals />} />
+            <Route path="/preply-deals/thank-you" element={<PreplyDealsThankYou />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/blog" element={<Blog />} />
