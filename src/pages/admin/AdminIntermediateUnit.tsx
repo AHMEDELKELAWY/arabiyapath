@@ -244,7 +244,40 @@ function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
           </p>
         </CardContent>
       </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" /> Listening Transcript
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            dir="auto"
+            rows={12}
+            className="font-arabic text-base leading-relaxed"
+            placeholder={"اُكْتُبْ الْحِوَارَ كَامِلًا هُنَا…\nالأب: مَنْ هَذَا؟\nنَدَى: هَذَا أَخِي."}
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+          />
+          <div className="flex items-center gap-3">
+            <Button onClick={saveTranscript} disabled={savingTranscript}>
+              {savingTranscript && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save transcript
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {transcript.trim() ? `${transcript.trim().split(/\s+/).length} words` : "empty"}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Paste the complete dialogue/script of the video. This is the <strong>only</strong> source used
+            to generate listening questions — if it is empty, no listening questions are generated and the
+            share is redistributed to Learn, Grammar and Speaking automatically.
+          </p>
+        </CardContent>
+      </Card>
     </div>
+
   );
 }
 
