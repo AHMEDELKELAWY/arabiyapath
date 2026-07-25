@@ -114,6 +114,10 @@ export function TestEditor({ unit }: { unit: any }) {
   const [publishing, setPublishing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [changeTypeFor, setChangeTypeFor] = useState<TestQuestion | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [lastClickedId, setLastClickedId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data: questions } = useQuery<TestQuestion[]>({
     queryKey: ["admin-intermediate-tests", unit.id],
