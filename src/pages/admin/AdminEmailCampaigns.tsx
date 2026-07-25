@@ -1,319 +1,365 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Send, Mail, Users, Calendar } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2, Send, Eye, Mail } from "lucide-react";
 import { format } from "date-fns";
 
-interface Campaign {
+type Audience = "all_users" | "never_purchased" | "active_members" | "expired_members" | "manual";
+
+const AUDIENCES: { value: Audience; label: string }[] = [
+  { value: "all_users", label: "All Users" },
+  { value: "never_purchased", label: "Registered Users Who Never Purchased" },
+  { value: "active_members", label: "Active Members" },
+  { value: "expired_members", label: "Expired Members" },
+  { value: "manual", label: "Manual Email List" },
+];
+
+const audienceLabel = (v: string) => AUDIENCES.find((a) => a.value === v)?.label ?? v;
+
+interface CampaignRow {
   id: string;
   subject: string;
-  content: string;
-  sent_at: string | null;
+  audience: string;
   recipients_count: number | null;
+  sent_success: number | null;
+  sent_failed: number | null;
+  status: string;
+  sent_at: string | null;
   created_at: string;
+}
+
+interface SendResult {
+  total: number;
+  sent: number;
+  failed: number;
+  failedEmails?: string[];
 }
 
 export default function AdminEmailCampaigns() {
   const { toast } = useToast();
+  const { profile, user } = useAuth();
   const queryClient = useQueryClient();
-  
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const [audience, setAudience] = useState<Audience>("all_users");
+  const [excludePurchasers, setExcludePurchasers] = useState(false);
+  const [manualList, setManualList] = useState("");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
-  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
 
-  // Fetch campaigns
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmCount, setConfirmCount] = useState(0);
+  const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
+  const [result, setResult] = useState<SendResult | null>(null);
+
+  const manualEmails = useMemo(
+    () => manualList.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean),
+    [manualList],
+  );
+
   const { data: campaigns, isLoading } = useQuery({
-    queryKey: ['email-campaigns'],
+    queryKey: ["email-campaigns"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('email_campaigns')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
+        .from("email_campaigns")
+        .select("id, subject, audience, recipients_count, sent_success, sent_failed, status, sent_at, created_at")
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Campaign[];
+      return data as CampaignRow[];
     },
   });
 
-  // Fetch subscriber count
-  const { data: subscriberCount } = useQuery({
-    queryKey: ['subscriber-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('marketing_consent', true);
-      
-      if (error) throw error;
-      return count || 0;
-    },
+  const payload = () => ({
+    subject,
+    content,
+    audience,
+    excludePurchasers: audience === "all_users" ? excludePurchasers : false,
+    manualEmails,
   });
 
-  // Create campaign mutation
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase
-        .from('email_campaigns')
-        .insert({ subject, content })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      setIsCreateOpen(false);
-      setSubject("");
-      setContent("");
-      toast({
-        title: "Campaign Created",
-        description: "Your email campaign has been saved as a draft.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create campaign.",
-        variant: "destructive",
-      });
-    },
-  });
+  const canSend = subject.trim().length > 0 && content.replace(/<[^>]*>/g, "").trim().length > 0;
 
-  // Send campaign mutation
-  const sendMutation = useMutation({
-    mutationFn: async (campaignId: string) => {
-      setSendingCampaignId(campaignId);
-      const { data, error } = await supabase.functions.invoke('send-marketing-email', {
-        body: { campaignId },
-      });
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+  const invoke = async (mode: "count" | "test" | "send") => {
+    const { data, error } = await supabase.functions.invoke("send-marketing-email", {
+      body: { ...payload(), mode },
+    });
+    if (error) throw error;
+    if ((data as any)?.error) throw new Error((data as any).error);
+    return data as any;
+  };
+
+  const previewHtml = useMemo(() => {
+    const name = profile?.first_name || "there";
+    const email = profile?.email || user?.email || "student@example.com";
+    return content
+      .replace(/\{\{\s*first_name\s*\}\}/g, name)
+      .replace(/\{\{\s*email\s*\}\}/g, email)
+      .replace(/\{\{\s*login_url\s*\}\}/g, "https://arabiyapath.com/login");
+  }, [content, profile, user]);
+
+  const handleOpenConfirm = async () => {
+    setBusy("count");
+    try {
+      const data = await invoke("count");
+      setConfirmCount(data.count ?? 0);
+      setConfirmOpen(true);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message ?? "Could not count recipients", variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleTest = async () => {
+    setBusy("test");
+    try {
+      const data = await invoke("test");
       toast({
-        title: "Campaign Sent! ✓",
-        description: `Successfully sent to ${data.sentCount} subscribers.`,
+        title: data.sent > 0 ? "Test email sent" : "Test email failed",
+        description: data.sent > 0
+          ? `Sent to ${profile?.email || user?.email}`
+          : "The test email could not be delivered.",
+        variant: data.sent > 0 ? undefined : "destructive",
       });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Send Failed",
-        description: error.message || "Failed to send campaign.",
-        variant: "destructive",
-      });
-    },
-    onSettled: () => {
-      setSendingCampaignId(null);
-    },
-  });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message ?? "Failed to send test email", variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleSend = async () => {
+    setBusy("send");
+    try {
+      const data = await invoke("send");
+      setResult({ total: data.total, sent: data.sent, failed: data.failed, failedEmails: data.failedEmails });
+      setConfirmOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      toast({ title: "Campaign finished", description: `${data.sent} sent, ${data.failed} failed.` });
+    } catch (e: any) {
+      toast({ title: "Send failed", description: e.message ?? "Failed to send campaign", variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Email Campaigns</h1>
-            <p className="text-muted-foreground">
-              Create and send marketing emails to your subscribers
-            </p>
-          </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Campaign
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create Email Campaign</DialogTitle>
-                <DialogDescription>
-                  Compose your marketing email. Use {"{{first_name}}"} to personalize.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Subject</label>
-                  <Input
-                    placeholder="Email subject line..."
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
+        <div>
+          <h1 className="text-2xl font-bold">Email Campaigns</h1>
+          <p className="text-muted-foreground">Send a one-off email to a selected audience.</p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Audience</CardTitle>
+              <CardDescription>Choose who receives this campaign</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup value={audience} onValueChange={(v) => setAudience(v as Audience)} className="space-y-2">
+                {AUDIENCES.map((a) => (
+                  <div key={a.value} className="flex items-start gap-2">
+                    <RadioGroupItem value={a.value} id={`aud-${a.value}`} className="mt-1" />
+                    <Label htmlFor={`aud-${a.value}`} className="font-normal leading-snug">{a.label}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+
+              {audience === "all_users" && (
+                <div className="flex items-start gap-2 rounded-md border border-border p-3">
+                  <Checkbox
+                    id="exclude-purchasers"
+                    checked={excludePurchasers}
+                    onCheckedChange={(c) => setExcludePurchasers(c === true)}
+                    className="mt-0.5"
                   />
+                  <Label htmlFor="exclude-purchasers" className="font-normal leading-snug">
+                    Exclude users who already purchased
+                  </Label>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Content (HTML)</label>
+              )}
+
+              {audience === "manual" && (
+                <div className="space-y-2">
+                  <Label htmlFor="manual-list">Email list (one per line)</Label>
                   <Textarea
-                    placeholder="<h2>Hello {{first_name}}!</h2><p>Your email content here...</p>"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={10}
+                    id="manual-list"
+                    rows={8}
+                    value={manualList}
+                    onChange={(e) => setManualList(e.target.value)}
+                    placeholder={"student1@example.com\nstudent2@example.com"}
                     className="font-mono text-sm"
                   />
+                  <p className="text-xs text-muted-foreground">{manualEmails.length} address(es)</p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Message</CardTitle>
+              <CardDescription>
+                Variables: {"{{first_name}}"}, {"{{email}}"}, {"{{login_url}}"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line..." />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancel
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <RichTextEditor value={content} onChange={setContent} placeholder="Hi {{first_name}}, ..." />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
+                  <Eye className="mr-2 h-4 w-4" /> Preview
                 </Button>
-                <Button 
-                  onClick={() => createMutation.mutate()}
-                  disabled={!subject || !content || createMutation.isPending}
-                >
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Campaign"
+                <Button variant="outline" onClick={handleTest} disabled={!canSend || busy !== null}>
+                  {busy === "test" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                  Send Test Email
+                </Button>
+                <Button onClick={handleOpenConfirm} disabled={!canSend || busy !== null || (audience === "manual" && manualEmails.length === 0)}>
+                  {busy === "count" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Send Campaign
+                </Button>
+              </div>
+
+              {result && (
+                <div className="grid grid-cols-3 gap-3 rounded-lg border border-border p-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Recipients</p>
+                    <p className="text-xl font-bold">{result.total}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Successfully Sent</p>
+                    <p className="text-xl font-bold text-primary">{result.sent}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Failed</p>
+                    <p className="text-xl font-bold text-destructive">{result.failed}</p>
+                  </div>
+                  {result.failedEmails && result.failedEmails.length > 0 && (
+                    <p className="col-span-3 text-xs text-muted-foreground break-all">
+                      Failed addresses: {result.failedEmails.join(", ")}
+                    </p>
                   )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Subscribers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{subscriberCount || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Verified users with marketing consent
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{campaigns?.length || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                All time campaigns
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sent Campaigns</CardTitle>
-              <Send className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {campaigns?.filter(c => c.sent_at).length || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Successfully delivered
-              </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Campaigns Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Campaigns</CardTitle>
-            <CardDescription>
-              Manage your email marketing campaigns
-            </CardDescription>
+            <CardTitle>Campaign Log</CardTitle>
+            <CardDescription>Every campaign sent from this page</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
             ) : campaigns && campaigns.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Subject</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Audience</TableHead>
                     <TableHead>Recipients</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Sent</TableHead>
+                    <TableHead>Failed</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Sent At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {campaigns.map((campaign) => (
-                    <TableRow key={campaign.id}>
-                      <TableCell className="font-medium max-w-[300px] truncate">
-                        {campaign.subject}
-                      </TableCell>
+                  {campaigns.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium max-w-[280px] truncate">{c.subject}</TableCell>
+                      <TableCell className="text-muted-foreground">{audienceLabel(c.audience)}</TableCell>
+                      <TableCell>{c.recipients_count ?? 0}</TableCell>
+                      <TableCell>{c.sent_success ?? 0}</TableCell>
+                      <TableCell>{c.sent_failed ?? 0}</TableCell>
                       <TableCell>
-                        {campaign.sent_at ? (
-                          <Badge variant="default" className="bg-green-500">
-                            Sent
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Draft</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {campaign.recipients_count || 0}
+                        <Badge variant={c.status === "sent" ? "default" : c.status === "failed" ? "destructive" : "secondary"}>
+                          {c.status}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {format(new Date(campaign.created_at), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {!campaign.sent_at && (
-                          <Button
-                            size="sm"
-                            onClick={() => sendMutation.mutate(campaign.id)}
-                            disabled={sendingCampaignId === campaign.id || subscriberCount === 0}
-                          >
-                            {sendingCampaignId === campaign.id ? (
-                              <>
-                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="mr-2 h-3 w-3" />
-                                Send
-                              </>
-                            )}
-                          </Button>
-                        )}
-                        {campaign.sent_at && (
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(campaign.sent_at), "MMM d, h:mm a")}
-                          </span>
-                        )}
+                        {c.sent_at ? format(new Date(c.sent_at), "MMM d, yyyy h:mm a") : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No campaigns yet</p>
-                <p className="text-sm">Create your first email campaign to get started.</p>
+              <div className="py-8 text-center text-muted-foreground">
+                <Mail className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                <p>No campaigns sent yet</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Preview */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle>Preview</DialogTitle>
+            <DialogDescription>Subject: {subject}</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4">
+            <div className="mx-auto max-w-[600px] overflow-hidden rounded-2xl bg-background shadow">
+              <div className="bg-primary p-6 text-center">
+                <span className="text-xl font-bold text-primary-foreground">ArabiyaPath</span>
+              </div>
+              <div
+                className="p-6 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6"
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              />
+              <div className="bg-muted p-4 text-center text-xs text-muted-foreground">
+                © {new Date().getFullYear()} ArabiyaPath. All rights reserved.
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm send */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send campaign</DialogTitle>
+            <DialogDescription>
+              You are about to send this campaign to {confirmCount} recipients.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={busy === "send"}>Cancel</Button>
+            <Button onClick={handleSend} disabled={busy === "send" || confirmCount === 0}>
+              {busy === "send" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : "Send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

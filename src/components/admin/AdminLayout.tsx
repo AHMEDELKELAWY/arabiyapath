@@ -15,6 +15,8 @@ import {
   Activity,
   Bell,
   Mail,
+  Send,
+
 } from "lucide-react";
 
 
@@ -38,6 +40,8 @@ const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/email-log", label: "Email Log", icon: Mail },
+  { href: "/admin/email-campaigns", label: "Email Campaigns", icon: Send },
+
   { href: "/admin/content", label: "Content", icon: BookOpen },
   { href: "/admin/products", label: "Products", icon: DollarSign },
   { href: "/admin/users", label: "Users", icon: Users },
