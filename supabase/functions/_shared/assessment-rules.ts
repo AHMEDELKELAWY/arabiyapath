@@ -83,7 +83,9 @@ export function normalizeSource(v: unknown): LessonSource | null {
  */
 export const FORBIDDEN_STEMS: string[] = [
   // Arabic (tashkeel is stripped before matching)
-  "اكمل",
+  "اكمل الحوار",
+  "اكمل الجملة التالية",
+  "اكمل الجمله التاليه",
   "اقرا الحوار",
   "اقرا النص",
   "اقرا ثم",
@@ -99,8 +101,7 @@ export const FORBIDDEN_STEMS: string[] = [
   "لماذا",
   // English
   "complete the dialogue",
-  "complete the sentence",
-  "complete the following",
+  "complete the following sentence",
   "listen and answer",
   "listen then",
   "read then answer",
@@ -126,7 +127,7 @@ export function norm(s: unknown): string {
 
 /**
  * Teacher-style wording gate.
- * `fill_in_blank` is allowed to be a plain sentence containing "____".
+ * `word_ordering` prompts are short ordering instructions (e.g. "رتب الكلمات.").
  */
 export function checkWording(question: unknown, questionType?: unknown): { ok: boolean; reason?: string } {
   const raw = String(question ?? "").trim();
@@ -144,13 +145,75 @@ export function checkWording(question: unknown, questionType?: unknown): { ok: b
     return { ok: false, reason: "more than one sentence" };
   }
 
-  // Length budget. fill_in_blank sentences get a little more room.
-  const limit = String(questionType ?? "") === "fill_in_blank" ? MAX_QUESTION_WORDS + 4 : MAX_QUESTION_WORDS;
+  // Length budget.
+  const limit = MAX_QUESTION_WORDS;
   const words = raw.split(/\s+/).filter(Boolean);
   if (words.length > limit) return { ok: false, reason: `too long (${words.length} words > ${limit})` };
 
   return { ok: true };
 }
+
+/* --------------------------- word ordering ------------------------------ */
+
+/**
+ * Validate a word_ordering question: options are the scrambled tokens, and
+ * correct_answer is the ordered array (or the full sentence string).
+ * Returns a normalized {options, correct_answer} pair or null when unusable.
+ */
+export function normalizeWordOrdering(
+  q: any,
+): { options: string[]; correct_answer: string[] } | null {
+  const toTokens = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+    return String(v ?? "").trim().split(/\s+/).filter(Boolean);
+  };
+  const answer = toTokens(q?.correct_answer);
+  let options = toTokens(q?.options);
+  if (answer.length < 3 || answer.length > 6) return null;
+  // Options must be exactly the same multiset as the answer tokens.
+  if (options.length !== answer.length) options = answer.slice();
+  const sortKey = (a: string[]) => a.map((w) => norm(w)).sort().join("|");
+  if (sortKey(options) !== sortKey(answer)) options = answer.slice();
+  return { options: shuffle(options), correct_answer: answer };
+}
+
+/* ------------------------------ image checks ---------------------------- */
+
+/**
+ * Confirm an image URL is present, allowed and actually reachable.
+ * Any failure means the question must NOT be published as an image question.
+ */
+export async function verifyImageUrl(
+  url: unknown,
+  allowed: Set<string>,
+): Promise<boolean> {
+  const u = String(url ?? "").trim();
+  if (!u || !/^https?:\/\//i.test(u)) return false;
+  if (allowed.size > 0 && !allowed.has(u)) return false;
+  try {
+    let res = await fetch(u, { method: "HEAD" });
+    if (res.status === 405 || res.status === 501) {
+      res = await fetch(u, { method: "GET", headers: { Range: "bytes=0-0" } });
+    }
+    if (!res.ok) return false;
+    const ct = res.headers.get("content-type") ?? "";
+    return ct === "" || ct.startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Downgrade a would-be image question to a plain multiple-choice question.
+ * Returns null when the question cannot stand on its own without the image.
+ */
+export function downgradeImageQuestion(q: any): any | null {
+  const opts = Array.isArray(q?.options) ? q.options.map((o: any) => String(o)).filter(Boolean) : [];
+  const correct = String(q?.correct_answer ?? "");
+  if (opts.length < 2 || !correct || !opts.some((o: string) => norm(o) === norm(correct))) return null;
+  return { ...q, question_type: "multiple_choice", image_url: null };
+}
+
 
 /* ------------------------------ grounding ------------------------------- */
 
