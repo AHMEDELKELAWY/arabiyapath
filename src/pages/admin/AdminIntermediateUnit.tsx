@@ -137,6 +137,19 @@ function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
     onSaved();
   };
 
+  const saveTranscript = async () => {
+    setSavingTranscript(true);
+    const { error } = await (supabase as any)
+      .from("flashcard_units")
+      .update({ listening_transcript: transcript.trim() || null })
+      .eq("id", unit.id);
+    setSavingTranscript(false);
+    if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    toast({ title: "Listening transcript saved" });
+    onSaved();
+  };
+
+
   const uploadVideo = async (file: File) => {
     setUploading(true);
     const path = `intermediate-videos/${unit.id}/${Date.now()}-${file.name}`;
