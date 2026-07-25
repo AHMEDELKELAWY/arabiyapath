@@ -7,39 +7,155 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SITE_URL = 'https://arabiyapath.com';
+const LOGIN_URL = `${SITE_URL}/login`;
+
+type Audience =
+  | 'all_users'
+  | 'never_purchased'
+  | 'active_members'
+  | 'expired_members'
+  | 'manual';
+
+interface Recipient {
+  email: string;
+  first_name: string | null;
+  user_id: string | null;
+}
+
+const escapeHtml = (s: string): string =>
+  s.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function personalize(content: string, r: Recipient): string {
+  return content
+    .replace(/\{\{\s*first_name\s*\}\}/g, escapeHtml(r.first_name || 'there'))
+    .replace(/\{\{\s*email\s*\}\}/g, escapeHtml(r.email))
+    .replace(/\{\{\s*login_url\s*\}\}/g, LOGIN_URL);
+}
+
+function wrap(subject: string, body: string): string {
+  return `<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f8f9fa;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f9fa;">
+    <tr><td style="padding:40px 20px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr><td style="padding:32px 40px 20px;text-align:center;background:linear-gradient(135deg,#1a5f4a 0%,#2d8b6f 100%);border-radius:16px 16px 0 0;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">ArabiyaPath</h1>
+        </td></tr>
+        <tr><td style="padding:40px;color:#222;font-size:16px;line-height:1.6;">${body}</td></tr>
+        <tr><td style="padding:24px 40px;background-color:#f8f9fa;border-radius:0 0 16px 16px;text-align:center;">
+          <p style="margin:0;color:#888;font-size:12px;">© ${new Date().getFullYear()} ArabiyaPath. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+async function resolveRecipients(
+  supabase: any,
+  audience: Audience,
+  excludePurchasers: boolean,
+  manualEmails: string[],
+): Promise<Recipient[]> {
+  if (audience === 'manual') {
+    const seen = new Set<string>();
+    const out: Recipient[] = [];
+    for (const raw of manualEmails) {
+      const email = String(raw || '').trim().toLowerCase();
+      if (!email || !email.includes('@') || seen.has(email)) continue;
+      seen.add(email);
+      out.push({ email, first_name: null, user_id: null });
+    }
+    return out;
+  }
+
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('user_id, email, first_name')
+    .not('email', 'is', null);
+  if (error) throw error;
+
+  let list: Recipient[] = (profiles ?? [])
+    .filter((p: any) => p.email)
+    .map((p: any) => ({ email: p.email, first_name: p.first_name, user_id: p.user_id }));
+
+  // Purchasers
+  const { data: purchases } = await supabase
+    .from('purchases')
+    .select('user_id')
+    .in('status', ['active', 'completed']);
+  const purchaserIds = new Set<string>((purchases ?? []).map((p: any) => p.user_id));
+
+  // Memberships
+  const { data: subs } = await supabase
+    .from('membership_subscriptions')
+    .select('user_id, status, expires_at');
+  const now = Date.now();
+  const activeIds = new Set<string>();
+  const anySubIds = new Set<string>();
+  for (const s of subs ?? []) {
+    anySubIds.add(s.user_id);
+    const isActive =
+      s.status === 'ACTIVE' ||
+      (s.status === 'CANCELLED' && s.expires_at && new Date(s.expires_at).getTime() > now);
+    if (isActive) activeIds.add(s.user_id);
+  }
+
+  if (audience === 'never_purchased') {
+    list = list.filter((r) => r.user_id && !purchaserIds.has(r.user_id));
+  } else if (audience === 'active_members') {
+    list = list.filter((r) => r.user_id && activeIds.has(r.user_id));
+  } else if (audience === 'expired_members') {
+    list = list.filter((r) => r.user_id && anySubIds.has(r.user_id) && !activeIds.has(r.user_id));
+  } else if (audience === 'all_users' && excludePurchasers) {
+    list = list.filter((r) => r.user_id && !purchaserIds.has(r.user_id));
+  }
+
+  // De-dupe by email
+  const seen = new Set<string>();
+  return list.filter((r) => {
+    const key = r.email.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify admin authorization
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    // Verify the user is admin
+
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+      global: { headers: { Authorization: authHeader } },
     });
-    
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Invalid authorization' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Check admin role
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: roleData } = await supabase
       .from('user_roles')
@@ -47,202 +163,145 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .eq('role', 'admin')
       .maybeSingle();
-
     if (!roleData) {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const { campaignId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const mode: 'count' | 'test' | 'send' = body.mode ?? 'send';
+    const subject: string = String(body.subject ?? '').trim();
+    const content: string = String(body.content ?? '');
+    const audience: Audience = (body.audience ?? 'all_users') as Audience;
+    const excludePurchasers = Boolean(body.excludePurchasers);
+    const manualEmails: string[] = Array.isArray(body.manualEmails) ? body.manualEmails : [];
 
-    if (!campaignId) {
-      return new Response(
-        JSON.stringify({ error: 'Campaign ID is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (mode !== 'count' && (!subject || !content.trim())) {
+      return new Response(JSON.stringify({ error: 'Subject and message are required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Get campaign details
-    const { data: campaign, error: campaignError } = await supabase
-      .from('email_campaigns')
-      .select('*')
-      .eq('id', campaignId)
-      .single();
-
-    if (campaignError || !campaign) {
-      return new Response(
-        JSON.stringify({ error: 'Campaign not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    let recipients: Recipient[] = [];
+    if (mode === 'test') {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('email, first_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const email = prof?.email || user.email;
+      if (!email) {
+        return new Response(JSON.stringify({ error: 'No admin email found' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      recipients = [{ email, first_name: prof?.first_name ?? null, user_id: user.id }];
+    } else {
+      recipients = await resolveRecipients(supabase, audience, excludePurchasers, manualEmails);
     }
 
-    // Get users who opted in to marketing
-    const { data: subscribers, error: subscribersError } = await supabase
-      .from('profiles')
-      .select('user_id, email, first_name')
-      .eq('marketing_consent', true)
-      .not('email', 'is', null);
-
-    if (subscribersError) {
-      console.error('Error fetching subscribers:', subscribersError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch subscribers' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (mode === 'count') {
+      return new Response(JSON.stringify({ count: recipients.length }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    if (!subscribers || subscribers.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No subscribers found', sentCount: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (recipients.length === 0) {
+      return new Response(JSON.stringify({ total: 0, sent: 0, failed: 0, failedEmails: [] }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Initialize SMTP client
     const smtpHost = Deno.env.get('ZOHO_SMTP_HOST')!;
     const smtpPort = parseInt(Deno.env.get('ZOHO_SMTP_PORT')!);
     const smtpUser = Deno.env.get('ZOHO_SMTP_USER')!;
     const smtpPass = Deno.env.get('ZOHO_SMTP_PASS')!;
 
-    // Port 465 uses direct TLS, port 587 uses STARTTLS
-    const useTls = smtpPort === 465;
-    console.log(`Connecting to SMTP: ${smtpHost}:${smtpPort} (TLS: ${useTls})`);
-
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
         port: smtpPort,
-        tls: useTls,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
+        tls: smtpPort === 465,
+        auth: { username: smtpUser, password: smtpPass },
       },
     });
 
     let sentCount = 0;
-    const errors: string[] = [];
+    const failedEmails: string[] = [];
 
-    const escapeHtml = (s: string): string =>
-      s.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-
-    for (const subscriber of subscribers) {
+    for (const r of recipients) {
       try {
-        // Personalize content (escape user-controlled fields to prevent HTML injection)
-        const safeName = escapeHtml(subscriber.first_name || 'there');
-        const safeEmail = escapeHtml(subscriber.email);
-        const personalizedContent = campaign.content
-          .replace(/\{\{first_name\}\}/g, safeName)
-          .replace(/\{\{email\}\}/g, safeEmail);
-
-
-        const htmlContent = `
-<!DOCTYPE html>
-<html dir="ltr" lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${campaign.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa;">
-    <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 32px 40px 20px; text-align: center; background: linear-gradient(135deg, #1a5f4a 0%, #2d8b6f 100%); border-radius: 16px 16px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">ArabiyaPath</h1>
-            </td>
-          </tr>
-          
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              ${personalizedContent}
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 24px 40px; background-color: #f8f9fa; border-radius: 0 0 16px 16px; text-align: center;">
-              <p style="margin: 0 0 8px; color: #888; font-size: 12px;">
-                You received this email because you subscribed to ArabiyaPath updates.
-              </p>
-              <p style="margin: 0; color: #888; font-size: 12px;">
-                © ${new Date().getFullYear()} ArabiyaPath. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-        `;
-
+        const html = wrap(subject, personalize(content, r));
         await client.send({
           from: `ArabiyaPath <${smtpUser}>`,
-          to: subscriber.email,
-          replyTo: "admin@arabiyapath.com",
-          subject: campaign.subject,
-          html: htmlContent,
+          to: r.email,
+          replyTo: 'admin@arabiyapath.com',
+          subject: personalize(subject, r),
+          html,
         });
-
-        // Record send
-        await supabase
-          .from('email_sends')
-          .insert({
-            campaign_id: campaignId,
-            user_id: subscriber.user_id,
-            status: 'sent',
-          });
-
         sentCount++;
-        
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.error(`Failed to send to ${subscriber.email}:`, error);
-        errors.push(subscriber.email);
+        await new Promise((res) => setTimeout(res, 100));
+      } catch (err) {
+        console.error(`Failed to send to ${r.email}:`, err);
+        failedEmails.push(r.email);
       }
     }
 
-    await client.close();
+    try { await client.close(); } catch (_) { /* ignore */ }
 
-    // Update campaign with sent info
-    await supabase
-      .from('email_campaigns')
-      .update({
-        sent_at: new Date().toISOString(),
-        recipients_count: sentCount,
-      })
-      .eq('id', campaignId);
+    let campaignId: string | null = null;
+    if (mode === 'send') {
+      const { data: campaign } = await supabase
+        .from('email_campaigns')
+        .insert({
+          subject,
+          content,
+          audience,
+          exclude_purchasers: audience === 'all_users' ? excludePurchasers : false,
+          manual_emails: audience === 'manual' ? recipients.map((r) => r.email) : [],
+          recipients_count: recipients.length,
+          sent_success: sentCount,
+          sent_failed: failedEmails.length,
+          failed_emails: failedEmails,
+          sent_by: user.id,
+          sent_at: new Date().toISOString(),
+          status: sentCount === 0 ? 'failed' : (failedEmails.length > 0 ? 'partial' : 'sent'),
+        })
+        .select('id')
+        .single();
+      campaignId = campaign?.id ?? null;
 
-    console.log(`Marketing campaign sent: ${sentCount} emails`);
+      if (campaignId) {
+        const rows = recipients
+          .filter((r) => r.user_id)
+          .map((r) => ({
+            campaign_id: campaignId,
+            user_id: r.user_id as string,
+            status: failedEmails.includes(r.email) ? 'failed' : 'sent',
+          }));
+        if (rows.length > 0) {
+          await supabase.from('email_sends').insert(rows);
+        }
+      }
+    }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Sent to ${sentCount} subscribers`,
-        sentCount,
-        errors: errors.length > 0 ? errors : undefined,
+      JSON.stringify({
+        success: true,
+        campaignId,
+        total: recipients.length,
+        sent: sentCount,
+        failed: failedEmails.length,
+        failedEmails,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error: unknown) {
     console.error('Error sending marketing email:', error);
-    const message = error instanceof Error ? error.message : 'Failed to send marketing emails';
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to send emails';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
