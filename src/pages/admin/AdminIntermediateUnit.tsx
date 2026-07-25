@@ -114,8 +114,11 @@ export default function AdminIntermediateUnit() {
 
 function ListeningTab({ unit, onSaved }: { unit: any; onSaved: () => void }) {
   const [videoUrl, setVideoUrl] = useState<string>(unit.video_url ?? "");
+  const [transcript, setTranscript] = useState<string>(unit.listening_transcript ?? "");
+  const [savingTranscript, setSavingTranscript] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
 
   const uploadedPath = unit.video_storage_path as string | null;
   const uploadedPublicUrl = uploadedPath
