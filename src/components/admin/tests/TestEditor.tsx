@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -114,6 +115,10 @@ export function TestEditor({ unit }: { unit: any }) {
   const [publishing, setPublishing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [changeTypeFor, setChangeTypeFor] = useState<TestQuestion | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [lastClickedId, setLastClickedId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { data: questions } = useQuery<TestQuestion[]>({
     queryKey: ["admin-intermediate-tests", unit.id],
@@ -134,6 +139,103 @@ export function TestEditor({ unit }: { unit: any }) {
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["admin-intermediate-tests", unit.id] });
+
+  /* ---------- Bulk selection ---------- */
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedCount = list.filter((q) => selectedSet.has(q.id)).length;
+  const allSelected = hasQuestions && selectedCount === list.length;
+
+  const toggleSelectAll = () =>
+    setSelectedIds(allSelected ? [] : list.map((q) => q.id));
+
+  const toggleOne = (q: TestQuestion, shiftKey = false) => {
+    if (shiftKey && lastClickedId) {
+      const a = list.findIndex((x) => x.id === lastClickedId);
+      const b = list.findIndex((x) => x.id === q.id);
+      if (a >= 0 && b >= 0) {
+        const range = list.slice(Math.min(a, b), Math.max(a, b) + 1).map((x) => x.id);
+        setSelectedIds((prev) => Array.from(new Set([...prev, ...range])));
+        setLastClickedId(q.id);
+        return;
+      }
+    }
+    setSelectedIds((prev) =>
+      prev.includes(q.id) ? prev.filter((id) => id !== q.id) : [...prev, q.id],
+    );
+    setLastClickedId(q.id);
+  };
+
+  const clearSelection = () => { setSelectedIds([]); setLastClickedId(null); };
+
+  const bulkSetPublished = async (published: boolean) => {
+    setBulkBusy(true);
+    const { error } = await (supabase as any)
+      .from("flashcard_unit_tests")
+      .update({ published })
+      .in("id", selectedIds);
+    setBulkBusy(false);
+    if (error) return toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    toast({ title: published ? `${selectedCount} questions published` : `${selectedCount} questions moved to draft` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkDelete = async () => {
+    setBulkDeleteOpen(false);
+    setBulkBusy(true);
+    const ids = [...selectedIds];
+    const { error } = await (supabase as any)
+      .from("flashcard_unit_tests")
+      .delete()
+      .in("id", ids);
+    if (error) {
+      setBulkBusy(false);
+      return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    }
+    const remaining = list.filter((q) => !ids.includes(q.id));
+    for (let i = 0; i < remaining.length; i++) {
+      await (supabase as any)
+        .from("flashcard_unit_tests")
+        .update({ order_index: i + 1 })
+        .eq("id", remaining[i].id);
+    }
+    setBulkBusy(false);
+    toast({ title: `${ids.length} questions deleted` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkDuplicate = async () => {
+    setBulkBusy(true);
+    const picked = list.filter((q) => selectedSet.has(q.id));
+    const rows = picked.map((q, i) => {
+      const { id, created_at, updated_at, ...rest } = q as any;
+      return { ...rest, order_index: list.length + i + 1, published: false };
+    });
+    const { error } = await (supabase as any).from("flashcard_unit_tests").insert(rows);
+    setBulkBusy(false);
+    if (error) return toast({ title: "Duplicate failed", description: error.message, variant: "destructive" });
+    toast({ title: `${rows.length} questions duplicated` });
+    clearSelection();
+    invalidate();
+  };
+
+  const bulkRegenerate = async () => {
+    setBulkBusy(true);
+    const ids = [...selectedIds];
+    let ok = 0;
+    for (const id of ids) {
+      const { error } = await supabase.functions.invoke("regenerate-intermediate-question", {
+        body: { question_id: id, mode: "regenerate" },
+      });
+      if (!error) ok++;
+    }
+    setBulkBusy(false);
+    toast({ title: `Regenerated ${ok} of ${ids.length} questions` });
+    clearSelection();
+    invalidate();
+  };
+
 
   /* ---------- Generate full test ---------- */
   const regenerateAll = async () => {
@@ -273,11 +375,21 @@ export function TestEditor({ unit }: { unit: any }) {
       {/* Toolbar */}
       <Card>
         <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Test Editor</p>
-            <p className="text-xs text-muted-foreground">
-              AI drafts. You own every question. Nothing regenerates on save or publish.
-            </p>
+          <div className="min-w-0 flex items-start gap-3">
+            {hasQuestions && (
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={toggleSelectAll}
+                aria-label="Select all questions"
+                className="mt-1"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Test Editor</p>
+              <p className="text-xs text-muted-foreground">
+                AI drafts. You own every question. Nothing regenerates on save or publish.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setCreating("multiple_choice")}>
@@ -310,6 +422,36 @@ export function TestEditor({ unit }: { unit: any }) {
         </CardContent>
       </Card>
 
+      {/* Bulk actions toolbar */}
+      {selectedCount > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium mr-1">
+              {selectedCount} question{selectedCount === 1 ? "" : "s"} selected
+            </span>
+            <Button variant="outline" size="sm" onClick={() => bulkSetPublished(true)} disabled={bulkBusy}>
+              <Check className="w-4 h-4 mr-1" /> Publish selected
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => bulkSetPublished(false)} disabled={bulkBusy}>
+              Move selected to draft
+            </Button>
+            <Button variant="outline" size="sm" onClick={bulkDuplicate} disabled={bulkBusy}>
+              <Copy className="w-4 h-4 mr-1" /> Duplicate selected
+            </Button>
+            <Button variant="outline" size="sm" onClick={bulkRegenerate} disabled={bulkBusy}>
+              {bulkBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+              Regenerate selected
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} disabled={bulkBusy}>
+              <Trash2 className="w-4 h-4 mr-1" /> Delete selected
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearSelection} disabled={bulkBusy}>
+              Deselect all
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {!hasQuestions ? (
         <p className="text-sm text-muted-foreground text-center py-8">
           No questions yet. Click <strong>Generate test</strong> or <strong>Add question</strong> to start.
@@ -325,6 +467,8 @@ export function TestEditor({ unit }: { unit: any }) {
                   index={i}
                   count={list.length}
                   regenerating={regenId === q.id}
+                  selected={selectedSet.has(q.id)}
+                  onToggleSelect={(shift) => toggleOne(q, shift)}
                   onEdit={() => setEditing(q)}
                   onDuplicate={() => duplicate(q)}
                   onDelete={() => setPendingDelete(q)}
@@ -374,6 +518,22 @@ export function TestEditor({ unit }: { unit: any }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirm */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedCount} selected questions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be removed and the remaining questions will be renumbered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={bulkDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -429,7 +589,7 @@ export function TestEditor({ unit }: { unit: any }) {
 /* ---------- Sortable row ---------- */
 
 function SortableQuestionRow({
-  q, index, count, regenerating,
+  q, index, count, regenerating, selected, onToggleSelect,
   onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown,
   onRegenerate, onEasier, onHarder, onImproveDistractors, onRewrite, onChangeType,
 }: {
@@ -437,6 +597,8 @@ function SortableQuestionRow({
   index: number;
   count: number;
   regenerating: boolean;
+  selected: boolean;
+  onToggleSelect: (shift: boolean) => void;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -453,9 +615,21 @@ function SortableQuestionRow({
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
 
   return (
-    <Card ref={setNodeRef} style={style} className={isDragging ? "shadow-lg" : ""}>
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`${isDragging ? "shadow-lg" : ""} ${selected ? "ring-2 ring-primary" : ""}`}
+    >
       <CardContent className="p-3">
         <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={selected}
+            aria-label={`Select question ${index + 1}`}
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(e.shiftKey); }}
+            onChange={() => {}}
+            className="mt-2 w-4 h-4 accent-primary cursor-pointer shrink-0"
+          />
           <button
             {...attributes}
             {...listeners}
