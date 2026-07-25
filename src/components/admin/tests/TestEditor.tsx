@@ -374,11 +374,21 @@ export function TestEditor({ unit }: { unit: any }) {
       {/* Toolbar */}
       <Card>
         <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Test Editor</p>
-            <p className="text-xs text-muted-foreground">
-              AI drafts. You own every question. Nothing regenerates on save or publish.
-            </p>
+          <div className="min-w-0 flex items-start gap-3">
+            {hasQuestions && (
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={toggleSelectAll}
+                aria-label="Select all questions"
+                className="mt-1"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Test Editor</p>
+              <p className="text-xs text-muted-foreground">
+                AI drafts. You own every question. Nothing regenerates on save or publish.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setCreating("multiple_choice")}>
