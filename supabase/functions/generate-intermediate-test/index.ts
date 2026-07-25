@@ -24,7 +24,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod";
 import {
   AI_VERSION,
-  ALLOWED_TYPES,
+
   SOURCE_CONTRACT_PROMPT,
   SOURCE_TO_CATEGORY,
   TYPE_RULES_PROMPT,
