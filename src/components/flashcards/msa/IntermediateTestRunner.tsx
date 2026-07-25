@@ -560,6 +560,7 @@ function QuestionView({
             src={question.image_url}
             alt=""
             loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             className="max-h-64 w-auto rounded-lg border object-contain bg-muted/30"
           />
         </div>
@@ -568,7 +569,7 @@ function QuestionView({
     </div>
   );
 
-  if (question.question_type === "sentence_ordering") {
+  if (question.question_type === "sentence_ordering" || question.question_type === "word_ordering") {
     return (
       <div className="space-y-3">
         {header}
@@ -576,6 +577,7 @@ function QuestionView({
       </div>
     );
   }
+
 
   if (question.question_type === "matching") {
     return (
