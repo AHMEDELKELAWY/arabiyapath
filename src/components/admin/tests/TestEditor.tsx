@@ -589,7 +589,7 @@ export function TestEditor({ unit }: { unit: any }) {
 /* ---------- Sortable row ---------- */
 
 function SortableQuestionRow({
-  q, index, count, regenerating,
+  q, index, count, regenerating, selected, onToggleSelect,
   onEdit, onDuplicate, onDelete, onMoveUp, onMoveDown,
   onRegenerate, onEasier, onHarder, onImproveDistractors, onRewrite, onChangeType,
 }: {
@@ -597,6 +597,8 @@ function SortableQuestionRow({
   index: number;
   count: number;
   regenerating: boolean;
+  selected: boolean;
+  onToggleSelect: (shift: boolean) => void;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -613,9 +615,21 @@ function SortableQuestionRow({
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
 
   return (
-    <Card ref={setNodeRef} style={style} className={isDragging ? "shadow-lg" : ""}>
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`${isDragging ? "shadow-lg" : ""} ${selected ? "ring-2 ring-primary" : ""}`}
+    >
       <CardContent className="p-3">
         <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={selected}
+            aria-label={`Select question ${index + 1}`}
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(e.shiftKey); }}
+            onChange={() => {}}
+            className="mt-2 w-4 h-4 accent-primary cursor-pointer shrink-0"
+          />
           <button
             {...attributes}
             {...listeners}
