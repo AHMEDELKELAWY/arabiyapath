@@ -10,7 +10,7 @@
  * grounding rules, and validation helpers.
  */
 
-export const AI_VERSION = "int-test/v7-source-grounded";
+export const AI_VERSION = "int-test/v8-word-order-simple-grammar";
 
 /** Native question types the runner supports. Do NOT extend without runner work. */
 export const ALLOWED_TYPES = [
@@ -18,7 +18,7 @@ export const ALLOWED_TYPES = [
   "grammar_selection",
   "conversation_completion",
   "vocab_in_context",
-  "fill_in_blank",
+  "word_ordering",
   "matching",
   "image_question",
   "choose_correct_sentence",
@@ -33,8 +33,8 @@ export const MC_OPTION_TYPES = new Set<string>([
   "vocab_in_context",
   "choose_correct_sentence",
   "image_question",
-  "fill_in_blank",
 ]);
+
 
 /** DB-level categories (flashcard_unit_tests.category CHECK). */
 export type Category = "listening" | "vocabulary" | "grammar";
