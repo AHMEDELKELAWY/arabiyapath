@@ -59,6 +59,7 @@ export default function AdminEmailCampaigns() {
   const [manualList, setManualList] = useState("");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
+  const [contentMode, setContentMode] = useState<"visual" | "html">("visual");
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
