@@ -479,6 +479,8 @@ export type Database = {
           campaign_id: string | null
           email: string | null
           error_message: string | null
+          event_at: string | null
+          event_detail: string | null
           id: string
           sent_at: string | null
           status: string | null
@@ -488,6 +490,8 @@ export type Database = {
           campaign_id?: string | null
           email?: string | null
           error_message?: string | null
+          event_at?: string | null
+          event_detail?: string | null
           id?: string
           sent_at?: string | null
           status?: string | null
@@ -497,6 +501,8 @@ export type Database = {
           campaign_id?: string | null
           email?: string | null
           error_message?: string | null
+          event_at?: string | null
+          event_detail?: string | null
           id?: string
           sent_at?: string | null
           status?: string | null
@@ -2031,27 +2037,41 @@ export type Database = {
       }
       suppressed_emails: {
         Row: {
+          campaign_id: string | null
           created_at: string
           email: string
           id: string
           metadata: Json | null
           reason: string
+          source: string
         }
         Insert: {
+          campaign_id?: string | null
           created_at?: string
           email: string
           id?: string
           metadata?: Json | null
           reason: string
+          source?: string
         }
         Update: {
+          campaign_id?: string | null
           created_at?: string
           email?: string
           id?: string
           metadata?: Json | null
           reason?: string
+          source?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "suppressed_emails_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unit_learning_events: {
         Row: {
@@ -2292,6 +2312,32 @@ export type Database = {
       }
     }
     Functions: {
+      admin_campaign_deliverability: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          audience: string
+          bounced: number
+          campaign_id: string
+          complained: number
+          failed: number
+          recipients: number
+          sent: number
+          sent_at: string
+          skipped: number
+          status: string
+          subject: string
+          unsubscribed: number
+        }[]
+      }
+      admin_campaign_failure_reasons: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          campaign_id: string
+          occurrences: number
+          reason: string
+          subject: string
+        }[]
+      }
       admin_get_quiz_questions: {
         Args: { _quiz_id: string }
         Returns: {
