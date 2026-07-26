@@ -369,6 +369,8 @@ export default function AdminEmailCampaigns() {
           </Card>
         </div>
 
+        <DeliverabilityAnalytics />
+
         <Card>
           <CardHeader>
             <CardTitle>Campaign Log</CardTitle>
@@ -389,8 +391,10 @@ export default function AdminEmailCampaigns() {
                     <TableHead>Skipped</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Sent At</TableHead>
+                    <TableHead className="text-right">Report</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {campaigns.map((c) => (
                     <TableRow key={c.id}>
