@@ -386,6 +386,7 @@ export default function AdminEmailCampaigns() {
                     <TableHead>Recipients</TableHead>
                     <TableHead>Sent</TableHead>
                     <TableHead>Failed</TableHead>
+                    <TableHead>Skipped</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Sent At</TableHead>
                   </TableRow>
@@ -393,14 +394,20 @@ export default function AdminEmailCampaigns() {
                 <TableBody>
                   {campaigns.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium max-w-[280px] truncate">{c.subject}</TableCell>
+                      <TableCell className="font-medium max-w-[280px] truncate">
+                        {c.subject}
+                        {c.error_message && (
+                          <span className="mt-1 block text-xs font-normal text-destructive break-words">{c.error_message}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{audienceLabel(c.audience)}</TableCell>
                       <TableCell>{c.recipients_count ?? 0}</TableCell>
                       <TableCell>{c.sent_success ?? 0}</TableCell>
                       <TableCell>{c.sent_failed ?? 0}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.skipped_count ?? 0}</TableCell>
                       <TableCell>
                         <Badge variant={c.status === "sent" ? "default" : c.status === "failed" ? "destructive" : "secondary"}>
-                          {c.status}
+                          {c.status === "sending" ? "sending…" : c.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -408,6 +415,7 @@ export default function AdminEmailCampaigns() {
                       </TableCell>
                     </TableRow>
                   ))}
+
                 </TableBody>
               </Table>
             ) : (
