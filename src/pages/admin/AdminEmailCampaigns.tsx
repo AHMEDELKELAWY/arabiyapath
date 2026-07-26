@@ -87,12 +87,15 @@ export default function AdminEmailCampaigns() {
   const payload = () => ({
     subject,
     content,
+    contentMode,
     audience,
     excludePurchasers: audience === "all_users" ? excludePurchasers : false,
     manualEmails,
   });
 
-  const canSend = subject.trim().length > 0 && content.replace(/<[^>]*>/g, "").trim().length > 0;
+  const canSend =
+    subject.trim().length > 0 &&
+    (contentMode === "html" ? content.trim().length > 0 : content.replace(/<[^>]*>/g, "").trim().length > 0);
 
   const invoke = async (mode: "count" | "test" | "send") => {
     const { data, error } = await supabase.functions.invoke("send-marketing-email", {
