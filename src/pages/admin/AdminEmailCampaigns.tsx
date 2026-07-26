@@ -95,8 +95,9 @@ export default function AdminEmailCampaigns() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmCount, setConfirmCount] = useState(0);
+  const [confirmSkipped, setConfirmSkipped] = useState(0);
   const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
-  const [result, setResult] = useState<SendResult | null>(null);
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
 
   const manualEmails = useMemo(
     () => manualList.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean),
@@ -108,12 +109,30 @@ export default function AdminEmailCampaigns() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_campaigns")
-        .select("id, subject, audience, recipients_count, sent_success, sent_failed, status, sent_at, created_at")
+        .select("id, subject, audience, recipients_count, sent_success, sent_failed, skipped_count, status, error_message, sent_at, completed_at, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as CampaignRow[];
     },
+    // Poll while any campaign is still processing in the background.
+    refetchInterval: (query) =>
+      (query.state.data as CampaignRow[] | undefined)?.some((c) => c.status === "sending") ? 5000 : false,
   });
+
+  const activeCampaign = campaigns?.find((c) => c.id === activeCampaignId) ?? null;
+
+  useEffect(() => {
+    if (!activeCampaign || activeCampaign.status === "sending") return;
+    setActiveCampaignId(null);
+    toast({
+      title: activeCampaign.status === "failed" ? "Campaign failed" : "Campaign finished",
+      description: activeCampaign.error_message
+        ? activeCampaign.error_message
+        : `${activeCampaign.sent_success ?? 0} sent, ${activeCampaign.sent_failed ?? 0} failed.`,
+      variant: activeCampaign.status === "failed" ? "destructive" : undefined,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCampaign?.status]);
 
   const payload = () => ({
     subject,
@@ -132,7 +151,7 @@ export default function AdminEmailCampaigns() {
     const { data, error } = await supabase.functions.invoke("send-marketing-email", {
       body: { ...payload(), mode },
     });
-    if (error) throw error;
+    if (error) throw new Error(await edgeErrorMessage(error, "The email service could not be reached."));
     if ((data as any)?.error) throw new Error((data as any).error);
     return data as any;
   };
@@ -144,7 +163,8 @@ export default function AdminEmailCampaigns() {
     return base
       .replace(/\{\{\s*first_name\s*\}\}/g, name)
       .replace(/\{\{\s*email\s*\}\}/g, email)
-      .replace(/\{\{\s*login_url\s*\}\}/g, "https://arabiyapath.com/login");
+      .replace(/\{\{\s*login_url\s*\}\}/g, "https://arabiyapath.com/login")
+      .replace(/\{\{\s*unsubscribe_url\s*\}\}/g, "https://arabiyapath.com/unsubscribe");
   }, [content, contentMode, profile, user]);
 
   const handleOpenConfirm = async () => {
@@ -152,9 +172,10 @@ export default function AdminEmailCampaigns() {
     try {
       const data = await invoke("count");
       setConfirmCount(data.count ?? 0);
+      setConfirmSkipped(data.skipped ?? 0);
       setConfirmOpen(true);
     } catch (e: any) {
-      toast({ title: "Error", description: e.message ?? "Could not count recipients", variant: "destructive" });
+      toast({ title: "Could not count recipients", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -165,14 +186,11 @@ export default function AdminEmailCampaigns() {
     try {
       const data = await invoke("test");
       toast({
-        title: data.sent > 0 ? "Test email sent" : "Test email failed",
-        description: data.sent > 0
-          ? `Sent to ${profile?.email || user?.email}`
-          : "The test email could not be delivered.",
-        variant: data.sent > 0 ? undefined : "destructive",
+        title: "Test email sent",
+        description: `Delivered to ${data.recipient ?? profile?.email ?? user?.email}`,
       });
     } catch (e: any) {
-      toast({ title: "Error", description: e.message ?? "Failed to send test email", variant: "destructive" });
+      toast({ title: "Test email failed", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -182,16 +200,20 @@ export default function AdminEmailCampaigns() {
     setBusy("send");
     try {
       const data = await invoke("send");
-      setResult({ total: data.total, sent: data.sent, failed: data.failed, failedEmails: data.failedEmails });
+      setActiveCampaignId(data.campaignId ?? null);
       setConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
-      toast({ title: "Campaign finished", description: `${data.sent} sent, ${data.failed} failed.` });
+      toast({
+        title: "Campaign started",
+        description: `Sending to ${data.total} recipient(s) in the background. Progress updates below.`,
+      });
     } catch (e: any) {
-      toast({ title: "Send failed", description: e.message ?? "Failed to send campaign", variant: "destructive" });
+      toast({ title: "Send failed", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
   };
+
 
   return (
     <AdminLayout>
