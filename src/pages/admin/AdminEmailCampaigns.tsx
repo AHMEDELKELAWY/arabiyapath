@@ -244,8 +244,44 @@ export default function AdminEmailCampaigns() {
                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line..." />
               </div>
               <div className="space-y-2">
-                <Label>Message</Label>
-                <RichTextEditor value={content} onChange={setContent} placeholder="Hi {{first_name}}, ..." />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label>Message</Label>
+                  <div className="inline-flex rounded-md border border-border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={contentMode === "visual" ? "secondary" : "ghost"}
+                      onClick={() => setContentMode("visual")}
+                    >
+                      Visual
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={contentMode === "html" ? "secondary" : "ghost"}
+                      onClick={() => setContentMode("html")}
+                    >
+                      HTML
+                    </Button>
+                  </div>
+                </div>
+                {contentMode === "visual" ? (
+                  <RichTextEditor value={content} onChange={setContent} placeholder="Hi {{first_name}}, ..." />
+                ) : (
+                  <>
+                    <Textarea
+                      rows={18}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      spellCheck={false}
+                      placeholder={"<!DOCTYPE html>\n<html>...paste your full HTML email template here...</html>"}
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pasted HTML is sent exactly as entered (inline CSS, tables and images preserved). Scripts and JavaScript are stripped.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2">
