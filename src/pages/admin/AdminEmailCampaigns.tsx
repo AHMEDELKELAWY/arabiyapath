@@ -337,27 +337,34 @@ export default function AdminEmailCampaigns() {
                 </Button>
               </div>
 
-              {result && (
-                <div className="grid grid-cols-3 gap-3 rounded-lg border border-border p-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Recipients</p>
-                    <p className="text-xl font-bold">{result.total}</p>
+              {activeCampaign && (
+                <div className="space-y-3 rounded-lg border border-border p-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Recipients</p>
+                      <p className="text-xl font-bold">{activeCampaign.recipients_count ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Successfully Sent</p>
+                      <p className="text-xl font-bold text-primary">{activeCampaign.sent_success ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Failed</p>
+                      <p className="text-xl font-bold text-destructive">{activeCampaign.sent_failed ?? 0}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Successfully Sent</p>
-                    <p className="text-xl font-bold text-primary">{result.sent}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Failed</p>
-                    <p className="text-xl font-bold text-destructive">{result.failed}</p>
-                  </div>
-                  {result.failedEmails && result.failedEmails.length > 0 && (
-                    <p className="col-span-3 text-xs text-muted-foreground break-all">
-                      Failed addresses: {result.failedEmails.join(", ")}
+                  {activeCampaign.status === "sending" && (
+                    <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Sending in the background — you can leave this page, progress is saved.
                     </p>
+                  )}
+                  {activeCampaign.error_message && (
+                    <p className="text-xs text-destructive break-words">{activeCampaign.error_message}</p>
                   )}
                 </div>
               )}
+
             </CardContent>
           </Card>
         </div>
