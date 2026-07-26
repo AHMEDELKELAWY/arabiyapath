@@ -30,6 +30,20 @@ const AUDIENCES: { value: Audience; label: string }[] = [
 
 const audienceLabel = (v: string) => AUDIENCES.find((a) => a.value === v)?.label ?? v;
 
+/** Strips JavaScript vectors while preserving layout HTML and inline CSS. */
+const sanitizeHtmlEmail = (html: string) =>
+  html
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, "")
+    .replace(/<script\b[^>]*\/?>/gi, "")
+    .replace(/<iframe\b[\s\S]*?<\/iframe\s*>/gi, "")
+    .replace(/<object\b[\s\S]*?<\/object\s*>/gi, "")
+    .replace(/<embed\b[^>]*\/?>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+
 interface CampaignRow {
   id: string;
   subject: string;
