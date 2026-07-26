@@ -282,6 +282,7 @@ interface CampaignJob {
   excludePurchasers: boolean;
   manualEmails: string[];
   offset: number;
+  token: string;
 }
 
 function buildHtml(job: { subject: string; content: string; contentMode: 'visual' | 'html' }, r: Recipient) {
@@ -292,18 +293,41 @@ function buildHtml(job: { subject: string; content: string; contentMode: 'visual
 
 async function runCampaign(supabase: any, cfg: SmtpConfig, job: CampaignJob) {
   const started = Date.now();
+
+  // ---- Single-worker lock: only one loop may ever process this campaign ----
+  const { data: claimed, error: claimErr } = await supabase.rpc('campaign_claim_worker', {
+    _campaign_id: job.campaignId,
+    _token: job.token,
+  });
+  if (claimErr) throw new Error(`Could not lock the campaign: ${claimErr.message}`);
+  if (claimed !== true) {
+    console.log(`send-marketing-email: campaign ${job.campaignId} is already being processed or finished; skipping.`);
+    return;
+  }
+
   const { recipients } = await resolveRecipients(supabase, job.audience, job.excludePurchasers, job.manualEmails);
   const slice = recipients.slice(job.offset);
 
   let client = newSmtpClient(cfg);
   let sinceReconnect = 0;
-  let sent = 0;
-  const failed: { email: string; user_id: string | null; error: string }[] = [];
-  const sendRows: any[] = [];
   let processed = 0;
+  let firstError: string | null = null;
 
   for (const r of slice) {
     if (Date.now() - started > TIME_BUDGET_MS) break;
+
+    // ---- Per-recipient idempotency: claim the row before touching SMTP ----
+    const { data: mine, error: rowErr } = await supabase.rpc('campaign_claim_recipient', {
+      _campaign_id: job.campaignId,
+      _email: r.email,
+      _user_id: r.user_id,
+    });
+    if (rowErr) {
+      console.error('send-marketing-email: claim failed', rowErr.message);
+      break;
+    }
+    processed++;
+    if (mine !== true) continue; // already sent / claimed by an earlier run
 
     if (sinceReconnect >= RECONNECT_EVERY) {
       try { await client.close(); } catch (_) { /* ignore */ }
@@ -312,83 +336,79 @@ async function runCampaign(supabase: any, cfg: SmtpConfig, job: CampaignJob) {
       sinceReconnect = 0;
     }
 
-    let lastError: unknown = null;
-    let ok = false;
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS && !ok; attempt++) {
-      try {
-        const html = buildHtml(job, r);
-        await client.send({
-          from: `ArabiyaPath <${cfg.user}>`,
-          to: r.email,
-          replyTo: REPLY_TO,
-          subject: personalize(job.subject, r),
-          html,
-          content: htmlToText(html),
-          headers: {
-            'List-Unsubscribe': `<${UNSUBSCRIBE_URL}?email=${encodeURIComponent(r.email)}>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          },
-        } as any);
-        ok = true;
-      } catch (err) {
-        lastError = err;
-        if (attempt < MAX_ATTEMPTS && isTransient(err)) {
-          try { await client.close(); } catch (_) { /* ignore */ }
-          await sleep(2000);
-          client = newSmtpClient(cfg);
-          sinceReconnect = 0;
-        } else {
-          break;
-        }
+    let sendError: unknown = null;
+    try {
+      const html = buildHtml(job, r);
+      await client.send({
+        from: `ArabiyaPath <${cfg.user}>`,
+        to: r.email,
+        replyTo: REPLY_TO,
+        subject: personalize(job.subject, r),
+        html,
+        content: htmlToText(html),
+        headers: {
+          'List-Unsubscribe': `<${UNSUBSCRIBE_URL}?email=${encodeURIComponent(r.email)}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      } as any);
+    } catch (err) {
+      sendError = err;
+    }
+
+    sinceReconnect++;
+    const message = sendError ? smtpErrorMessage(sendError) : null;
+    if (message) {
+      console.error(`send-marketing-email: failed for ${r.email}: ${message}`);
+      if (!firstError) firstError = message;
+      // A dropped connection is not retried on the same address: the message may
+      // already have been accepted by Zoho, and re-sending would duplicate it.
+      if (isTransient(sendError)) {
+        try { await client.close(); } catch (_) { /* ignore */ }
+        client = newSmtpClient(cfg);
+        sinceReconnect = 0;
       }
     }
 
-    processed++;
-    sinceReconnect++;
-    if (ok) {
-      sent++;
-      sendRows.push({ campaign_id: job.campaignId, user_id: r.user_id, email: r.email, status: 'sent' });
-    } else {
-      const msg = smtpErrorMessage(lastError);
-      console.error(`send-marketing-email: failed for ${r.email}: ${msg}`);
-      failed.push({ email: r.email, user_id: r.user_id, error: msg });
-      sendRows.push({ campaign_id: job.campaignId, user_id: r.user_id, email: r.email, status: 'failed', error_message: msg.slice(0, 500) });
-    }
+    // Live progress: counters move after every single recipient.
+    const { error: recErr } = await supabase.rpc('campaign_record_result', {
+      _campaign_id: job.campaignId,
+      _email: r.email,
+      _ok: !message,
+      _error: message,
+    });
+    if (recErr) console.error('send-marketing-email: record_result failed', recErr.message);
 
     await sleep(SEND_INTERVAL_MS);
   }
 
   try { await client.close(); } catch (_) { /* ignore */ }
 
-  if (sendRows.length > 0) {
-    const { error: logErr } = await supabase.from('email_sends').insert(sendRows);
-    if (logErr) console.error('send-marketing-email: email_sends insert failed', logErr.message);
-  }
+  // Any row still 'pending' was claimed but never attempted — free it for the next chunk.
+  await supabase.rpc('campaign_release_pending', { _campaign_id: job.campaignId });
 
-  // Merge counters with whatever previous chunks recorded.
   const { data: current } = await supabase
     .from('email_campaigns')
-    .select('sent_success, sent_failed, failed_emails, recipients_count')
+    .select('sent_success, sent_failed')
     .eq('id', job.campaignId)
     .maybeSingle();
 
-  const totalSent = (current?.sent_success ?? 0) + sent;
-  const totalFailed = (current?.sent_failed ?? 0) + failed.length;
-  const failedEmails = [...(current?.failed_emails ?? []), ...failed.map((f) => f.email)];
+  const totalSent = current?.sent_success ?? 0;
+  const totalFailed = current?.sent_failed ?? 0;
   const nextOffset = job.offset + processed;
   const done = nextOffset >= recipients.length;
 
   await supabase
     .from('email_campaigns')
     .update({
-      sent_success: totalSent,
-      sent_failed: totalFailed,
-      failed_emails: failedEmails,
+      worker_offset: nextOffset,
       status: done
         ? (totalSent === 0 ? 'failed' : totalFailed > 0 ? 'partial' : 'sent')
         : 'sending',
-      error_message: done && totalSent === 0 && failed.length > 0 ? failed[0].error.slice(0, 500) : null,
+      error_message: done && totalSent === 0 && firstError ? firstError.slice(0, 500) : null,
       completed_at: done ? new Date().toISOString() : null,
+      // Release the lock when finished so a stale token can never resume it.
+      lock_token: done ? null : job.token,
+      locked_at: done ? null : new Date().toISOString(),
     })
     .eq('id', job.campaignId);
 
@@ -410,11 +430,12 @@ async function runCampaign(supabase: any, cfg: SmtpConfig, job: CampaignJob) {
       console.error('send-marketing-email: resume dispatch failed', e);
       await supabase
         .from('email_campaigns')
-        .update({ status: 'partial', error_message: 'Campaign stopped early: could not resume processing.', completed_at: new Date().toISOString() })
+        .update({ status: 'partial', error_message: 'Campaign stopped early: could not resume processing.', completed_at: new Date().toISOString(), lock_token: null, locked_at: null })
         .eq('id', job.campaignId);
     }
   }
 }
+
 
 // ---- HTTP handler ---------------------------------------------------------
 
