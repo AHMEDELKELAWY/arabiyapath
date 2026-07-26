@@ -356,6 +356,8 @@ export type Database = {
           exclude_purchasers: boolean
           failed_emails: string[]
           id: string
+          lock_token: string | null
+          locked_at: string | null
           manual_emails: string[]
           recipients_count: number | null
           sent_at: string | null
@@ -366,6 +368,7 @@ export type Database = {
           started_at: string | null
           status: string
           subject: string
+          worker_offset: number
         }
         Insert: {
           audience?: string
@@ -377,6 +380,8 @@ export type Database = {
           exclude_purchasers?: boolean
           failed_emails?: string[]
           id?: string
+          lock_token?: string | null
+          locked_at?: string | null
           manual_emails?: string[]
           recipients_count?: number | null
           sent_at?: string | null
@@ -387,6 +392,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           subject: string
+          worker_offset?: number
         }
         Update: {
           audience?: string
@@ -398,6 +404,8 @@ export type Database = {
           exclude_purchasers?: boolean
           failed_emails?: string[]
           id?: string
+          lock_token?: string | null
+          locked_at?: string | null
           manual_emails?: string[]
           recipients_count?: number | null
           sent_at?: string | null
@@ -408,6 +416,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           subject?: string
+          worker_offset?: number
         }
         Relationships: []
       }
@@ -2388,6 +2397,31 @@ export type Database = {
           student_last_name: string
           student_user_id: string
         }[]
+      }
+      campaign_claim_recipient: {
+        Args: { _campaign_id: string; _email: string; _user_id: string }
+        Returns: boolean
+      }
+      campaign_claim_worker: {
+        Args: { _campaign_id: string; _stale_after?: string; _token: string }
+        Returns: boolean
+      }
+      campaign_heartbeat: {
+        Args: { _campaign_id: string; _token: string }
+        Returns: boolean
+      }
+      campaign_record_result: {
+        Args: {
+          _campaign_id: string
+          _email: string
+          _error?: string
+          _ok: boolean
+        }
+        Returns: undefined
+      }
+      campaign_release_pending: {
+        Args: { _campaign_id: string }
+        Returns: number
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }

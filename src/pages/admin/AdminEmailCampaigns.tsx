@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,6 +100,7 @@ export default function AdminEmailCampaigns() {
   const [confirmCount, setConfirmCount] = useState(0);
   const [confirmSkipped, setConfirmSkipped] = useState(0);
   const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
+  const sendingRef = useRef(false);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
 
@@ -215,6 +216,10 @@ export default function AdminEmailCampaigns() {
   };
 
   const handleSend = async () => {
+    // Hard guard: a second click can never issue a second request, even before
+    // React has re-rendered the disabled state.
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setBusy("send");
     try {
       const data = await invoke("send");
@@ -222,15 +227,19 @@ export default function AdminEmailCampaigns() {
       setConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
       toast({
-        title: "Campaign started",
-        description: `Sending to ${data.total} recipient(s) in the background. Progress updates below.`,
+        title: data.duplicate ? "Campaign already running" : "Campaign started",
+        description: data.duplicate
+          ? "An identical campaign was started moments ago — showing its progress instead of sending again."
+          : `Sending to ${data.total} recipient(s) in the background. Progress updates below.`,
       });
     } catch (e: any) {
       toast({ title: "Send failed", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
+      setTimeout(() => { sendingRef.current = false; }, 3000);
     }
   };
+
 
 
   return (
