@@ -348,8 +348,11 @@ export type Database = {
       email_campaigns: {
         Row: {
           audience: string
+          completed_at: string | null
           content: string
+          content_mode: string
           created_at: string | null
+          error_message: string | null
           exclude_purchasers: boolean
           failed_emails: string[]
           id: string
@@ -359,13 +362,18 @@ export type Database = {
           sent_by: string | null
           sent_failed: number
           sent_success: number
+          skipped_count: number
+          started_at: string | null
           status: string
           subject: string
         }
         Insert: {
           audience?: string
+          completed_at?: string | null
           content: string
+          content_mode?: string
           created_at?: string | null
+          error_message?: string | null
           exclude_purchasers?: boolean
           failed_emails?: string[]
           id?: string
@@ -375,13 +383,18 @@ export type Database = {
           sent_by?: string | null
           sent_failed?: number
           sent_success?: number
+          skipped_count?: number
+          started_at?: string | null
           status?: string
           subject: string
         }
         Update: {
           audience?: string
+          completed_at?: string | null
           content?: string
+          content_mode?: string
           created_at?: string | null
+          error_message?: string | null
           exclude_purchasers?: boolean
           failed_emails?: string[]
           id?: string
@@ -391,6 +404,8 @@ export type Database = {
           sent_by?: string | null
           sent_failed?: number
           sent_success?: number
+          skipped_count?: number
+          started_at?: string | null
           status?: string
           subject?: string
         }
@@ -462,24 +477,30 @@ export type Database = {
       email_sends: {
         Row: {
           campaign_id: string | null
+          email: string | null
+          error_message: string | null
           id: string
           sent_at: string | null
           status: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           campaign_id?: string | null
+          email?: string | null
+          error_message?: string | null
           id?: string
           sent_at?: string | null
           status?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           campaign_id?: string | null
+          email?: string | null
+          error_message?: string | null
           id?: string
           sent_at?: string | null
           status?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
