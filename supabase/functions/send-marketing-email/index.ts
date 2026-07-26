@@ -190,6 +190,7 @@ serve(async (req) => {
     const content: string = String(body.content ?? '');
     const audience: Audience = (body.audience ?? 'all_users') as Audience;
     const excludePurchasers = Boolean(body.excludePurchasers);
+    const contentMode: 'visual' | 'html' = body.contentMode === 'html' ? 'html' : 'visual';
     const manualEmails: string[] = Array.isArray(body.manualEmails) ? body.manualEmails : [];
 
     if (mode !== 'count' && (!subject || !content.trim())) {
