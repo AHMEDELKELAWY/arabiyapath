@@ -16,8 +16,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Send, Eye, Mail } from "lucide-react";
+import { Loader2, Send, Eye, Mail, Download } from "lucide-react";
 import { format } from "date-fns";
+import { DeliverabilityAnalytics } from "@/components/admin/email/DeliverabilityAnalytics";
+import { exportCampaignReport } from "@/lib/email/campaignReport";
+
 
 
 type Audience = "all_users" | "never_purchased" | "active_members" | "expired_members" | "manual";
