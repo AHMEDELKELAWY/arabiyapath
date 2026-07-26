@@ -16,8 +16,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Send, Eye, Mail } from "lucide-react";
+import { Loader2, Send, Eye, Mail, Download } from "lucide-react";
 import { format } from "date-fns";
+import { DeliverabilityAnalytics } from "@/components/admin/email/DeliverabilityAnalytics";
+import { exportCampaignReport } from "@/lib/email/campaignReport";
+
 
 
 type Audience = "all_users" | "never_purchased" | "active_members" | "expired_members" | "manual";
@@ -98,6 +101,21 @@ export default function AdminEmailCampaigns() {
   const [confirmSkipped, setConfirmSkipped] = useState(0);
   const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+
+  const handleExport = async (campaignId: string) => {
+    setExportingId(campaignId);
+    try {
+      const { filename, recipients } = await exportCampaignReport(campaignId);
+      toast({ title: "Report downloaded", description: `${filename} — ${recipients} recipient row(s).` });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message ?? "Could not build the report.", variant: "destructive" });
+    } finally {
+      setExportingId(null);
+    }
+  };
+
+
 
   const manualEmails = useMemo(
     () => manualList.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean),
@@ -369,6 +387,8 @@ export default function AdminEmailCampaigns() {
           </Card>
         </div>
 
+        <DeliverabilityAnalytics />
+
         <Card>
           <CardHeader>
             <CardTitle>Campaign Log</CardTitle>
@@ -389,8 +409,10 @@ export default function AdminEmailCampaigns() {
                     <TableHead>Skipped</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Sent At</TableHead>
+                    <TableHead className="text-right">Report</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {campaigns.map((c) => (
                     <TableRow key={c.id}>
@@ -413,6 +435,20 @@ export default function AdminEmailCampaigns() {
                       <TableCell className="text-muted-foreground">
                         {c.sent_at ? format(new Date(c.sent_at), "MMM d, yyyy h:mm a") : "—"}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleExport(c.id)}
+                          disabled={exportingId === c.id}
+                        >
+                          {exportingId === c.id
+                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            : <Download className="mr-2 h-4 w-4" />}
+                          Export report
+                        </Button>
+                      </TableCell>
+
                     </TableRow>
                   ))}
 
