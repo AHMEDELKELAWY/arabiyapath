@@ -248,7 +248,9 @@ serve(async (req) => {
 
     for (const r of recipients) {
       try {
-        const html = wrap(subject, personalize(content, r));
+        const html = contentMode === 'html'
+          ? personalize(sanitizeHtmlEmail(content), r)
+          : wrap(subject, personalize(content, r));
         await client.send({
           from: `ArabiyaPath <${smtpUser}>`,
           to: r.email,
