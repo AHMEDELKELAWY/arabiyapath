@@ -109,11 +109,12 @@ export default function AdminEmailCampaigns() {
   const previewHtml = useMemo(() => {
     const name = profile?.first_name || "there";
     const email = profile?.email || user?.email || "student@example.com";
-    return content
+    const base = contentMode === "html" ? sanitizeHtmlEmail(content) : content;
+    return base
       .replace(/\{\{\s*first_name\s*\}\}/g, name)
       .replace(/\{\{\s*email\s*\}\}/g, email)
       .replace(/\{\{\s*login_url\s*\}\}/g, "https://arabiyapath.com/login");
-  }, [content, profile, user]);
+  }, [content, contentMode, profile, user]);
 
   const handleOpenConfirm = async () => {
     setBusy("count");
