@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,6 +100,7 @@ export default function AdminEmailCampaigns() {
   const [confirmCount, setConfirmCount] = useState(0);
   const [confirmSkipped, setConfirmSkipped] = useState(0);
   const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
+  const sendingRef = useRef(false);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
 
