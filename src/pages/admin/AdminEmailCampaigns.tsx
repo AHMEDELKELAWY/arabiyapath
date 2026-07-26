@@ -470,7 +470,10 @@ export default function AdminEmailCampaigns() {
             <DialogTitle>Send campaign</DialogTitle>
             <DialogDescription>
               You are about to send this campaign to {confirmCount} recipients.
+              {confirmSkipped > 0 && ` ${confirmSkipped} address(es) were skipped (duplicate, invalid or unsubscribed).`}
+              {" "}Emails are sent at a steady pace to respect Zoho Mail limits (~40 per minute), so large campaigns take a few minutes.
             </DialogDescription>
+
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={busy === "send"}>Cancel</Button>
