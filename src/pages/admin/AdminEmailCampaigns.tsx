@@ -53,17 +53,32 @@ interface CampaignRow {
   recipients_count: number | null;
   sent_success: number | null;
   sent_failed: number | null;
+  skipped_count: number | null;
   status: string;
+  error_message: string | null;
   sent_at: string | null;
+  completed_at: string | null;
   created_at: string;
 }
 
-interface SendResult {
-  total: number;
-  sent: number;
-  failed: number;
-  failedEmails?: string[];
+/** Pulls the real message out of a Supabase Edge Function error response. */
+async function edgeErrorMessage(err: unknown, fallback: string): Promise<string> {
+  if (err instanceof FunctionsHttpError) {
+    try {
+      const body = await err.context.json();
+      if (body?.error) return String(body.error);
+      return JSON.stringify(body);
+    } catch {
+      try {
+        const text = await err.context.text();
+        if (text) return text;
+      } catch { /* ignore */ }
+    }
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
 }
+
 
 export default function AdminEmailCampaigns() {
   const { toast } = useToast();
