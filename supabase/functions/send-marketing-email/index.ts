@@ -37,6 +37,21 @@ function personalize(content: string, r: Recipient): string {
     .replace(/\{\{\s*login_url\s*\}\}/g, LOGIN_URL);
 }
 
+// Strips JavaScript vectors while preserving layout HTML and inline CSS.
+function sanitizeHtmlEmail(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<script\b[^>]*\/?>/gi, '')
+    .replace(/<iframe\b[\s\S]*?<\/iframe\s*>/gi, '')
+    .replace(/<object\b[\s\S]*?<\/object\s*>/gi, '')
+    .replace(/<embed\b[^>]*\/?>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+}
+
 function wrap(subject: string, body: string): string {
   return `<!DOCTYPE html>
 <html dir="ltr" lang="en">
