@@ -570,6 +570,30 @@ serve(async (req) => {
       );
     }
 
+    // Guard against double submits (double-click, retried request): an identical
+    // campaign started in the last 5 minutes is returned instead of re-sent.
+    const { data: recent } = await supabase
+      .from('email_campaigns')
+      .select('id, recipients_count, skipped_count')
+      .eq('sent_by', user.id)
+      .eq('subject', subject)
+      .eq('audience', audience)
+      .gte('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recent) {
+      return json({
+        success: true,
+        queued: true,
+        duplicate: true,
+        campaignId: recent.id,
+        total: recent.recipients_count ?? recipients.length,
+        skipped: recent.skipped_count ?? skipped,
+      }, 202);
+    }
+
     const { data: campaign, error: campaignErr } = await supabase
       .from('email_campaigns')
       .insert({
@@ -600,7 +624,9 @@ serve(async (req) => {
       campaignId: campaign.id,
       subject, content, contentMode, audience, excludePurchasers, manualEmails,
       offset: 0,
+      token: crypto.randomUUID(),
     };
+
 
     // @ts-ignore EdgeRuntime is available in Supabase Edge Functions
     EdgeRuntime.waitUntil(runCampaign(supabase, config, job).catch(async (e) => {
