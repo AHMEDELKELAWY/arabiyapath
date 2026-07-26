@@ -468,14 +468,33 @@ serve(async (req) => {
       if (!config) return fail(cfgErr!, 500);
       const job = body.job as CampaignJob;
       if (!job?.campaignId) return fail('Resume payload is missing the campaign id.', 400);
+      if (!job?.token) return fail('Resume payload is missing the worker token.', 400);
+      if (typeof job.offset !== 'number' || job.offset < 0) return fail('Resume payload has an invalid offset.', 400);
+
+      // Never restart a finished campaign, and never resume with a token that no
+      // longer owns the campaign lock.
+      const { data: state } = await supabase
+        .from('email_campaigns')
+        .select('status, lock_token')
+        .eq('id', job.campaignId)
+        .maybeSingle();
+      if (!state) return fail('Campaign not found.', 404);
+      if (['sent', 'partial', 'failed'].includes(state.status)) {
+        return json({ accepted: false, reason: 'campaign already completed' });
+      }
+      if (state.lock_token && state.lock_token !== job.token) {
+        return json({ accepted: false, reason: 'another worker owns this campaign' });
+      }
+
       // @ts-ignore EdgeRuntime is available in Supabase Edge Functions
       EdgeRuntime.waitUntil(runCampaign(supabase, config, job).catch(async (e) => {
         console.error('resume failed', e);
         await supabase.from('email_campaigns')
-          .update({ status: 'partial', error_message: String(e?.message ?? e).slice(0, 500), completed_at: new Date().toISOString() })
+          .update({ status: 'partial', error_message: String(e?.message ?? e).slice(0, 500), completed_at: new Date().toISOString(), lock_token: null, locked_at: null })
           .eq('id', job.campaignId);
       }));
       return json({ accepted: true });
+
     }
 
     if (!authHeader) {
