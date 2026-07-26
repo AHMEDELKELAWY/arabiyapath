@@ -18,7 +18,8 @@ const REPLY_TO = 'admin@arabiyapath.com';
 const SEND_INTERVAL_MS = 1500;      // ~40 emails / minute
 const RECONNECT_EVERY = 20;         // new SMTP session every N messages
 const PAUSE_BETWEEN_BATCHES_MS = 3000;
-const MAX_ATTEMPTS = 2;             // one retry per recipient on transient errors
+// Retries are intentionally NOT performed per recipient: a dropped connection may
+// still have delivered the message, and re-sending would duplicate it.
 const TIME_BUDGET_MS = 90_000;      // per invocation; then it resumes itself
 const MAX_RECIPIENTS = 5000;
 
@@ -651,7 +652,7 @@ serve(async (req) => {
     EdgeRuntime.waitUntil(runCampaign(supabase, config, job).catch(async (e) => {
       console.error('send-marketing-email: campaign failed', e);
       await supabase.from('email_campaigns')
-        .update({ status: 'failed', error_message: String(e?.message ?? e).slice(0, 500), completed_at: new Date().toISOString() })
+        .update({ status: 'failed', error_message: String(e?.message ?? e).slice(0, 500), completed_at: new Date().toISOString(), lock_token: null, locked_at: null })
         .eq('id', campaign.id);
     }));
 
