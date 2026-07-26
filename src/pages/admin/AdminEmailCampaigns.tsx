@@ -417,6 +417,20 @@ export default function AdminEmailCampaigns() {
                       <TableCell className="text-muted-foreground">
                         {c.sent_at ? format(new Date(c.sent_at), "MMM d, yyyy h:mm a") : "—"}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleExport(c.id)}
+                          disabled={exportingId === c.id}
+                        >
+                          {exportingId === c.id
+                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            : <Download className="mr-2 h-4 w-4" />}
+                          Export report
+                        </Button>
+                      </TableCell>
+
                     </TableRow>
                   ))}
 
