@@ -37,6 +37,21 @@ function personalize(content: string, r: Recipient): string {
     .replace(/\{\{\s*login_url\s*\}\}/g, LOGIN_URL);
 }
 
+// Strips JavaScript vectors while preserving layout HTML and inline CSS.
+function sanitizeHtmlEmail(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<script\b[^>]*\/?>/gi, '')
+    .replace(/<iframe\b[\s\S]*?<\/iframe\s*>/gi, '')
+    .replace(/<object\b[\s\S]*?<\/object\s*>/gi, '')
+    .replace(/<embed\b[^>]*\/?>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+}
+
 function wrap(subject: string, body: string): string {
   return `<!DOCTYPE html>
 <html dir="ltr" lang="en">
@@ -175,6 +190,7 @@ serve(async (req) => {
     const content: string = String(body.content ?? '');
     const audience: Audience = (body.audience ?? 'all_users') as Audience;
     const excludePurchasers = Boolean(body.excludePurchasers);
+    const contentMode: 'visual' | 'html' = body.contentMode === 'html' ? 'html' : 'visual';
     const manualEmails: string[] = Array.isArray(body.manualEmails) ? body.manualEmails : [];
 
     if (mode !== 'count' && (!subject || !content.trim())) {
@@ -232,7 +248,9 @@ serve(async (req) => {
 
     for (const r of recipients) {
       try {
-        const html = wrap(subject, personalize(content, r));
+        const html = contentMode === 'html'
+          ? personalize(sanitizeHtmlEmail(content), r)
+          : wrap(subject, personalize(content, r));
         await client.send({
           from: `ArabiyaPath <${smtpUser}>`,
           to: r.email,

@@ -30,6 +30,20 @@ const AUDIENCES: { value: Audience; label: string }[] = [
 
 const audienceLabel = (v: string) => AUDIENCES.find((a) => a.value === v)?.label ?? v;
 
+/** Strips JavaScript vectors while preserving layout HTML and inline CSS. */
+const sanitizeHtmlEmail = (html: string) =>
+  html
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, "")
+    .replace(/<script\b[^>]*\/?>/gi, "")
+    .replace(/<iframe\b[\s\S]*?<\/iframe\s*>/gi, "")
+    .replace(/<object\b[\s\S]*?<\/object\s*>/gi, "")
+    .replace(/<embed\b[^>]*\/?>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+
 interface CampaignRow {
   id: string;
   subject: string;
@@ -59,6 +73,7 @@ export default function AdminEmailCampaigns() {
   const [manualList, setManualList] = useState("");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
+  const [contentMode, setContentMode] = useState<"visual" | "html">("visual");
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -86,12 +101,15 @@ export default function AdminEmailCampaigns() {
   const payload = () => ({
     subject,
     content,
+    contentMode,
     audience,
     excludePurchasers: audience === "all_users" ? excludePurchasers : false,
     manualEmails,
   });
 
-  const canSend = subject.trim().length > 0 && content.replace(/<[^>]*>/g, "").trim().length > 0;
+  const canSend =
+    subject.trim().length > 0 &&
+    (contentMode === "html" ? content.trim().length > 0 : content.replace(/<[^>]*>/g, "").trim().length > 0);
 
   const invoke = async (mode: "count" | "test" | "send") => {
     const { data, error } = await supabase.functions.invoke("send-marketing-email", {
@@ -105,11 +123,12 @@ export default function AdminEmailCampaigns() {
   const previewHtml = useMemo(() => {
     const name = profile?.first_name || "there";
     const email = profile?.email || user?.email || "student@example.com";
-    return content
+    const base = contentMode === "html" ? sanitizeHtmlEmail(content) : content;
+    return base
       .replace(/\{\{\s*first_name\s*\}\}/g, name)
       .replace(/\{\{\s*email\s*\}\}/g, email)
       .replace(/\{\{\s*login_url\s*\}\}/g, "https://arabiyapath.com/login");
-  }, [content, profile, user]);
+  }, [content, contentMode, profile, user]);
 
   const handleOpenConfirm = async () => {
     setBusy("count");
@@ -225,8 +244,44 @@ export default function AdminEmailCampaigns() {
                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line..." />
               </div>
               <div className="space-y-2">
-                <Label>Message</Label>
-                <RichTextEditor value={content} onChange={setContent} placeholder="Hi {{first_name}}, ..." />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label>Message</Label>
+                  <div className="inline-flex rounded-md border border-border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={contentMode === "visual" ? "secondary" : "ghost"}
+                      onClick={() => setContentMode("visual")}
+                    >
+                      Visual
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={contentMode === "html" ? "secondary" : "ghost"}
+                      onClick={() => setContentMode("html")}
+                    >
+                      HTML
+                    </Button>
+                  </div>
+                </div>
+                {contentMode === "visual" ? (
+                  <RichTextEditor value={content} onChange={setContent} placeholder="Hi {{first_name}}, ..." />
+                ) : (
+                  <>
+                    <Textarea
+                      rows={18}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      spellCheck={false}
+                      placeholder={"<!DOCTYPE html>\n<html>...paste your full HTML email template here...</html>"}
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pasted HTML is sent exactly as entered (inline CSS, tables and images preserved). Scripts and JavaScript are stripped.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -326,20 +381,31 @@ export default function AdminEmailCampaigns() {
             <DialogTitle>Preview</DialogTitle>
             <DialogDescription>Subject: {subject}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4">
-            <div className="mx-auto max-w-[600px] overflow-hidden rounded-2xl bg-background shadow">
-              <div className="bg-primary p-6 text-center">
-                <span className="text-xl font-bold text-primary-foreground">ArabiyaPath</span>
-              </div>
-              <div
-                className="p-6 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+          {contentMode === "html" ? (
+            <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-2">
+              <iframe
+                title="Email preview"
+                sandbox=""
+                srcDoc={previewHtml}
+                className="h-[55vh] w-full rounded-lg border-0 bg-white"
               />
-              <div className="bg-muted p-4 text-center text-xs text-muted-foreground">
-                © {new Date().getFullYear()} ArabiyaPath. All rights reserved.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4">
+              <div className="mx-auto max-w-[600px] overflow-hidden rounded-2xl bg-background shadow">
+                <div className="bg-primary p-6 text-center">
+                  <span className="text-xl font-bold text-primary-foreground">ArabiyaPath</span>
+                </div>
+                <div
+                  className="p-6 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6"
+                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                />
+                <div className="bg-muted p-4 text-center text-xs text-muted-foreground">
+                  © {new Date().getFullYear()} ArabiyaPath. All rights reserved.
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
