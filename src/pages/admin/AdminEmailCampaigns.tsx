@@ -101,6 +101,21 @@ export default function AdminEmailCampaigns() {
   const [confirmSkipped, setConfirmSkipped] = useState(0);
   const [busy, setBusy] = useState<null | "count" | "test" | "send">(null);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+
+  const handleExport = async (campaignId: string) => {
+    setExportingId(campaignId);
+    try {
+      const { filename, recipients } = await exportCampaignReport(campaignId);
+      toast({ title: "Report downloaded", description: `${filename} — ${recipients} recipient row(s).` });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message ?? "Could not build the report.", variant: "destructive" });
+    } finally {
+      setExportingId(null);
+    }
+  };
+
+
 
   const manualEmails = useMemo(
     () => manualList.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean),
