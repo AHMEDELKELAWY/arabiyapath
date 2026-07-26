@@ -345,20 +345,31 @@ export default function AdminEmailCampaigns() {
             <DialogTitle>Preview</DialogTitle>
             <DialogDescription>Subject: {subject}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4">
-            <div className="mx-auto max-w-[600px] overflow-hidden rounded-2xl bg-background shadow">
-              <div className="bg-primary p-6 text-center">
-                <span className="text-xl font-bold text-primary-foreground">ArabiyaPath</span>
-              </div>
-              <div
-                className="p-6 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+          {contentMode === "html" ? (
+            <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-2">
+              <iframe
+                title="Email preview"
+                sandbox=""
+                srcDoc={previewHtml}
+                className="h-[55vh] w-full rounded-lg border-0 bg-white"
               />
-              <div className="bg-muted p-4 text-center text-xs text-muted-foreground">
-                © {new Date().getFullYear()} ArabiyaPath. All rights reserved.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4">
+              <div className="mx-auto max-w-[600px] overflow-hidden rounded-2xl bg-background shadow">
+                <div className="bg-primary p-6 text-center">
+                  <span className="text-xl font-bold text-primary-foreground">ArabiyaPath</span>
+                </div>
+                <div
+                  className="p-6 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6"
+                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                />
+                <div className="bg-muted p-4 text-center text-xs text-muted-foreground">
+                  © {new Date().getFullYear()} ArabiyaPath. All rights reserved.
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
