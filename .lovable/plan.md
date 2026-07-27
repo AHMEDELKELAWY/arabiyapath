@@ -1,94 +1,60 @@
-# Assessment Generation Redesign — `int-test/v7-source-grounded`
+## Where the site stands today (Semrush, US database)
 
-Only the generation pipeline and its lesson inputs change. Test Editor, Student Preview, draft/publish, manual editing, regeneration UI, the assessment runner, question types, answer validation, and RLS all keep working exactly as today.
+- 15 organic keywords, ~0 estimated monthly organic traffic. The site is indexed but nothing ranks on page 1 yet.
+- Every ranking keyword belongs to just two pages: `/learn/gulf-arabic` and `/learn/fusha-arabic`. The 23 blog posts rank for nothing measurable.
+- Best positions: `fusha arabic` (720/mo) at #18, `fus ha` (260/mo) at #20, `khaliji arabic` (260/mo) at #28, `arabic khaleeji` (90/mo) at #20, `what is fusha arabic` (40/mo) at #16.
+- Competitors are small and beatable: masterfusha.com, yallakhaleeji.com, gulfarabicresources.com, al-fusha.com. Nobody dominates "Gulf/Khaleeji Arabic" learning.
 
-## 1. Listening Transcript (the one schema change)
+Read: the technical foundation is fine (helmet-based per-route meta, sitemap, robots, JSON-LD). The gap is **topical depth on the two themes that already work** and **zero authority signals**. Positions 16–28 are the fastest money — a page at #18 needs a push, not a rewrite.
 
-Add nullable `listening_transcript text` to `flashcard_units`. Nothing else in the database is touched.
+## Strategy
 
-Admin: a **Listening Transcript** textarea inside the existing Listening tab, in the same card style and same save pattern as the YouTube URL field.
+Stop spreading across generic "learn arabic online" head terms (that's what the 23 blog posts chase, and they rank for nothing). Own two clusters instead:
 
-Generation rules:
-- Listening questions are generated **only** from this transcript.
-- `lesson_topic` is demoted to context only — never a listening source, never used to guess dialogue.
-- Empty transcript → zero listening questions, its share redistributed to the other sources, generation still succeeds.
+1. **Khaleeji / Gulf Arabic** — the least contested niche in the data, and the paid product.
+2. **Fusha / MSA** — already the strongest signal, feeds the Spoken Arabic + vocabulary products.
 
-## 2. Lesson sources (only these)
+## Phase 1 — Harvest what's already ranking (weeks 1–2)
 
-| Source | Data |
-|---|---|
-| Listening Transcript | `flashcard_units.listening_transcript` |
-| Learn | `flashcards` where `kind = 'learn'`, published |
-| Grammar | `flashcards` where `kind = 'grammar'`, published |
-| Speaking | `flashcards` where `kind = 'speaking'`, published (newly added; auto-skipped when absent) |
+Rewrite and expand the two landing pages that hold all current rankings.
 
-Any empty source is skipped silently.
+- `/learn/fusha-arabic`: target `fusha arabic`, `fus ha`, `fusha in arabic`, `what is fusha arabic`. Add an explicit "What is Fusha Arabic?" H2 with a direct 40-word answer, a Fusha-vs-dialect comparison table, and an alphabet section (`fusha arabic alphabet` is ranking at #31).
+- `/learn/gulf-arabic`: target `khaliji arabic`, `arabic khaleeji`, `khaleeji arabic`, `gulf arabic dialect`, `khaleeji meaning in arabic`. Add a "Khaleeji meaning" answer block and a country-by-country dialect breakdown (UAE, Saudi, Qatar, Kuwait, Bahrain, Oman).
+- Add `FAQPage` + `Course` JSON-LD to both (helpers already exist in `SEOHead.tsx`).
+- Internal links from every blog post and the homepage into these two hubs with descriptive anchor text.
 
-## 3. Dynamic distribution — no fixed numbers
+## Phase 2 — Build the two clusters (weeks 3–8)
 
-The current hardcoded 8/6/6 pool of 20 is removed entirely. Instead the generator computes a *weight* per source from the actual lesson content:
+New supporting pages, each linking up to its hub:
 
-```text
-learnWeight    = learnCards      x questionsPerCard
-grammarWeight  = grammarCards    x questionsPerCard
-speakingWeight = speakingCards   x questionsPerCard
-listenWeight   = transcript utterance/sentence count x questionsPerUtterance
+**Gulf cluster:** Khaleeji vs Egyptian Arabic · Gulf Arabic alphabet & pronunciation · Emirati vs Saudi vs Kuwaiti dialect · 100 Gulf Arabic phrases · Gulf Arabic numbers · Is Gulf Arabic hard to learn?
 
-poolTarget = clamp(sum(weights), 20, 40)
-share(source) = round(poolTarget * weight / totalWeight)
-```
+**Fusha cluster:** Fusha Arabic alphabet (full guide) · Fusha vs Ammiyya · MSA grammar basics for beginners · Fusha Arabic pronunciation · Learn to read Arabic in 30 days
 
-Small lessons naturally produce small pools; content-rich lessons approach 40. Sources with weight 0 drop out and their share is redistributed proportionally. No constant anywhere states "8 listening" or similar — only the 20–40 safety clamp the brief specifies.
+Each page: one H1, direct-answer paragraph in the first 60 words, 1,200–1,800 words, FAQ block with `FAQPage` schema, and a CTA into the free lesson funnel.
 
-## 4. Multiple questions per lesson item
+## Phase 3 — Fix the existing blog (weeks 3–4, parallel)
 
-The prompt explicitly asks for several angles per item: a Learn card may yield meaning / vocabulary / fill-blank / image / context questions; a Grammar card several rule checks; the transcript several comprehension questions; a Speaking card several simple prompts. Existing question types only — nothing new introduced.
+The 23 posts targeting `learn arabic online`, `online arabic classes`, `arabic lessons online`, etc. compete with Duolingo, Preply and italki and will not rank.
 
-## 5. Teacher-style wording (hard gate)
+- Keep and rewrite the 4 that fit the clusters (`learn-gulf-arabic-online`, `gulf-vs-fusha-arabic`, `fusha-vs-gulf-arabic`, `why-learn-gulf-arabic`).
+- Consolidate the near-duplicate head-term posts (`learn-arabic-online`, `learn-arabic-language-online`, `learnarabiconline`, `arabic-language-online`, `study-arabic-online`) into one strong pillar; 301 the rest to it. Duplicate thin pages actively suppress the whole domain.
+- Repoint the survivors' internal links at the two hubs.
 
-Enforced twice: in the prompt, and by a post-generation filter that discards violations **before** saving.
+## Phase 4 — Authority & technical polish (ongoing)
 
-- One short sentence, target ≤ 8 Arabic words.
-- Rejected stems: `أكمل`, `اقرأ الحوار`, `استمع ثم`, `اختر الإجابة الصحيحة`, `أكمل الجملة التالية`, `انظر إلى الصورة`, plus the English equivalents ("Complete the dialogue", "Listen and answer", "Read then answer").
-- Target shapes: `مَنْ هَذَا؟` · `أَيْنَ الْوَلَدُ؟` · `مَاذَا قَالَ الْأَبُ؟` · `مَا مَعْنَى …؟`
+- Backlinks: the profile is effectively empty, which is why nothing crosses position 15. Target expat-in-Dubai forums and communities, Arabic-learning subreddit resource lists, language-blog guest posts, and directory listings for the free Gulf lesson.
+- Programmatic depth: generate indexable pages from the existing curriculum data (dialect → level → unit overviews) where the content is genuinely unique. Add these to the sitemap generator.
+- Sitemap: `public/sitemap.xml` is currently hand-maintained and drifting from the routes. Move it to the generator script pattern so new pages and blog posts are picked up automatically.
+- Core Web Vitals: the Houria page already uses `LiteYouTube` and split bundles — apply the same treatment to the two learn hubs.
+- Add `Article` + `BreadcrumbList` JSON-LD to every blog post.
 
-Fill-in-the-blank keeps its blank in the sentence but loses the instructional preamble.
+## Measurement
 
-## 6. Grounding + traceability
+Track monthly: position of the 15 known keywords, indexed page count, referring domains, and free-lesson signups from organic. Realistic target: the two hubs into positions 5–10 within 3 months, first meaningful organic traffic by month 4.
 
-- Every question must be answerable from exactly one source; the grounding haystack is rebuilt from transcript + learn + grammar + speaking (title/`lesson_topic` no longer sufficient).
-- Each question carries an internal source label (`Listening Transcript`, `Learn Card #12`, `Grammar Card #4`, `Speaking Card #3`).
-- **No schema change for this:** the label is stored in the existing unused-by-students `learning_objective` text column, which the Test Editor already renders as an admin-only field. Students never see it — the runner does not read that column.
-- Improved dedupe: normalized-prompt similarity check removes near-duplicate questions so a 30-item pool is 30 distinct items.
+## Technical notes
 
-## 7. Difficulty
+Nothing here requires new infrastructure. `SEOHead.tsx` already handles per-route title/description/canonical/OG/JSON-LD; `generateFAQPageSchema` and `generateCourseSchema` exist. Work is: content in `src/pages/learn/*` and `src/content/blog/*`, redirect handling in `FullAppRoutes.tsx`, and replacing the static `public/sitemap.xml` with `scripts/generate-sitemap.ts` wired to `predev`/`prebuild`.
 
-Back to the original Beginner philosophy: easy, direct, confidence-building, lesson-based. No "why", no inference, no puzzles, no untaught vocabulary. Difficulty stays `easy`.
-
-## 8. Randomization
-
-Each attempt draws a different subset from the pool, weighted across whichever categories exist, instead of assuming a fixed 8/6/6 pool of 20. Selection logic only — runner UI, scoring, review, and student workflow untouched.
-
-## 9. Files to change and why
-
-| File | Why |
-|---|---|
-| new migration | Add `listening_transcript` to `flashcard_units` |
-| `src/pages/admin/AdminIntermediateUnit.tsx` | Listening tab needs the transcript textarea + save |
-| `supabase/functions/_shared/assessment-rules.ts` (new) | Single home for lesson-source contract, wording rules, allowed types, grounding + validation — ends the current duplication between the two functions |
-| `supabase/functions/generate-intermediate-test/index.ts` | Fetch transcript & speaking cards, dynamic distribution, teacher-style prompt, source metadata, wording validation, better dedupe |
-| `supabase/functions/regenerate-intermediate-question/index.ts` | Same sources, same wording rules, and grounding validation it currently lacks |
-| `src/components/flashcards/msa/IntermediateTestRunner.tsx` | Pool selection only, so a 20–40 dynamic pool with variable categories still yields a full attempt |
-| `src/integrations/supabase/types.ts` | Regenerated after the migration |
-
-Version tag becomes `int-test/v7-source-grounded`.
-
-## 10. Verification
-
-- Unit with a transcript → listening questions quote the transcript only.
-- Blank transcript → zero listening questions, share redistributed, generation succeeds.
-- Unit with/without speaking cards → included / silently skipped.
-- Tiny lesson → small pool; rich lesson → approaches 40.
-- Every saved question shows its source label in the Test Editor; nothing new appears to students.
-- Two runner attempts on the same unit → different question sets.
-- Test Editor edit / reorder / add / delete / publish and Student Preview behave identically.
+Data source: Semrush (US database).

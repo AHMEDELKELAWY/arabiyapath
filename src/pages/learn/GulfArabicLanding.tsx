@@ -60,6 +60,34 @@ const GULF_COMPARE = [
   },
 ];
 
+const GULF_COUNTRIES = [
+  {
+    country: "United Arab Emirates",
+    note: "Emirati Arabic. Softer, heavily code-switched with English in Dubai and Abu Dhabi. The most expat-friendly entry point into Khaleeji.",
+  },
+  {
+    country: "Saudi Arabia",
+    note: "Najdi in Riyadh, Hijazi on the west coast. Najdi is the closest to what most people picture as 'Gulf Arabic'; Hijazi is a little closer to Egyptian.",
+  },
+  {
+    country: "Qatar",
+    note: "Very close to Emirati and Najdi. If you learn Gulf Arabic for Dubai, you will be understood in Doha with almost no adjustment.",
+  },
+  {
+    country: "Kuwait",
+    note: "Kuwaiti Arabic carries strong media influence across the region — Kuwaiti TV drama is watched throughout the Gulf.",
+  },
+  {
+    country: "Bahrain",
+    note: "Two overlapping varieties, but both sit comfortably inside the Khaleeji family and are mutually intelligible with Emirati.",
+  },
+  {
+    country: "Oman",
+    note: "The most distinct of the six, with its own vocabulary and some Swahili and Baluchi influence, though standard Khaleeji is widely understood.",
+  },
+];
+
+
 export default function GulfArabicLanding() {
   const seo = getDialectSEO("Gulf Arabic");
   const canonicalPath = "/learn/gulf-arabic";
@@ -150,6 +178,63 @@ export default function GulfArabicLanding() {
             </div>
           </div>
         </section>
+
+        {/* KHALEEJI MEANING */}
+        <section className="py-14 bg-cream">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                What does "Khaleeji" mean in Arabic?
+              </h2>
+              <p className="text-muted-foreground mb-4 leading-relaxed">
+                <strong>Khaleeji</strong> (<span lang="ar" dir="rtl">خليجي</span>) literally means
+                "of the gulf". It comes from <em>khaleej</em> (<span lang="ar" dir="rtl">خليج</span>),
+                the Arabic word for gulf or bay — as in <em>Al-Khaleej Al-Arabi</em>, the Arabian Gulf.
+                Used as an adjective it describes anything from the region: Khaleeji people, Khaleeji
+                music, Khaleeji food, and Khaleeji Arabic.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                So "Khaleeji Arabic", "Khaliji Arabic", and "Gulf Arabic" are three names for the same
+                thing — the spoken dialect of the Arabian Peninsula. You will see both the
+                <em> khaleeji</em> and <em>khaliji</em> spellings in English; they transliterate the
+                identical Arabic word.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* COUNTRY BY COUNTRY */}
+        <section className="py-14">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl font-bold text-foreground mb-3">
+                Gulf Arabic dialects country by country
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Khaleeji is not one uniform dialect — it is a closely related family. Speakers across
+                all six countries understand each other easily, so learning one variety gives you the
+                whole region.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                {GULF_COUNTRIES.map((c) => (
+                  <div key={c.country} className="bg-card rounded-2xl p-6 border border-border">
+                    <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      {c.country}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{c.note}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground mt-6">
+                This course teaches the widely-understood core of Khaleeji used across the UAE, Saudi
+                Arabia, and Qatar, with notes wherever a country differs.
+              </p>
+            </div>
+          </div>
+        </section>
+
+
 
         {/* FEATURE GRID */}
         <section className="py-14 bg-cream">
@@ -277,7 +362,11 @@ export default function GulfArabicLanding() {
                   { href: "/blog/10-daily-gulf-arabic-phrases-for-expats", label: "10 daily Gulf Arabic phrases" },
                   { href: "/blog/how-to-order-food-in-gulf-arabic-dubai", label: "Order food in Gulf Arabic (Dubai)" },
                   { href: "/blog/arabic-for-expats-in-saudi-arabia", label: "Arabic for expats in Saudi Arabia" },
-                  { href: "/blog/learn-gulf-arabic-online", label: "Learn Gulf Arabic online" },
+                  { href: "/blog/khaleeji-vs-egyptian-arabic", label: "Khaleeji vs. Egyptian Arabic" },
+                  { href: "/blog/gulf-arabic-alphabet-and-pronunciation", label: "Gulf Arabic alphabet & pronunciation" },
+                  { href: "/blog/100-gulf-arabic-phrases", label: "100 Gulf Arabic phrases" },
+                  { href: "/blog/is-gulf-arabic-hard-to-learn", label: "Is Gulf Arabic hard to learn?" },
+
                 ].map((l) => (
                   <Link
                     key={l.href}

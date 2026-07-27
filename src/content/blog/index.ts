@@ -1,4 +1,6 @@
 // Blog post registry - add new posts here
+import { BLOG_SLUG_REDIRECTS, RETIRED_BLOG_SLUGS } from './redirects';
+
 export interface BlogPost {
   title: string;
   description: string;
@@ -32,6 +34,14 @@ import learnArabicFast from './learn-arabic-fast.md?raw';
 import arabicConversationCourse from './arabic-conversation-course.md?raw';
 import bestArabicLearningApp from './best-arabic-learning-app.md?raw';
 import learnGulfArabicOnline from './learn-gulf-arabic-online.md?raw';
+// Cluster pages: Gulf / Khaleeji + Fusha topical depth
+import khaleejiVsEgyptian from './khaleeji-vs-egyptian-arabic.md?raw';
+import gulfAlphabetPronunciation from './gulf-arabic-alphabet-and-pronunciation.md?raw';
+import hundredGulfPhrases from './100-gulf-arabic-phrases.md?raw';
+import isGulfArabicHard from './is-gulf-arabic-hard-to-learn.md?raw';
+import fushaVsAmmiyya from './fusha-vs-ammiyya.md?raw';
+import fushaAlphabet from './fusha-arabic-alphabet.md?raw';
+
 
 function parseFrontmatter(markdown: string): BlogPost {
   const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -42,7 +52,10 @@ function parseFrontmatter(markdown: string): BlogPost {
   }
   
   const frontmatter = match[1];
-  const content = match[2].trim();
+  // Strip a leading "# Title" — the page already renders the title as the single
+  // H1, and a second H1 in the body dilutes the page's heading structure.
+  const content = match[2].trim().replace(/^#\s+[^\n]+\n+/, '');
+
   
   const metadata: Record<string, string> = {};
   frontmatter.split('\n').forEach(line => {
@@ -94,12 +107,19 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(arabicConversationCourse),
   parseFrontmatter(bestArabicLearningApp),
   parseFrontmatter(learnGulfArabicOnline),
+  parseFrontmatter(khaleejiVsEgyptian),
+  parseFrontmatter(gulfAlphabetPronunciation),
+  parseFrontmatter(hundredGulfPhrases),
+  parseFrontmatter(isGulfArabicHard),
+  parseFrontmatter(fushaVsAmmiyya),
+  parseFrontmatter(fushaAlphabet),
+
 ];
 
-// Sort by date (newest first)
-export const blogPosts = allPosts.sort((a, b) => 
-  new Date(b.date).getTime() - new Date(a.date).getTime()
-);
+// Sort by date (newest first), excluding slugs retired by consolidation
+export const blogPosts = allPosts
+  .filter((post) => !RETIRED_BLOG_SLUGS.has(post.slug))
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find(post => post.slug === slug);
@@ -108,3 +128,6 @@ export function getPostBySlug(slug: string): BlogPost | undefined {
 export function getAllSlugs(): string[] {
   return blogPosts.map(post => post.slug);
 }
+
+export { BLOG_SLUG_REDIRECTS, RETIRED_BLOG_SLUGS };
+
