@@ -312,7 +312,7 @@ The single most powerful step you can take today is to **start your first lesson
 
 If you want a gentle, beginner-friendly place to start, [try a free Gulf Arabic lesson](/learn/gulf-arabic). It is short, it has native audio, and it shows you exactly how easy it can be to begin.
 
-You can also explore more beginner resources in our [study arabic online](/blog/study-arabic-online) guide and our full [learn arabic online](/blog/learn-arabic-online) library.
+You can also explore more beginner resources in our [study arabic online](/blog/learn-arabic-online) guide and our full [learn arabic online](/blog/learn-arabic-online) library.
 
 No pressure. No rush. Just one small step today.
 
@@ -378,7 +378,6 @@ Ready for the next step? Explore these related guides:
 ## Related reading
 
 - [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
-- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
 - [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
 
 <!-- enrich:cta -->

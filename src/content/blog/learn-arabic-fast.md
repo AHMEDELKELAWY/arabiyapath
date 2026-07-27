@@ -250,7 +250,7 @@ You can't learn Arabic fast with the wrong tools. You need:
 
 When you combine the right system with daily practice, fluency stops being a dream. It becomes a deadline.
 
-To go deeper, explore our complete [study arabic online](/blog/study-arabic-online) guide for the full method.
+To go deeper, explore our complete [study arabic online](/blog/learn-arabic-online) guide for the full method.
 
 ---
 
@@ -302,14 +302,12 @@ If this guide helped you, these will take you even further:
 
 - 📘 **Pillar:** [Learn Arabic online: the complete 2026 guide](/blog/learn-arabic-online) — the comprehensive master roadmap.
 - 🌱 [Step-by-step beginner's guide to Arabic](/blog/learn-arabic-for-beginners) — for anyone starting from scratch.
-- 📅 [How to study Arabic online (8 powerful tips)](/blog/study-arabic-online) — productivity strategies for daily progress.
 - 🎓 [Choosing the right Arabic online course](/blog/arabic-online-course) — pick the program that fits you.
 
 <!-- enrich:related -->
 ## Related reading
 
 - [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
-- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
 - [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
 
 <!-- enrich:cta -->
