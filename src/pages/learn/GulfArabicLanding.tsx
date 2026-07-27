@@ -60,6 +60,34 @@ const GULF_COMPARE = [
   },
 ];
 
+const GULF_COUNTRIES = [
+  {
+    country: "United Arab Emirates",
+    note: "Emirati Arabic. Softer, heavily code-switched with English in Dubai and Abu Dhabi. The most expat-friendly entry point into Khaleeji.",
+  },
+  {
+    country: "Saudi Arabia",
+    note: "Najdi in Riyadh, Hijazi on the west coast. Najdi is the closest to what most people picture as 'Gulf Arabic'; Hijazi is a little closer to Egyptian.",
+  },
+  {
+    country: "Qatar",
+    note: "Very close to Emirati and Najdi. If you learn Gulf Arabic for Dubai, you will be understood in Doha with almost no adjustment.",
+  },
+  {
+    country: "Kuwait",
+    note: "Kuwaiti Arabic carries strong media influence across the region — Kuwaiti TV drama is watched throughout the Gulf.",
+  },
+  {
+    country: "Bahrain",
+    note: "Two overlapping varieties, but both sit comfortably inside the Khaleeji family and are mutually intelligible with Emirati.",
+  },
+  {
+    country: "Oman",
+    note: "The most distinct of the six, with its own vocabulary and some Swahili and Baluchi influence, though standard Khaleeji is widely understood.",
+  },
+];
+
+
 export default function GulfArabicLanding() {
   const seo = getDialectSEO("Gulf Arabic");
   const canonicalPath = "/learn/gulf-arabic";
