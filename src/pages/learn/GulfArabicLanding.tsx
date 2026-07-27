@@ -179,6 +179,63 @@ export default function GulfArabicLanding() {
           </div>
         </section>
 
+        {/* KHALEEJI MEANING */}
+        <section className="py-14 bg-cream">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                What does "Khaleeji" mean in Arabic?
+              </h2>
+              <p className="text-muted-foreground mb-4 leading-relaxed">
+                <strong>Khaleeji</strong> (<span lang="ar" dir="rtl">خليجي</span>) literally means
+                "of the gulf". It comes from <em>khaleej</em> (<span lang="ar" dir="rtl">خليج</span>),
+                the Arabic word for gulf or bay — as in <em>Al-Khaleej Al-Arabi</em>, the Arabian Gulf.
+                Used as an adjective it describes anything from the region: Khaleeji people, Khaleeji
+                music, Khaleeji food, and Khaleeji Arabic.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                So "Khaleeji Arabic", "Khaliji Arabic", and "Gulf Arabic" are three names for the same
+                thing — the spoken dialect of the Arabian Peninsula. You will see both the
+                <em> khaleeji</em> and <em>khaliji</em> spellings in English; they transliterate the
+                identical Arabic word.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* COUNTRY BY COUNTRY */}
+        <section className="py-14">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl font-bold text-foreground mb-3">
+                Gulf Arabic dialects country by country
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Khaleeji is not one uniform dialect — it is a closely related family. Speakers across
+                all six countries understand each other easily, so learning one variety gives you the
+                whole region.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                {GULF_COUNTRIES.map((c) => (
+                  <div key={c.country} className="bg-card rounded-2xl p-6 border border-border">
+                    <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      {c.country}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{c.note}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground mt-6">
+                This course teaches the widely-understood core of Khaleeji used across the UAE, Saudi
+                Arabia, and Qatar, with notes wherever a country differs.
+              </p>
+            </div>
+          </div>
+        </section>
+
+
+
         {/* FEATURE GRID */}
         <section className="py-14 bg-cream">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
