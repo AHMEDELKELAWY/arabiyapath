@@ -129,3 +129,5 @@ Phrases first. Fixed expressions get you speaking and getting responses in week 
 ---
 
 Hear these spoken by native Khaleeji speakers in the [free Gulf Arabic lesson](/free-gulf-lesson), or start the full [Gulf Arabic course](/learn/gulf-arabic).
+
+**Keep reading:** [Gulf Arabic alphabet and pronunciation](/blog/gulf-arabic-alphabet-and-pronunciation) · [Is Gulf Arabic hard to learn?](/blog/is-gulf-arabic-hard-to-learn) · [Khaleeji vs Egyptian Arabic](/blog/khaleeji-vs-egyptian-arabic)

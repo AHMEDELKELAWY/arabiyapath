@@ -79,3 +79,5 @@ Gulf Arabic retains more Fusha consonants (like the qaaf and the interdental sou
 ---
 
 Ready to start? Try the [free Gulf Arabic lesson](/free-gulf-lesson) or browse the full [Gulf Arabic course](/learn/gulf-arabic).
+
+**Keep reading:** [100 Gulf Arabic phrases for everyday life](/blog/100-gulf-arabic-phrases) · [Is Gulf Arabic hard to learn?](/blog/is-gulf-arabic-hard-to-learn) · [Fusha vs Ammiyya](/blog/fusha-vs-ammiyya)

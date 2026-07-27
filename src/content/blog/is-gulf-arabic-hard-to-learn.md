@@ -67,3 +67,5 @@ Not necessarily, but you need native audio and structured progression. Self-stud
 ---
 
 See how it feels for yourself — the [first Gulf Arabic lesson is free](/free-gulf-lesson), or browse the full [Gulf Arabic course](/learn/gulf-arabic).
+
+**Keep reading:** [Gulf Arabic alphabet and pronunciation](/blog/gulf-arabic-alphabet-and-pronunciation) · [100 Gulf Arabic phrases for everyday life](/blog/100-gulf-arabic-phrases) · [Khaleeji vs Egyptian Arabic](/blog/khaleeji-vs-egyptian-arabic)

@@ -108,3 +108,5 @@ Because of positional forms and ligatures — لا (laam-alif) is the most commo
 ---
 
 Learn the script alongside real vocabulary and native audio in the [Fusha Arabic course](/learn/fusha-arabic).
+
+**Keep reading:** [Fusha vs Ammiyya](/blog/fusha-vs-ammiyya) · [Fusha vs Gulf Arabic](/blog/fusha-vs-gulf-arabic) · [Gulf Arabic alphabet and pronunciation](/blog/gulf-arabic-alphabet-and-pronunciation)

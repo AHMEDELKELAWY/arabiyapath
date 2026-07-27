@@ -86,3 +86,5 @@ No. You can learn Gulf or Egyptian Arabic from zero without any Fusha. Fusha hel
 ---
 
 Explore both paths: the [Fusha Arabic course](/learn/fusha-arabic) or the [Gulf Arabic course](/learn/gulf-arabic).
+
+**Keep reading:** [The Fusha Arabic alphabet](/blog/fusha-arabic-alphabet) · [Khaleeji vs Egyptian Arabic](/blog/khaleeji-vs-egyptian-arabic) · [Is Gulf Arabic hard to learn?](/blog/is-gulf-arabic-hard-to-learn)

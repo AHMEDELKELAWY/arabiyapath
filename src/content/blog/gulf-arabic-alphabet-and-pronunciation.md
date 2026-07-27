@@ -67,3 +67,5 @@ Because Arabic has sounds English letters do not cover. *Khaleeji* and *khaliji*
 ---
 
 Practise these sounds with native Khaleeji audio in the [free Gulf Arabic lesson](/free-gulf-lesson), or see the full [Gulf Arabic course](/learn/gulf-arabic).
+
+**Keep reading:** [100 Gulf Arabic phrases for everyday life](/blog/100-gulf-arabic-phrases) · [Is Gulf Arabic hard to learn?](/blog/is-gulf-arabic-hard-to-learn) · [Fusha vs Gulf Arabic](/blog/fusha-vs-gulf-arabic)
