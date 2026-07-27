@@ -1,4 +1,6 @@
 // Blog post registry - add new posts here
+import { BLOG_SLUG_REDIRECTS, RETIRED_BLOG_SLUGS } from './redirects';
+
 export interface BlogPost {
   title: string;
   description: string;
@@ -96,10 +98,10 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(learnGulfArabicOnline),
 ];
 
-// Sort by date (newest first)
-export const blogPosts = allPosts.sort((a, b) => 
-  new Date(b.date).getTime() - new Date(a.date).getTime()
-);
+// Sort by date (newest first), excluding slugs retired by consolidation
+export const blogPosts = allPosts
+  .filter((post) => !RETIRED_BLOG_SLUGS.has(post.slug))
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find(post => post.slug === slug);
@@ -108,3 +110,6 @@ export function getPostBySlug(slug: string): BlogPost | undefined {
 export function getAllSlugs(): string[] {
   return blogPosts.map(post => post.slug);
 }
+
+export { BLOG_SLUG_REDIRECTS, RETIRED_BLOG_SLUGS };
+

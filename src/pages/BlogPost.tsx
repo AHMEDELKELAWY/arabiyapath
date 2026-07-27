@@ -5,7 +5,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import { Layout } from "@/components/layout/Layout";
 import { SEOHead } from "@/components/seo/SEOHead";
-import { getPostBySlug } from "@/content/blog";
+import { getPostBySlug, BLOG_SLUG_REDIRECTS } from "@/content/blog";
 import { CalendarDays, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
@@ -38,11 +38,19 @@ function extractFAQs(md: string): FAQItem[] {
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
+
+  // Consolidated duplicates redirect to their pillar page.
+  const redirectTarget = slug ? BLOG_SLUG_REDIRECTS[slug] : undefined;
+  if (redirectTarget) {
+    return <Navigate to={`/blog/${redirectTarget}`} replace />;
+  }
+
   const post = slug ? getPostBySlug(slug) : undefined;
 
   if (!post) {
     return <Navigate to="/blog" replace />;
   }
+
 
   const canonicalPath = `/blog/${post.slug}`;
 
