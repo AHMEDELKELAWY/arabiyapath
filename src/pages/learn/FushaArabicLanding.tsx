@@ -44,6 +44,19 @@ const FUSHA_FAQS = [
   },
 ];
 
+const FUSHA_ALPHABET_SAMPLE = [
+  { letter: "ا", name: "alif", sound: "long 'aa' as in father" },
+  { letter: "ب", name: "baa", sound: "b as in book" },
+  { letter: "ت", name: "taa", sound: "t as in table" },
+  { letter: "ج", name: "jeem", sound: "j as in jam" },
+  { letter: "ح", name: "haa", sound: "a breathy h from the throat (no English equivalent)" },
+  { letter: "ر", name: "raa", sound: "a rolled r as in Spanish pero" },
+  { letter: "س", name: "seen", sound: "s as in sun" },
+  { letter: "ع", name: "ayn", sound: "a deep throat sound — the classic Arabic letter" },
+  { letter: "ق", name: "qaaf", sound: "a k made far back in the throat" },
+  { letter: "م", name: "meem", sound: "m as in moon" },
+];
+
 
 const FUSHA_COMPARE = [
   {
