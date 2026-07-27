@@ -316,7 +316,7 @@ In 30 days, you will surprise yourself.
 ## Related reading
 
 - [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
-- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/learn-arabic-online)
 - [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
 
 <!-- enrich:cta -->

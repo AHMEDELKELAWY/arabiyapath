@@ -283,8 +283,6 @@ Make the choice today.
 
 Keep building your Arabic learning strategy:
 
-- 📘 **Pillar:** [Learn Arabic online: the complete 2026 guide](/blog/learn-arabic-online) — the master resource for every Arabic learner.
-- 📅 [8 powerful tips to study Arabic online](/blog/study-arabic-online) — turn your new course into a daily habit.
 - 🌱 [Learn Arabic for beginners: step-by-step guide](/blog/learn-arabic-for-beginners) — perfect if you're brand new.
 - ⚡ [Speak Arabic fluently in 30 days](/blog/learn-arabic-fast) — accelerate results once your course is chosen.
 
@@ -292,7 +290,6 @@ Keep building your Arabic learning strategy:
 ## Related reading
 
 - [Arabic Conversation Course: Speak Arabic Confidently in 30 Days](/blog/arabic-conversation-course)
-- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
 - [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
 
 <!-- enrich:cta -->

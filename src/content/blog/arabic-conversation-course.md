@@ -335,7 +335,7 @@ Ahmed did it. Sara did it. You can too.
 <!-- enrich:related -->
 ## Related reading
 
-- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/arabic-language-online)
+- [Arabic Language Online: Best Methods to Master Arabic from Home](/blog/learn-arabic-online)
 - [Arabic Lessons Online: The Complete Guide to Learning Arabic from Home (2026)](/blog/arabic-lessons-online)
 - [Arabic Online Course: How to Choose the Best Program for Fast Results (2026)](/blog/arabic-online-course)
 
