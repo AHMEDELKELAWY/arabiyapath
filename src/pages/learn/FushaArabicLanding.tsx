@@ -341,9 +341,11 @@ export default function FushaArabicLanding() {
                 {[
                   { href: "/blog/fusha-vs-gulf-arabic", label: "Fusha vs. Gulf Arabic" },
                   { href: "/blog/gulf-vs-fusha-arabic", label: "Gulf vs. Fusha Arabic" },
+                  { href: "/blog/fusha-arabic-alphabet", label: "The Fusha Arabic alphabet" },
+                  { href: "/blog/fusha-vs-ammiyya", label: "Fusha vs. Ammiyya" },
                   { href: "/blog/learn-arabic-beginners-guide", label: "Learn Arabic: beginner's guide" },
                   { href: "/blog/learn-arabic-online", label: "Learn Arabic online" },
-                  { href: "/blog/best-arabic-learning-app", label: "Best Arabic learning app" },
+
                   { href: "/flashcards", label: "Fusha vocabulary flashcards" },
                 ].map((l) => (
                   <Link

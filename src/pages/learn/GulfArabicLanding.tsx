@@ -362,7 +362,11 @@ export default function GulfArabicLanding() {
                   { href: "/blog/10-daily-gulf-arabic-phrases-for-expats", label: "10 daily Gulf Arabic phrases" },
                   { href: "/blog/how-to-order-food-in-gulf-arabic-dubai", label: "Order food in Gulf Arabic (Dubai)" },
                   { href: "/blog/arabic-for-expats-in-saudi-arabia", label: "Arabic for expats in Saudi Arabia" },
-                  { href: "/blog/learn-gulf-arabic-online", label: "Learn Gulf Arabic online" },
+                  { href: "/blog/khaleeji-vs-egyptian-arabic", label: "Khaleeji vs. Egyptian Arabic" },
+                  { href: "/blog/gulf-arabic-alphabet-and-pronunciation", label: "Gulf Arabic alphabet & pronunciation" },
+                  { href: "/blog/100-gulf-arabic-phrases", label: "100 Gulf Arabic phrases" },
+                  { href: "/blog/is-gulf-arabic-hard-to-learn", label: "Is Gulf Arabic hard to learn?" },
+
                 ].map((l) => (
                   <Link
                     key={l.href}
