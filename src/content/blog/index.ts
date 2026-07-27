@@ -107,6 +107,13 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(arabicConversationCourse),
   parseFrontmatter(bestArabicLearningApp),
   parseFrontmatter(learnGulfArabicOnline),
+  parseFrontmatter(khaleejiVsEgyptian),
+  parseFrontmatter(gulfAlphabetPronunciation),
+  parseFrontmatter(hundredGulfPhrases),
+  parseFrontmatter(isGulfArabicHard),
+  parseFrontmatter(fushaVsAmmiyya),
+  parseFrontmatter(fushaAlphabet),
+
 ];
 
 // Sort by date (newest first), excluding slugs retired by consolidation
