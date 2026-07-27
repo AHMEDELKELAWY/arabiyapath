@@ -34,7 +34,16 @@ const FUSHA_FAQS = [
     q: "Do I need to know the Arabic alphabet first?",
     a: "No. The course starts from zero. You learn the Arabic script alongside vocabulary and grammar, with English transliteration and native audio on every lesson.",
   },
+  {
+    q: "Why is Fusha spelled so many different ways in English?",
+    a: "Fusha, fus'ha, fus ha, and fos-ha are all transliterations of the same Arabic word, فصحى. Arabic has sounds that English letters do not cover exactly, so several spellings circulate. They all refer to Modern Standard Arabic.",
+  },
+  {
+    q: "Can I just use a Fusha Arabic translator instead of learning?",
+    a: "A translator helps you decode a single sentence, but it will not teach you to read a news article, follow a broadcast, or write correctly — machine output frequently misses case endings, root patterns, and register. Use a translator as a lookup tool alongside structured study, not as a replacement.",
+  },
 ];
+
 
 const FUSHA_COMPARE = [
   {
@@ -151,6 +160,50 @@ export default function FushaArabicLanding() {
             </div>
           </div>
         </section>
+
+        {/* ALPHABET */}
+        <section className="py-14 bg-cream">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold text-foreground mb-4">The Fusha Arabic alphabet</h2>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Fusha uses the 28-letter Arabic alphabet, written right to left. Most letters change
+                shape depending on whether they stand alone or sit at the start, middle, or end of a
+                word — but the core skeleton of each letter stays recognisable, so the script is much
+                faster to learn than it looks. Short vowels are written as small marks above and below
+                the letters (tashkeel), and beginner materials keep them visible until you no longer
+                need them.
+              </p>
+              <div className="overflow-hidden rounded-2xl border border-border bg-card mb-6">
+                <table className="w-full text-sm md:text-base">
+                  <thead className="bg-accent/40">
+                    <tr>
+                      <th className="text-left p-4 font-semibold">Letter</th>
+                      <th className="text-left p-4 font-semibold">Name</th>
+                      <th className="text-left p-4 font-semibold">Sounds like</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FUSHA_ALPHABET_SAMPLE.map((row, i) => (
+                      <tr key={row.name} className={i % 2 ? "bg-background" : ""}>
+                        <td className="p-4 text-2xl font-medium text-foreground" lang="ar" dir="rtl">{row.letter}</td>
+                        <td className="p-4 font-medium text-foreground">{row.name}</td>
+                        <td className="p-4 text-muted-foreground">{row.sound}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                Every lesson in this course pairs the Arabic script with English transliteration and
+                native audio, so you can start recognising words on day one instead of waiting until
+                the alphabet is "finished". By the end of the beginner level you can read fully
+                vowelled Fusha text out loud without transliteration.
+              </p>
+            </div>
+          </div>
+        </section>
+
 
         {/* FEATURE GRID */}
         <section className="py-14 bg-cream">
