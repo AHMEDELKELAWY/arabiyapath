@@ -53,14 +53,20 @@ export default function BlogPost() {
 
 
   const canonicalPath = `/blog/${post.slug}`;
+  const ogImage = post.image || '/og-image.png';
+  const absoluteImage = ogImage.startsWith('http')
+    ? ogImage
+    : `https://arabiyapath.com${ogImage}`;
 
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "Article",
     "headline": post.title,
     "description": post.description,
+    "image": [absoluteImage],
     "datePublished": post.date,
     "dateModified": post.date,
+    "inLanguage": "en",
     "author": {
       "@type": "Organization",
       "name": "ArabiyaPath",
@@ -95,11 +101,13 @@ export default function BlogPost() {
     <Layout>
       <SEOHead
         title={post.title}
-        description={post.description}
+        description={post.description || post.excerpt}
         canonicalPath={canonicalPath}
         ogType="article"
+        ogImage={ogImage}
         jsonLd={schemas}
       />
+
 
       <article className="py-12 md:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
