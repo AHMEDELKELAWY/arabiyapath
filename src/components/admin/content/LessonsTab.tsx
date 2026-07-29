@@ -96,6 +96,33 @@ export function LessonsTab() {
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0, currentLesson: "" });
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
 
+  // Single-lesson AI image generation (inside the edit dialog)
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [isGeneratingLessonImage, setIsGeneratingLessonImage] = useState(false);
+
+  const generateImageForCurrentLesson = async () => {
+    if (!editingLesson?.id) return;
+    setIsGeneratingLessonImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lesson-images", {
+        body: { lessonId: editingLesson.id, prompt: imagePrompt || undefined },
+      });
+      if (error) throw error;
+      if (!data?.success || !data?.imageUrl) {
+        throw new Error(data?.error || "Image generation failed");
+      }
+      setForm((f) => ({ ...f, image_url: data.imageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["lessons"] });
+      toast.success("Image generated");
+    } catch (err) {
+      console.error("Lesson image generation error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to generate image");
+    } finally {
+      setIsGeneratingLessonImage(false);
+    }
+  };
+
+
   const generateImagesForLevel = async (levelId: string, lessonIds: string[]) => {
     setIsGeneratingImages(true);
     setGenerationProgress({ current: 0, total: lessonIds.length, currentLesson: "" });
@@ -192,6 +219,7 @@ export function LessonsTab() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingLesson(null);
+    setImagePrompt("");
     setForm({
       title: "",
       unit_id: "",
@@ -205,6 +233,7 @@ export function LessonsTab() {
 
   const openEdit = (lesson: any) => {
     setEditingLesson(lesson);
+    setImagePrompt("");
     setForm({
       title: lesson.title,
       unit_id: lesson.unit_id,
@@ -475,14 +504,47 @@ export function LessonsTab() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="col-span-2 space-y-2">
                 <Label>Image</Label>
                 <ImageUploader
                   value={form.image_url}
                   onChange={(url) => setForm({ ...form, image_url: url })}
                   folder="lessons"
                 />
+                <div className="space-y-2 rounded-lg border border-dashed p-3">
+                  <Label htmlFor="image_prompt" className="text-xs text-muted-foreground">
+                    AI image prompt (optional — leave empty to use the lesson title)
+                  </Label>
+                  <Textarea
+                    id="image_prompt"
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    rows={2}
+                    placeholder="e.g., A friendly Gulf café scene with two people greeting each other"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2"
+                    disabled={!editingLesson || isGeneratingLessonImage}
+                    onClick={generateImageForCurrentLesson}
+                  >
+                    {isGeneratingLessonImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                    Generate Image with AI
+                  </Button>
+                  {!editingLesson && (
+                    <p className="text-xs text-muted-foreground">
+                      Save the lesson first to generate an image with AI.
+                    </p>
+                  )}
+                </div>
               </div>
+
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
