@@ -147,6 +147,8 @@ export default function BlogPost() {
   const faqs = extractFAQs(post.content);
   const schemas: object[] = [articleSchema, breadcrumbSchema];
   if (faqs.length) schemas.push(generateFAQPageSchema(canonicalPath, faqs));
+  const extra = EXTRA_SCHEMAS_BY_SLUG[post.slug];
+  if (extra) schemas.push(...extra);
 
   return (
     <Layout>
