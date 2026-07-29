@@ -41,6 +41,7 @@ import hundredGulfPhrases from './100-gulf-arabic-phrases.md?raw';
 import isGulfArabicHard from './is-gulf-arabic-hard-to-learn.md?raw';
 import fushaVsAmmiyya from './fusha-vs-ammiyya.md?raw';
 import fushaAlphabet from './fusha-arabic-alphabet.md?raw';
+import learnGulfArabicOnlineForBeginners from './learn-gulf-arabic-online-for-beginners.md?raw';
 
 
 function parseFrontmatter(markdown: string): BlogPost {
