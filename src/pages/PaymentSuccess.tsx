@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
-const FLASHCARD_SUCCESS_PATH = "/dashboard/progress#flashcards-section";
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
