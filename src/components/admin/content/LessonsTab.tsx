@@ -196,7 +196,7 @@ export function LessonsTab() {
 
   const createMutation = useMutation({
     mutationFn: async (data: LessonForm) => {
-      const { error } = await supabase.from("lessons").insert(data);
+      const { error } = await supabase.from("lessons").insert(data as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -209,7 +209,7 @@ export function LessonsTab() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LessonForm }) => {
-      const { error } = await supabase.from("lessons").update(data).eq("id", id);
+      const { error } = await supabase.from("lessons").update(data as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
