@@ -15,13 +15,14 @@ interface Lesson {
 async function generateImageForLesson(
   supabase: any,
   lesson: Lesson,
-  lovableApiKey: string
-): Promise<{ success: boolean; lessonId: string; error?: string }> {
+  lovableApiKey: string,
+  customPrompt?: string
+): Promise<{ success: boolean; lessonId: string; imageUrl?: string; error?: string }> {
   try {
     console.log(`Generating image for lesson: ${lesson.id} - ${lesson.title}`);
     
     // Create a descriptive prompt for the image based on the lesson content
-    const prompt = `Create a simple, clean educational illustration for an Arabic language lesson about: "${lesson.title}". The image should be culturally appropriate for Middle Eastern context, warm and inviting colors, suitable for language learning. Style: flat design, modern, minimalist. The image should clearly represent the concept without any text.`;
+    const prompt = customPrompt?.trim() || `Create a simple, clean educational illustration for an Arabic language lesson about: "${lesson.title}". The image should be culturally appropriate for Middle Eastern context, warm and inviting colors, suitable for language learning. Style: flat design, modern, minimalist. The image should clearly represent the concept without any text.`;
     
     // Call Lovable AI Gateway with image generation model
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -31,7 +32,7 @@ async function generateImageForLesson(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "google/gemini-2.5-flash-image",
         messages: [
           {
             role: "user",
@@ -113,7 +114,7 @@ async function generateImageForLesson(
     }
 
     console.log(`Successfully generated and saved image for lesson ${lesson.id}`);
-    return { success: true, lessonId: lesson.id };
+    return { success: true, lessonId: lesson.id, imageUrl: publicUrl };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Error generating image for lesson ${lesson.id}:`, error);
@@ -184,7 +185,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { lessonId, lessonIds, levelId, limit = 5, background = false } = await req.json().catch(() => ({}));
+    const { lessonId, lessonIds, levelId, prompt: customPrompt, limit = 5, background = false } = await req.json().catch(() => ({}));
 
     // If specific lesson ID provided, generate for that lesson only (sync)
     if (lessonId) {
@@ -201,7 +202,7 @@ serve(async (req) => {
         );
       }
 
-      const result = await generateImageForLesson(supabase, lesson, lovableApiKey);
+      const result = await generateImageForLesson(supabase, lesson, lovableApiKey, customPrompt);
       return new Response(
         JSON.stringify(result),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
