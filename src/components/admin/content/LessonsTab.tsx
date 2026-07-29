@@ -49,7 +49,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2, Upload, History } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "../ImageUploader";
 import { AudioUploader } from "../AudioUploader";
@@ -322,6 +322,10 @@ export function LessonsTab() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button variant="outline" className="gap-2" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Bulk Import CSV
+            </Button>
             <Button
               onClick={() => {
                 if (scope.unitId) setForm((f) => ({ ...f, unit_id: scope.unitId! }));
@@ -414,6 +418,14 @@ export function LessonsTab() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          title="Version history"
+                          onClick={() => setHistoryLesson(lesson)}
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setDeleteLesson(lesson.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -433,6 +445,19 @@ export function LessonsTab() {
           )}
         </CardContent>
       </Card>
+
+      <LessonBulkImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        units={unitsGrouped ?? []}
+        lessons={lessons ?? []}
+        defaultUnitId={scope.unitId ?? undefined}
+      />
+
+      <LessonHistoryDialog
+        lesson={historyLesson}
+        onOpenChange={(open) => !open && setHistoryLesson(null)}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
