@@ -1,6 +1,6 @@
 ---
 title: "Learn Gulf Arabic Online for Beginners: The Comprehensive 2026 Guide"
-description: "Learn Gulf Arabic (Khaleeji) online as a beginner in 2026: Khaleeji vs Fusha, a realistic timeline, a 4-step roadmap, dialect differences, and native audio lessons."
+description: "Learn Gulf Arabic (Khaleeji) online for beginners. Your comprehensive guide for expats in the UAE, Saudi Arabia, and Qatar. Discover differences with Fusha and a roadmap to learn effectively with ArabiyaPath."
 date: "2026-07-29"
 slug: "learn-gulf-arabic-online-for-beginners"
 image: "/images/blog/learn-gulf-arabic-online-for-beginners.jpg"
