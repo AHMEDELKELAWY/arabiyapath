@@ -132,7 +132,7 @@ export default function GulfArabicLanding() {
                   linksTitle="Popular next steps"
                   links={[
                     { href: FREE_LESSON_URL, label: "Try a free lesson" },
-                    { href: "/pricing?course=gulf", label: "View pricing" },
+                    { href: "/gulf-arabic-course#choose-your-plan", label: "View pricing" },
                     { href: "/blog/gulf-vs-fusha-arabic", label: "Gulf vs. Fusha" },
                     { href: "/learn/fusha-arabic", label: "Fusha Arabic" },
                   ]}
@@ -146,7 +146,7 @@ export default function GulfArabicLanding() {
                   </Link>
                 </Button>
                 <Button size="xl" variant="outline" className="w-full sm:w-auto" asChild>
-                  <Link to="/pricing?course=gulf">View Pricing</Link>
+                  <Link to="/gulf-arabic-course#choose-your-plan">View Pricing</Link>
                 </Button>
               </div>
             </div>
