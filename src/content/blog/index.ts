@@ -8,6 +8,8 @@ export interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
+  /** Optional social share image (absolute path under /public). */
+  image?: string;
 }
 
 // Import raw markdown files
