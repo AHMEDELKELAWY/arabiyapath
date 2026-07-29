@@ -517,6 +517,12 @@ export function LessonsTab() {
                   value={form.audio_url}
                   onChange={(url) => setForm({ ...form, audio_url: url })}
                   arabicText={form.arabic_text}
+                  voiceSettings={{
+                    voiceId: form.media_settings.voice_id,
+                    speed: form.media_settings.speed,
+                    stability: form.media_settings.stability,
+                    maxChars: form.media_settings.max_chars,
+                  }}
                   folder="lessons"
                 />
               </div>
@@ -528,39 +534,59 @@ export function LessonsTab() {
                   onChange={(url) => setForm({ ...form, image_url: url })}
                   folder="lessons"
                 />
-                <div className="space-y-2 rounded-lg border border-dashed p-3">
-                  <Label htmlFor="image_prompt" className="text-xs text-muted-foreground">
-                    AI image prompt (optional — leave empty to use the lesson title)
-                  </Label>
-                  <Textarea
-                    id="image_prompt"
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    rows={2}
-                    placeholder="e.g., A friendly Gulf café scene with two people greeting each other"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="gap-2"
-                    disabled={!editingLesson || isGeneratingLessonImage}
-                    onClick={generateImageForCurrentLesson}
-                  >
-                    {isGeneratingLessonImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-4 w-4" />
-                    )}
-                    Generate Image with AI
-                  </Button>
-                  {!editingLesson && (
-                    <p className="text-xs text-muted-foreground">
-                      Save the lesson first to generate an image with AI.
-                    </p>
-                  )}
-                </div>
               </div>
+
+              <div className="col-span-2 space-y-3 rounded-lg border border-dashed p-3">
+                <Label className="text-sm font-semibold">AI generation settings</Label>
+                <LessonMediaSettingsPanel
+                  settings={form.media_settings}
+                  onChange={(next) => setForm({ ...form, media_settings: next })}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2"
+                  disabled={!editingLesson || isGeneratingLessonImage}
+                  onClick={generateImageForCurrentLesson}
+                >
+                  {isGeneratingLessonImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  Generate Image with AI
+                </Button>
+                {!editingLesson && (
+                  <p className="text-xs text-muted-foreground">
+                    Save the lesson first to generate an image with AI. Settings are stored per lesson.
+                  </p>
+                )}
+              </div>
+
+              {/* Media preview before saving */}
+              {(form.image_url || form.audio_url) && (
+                <div className="col-span-2 space-y-2 rounded-lg border p-3">
+                  <Label className="text-sm font-semibold">Media preview</Label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {form.image_url && (
+                      <img
+                        src={form.image_url}
+                        alt={form.title || "Lesson image preview"}
+                        loading="lazy"
+                        className="w-full max-h-48 object-contain rounded-md bg-muted"
+                      />
+                    )}
+                    {form.audio_url && (
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <audio controls src={form.audio_url} className="w-full" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
 
             </div>
             <DialogFooter>
