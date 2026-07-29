@@ -96,6 +96,33 @@ export function LessonsTab() {
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0, currentLesson: "" });
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
 
+  // Single-lesson AI image generation (inside the edit dialog)
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [isGeneratingLessonImage, setIsGeneratingLessonImage] = useState(false);
+
+  const generateImageForCurrentLesson = async () => {
+    if (!editingLesson?.id) return;
+    setIsGeneratingLessonImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lesson-images", {
+        body: { lessonId: editingLesson.id, prompt: imagePrompt || undefined },
+      });
+      if (error) throw error;
+      if (!data?.success || !data?.imageUrl) {
+        throw new Error(data?.error || "Image generation failed");
+      }
+      setForm((f) => ({ ...f, image_url: data.imageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["lessons"] });
+      toast.success("Image generated");
+    } catch (err) {
+      console.error("Lesson image generation error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to generate image");
+    } finally {
+      setIsGeneratingLessonImage(false);
+    }
+  };
+
+
   const generateImagesForLevel = async (levelId: string, lessonIds: string[]) => {
     setIsGeneratingImages(true);
     setGenerationProgress({ current: 0, total: lessonIds.length, currentLesson: "" });
