@@ -8,6 +8,8 @@ export interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
+  /** Optional social share image (absolute path under /public). */
+  image?: string;
 }
 
 // Import raw markdown files
@@ -79,6 +81,7 @@ function parseFrontmatter(markdown: string): BlogPost {
     date: metadata.date || '',
     slug: metadata.slug || '',
     excerpt: metadata.excerpt || '',
+    image: metadata.image || undefined,
     content
   };
 }
