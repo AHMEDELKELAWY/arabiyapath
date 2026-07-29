@@ -56,7 +56,7 @@ serve(async (req) => {
       });
     }
 
-    const { text, voiceId } = await req.json();
+    const { text, voiceId, speed, stability, maxChars } = await req.json();
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
     if (!ELEVENLABS_API_KEY) {
@@ -68,7 +68,14 @@ serve(async (req) => {
     }
 
     // Cap input length to prevent abuse
-    const safeText = text.slice(0, 1000);
+    const cap = Math.min(1000, Math.max(50, Number(maxChars) || 1000));
+    const safeText = text.slice(0, cap);
+    const clamp = (n: unknown, min: number, max: number, dflt: number) => {
+      const v = Number(n);
+      return Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : dflt;
+    };
+    const safeSpeed = clamp(speed, 0.7, 1.2, 0.9);
+    const safeStability = clamp(stability, 0, 1, 0.6);
 
     const selectedVoiceId = voiceId || "21m00Tcm4TlvDq8ikWAM";
 
@@ -86,11 +93,11 @@ serve(async (req) => {
           text: safeText,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.6,
+            stability: safeStability,
             similarity_boost: 0.75,
             style: 0.3,
             use_speaker_boost: true,
-            speed: 0.9,
+            speed: safeSpeed,
           },
         }),
       }
