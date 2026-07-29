@@ -219,6 +219,7 @@ export function LessonsTab() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingLesson(null);
+    setImagePrompt("");
     setForm({
       title: "",
       unit_id: "",
@@ -232,6 +233,7 @@ export function LessonsTab() {
 
   const openEdit = (lesson: any) => {
     setEditingLesson(lesson);
+    setImagePrompt("");
     setForm({
       title: lesson.title,
       unit_id: lesson.unit_id,
