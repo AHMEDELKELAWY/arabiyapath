@@ -10,10 +10,11 @@ interface Props {
   currency?: string
   invoiceDate?: string
   transactionId?: string
+  orderId?: string
   dashboardUrl?: string
 }
 
-const Email = ({ name, productName, amount, currency, invoiceDate, transactionId, dashboardUrl = 'https://arabiyapath.com/dashboard' }: Props) => (
+const Email = ({ name, productName, amount, currency, invoiceDate, transactionId, orderId, dashboardUrl = 'https://arabiyapath.com/dashboard' }: Props) => (
   <EmailLayout preview="Your ArabiyaPath receipt" heading="Your Receipt">
     <Text style={styles.text}>{name ? `Hi ${name},` : 'Hi there,'}</Text>
     <Text style={styles.text}>Thank you for your purchase. Here's a summary of your order:</Text>
@@ -22,11 +23,18 @@ const Email = ({ name, productName, amount, currency, invoiceDate, transactionId
     {amount && <Text style={styles.detailRow}><span style={styles.detailLabel}>Amount:</span> {amount} {currency || 'USD'}</Text>}
     {invoiceDate && <Text style={styles.detailRow}><span style={styles.detailLabel}>Invoice date:</span> {invoiceDate}</Text>}
     {transactionId && <Text style={styles.detailRow}><span style={styles.detailLabel}>Transaction ID:</span> {transactionId}</Text>}
+    {orderId && <Text style={styles.detailRow}><span style={styles.detailLabel}>Order ID:</span> {orderId}</Text>}
     <Hr style={styles.hr} />
     <Section style={{ textAlign: 'center', margin: '24px 0' }}>
       <Button style={styles.button} href={dashboardUrl}>Access your content</Button>
     </Section>
-    <Text style={styles.muted}>Keep this email for your records. Questions? Just reply to this message.</Text>
+    <Text style={styles.text}>
+      You can review everything you own any time in <a href="https://arabiyapath.com/dashboard/progress">My Courses</a>.
+    </Text>
+    <Text style={styles.muted}>
+      Keep this email for your records. Need help? Reply to this message or visit{' '}
+      <a href="https://arabiyapath.com/contact">arabiyapath.com/contact</a>.
+    </Text>
   </EmailLayout>
 )
 
@@ -34,5 +42,5 @@ export const template = {
   component: Email,
   subject: 'Your Receipt',
   displayName: 'Purchase Receipt',
-  previewData: { name: 'Sara', productName: 'Gulf Arabic — Beginner', amount: '15.00', currency: 'USD', invoiceDate: 'Jul 14, 2026', transactionId: 'ABC123XYZ' },
+  previewData: { name: 'Sara', productName: 'Gulf Arabic — Beginner', amount: '15.00', currency: 'USD', invoiceDate: 'Jul 14, 2026', transactionId: 'ABC123XYZ', orderId: '5O190127TN364715T' },
 } satisfies TemplateEntry
