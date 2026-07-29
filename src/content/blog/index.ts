@@ -81,6 +81,7 @@ function parseFrontmatter(markdown: string): BlogPost {
     date: metadata.date || '',
     slug: metadata.slug || '',
     excerpt: metadata.excerpt || '',
+    image: metadata.image || undefined,
     content
   };
 }
