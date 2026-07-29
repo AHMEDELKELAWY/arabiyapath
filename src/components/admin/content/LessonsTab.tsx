@@ -49,10 +49,19 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2, Upload, History } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "../ImageUploader";
 import { AudioUploader } from "../AudioUploader";
+import { LessonMediaSettingsPanel } from "./LessonMediaSettingsPanel";
+import { LessonBulkImportDialog } from "./LessonBulkImportDialog";
+import { LessonHistoryDialog } from "./LessonHistoryDialog";
+import {
+  DEFAULT_MEDIA_SETTINGS,
+  buildImagePrompt,
+  parseMediaSettings,
+  type LessonMediaSettings,
+} from "@/lib/admin/lessonMediaSettings";
 
 interface LessonForm {
   title: string;
@@ -62,6 +71,7 @@ interface LessonForm {
   transliteration: string;
   image_url: string;
   audio_url: string;
+  media_settings: LessonMediaSettings;
 }
 
 export function LessonsTab() {
@@ -89,6 +99,7 @@ export function LessonsTab() {
     transliteration: "",
     image_url: "",
     audio_url: "",
+    media_settings: DEFAULT_MEDIA_SETTINGS,
   });
 
   // Image generation state
@@ -96,8 +107,11 @@ export function LessonsTab() {
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0, currentLesson: "" });
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
 
+  // Bulk import + history
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [historyLesson, setHistoryLesson] = useState<any>(null);
+
   // Single-lesson AI image generation (inside the edit dialog)
-  const [imagePrompt, setImagePrompt] = useState("");
   const [isGeneratingLessonImage, setIsGeneratingLessonImage] = useState(false);
 
   const generateImageForCurrentLesson = async () => {
@@ -105,7 +119,10 @@ export function LessonsTab() {
     setIsGeneratingLessonImage(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lesson-images", {
-        body: { lessonId: editingLesson.id, prompt: imagePrompt || undefined },
+        body: {
+          lessonId: editingLesson.id,
+          prompt: buildImagePrompt(form.title, form.media_settings),
+        },
       });
       if (error) throw error;
       if (!data?.success || !data?.imageUrl) {
@@ -179,7 +196,7 @@ export function LessonsTab() {
 
   const createMutation = useMutation({
     mutationFn: async (data: LessonForm) => {
-      const { error } = await supabase.from("lessons").insert(data);
+      const { error } = await supabase.from("lessons").insert(data as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -192,7 +209,7 @@ export function LessonsTab() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LessonForm }) => {
-      const { error } = await supabase.from("lessons").update(data).eq("id", id);
+      const { error } = await supabase.from("lessons").update(data as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -219,7 +236,6 @@ export function LessonsTab() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingLesson(null);
-    setImagePrompt("");
     setForm({
       title: "",
       unit_id: "",
@@ -228,12 +244,12 @@ export function LessonsTab() {
       transliteration: "",
       image_url: "",
       audio_url: "",
+      media_settings: DEFAULT_MEDIA_SETTINGS,
     });
   };
 
   const openEdit = (lesson: any) => {
     setEditingLesson(lesson);
-    setImagePrompt("");
     setForm({
       title: lesson.title,
       unit_id: lesson.unit_id,
@@ -242,6 +258,7 @@ export function LessonsTab() {
       transliteration: lesson.transliteration || "",
       image_url: lesson.image_url || "",
       audio_url: lesson.audio_url || "",
+      media_settings: parseMediaSettings(lesson.media_settings),
     });
     setIsDialogOpen(true);
   };
@@ -305,6 +322,10 @@ export function LessonsTab() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button variant="outline" className="gap-2" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Bulk Import CSV
+            </Button>
             <Button
               onClick={() => {
                 if (scope.unitId) setForm((f) => ({ ...f, unit_id: scope.unitId! }));
@@ -397,6 +418,14 @@ export function LessonsTab() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          title="Version history"
+                          onClick={() => setHistoryLesson(lesson)}
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setDeleteLesson(lesson.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -416,6 +445,19 @@ export function LessonsTab() {
           )}
         </CardContent>
       </Card>
+
+      <LessonBulkImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        units={unitsGrouped ?? []}
+        lessons={lessons ?? []}
+        defaultUnitId={scope.unitId ?? undefined}
+      />
+
+      <LessonHistoryDialog
+        lesson={historyLesson}
+        onOpenChange={(open) => !open && setHistoryLesson(null)}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -500,6 +542,12 @@ export function LessonsTab() {
                   value={form.audio_url}
                   onChange={(url) => setForm({ ...form, audio_url: url })}
                   arabicText={form.arabic_text}
+                  voiceSettings={{
+                    voiceId: form.media_settings.voice_id,
+                    speed: form.media_settings.speed,
+                    stability: form.media_settings.stability,
+                    maxChars: form.media_settings.max_chars,
+                  }}
                   folder="lessons"
                 />
               </div>
@@ -511,39 +559,59 @@ export function LessonsTab() {
                   onChange={(url) => setForm({ ...form, image_url: url })}
                   folder="lessons"
                 />
-                <div className="space-y-2 rounded-lg border border-dashed p-3">
-                  <Label htmlFor="image_prompt" className="text-xs text-muted-foreground">
-                    AI image prompt (optional — leave empty to use the lesson title)
-                  </Label>
-                  <Textarea
-                    id="image_prompt"
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    rows={2}
-                    placeholder="e.g., A friendly Gulf café scene with two people greeting each other"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="gap-2"
-                    disabled={!editingLesson || isGeneratingLessonImage}
-                    onClick={generateImageForCurrentLesson}
-                  >
-                    {isGeneratingLessonImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-4 w-4" />
-                    )}
-                    Generate Image with AI
-                  </Button>
-                  {!editingLesson && (
-                    <p className="text-xs text-muted-foreground">
-                      Save the lesson first to generate an image with AI.
-                    </p>
-                  )}
-                </div>
               </div>
+
+              <div className="col-span-2 space-y-3 rounded-lg border border-dashed p-3">
+                <Label className="text-sm font-semibold">AI generation settings</Label>
+                <LessonMediaSettingsPanel
+                  settings={form.media_settings}
+                  onChange={(next) => setForm({ ...form, media_settings: next })}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2"
+                  disabled={!editingLesson || isGeneratingLessonImage}
+                  onClick={generateImageForCurrentLesson}
+                >
+                  {isGeneratingLessonImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  Generate Image with AI
+                </Button>
+                {!editingLesson && (
+                  <p className="text-xs text-muted-foreground">
+                    Save the lesson first to generate an image with AI. Settings are stored per lesson.
+                  </p>
+                )}
+              </div>
+
+              {/* Media preview before saving */}
+              {(form.image_url || form.audio_url) && (
+                <div className="col-span-2 space-y-2 rounded-lg border p-3">
+                  <Label className="text-sm font-semibold">Media preview</Label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {form.image_url && (
+                      <img
+                        src={form.image_url}
+                        alt={form.title || "Lesson image preview"}
+                        loading="lazy"
+                        className="w-full max-h-48 object-contain rounded-md bg-muted"
+                      />
+                    )}
+                    {form.audio_url && (
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <audio controls src={form.audio_url} className="w-full" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
 
             </div>
             <DialogFooter>

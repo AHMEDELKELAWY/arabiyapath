@@ -1346,6 +1346,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_revisions: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_fields: string[]
+          changes: Json
+          created_at: string
+          id: string
+          lesson_id: string
+          lesson_title: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          changes?: Json
+          created_at?: string
+          id?: string
+          lesson_id: string
+          lesson_title?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          changes?: Json
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          lesson_title?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           arabic_text: string | null
@@ -1353,6 +1386,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          media_settings: Json
           order_index: number
           title: string
           transliteration: string | null
@@ -1364,6 +1398,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          media_settings?: Json
           order_index?: number
           title: string
           transliteration?: string | null
@@ -1375,6 +1410,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          media_settings?: Json
           order_index?: number
           title?: string
           transliteration?: string | null
