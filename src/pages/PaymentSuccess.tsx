@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
-const FLASHCARD_SUCCESS_PATH = "/dashboard/progress#flashcards-section";
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -72,12 +71,10 @@ export default function PaymentSuccess() {
               await queryClient.invalidateQueries({ queryKey: ["fc-unit-access"] });
             }
 
-            if (data.productType === "flashcard_pack") {
-              navigate(FLASHCARD_SUCCESS_PATH, { replace: true });
-              return;
-            }
-
-            navigate("/thank-you-purchase", { replace: true });
+            const params = new URLSearchParams();
+            if (data.purchaseId) params.set("purchase", data.purchaseId);
+            if (data.orderId || token) params.set("order", data.orderId || token);
+            navigate(`/purchase/success?${params.toString()}`, { replace: true });
             return;
           }
 

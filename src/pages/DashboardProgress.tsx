@@ -63,12 +63,12 @@ export default function DashboardProgress() {
     dg.levels.some((l) => hasLevelAccess(l.levelId, l.dialectId))
   );
 
+  // Entitlement comes from the backend (active membership or purchased pack).
+  // Free units alone must NEVER imply ownership of Spoken Arabic.
   const hasFlashcards =
     !!fcSummary &&
-    (fcSummary.purchases.some((p) => p.status === "active") ||
-      fcSummary.units.length > 0 ||
-      fcSummary.total_mastered > 0 ||
-      (fcSummary.streak?.current_streak ?? 0) > 0);
+    (fcSummary.entitled === true ||
+      fcSummary.purchases.some((p) => p.status === "active"));
 
   const hasAnyProduct = ownedDialects.length > 0 || hasFlashcards;
 

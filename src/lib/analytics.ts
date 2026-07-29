@@ -63,3 +63,42 @@ export const trackEvent = (eventName: string, params?: Record<string, unknown>) 
     });
   }
 };
+
+// Track a verified purchase (GA4 ecommerce). Deduped per transaction id so a
+// page refresh never fires the event twice.
+export const trackPurchase = (params: {
+  transactionId: string;
+  value: number;
+  currency?: string;
+  items?: Array<Record<string, unknown>>;
+}) => {
+  if (!params.transactionId) return;
+  const key = `ga4_purchase_${params.transactionId}`;
+  try {
+    if (localStorage.getItem(key)) return;
+  } catch {
+    /* storage unavailable — still fire once per page load */
+  }
+
+  if (typeof window.gtag !== 'undefined') {
+    window.gtag('event', 'purchase', {
+      transaction_id: params.transactionId,
+      value: params.value,
+      currency: params.currency || 'USD',
+      items: params.items ?? [],
+    });
+  }
+
+  if (typeof (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq !== 'undefined') {
+    (window as unknown as { fbq: (...a: unknown[]) => void }).fbq('track', 'Purchase', {
+      value: params.value,
+      currency: params.currency || 'USD',
+    });
+  }
+
+  try {
+    localStorage.setItem(key, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+};

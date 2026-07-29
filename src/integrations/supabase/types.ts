@@ -1821,6 +1821,42 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_events: {
+        Row: {
+          created_at: string
+          detail: Json
+          id: string
+          provider_capture_id: string | null
+          provider_order_id: string | null
+          purchase_id: string | null
+          status: string
+          step: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          provider_capture_id?: string | null
+          provider_order_id?: string | null
+          purchase_id?: string | null
+          status?: string
+          step: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          provider_capture_id?: string | null
+          provider_order_id?: string | null
+          purchase_id?: string | null
+          status?: string
+          step?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           affiliate_id: string | null

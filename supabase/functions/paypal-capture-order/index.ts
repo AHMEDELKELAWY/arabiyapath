@@ -2,6 +2,35 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendTransactionalEmail, getUserContact, formatDate } from "../_shared/notify-email.ts";
 
+/** Structured audit log for every step of the purchase lifecycle. Never throws. */
+async function logPurchaseEvent(
+  supabase: any,
+  entry: {
+    user_id?: string | null;
+    purchase_id?: string | null;
+    provider_order_id?: string | null;
+    provider_capture_id?: string | null;
+    step: string;
+    status?: string;
+    detail?: Record<string, unknown>;
+  }
+) {
+  try {
+    console.log(`[purchase-event] ${entry.step} (${entry.status ?? "ok"})`, JSON.stringify(entry.detail ?? {}));
+    await supabase.from("purchase_events").insert({
+      user_id: entry.user_id ?? null,
+      purchase_id: entry.purchase_id ?? null,
+      provider_order_id: entry.provider_order_id ?? null,
+      provider_capture_id: entry.provider_capture_id ?? null,
+      step: entry.step,
+      status: entry.status ?? "ok",
+      detail: entry.detail ?? {},
+    });
+  } catch (e) {
+    console.error("logPurchaseEvent failed", e);
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -89,6 +118,20 @@ async function createPurchaseFromPendingOrder(
     throw new Error("Failed to create purchase record");
   }
 
+  await logPurchaseEvent(supabase, {
+    user_id: pendingOrder.user_id,
+    purchase_id: purchase.id,
+    provider_order_id: paypalOrderId,
+    provider_capture_id: captureId,
+    step: "access_granted",
+    detail: {
+      product_id: pendingOrder.product_id,
+      product_type: pendingOrder.product_type,
+      amount: captureAmount,
+      currency: captureCurrency,
+    },
+  });
+
   console.log(`Purchase created: ${purchase.id}, user: ${pendingOrder.user_id}, product: ${pendingOrder.product_id}, paypal_order: ${paypalOrderId}, capture: ${captureId}`);
 
   // Email: purchase receipt (fire-and-forget)
@@ -106,10 +149,31 @@ async function createPurchaseFromPendingOrder(
           currency: captureCurrency,
           invoiceDate: formatDate(new Date().toISOString()),
           transactionId: captureId,
+          orderId: paypalOrderId,
+          dashboardUrl: "https://arabiyapath.com/dashboard",
         },
       });
+      await logPurchaseEvent(supabase, {
+        user_id: pendingOrder.user_id,
+        purchase_id: purchase.id,
+        provider_order_id: paypalOrderId,
+        provider_capture_id: captureId,
+        step: "receipt_email_queued",
+        detail: { recipient: contact.email, template: "purchase-receipt" },
+      });
     }
-  } catch (e) { console.error("receipt email failed", e); }
+  } catch (e) {
+    console.error("receipt email failed", e);
+    await logPurchaseEvent(supabase, {
+      user_id: pendingOrder.user_id,
+      purchase_id: purchase.id,
+      provider_order_id: paypalOrderId,
+      provider_capture_id: captureId,
+      step: "receipt_email_queued",
+      status: "error",
+      detail: { message: String(e) },
+    });
+  }
 
   // Mirror into flashcard_purchases when this is a flash card pack
   try {
@@ -218,7 +282,7 @@ serve(async (req) => {
     // === IDEMPOTENCY CHECK: If purchase already exists for this PayPal order, return success ===
     const { data: existingPurchase } = await supabase
       .from("purchases")
-      .select("id, product_type")
+      .select("id, product_type, product_name, amount, currency, paypal_capture_id")
       .eq("paypal_order_id", orderId)
       .maybeSingle();
 
@@ -229,7 +293,13 @@ serve(async (req) => {
           success: true,
           message: "Order already processed",
           alreadyCaptured: true,
+          purchaseId: existingPurchase.id,
+          orderId,
+          captureId: existingPurchase.paypal_capture_id,
           productType: existingPurchase.product_type,
+          productName: existingPurchase.product_name,
+          amount: existingPurchase.amount,
+          currency: existingPurchase.currency,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -345,14 +415,24 @@ serve(async (req) => {
     // Re-check idempotency after capture (race condition guard)
     const { data: existingAfterCapture } = await supabase
       .from("purchases")
-      .select("id, product_type")
+      .select("id, product_type, product_name, amount, currency, paypal_capture_id")
       .eq("paypal_order_id", orderId)
       .maybeSingle();
 
     if (existingAfterCapture) {
       console.log(`Purchase created by concurrent request: ${existingAfterCapture.id}`);
       return new Response(
-        JSON.stringify({ success: true, alreadyCaptured: true, productType: existingAfterCapture.product_type }),
+        JSON.stringify({
+          success: true,
+          alreadyCaptured: true,
+          purchaseId: existingAfterCapture.id,
+          orderId,
+          captureId: existingAfterCapture.paypal_capture_id,
+          productType: existingAfterCapture.product_type,
+          productName: existingAfterCapture.product_name,
+          amount: existingAfterCapture.amount,
+          currency: existingAfterCapture.currency,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -382,8 +462,16 @@ serve(async (req) => {
       throw new Error("User mismatch");
     }
 
+    await logPurchaseEvent(supabase, {
+      user_id: pendingOrder.user_id,
+      provider_order_id: orderId,
+      provider_capture_id: capture.id,
+      step: "payment_captured",
+      detail: { amount: capture.amount.value, currency: capture.amount.currency_code },
+    });
+
     // === CREATE PURCHASE ===
-    await createPurchaseFromPendingOrder(
+    const createdPurchaseId = await createPurchaseFromPendingOrder(
       supabase,
       pendingOrder,
       captureData.id,
@@ -397,9 +485,14 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
+        purchaseId: createdPurchaseId,
+        orderId,
         captureId: capture.id,
         status: captureData.status,
         productType: pendingOrder.product_type,
+        productName: pendingOrder.product_name,
+        amount: parseFloat(capture.amount.value),
+        currency: capture.amount.currency_code,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
