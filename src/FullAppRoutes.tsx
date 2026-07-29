@@ -57,6 +57,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const ThankYouPurchase = lazy(() => import("./pages/ThankYouPurchase"));
+const PurchaseSuccess = lazy(() => import("./pages/PurchaseSuccess"));
 const MembershipContinue = lazy(() => import("./pages/MembershipContinue"));
 const MembershipActivate = lazy(() => import("./pages/MembershipActivate"));
 const StartFree = lazy(() => import("./pages/StartFree"));
@@ -200,6 +201,7 @@ export default function FullAppRoutes() {
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="/thank-you-purchase" element={<ThankYouPurchase />} />
+            <Route path="/purchase/success" element={<PurchaseSuccess />} />
             <Route path="/choose-plan/:dialectId" element={<ChoosePlan />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/membership/continue" element={<MembershipContinue />} />

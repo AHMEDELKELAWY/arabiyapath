@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface FlashcardsDashboardSummary {
+  entitled?: boolean;
   streak: { current_streak: number; longest_streak: number; last_active_date: string | null } | null;
   due_today: number;
   total_mastered: number;
@@ -29,7 +30,7 @@ export function useFlashcardsDashboard() {
       const { data, error } = await (supabase.rpc as any)("fc_dashboard_summary");
       if (error) throw error;
       const summary = (data as FlashcardsDashboardSummary) ?? {
-        streak: null, due_today: 0, total_mastered: 0, units: [], purchases: [],
+        entitled: false, streak: null, due_today: 0, total_mastered: 0, units: [], purchases: [],
       };
       if (import.meta.env.DEV && summary.units?.some((u) => u.reviewed === undefined)) {
         console.warn("[fc-dashboard] RPC returned units without `reviewed` field; falling back to mastered.");
