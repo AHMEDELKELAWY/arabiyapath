@@ -10,6 +10,8 @@ interface AudioUploaderProps {
   value: string;
   onChange: (url: string) => void;
   arabicText?: string;
+  /** Optional TTS settings (voice, speed, stability, max length). */
+  voiceSettings?: { voiceId?: string; speed?: number; stability?: number; maxChars?: number };
   bucket?: string;
   folder?: string;
   className?: string;
@@ -19,6 +21,7 @@ export function AudioUploader({
   value,
   onChange,
   arabicText,
+  voiceSettings,
   bucket = "content",
   folder = "audio",
   className,
@@ -80,7 +83,13 @@ export function AudioUploader({
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ text: arabicText }),
+          body: JSON.stringify({
+            text: arabicText,
+            voiceId: voiceSettings?.voiceId,
+            speed: voiceSettings?.speed,
+            stability: voiceSettings?.stability,
+            maxChars: voiceSettings?.maxChars,
+          }),
         }
       );
 
