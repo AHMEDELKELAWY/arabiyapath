@@ -44,6 +44,7 @@ import isGulfArabicHard from './is-gulf-arabic-hard-to-learn.md?raw';
 import fushaVsAmmiyya from './fusha-vs-ammiyya.md?raw';
 import fushaAlphabet from './fusha-arabic-alphabet.md?raw';
 import learnGulfArabicOnlineForBeginners from './learn-gulf-arabic-online-for-beginners.md?raw';
+import arabicForExpatsGuide from './arabic-for-expats-guide.md?raw';
 
 
 function parseFrontmatter(markdown: string): BlogPost {
@@ -118,6 +119,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(fushaVsAmmiyya),
   parseFrontmatter(fushaAlphabet),
   parseFrontmatter(learnGulfArabicOnlineForBeginners),
+  parseFrontmatter(arabicForExpatsGuide),
 
 ];
 
