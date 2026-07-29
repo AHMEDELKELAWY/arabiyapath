@@ -53,6 +53,15 @@ import { Plus, Pencil, Trash2, Search, Image, Volume2, Eye, Wand2, Loader2 } fro
 import { toast } from "sonner";
 import { ImageUploader } from "../ImageUploader";
 import { AudioUploader } from "../AudioUploader";
+import { LessonMediaSettingsPanel } from "./LessonMediaSettingsPanel";
+import { LessonBulkImportDialog } from "./LessonBulkImportDialog";
+import { LessonHistoryDialog } from "./LessonHistoryDialog";
+import {
+  DEFAULT_MEDIA_SETTINGS,
+  buildImagePrompt,
+  parseMediaSettings,
+  type LessonMediaSettings,
+} from "@/lib/admin/lessonMediaSettings";
 
 interface LessonForm {
   title: string;
@@ -62,6 +71,7 @@ interface LessonForm {
   transliteration: string;
   image_url: string;
   audio_url: string;
+  media_settings: LessonMediaSettings;
 }
 
 export function LessonsTab() {
@@ -89,6 +99,7 @@ export function LessonsTab() {
     transliteration: "",
     image_url: "",
     audio_url: "",
+    media_settings: DEFAULT_MEDIA_SETTINGS,
   });
 
   // Image generation state
@@ -96,8 +107,11 @@ export function LessonsTab() {
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0, currentLesson: "" });
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
 
+  // Bulk import + history
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [historyLesson, setHistoryLesson] = useState<any>(null);
+
   // Single-lesson AI image generation (inside the edit dialog)
-  const [imagePrompt, setImagePrompt] = useState("");
   const [isGeneratingLessonImage, setIsGeneratingLessonImage] = useState(false);
 
   const generateImageForCurrentLesson = async () => {
@@ -105,7 +119,10 @@ export function LessonsTab() {
     setIsGeneratingLessonImage(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lesson-images", {
-        body: { lessonId: editingLesson.id, prompt: imagePrompt || undefined },
+        body: {
+          lessonId: editingLesson.id,
+          prompt: buildImagePrompt(form.title, form.media_settings),
+        },
       });
       if (error) throw error;
       if (!data?.success || !data?.imageUrl) {
@@ -219,7 +236,6 @@ export function LessonsTab() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingLesson(null);
-    setImagePrompt("");
     setForm({
       title: "",
       unit_id: "",
@@ -228,12 +244,12 @@ export function LessonsTab() {
       transliteration: "",
       image_url: "",
       audio_url: "",
+      media_settings: DEFAULT_MEDIA_SETTINGS,
     });
   };
 
   const openEdit = (lesson: any) => {
     setEditingLesson(lesson);
-    setImagePrompt("");
     setForm({
       title: lesson.title,
       unit_id: lesson.unit_id,
@@ -242,6 +258,7 @@ export function LessonsTab() {
       transliteration: lesson.transliteration || "",
       image_url: lesson.image_url || "",
       audio_url: lesson.audio_url || "",
+      media_settings: parseMediaSettings(lesson.media_settings),
     });
     setIsDialogOpen(true);
   };
