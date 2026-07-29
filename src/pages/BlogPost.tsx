@@ -11,6 +11,57 @@ import { Button } from "@/components/ui/button";
 import { generateBreadcrumbListSchema } from "@/lib/seo/breadcrumbs";
 import { generateFAQPageSchema, type FAQItem } from "@/components/seo/SEOHead";
 
+/** Extra per-post JSON-LD (e.g. HowTo) keyed by slug. */
+const EXTRA_SCHEMAS_BY_SLUG: Record<string, object[]> = {
+  "learn-gulf-arabic-online-for-beginners": [
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      name: "Learn Gulf Arabic Online for Beginners: The Comprehensive 2026 Guide",
+      description:
+        "A comprehensive guide for beginners to learn Gulf Arabic (Khaleeji) online. Discover why it's essential for expats in the UAE, Saudi Arabia, and Qatar, how it differs from Fusha, and a 4-step roadmap to learn it effectively.",
+      image: "https://arabiyapath.com/images/blog/learn-gulf-arabic-online-for-beginners.jpg",
+      totalTime: "PT6M",
+      supply: [
+        { "@type": "HowToSupply", name: "Internet connection" },
+        { "@type": "HowToSupply", name: "ArabiyaPath Arabic learning platform" },
+      ],
+      tool: [
+        { "@type": "HowToTool", name: "Computer or smartphone" },
+        { "@type": "HowToTool", name: "Headphones (optional)" },
+      ],
+      step: [
+        {
+          "@type": "HowToStep",
+          name: "Master the Sounds (Pronunciation First)",
+          text: "Start by listening to native Gulf Arabic audio and repeating it aloud to train your ear and tongue to the rhythm and melody of the Gulf dialect.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Learn Survival Phrases",
+          text: "Focus on building a solid foundation of high-frequency phrases such as greetings, numbers, and politeness expressions.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Dive into Basic Grammar and Vocabulary",
+          text: "After mastering the basics, start learning essential sentence structures and vocabulary related to your daily life.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Practice Consistently and Immerse Yourself",
+          text: "Practice the language regularly through conversations, listening to Gulf media, and using learning platforms like ArabiyaPath.",
+        },
+      ],
+      author: { "@type": "Organization", name: "ArabiyaPath" },
+      publisher: {
+        "@type": "Organization",
+        name: "ArabiyaPath",
+        logo: { "@type": "ImageObject", url: "https://arabiyapath.com/logo.png" },
+      },
+    },
+  ],
+};
+
 /** Parse Q/A pairs from an FAQ section in the markdown so we can emit FAQPage JSON-LD. */
 function extractFAQs(md: string): FAQItem[] {
   const sectionMatch = md.match(/##\s+(?:FAQ|FAQs|Frequently Asked Questions)[^\n]*\n([\s\S]*?)(?=\n##\s|$)/i);
@@ -96,6 +147,8 @@ export default function BlogPost() {
   const faqs = extractFAQs(post.content);
   const schemas: object[] = [articleSchema, breadcrumbSchema];
   if (faqs.length) schemas.push(generateFAQPageSchema(canonicalPath, faqs));
+  const extra = EXTRA_SCHEMAS_BY_SLUG[post.slug];
+  if (extra) schemas.push(...extra);
 
   return (
     <Layout>
