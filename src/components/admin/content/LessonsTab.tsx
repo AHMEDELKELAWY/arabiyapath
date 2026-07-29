@@ -475,14 +475,47 @@ export function LessonsTab() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="col-span-2 space-y-2">
                 <Label>Image</Label>
                 <ImageUploader
                   value={form.image_url}
                   onChange={(url) => setForm({ ...form, image_url: url })}
                   folder="lessons"
                 />
+                <div className="space-y-2 rounded-lg border border-dashed p-3">
+                  <Label htmlFor="image_prompt" className="text-xs text-muted-foreground">
+                    AI image prompt (optional — leave empty to use the lesson title)
+                  </Label>
+                  <Textarea
+                    id="image_prompt"
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    rows={2}
+                    placeholder="e.g., A friendly Gulf café scene with two people greeting each other"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2"
+                    disabled={!editingLesson || isGeneratingLessonImage}
+                    onClick={generateImageForCurrentLesson}
+                  >
+                    {isGeneratingLessonImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                    Generate Image with AI
+                  </Button>
+                  {!editingLesson && (
+                    <p className="text-xs text-muted-foreground">
+                      Save the lesson first to generate an image with AI.
+                    </p>
+                  )}
+                </div>
               </div>
+
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
