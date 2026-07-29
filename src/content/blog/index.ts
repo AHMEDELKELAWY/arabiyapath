@@ -113,6 +113,7 @@ const allPosts: BlogPost[] = [
   parseFrontmatter(hundredGulfPhrases),
   parseFrontmatter(isGulfArabicHard),
   parseFrontmatter(fushaVsAmmiyya),
+  parseFrontmatter(fushaAlphabet),
   parseFrontmatter(learnGulfArabicOnlineForBeginners),
 
 ];
