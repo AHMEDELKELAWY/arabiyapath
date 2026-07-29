@@ -167,6 +167,43 @@ async function ensurePurchaseExists(
 
   console.log(`Webhook: BACKUP purchase created: ${purchase.id}, user: ${pendingOrder.user_id}, product: ${pendingOrder.product_id}`);
 
+  // Receipt email (idempotent per capture — the client capture path uses the same key)
+  try {
+    const contact = await getUserContact(supabase, pendingOrder.user_id);
+    if (contact.email) {
+      await sendTransactionalEmail({
+        templateName: "purchase-receipt",
+        recipientEmail: contact.email,
+        idempotencyKey: `receipt-${captureId}`,
+        templateData: {
+          name: contact.name,
+          productName: pendingOrder.product_name,
+          amount: Number(captureAmount).toFixed(2),
+          currency: captureCurrency,
+          invoiceDate: formatDate(new Date().toISOString()),
+          transactionId: captureId,
+          orderId: paypalOrderId,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("Webhook: receipt email failed", e);
+  }
+
+  try {
+    await supabase.from("purchase_events").insert({
+      user_id: pendingOrder.user_id,
+      purchase_id: purchase.id,
+      provider_order_id: paypalOrderId,
+      provider_capture_id: captureId,
+      step: "access_granted",
+      status: "ok",
+      detail: { source: "webhook_backup", product_id: pendingOrder.product_id },
+    });
+  } catch (e) {
+    console.error("Webhook: purchase_events log failed", e);
+  }
+
   // Update coupon usage
   if (pendingOrder.coupon_id) {
     await supabase.rpc("increment_coupon_usage", { coupon_id: pendingOrder.coupon_id });
