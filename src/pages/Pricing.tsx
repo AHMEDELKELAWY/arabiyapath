@@ -50,7 +50,7 @@ export default function Pricing() {
     <>
       <SEOHead
         title={`${PRODUCT_NAME} — Pricing`}
-        description="Join the ArabiyaPath Membership. Free plan available. Monthly, 6-month, and yearly plans with full access to native audio, speaking, listening, quizzes, and certificate."
+        description="ArabiyaPath Membership plans: free tier plus monthly, 6-month, and yearly access to native audio, speaking, listening, quizzes, and certificates."
         canonicalPath="/pricing"
         jsonLd={[breadcrumbSchema, faqPageSchema]}
       />

@@ -345,7 +345,7 @@ export default function FushaArabicLanding() {
                   { href: "/blog/fusha-vs-ammiyya", label: "Fusha vs. Ammiyya" },
                   { href: "/blog/learn-arabic-beginners-guide", label: "Learn Arabic: beginner's guide" },
                   { href: "/blog/learn-arabic-online", label: "Learn Arabic online" },
-
+                  { href: "/learn/99-names-of-allah", label: "The 99 Names of Allah (Asma ul Husna)" },
                   { href: "/flashcards", label: "Fusha vocabulary flashcards" },
                 ].map((l) => (
                   <Link

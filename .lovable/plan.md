@@ -1,60 +1,58 @@
-## Where the site stands today (Semrush, US database)
+## Where the site stands (Semrush, US database, today)
 
-- 15 organic keywords, ~0 estimated monthly organic traffic. The site is indexed but nothing ranks on page 1 yet.
-- Every ranking keyword belongs to just two pages: `/learn/gulf-arabic` and `/learn/fusha-arabic`. The 23 blog posts rank for nothing measurable.
-- Best positions: `fusha arabic` (720/mo) at #18, `fus ha` (260/mo) at #20, `khaliji arabic` (260/mo) at #28, `arabic khaleeji` (90/mo) at #20, `what is fusha arabic` (40/mo) at #16.
-- Competitors are small and beatable: masterfusha.com, yallakhaleeji.com, gulfarabicresources.com, al-fusha.com. Nobody dominates "Gulf/Khaleeji Arabic" learning.
+- 16 organic keywords, ~1 estimated visit/month. Indexed, nothing on page 1 yet.
+- All rankings sit on two pages: `/learn/fusha-arabic` and `/learn/gulf-arabic`. The 25+ blog posts rank for nothing measurable.
+- Closest wins: `fusha` (4,400/mo) at #19 · `fusha arabic` (720/mo) at #18 · `fus ha` (260/mo) at #20 · `arabic khaleeji` (90/mo) at #20 · `fusha in arabic` (140/mo) at #22 · `learn fusha arabic` (30/mo) at #23 · `what is fusha arabic` (40/mo) at #16.
+- Mid-page-3 opportunities: `khaliji arabic` (260/mo) #28 · `khaleeji arabic` (110/mo) #31 · `fusha arabic alphabet` (50/mo) #31 · `gulf arabic dialect` (320/mo) #40.
 
-Read: the technical foundation is fine (helmet-based per-route meta, sitemap, robots, JSON-LD). The gap is **topical depth on the two themes that already work** and **zero authority signals**. Positions 16–28 are the fastest money — a page at #18 needs a push, not a rewrite.
+Read: technical SEO is solid (Helmet per-route meta, JSON-LD, sitemap, robots). The gap is **topical depth on the two themes that already rank** and **near-zero authority**. Positions 16–23 are the fastest money.
 
 ## Strategy
 
-Stop spreading across generic "learn arabic online" head terms (that's what the 23 blog posts chase, and they rank for nothing). Own two clusters instead:
+Own two clusters instead of chasing generic "learn arabic online" head terms (what most existing blog posts do, ranking for nothing):
 
-1. **Khaleeji / Gulf Arabic** — the least contested niche in the data, and the paid product.
-2. **Fusha / MSA** — already the strongest signal, feeds the Spoken Arabic + vocabulary products.
+1. **Fusha / MSA** — strongest current signal, feeds Spoken Arabic + vocabulary products.
+2. **Khaleeji / Gulf Arabic** — least contested niche in the data, and the paid product.
 
-## Phase 1 — Harvest what's already ranking (weeks 1–2)
+## Phase 1 — Harvest existing rankings (weeks 1–2)
 
-Rewrite and expand the two landing pages that hold all current rankings.
-
-- `/learn/fusha-arabic`: target `fusha arabic`, `fus ha`, `fusha in arabic`, `what is fusha arabic`. Add an explicit "What is Fusha Arabic?" H2 with a direct 40-word answer, a Fusha-vs-dialect comparison table, and an alphabet section (`fusha arabic alphabet` is ranking at #31).
-- `/learn/gulf-arabic`: target `khaliji arabic`, `arabic khaleeji`, `khaleeji arabic`, `gulf arabic dialect`, `khaleeji meaning in arabic`. Add a "Khaleeji meaning" answer block and a country-by-country dialect breakdown (UAE, Saudi, Qatar, Kuwait, Bahrain, Oman).
-- Add `FAQPage` + `Course` JSON-LD to both (helpers already exist in `SEOHead.tsx`).
-- Internal links from every blog post and the homepage into these two hubs with descriptive anchor text.
+- `/learn/fusha-arabic`: expand for `fusha`, `fusha arabic`, `fus ha`, `fusha in arabic`, `what is fusha arabic`, `learn fusha arabic`. Add a direct-answer "What is Fusha Arabic?" block (40 words, first screen), a Fusha-vs-dialect comparison table, and an alphabet section.
+- `/learn/gulf-arabic`: expand for `khaliji arabic`, `khaleeji arabic`, `arabic khaleeji`, `gulf arabic dialect`, `khaleeji meaning in arabic`. Add a "Khaleeji meaning" answer block and a country-by-country breakdown (UAE, Saudi, Qatar, Kuwait, Bahrain, Oman).
+- Ensure `FAQPage` + `Course` JSON-LD on both (helpers exist in `SEOHead.tsx`).
+- Internal-link into both hubs from the homepage and every relevant blog post with descriptive anchors.
 
 ## Phase 2 — Build the two clusters (weeks 3–8)
 
-New supporting pages, each linking up to its hub:
+New supporting pages, each linking up to its hub, ~1,200–1,800 words, one H1, direct answer in the first 60 words, FAQ block with schema, CTA into the free-lesson funnel.
 
-**Gulf cluster:** Khaleeji vs Egyptian Arabic · Gulf Arabic alphabet & pronunciation · Emirati vs Saudi vs Kuwaiti dialect · 100 Gulf Arabic phrases · Gulf Arabic numbers · Is Gulf Arabic hard to learn?
-
-**Fusha cluster:** Fusha Arabic alphabet (full guide) · Fusha vs Ammiyya · MSA grammar basics for beginners · Fusha Arabic pronunciation · Learn to read Arabic in 30 days
-
-Each page: one H1, direct-answer paragraph in the first 60 words, 1,200–1,800 words, FAQ block with `FAQPage` schema, and a CTA into the free lesson funnel.
+- **Fusha:** Fusha Arabic alphabet (full guide) · Fusha vs Ammiyya · MSA grammar basics for beginners · Fusha pronunciation · Learn to read Arabic in 30 days · "Fusha translator" intent page (currently #24).
+- **Gulf:** Khaleeji vs Egyptian · Gulf Arabic alphabet & pronunciation · Emirati vs Saudi vs Kuwaiti · 100 Gulf Arabic phrases · Gulf Arabic numbers · Is Gulf Arabic hard to learn?
+- **One high-traffic adjacent asset:** a 99 Names of Allah (Asma ul Husna) guide at `/learn/99-names-of-allah` — Arabic text, transliteration, meanings. It drives >6% of a top competitor's organic traffic.
 
 ## Phase 3 — Fix the existing blog (weeks 3–4, parallel)
 
-The 23 posts targeting `learn arabic online`, `online arabic classes`, `arabic lessons online`, etc. compete with Duolingo, Preply and italki and will not rank.
+- Keep and rewrite the posts that fit the clusters (`learn-gulf-arabic-online`, `gulf-vs-fusha-arabic`, `fusha-vs-gulf-arabic`, `why-learn-gulf-arabic`, `fusha-arabic-alphabet`, `khaleeji-vs-egyptian-arabic`).
+- Consolidate the near-duplicate head-term posts (`learn-arabic-online`, `learn-arabic-language-online`, `learnarabiconline`, `arabic-language-online`, `study-arabic-online`, `arabic-lessons-online`, `online-arabic-classes`) into one pillar; 301 the rest via `src/content/blog/redirects.ts`. Thin duplicates suppress the whole domain.
+- Repoint surviving internal links at the two hubs. Confirm `Article` + `BreadcrumbList` JSON-LD on every post.
 
-- Keep and rewrite the 4 that fit the clusters (`learn-gulf-arabic-online`, `gulf-vs-fusha-arabic`, `fusha-vs-gulf-arabic`, `why-learn-gulf-arabic`).
-- Consolidate the near-duplicate head-term posts (`learn-arabic-online`, `learn-arabic-language-online`, `learnarabiconline`, `arabic-language-online`, `study-arabic-online`) into one strong pillar; 301 the rest to it. Duplicate thin pages actively suppress the whole domain.
-- Repoint the survivors' internal links at the two hubs.
+## Phase 4 — Authority, indexing & polish (ongoing)
 
-## Phase 4 — Authority & technical polish (ongoing)
-
-- Backlinks: the profile is effectively empty, which is why nothing crosses position 15. Target expat-in-Dubai forums and communities, Arabic-learning subreddit resource lists, language-blog guest posts, and directory listings for the free Gulf lesson.
-- Programmatic depth: generate indexable pages from the existing curriculum data (dialect → level → unit overviews) where the content is genuinely unique. Add these to the sitemap generator.
-- Sitemap: `public/sitemap.xml` is currently hand-maintained and drifting from the routes. Move it to the generator script pattern so new pages and blog posts are picked up automatically.
-- Core Web Vitals: the Houria page already uses `LiteYouTube` and split bundles — apply the same treatment to the two learn hubs.
-- Add `Article` + `BreadcrumbList` JSON-LD to every blog post.
+- **Google Search Console** is not connected — connect it, verify `https://arabiyapath.com/`, and submit the sitemap. Without it there is no query, coverage, or indexing data at all.
+- **Backlinks** are effectively zero, which is why nothing crosses position 15: expat-in-Dubai/Saudi forums, r/learn_arabic resource lists, language-blog guest posts, directory listings for the free Gulf lesson.
+- **Sitemap:** `public/sitemap.xml` is hand-maintained and drifting. Move to `scripts/generate-sitemap.ts` wired to `predev`/`prebuild` so new pages and posts are picked up automatically.
+- **Metadata hygiene:** shorten meta descriptions on `Pricing.tsx` and `GulfArabicCourse.tsx` to under 160 chars.
+- **Content hygiene:** fix the H1→H3 heading skip in `ContactMethods.tsx`.
+- **AI search:** add `public/llms.txt` listing public pages only (no admin, auth, or dashboard routes).
+- **Core Web Vitals:** apply the `LiteYouTube` + split-bundle treatment already used on the Houria page to the two learn hubs.
 
 ## Measurement
 
-Track monthly: position of the 15 known keywords, indexed page count, referring domains, and free-lesson signups from organic. Realistic target: the two hubs into positions 5–10 within 3 months, first meaningful organic traffic by month 4.
+Monthly: positions of the 16 known keywords, indexed page count (via Search Console once connected), referring domains, and free-lesson signups from organic. Realistic target: both hubs into positions 5–10 within 3 months, first meaningful organic traffic by month 4.
 
 ## Technical notes
 
-Nothing here requires new infrastructure. `SEOHead.tsx` already handles per-route title/description/canonical/OG/JSON-LD; `generateFAQPageSchema` and `generateCourseSchema` exist. Work is: content in `src/pages/learn/*` and `src/content/blog/*`, redirect handling in `FullAppRoutes.tsx`, and replacing the static `public/sitemap.xml` with `scripts/generate-sitemap.ts` wired to `predev`/`prebuild`.
+No new infrastructure needed. Work lands in `src/pages/learn/*`, `src/content/blog/*`, redirects in `src/content/blog/redirects.ts` / `FullAppRoutes.tsx`, and replacing the static sitemap with the generator script. `SEOHead.tsx` already handles per-route title/description/canonical/OG/JSON-LD; `generateFAQPageSchema`, `generateCourseSchema`, and `generateBreadcrumbListSchema` exist.
 
-Data source: Semrush (US database).
+Note: this is a client-rendered SPA, so social-preview crawlers see only the static `index.html` head. Per-page social previews would need SSR — the app can get that by upgrading to Lovable's latest template ([what the upgrade gives you](https://lovable.dev/blog/building-apps-using-tanstack-start)).
+
+Data sources: Semrush (US database) and the SEO scan now running.
