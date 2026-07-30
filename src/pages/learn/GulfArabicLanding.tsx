@@ -149,7 +149,27 @@ export default function GulfArabicLanding() {
                   <Link to="/gulf-arabic-course#choose-your-plan">View Pricing</Link>
                 </Button>
               </div>
+
+              <Link
+                to="/blog/100-gulf-arabic-phrases"
+                className="group mt-10 inline-flex w-full max-w-2xl items-center gap-4 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-left transition-colors hover:bg-primary/10"
+              >
+                <span className="shrink-0 rounded-xl bg-primary/15 p-3 text-2xl" aria-hidden="true">📘</span>
+                <span className="flex-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-primary">
+                    Free cheat sheet
+                  </span>
+                  <span className="block text-base sm:text-lg font-semibold text-foreground">
+                    100 Essential Gulf Arabic Phrases (Khaleeji)
+                  </span>
+                  <span className="block text-sm text-muted-foreground">
+                    Greetings, shopping, taxis and work — with transliteration and audio-ready examples.
+                  </span>
+                </span>
+                <ArrowRight className="w-5 h-5 shrink-0 text-primary transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
+
           </div>
         </section>
 
