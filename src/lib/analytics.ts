@@ -87,6 +87,13 @@ export const trackPurchase = (params: {
       currency: params.currency || 'USD',
       items: params.items ?? [],
     });
+    console.info('[GA4] purchase sent', {
+      transaction_id: params.transactionId,
+      value: params.value,
+      currency: params.currency || 'USD',
+    });
+  } else {
+    console.warn('[GA4] purchase skipped — gtag not loaded', params.transactionId);
   }
 
   if (typeof (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq !== 'undefined') {
