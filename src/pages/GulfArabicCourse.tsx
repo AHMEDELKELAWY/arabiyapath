@@ -173,7 +173,7 @@ export default function GulfArabicCourse() {
     <>
       <SEOHead
         title="Gulf Arabic Course for Expats"
-        description="Learn Gulf Arabic for real life in the UAE & GCC with native audio, practical phrases, and interactive quizzes. Lifetime access. PayPal checkout."
+        description="Learn Gulf Arabic for real life in the UAE and GCC with native audio, practical phrases, and interactive quizzes. Lifetime access."
         canonicalPath="/gulf-arabic-course"
         jsonLd={[breadcrumbSchema, courseSchema]}
       />
