@@ -1,0 +1,35 @@
+# ArabiyaPath
+
+> Learn Arabic online — Gulf (Khaleeji) Arabic, Modern Standard Arabic (Fusha), and spoken vocabulary courses with native audio, quizzes, and certificates.
+
+ArabiyaPath teaches Arabic to expats, professionals, and language learners through structured levels, native-recorded audio, spaced-repetition vocabulary, and assessments. The two main learning tracks are Gulf Arabic (used across the UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, and Oman) and Fusha / Modern Standard Arabic.
+
+## Pages
+
+- [Home](/): Overview of the ArabiyaPath courses and learning method.
+- [Learn Gulf Arabic (Khaleeji)](/learn/gulf-arabic): What Gulf Arabic is, country-by-country dialect differences, and the full Gulf course.
+- [Learn Fusha Arabic (MSA)](/learn/fusha-arabic): What Fusha Arabic is, the alphabet, and the Modern Standard Arabic course.
+- [99 Names of Allah](/learn/99-names-of-allah): Asma ul Husna with Arabic script, transliteration, and English meanings.
+- [Dialects](/dialects): Comparison of the Arabic dialects taught on the site.
+- [Gulf Arabic Course](/gulf-arabic-course): Curriculum, pricing, and enrollment for the Gulf Arabic course.
+- [Spoken Arabic & Vocabulary](/flashcards): Premium MSA vocabulary units with audio, images, and spaced repetition.
+- [Free Gulf Arabic Lesson](/free-gulf-lesson): A free introductory Gulf Arabic lesson.
+- [Pricing](/pricing): Membership plans and course pricing.
+- [About](/about): Who is behind ArabiyaPath.
+- [FAQ](/faq): Common questions about the courses, access, and certificates.
+- [Contact](/contact): How to reach the ArabiyaPath team.
+
+## Blog
+
+- [Blog](/blog): Guides on learning Gulf and Fusha Arabic.
+- [Learn Gulf Arabic Online for Beginners](/blog/learn-gulf-arabic-online-for-beginners): Step-by-step beginner guide.
+- [Arabic for Expats](/blog/arabic-for-expats-guide): Which Arabic to learn when living in the Gulf.
+- [Gulf vs Fusha Arabic](/blog/gulf-vs-fusha-arabic): How the dialect and the standard language differ.
+- [Fusha Arabic Alphabet](/blog/fusha-arabic-alphabet): The Arabic alphabet with pronunciation.
+- [100 Gulf Arabic Phrases](/blog/100-gulf-arabic-phrases): Practical everyday phrases.
+
+## Optional
+
+- [Become an Affiliate](/become-affiliate): Partner program details.
+- [Privacy Policy](/privacy)
+- [Terms of Service](/terms)
