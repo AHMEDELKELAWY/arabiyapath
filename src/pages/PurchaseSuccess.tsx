@@ -46,15 +46,18 @@ export default function PurchaseSuccess() {
   useEffect(() => {
     if (!purchase || !transactionId) return;
     if (!["active", "completed"].includes(purchase.status)) return;
+    const productType = purchase.product_type || "course";
     trackPurchase({
       transactionId,
       value: Number(purchase.amount ?? 0),
       currency: purchase.currency || "USD",
+      productType,
       items: [
         {
           item_id: purchase.product_id,
           item_name: purchase.product_name || "ArabiyaPath course",
-          item_category: purchase.product_type || "course",
+          item_category: productType,
+          product_type: productType,
           price: Number(purchase.amount ?? 0),
           quantity: 1,
         },
