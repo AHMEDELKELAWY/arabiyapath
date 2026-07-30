@@ -44,6 +44,7 @@ const staticEntries: SitemapEntry[] = [
   { path: "/dialects", changefreq: "monthly", priority: "0.7" },
   { path: "/learn/gulf-arabic", changefreq: "weekly", priority: "1.0" },
   { path: "/learn/fusha-arabic", changefreq: "weekly", priority: "1.0" },
+  { path: "/learn/99-names-of-allah", changefreq: "monthly", priority: "0.8" },
 
   // Products
   { path: "/flashcards", changefreq: "weekly", priority: "0.9" },
