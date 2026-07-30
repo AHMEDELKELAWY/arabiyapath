@@ -64,6 +64,7 @@ const StartFree = lazy(() => import("./pages/StartFree"));
 const CertificateView = lazy(() => import("./pages/CertificateView"));
 const GulfArabicLanding = lazy(() => import("./pages/learn/GulfArabicLanding"));
 const FushaArabicLanding = lazy(() => import("./pages/learn/FushaArabicLanding"));
+const NamesOfAllah = lazy(() => import("./pages/learn/NamesOfAllah"));
 const EgyptianArabicComingSoon = lazy(() => import("./pages/learn/EgyptianArabicComingSoon"));
 const DialectOverview = lazy(() => import("./pages/learn/DialectOverview"));
 const LevelOverview = lazy(() => import("./pages/learn/LevelOverview"));
@@ -209,6 +210,7 @@ export default function FullAppRoutes() {
             <Route path="/certificate/:certCode" element={<CertificateView />} />
             <Route path="/learn/gulf-arabic" element={<GulfArabicLanding />} />
             <Route path="/learn/fusha-arabic" element={<FushaArabicLanding />} />
+            <Route path="/learn/99-names-of-allah" element={<NamesOfAllah />} />
             <Route path="/learn/egyptian-arabic" element={<EgyptianArabicComingSoon />} />
             <Route path="/learn/dialect/:dialectId" element={<DialectOverview />} />
             <Route path="/learn/level/:levelId" element={<LevelOverview />} />
