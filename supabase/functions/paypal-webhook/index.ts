@@ -301,9 +301,19 @@ serve(async (req) => {
     
     console.log("PayPal webhook received:", body.event_type);
     
-    const isValid = await verifyWebhookSignature(req, body, rawBody);
-    
-    if (!isValid) {
+    const verifyResult = await verifyWebhookSignature(req, body, rawBody);
+
+    if (verifyResult === "UNAVAILABLE") {
+      // We could not reach PayPal's verification API (network error/timeout/5xx).
+      // 503 tells PayPal to retry later rather than treating this as a rejection.
+      console.error("Webhook verification unavailable - asking PayPal to retry");
+      return new Response(
+        JSON.stringify({ error: "Verification temporarily unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (verifyResult !== "SUCCESS") {
       console.error("Invalid webhook signature - rejecting request");
       return new Response(
         JSON.stringify({ error: "Invalid webhook signature" }),
@@ -328,12 +338,18 @@ serve(async (req) => {
         const customId = body.resource.custom_id;
         const captureAmount = parseFloat(body.resource.amount?.value || "0");
         const captureCurrency = body.resource.amount?.currency_code || "USD";
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
         console.log(`Webhook CAPTURE.COMPLETED: captureId=${captureId}, orderId=${orderId}, customId=${customId}`);
 
-        if (orderId && customId) {
-          // customId is the pending_order_id
+        if (orderId && customId && UUID_RE.test(String(customId))) {
+          // customId is the pending_order_id for one-time course/pack purchases
           await ensurePurchaseExists(supabase, orderId, captureId, captureAmount, captureCurrency, customId);
+        } else if (customId && !UUID_RE.test(String(customId))) {
+          // Subscription-originated capture (custom_id = user id on the PayPal
+          // subscription) — recurring revenue is recorded by PAYMENT.SALE.COMPLETED.
+          console.log(`Webhook: capture ${captureId} is not a pending-order capture; handled elsewhere.`);
+
         } else {
           // Try to find by capture ID directly and update status
           const { data: purchase } = await supabase
