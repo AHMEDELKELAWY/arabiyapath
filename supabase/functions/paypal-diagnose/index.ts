@@ -20,9 +20,54 @@ async function token() {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { subscriptionId, planId, webhooks, repairWebhook, simulateEvents } = await req.json();
+    const { subscriptionId, planId, webhooks, repairWebhook, simulateEvents, listEvents, resendEventId } = await req.json();
     const t = await token();
     const out: any = {};
+
+    // Real (non-simulated) webhook events PayPal has already tried to deliver.
+    if (listEvents) {
+      const qs = new URLSearchParams({ page_size: "20" });
+      if (typeof listEvents === "string") qs.set("event_status", listEvents);
+      const r = await fetch(`${BASE}/v1/notifications/webhooks-events?${qs}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const b = await r.json().catch(() => null);
+      out.events = {
+        status: r.status,
+        items: (b?.events || []).map((e: any) => ({
+          id: e.id,
+          event_type: e.event_type,
+          status: e.status,
+          create_time: e.create_time,
+          summary: e.summary,
+        })),
+      };
+    }
+
+    // Re-deliver a REAL stored event to the registered webhook. PayPal re-signs it
+    // with real headers, so verify-webhook-signature works (unlike the simulator).
+    if (resendEventId) {
+      const wr = await fetch(`${BASE}/v1/notifications/webhooks`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const wl = await wr.json().catch(() => null);
+      const selfUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paypal-webhook`;
+      const hook = (wl?.webhooks || []).find((w: any) => w.url === selfUrl);
+      const r = await fetch(`${BASE}/v1/notifications/webhooks-events/${resendEventId}/resend`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ webhook_ids: hook ? [hook.id] : [] }),
+      });
+      const b = await r.json().catch(() => null);
+      out.resend = {
+        event_id: resendEventId,
+        target_webhook_id_tail: hook ? String(hook.id).slice(-6) : null,
+        status: r.status,
+        event_status: b?.status ?? null,
+        error: r.ok ? null : b,
+      };
+    }
+
     if (webhooks) {
       const configuredId = Deno.env.get("PAYPAL_WEBHOOK_ID") || null;
       const r = await fetch(`${BASE}/v1/notifications/webhooks`, {
