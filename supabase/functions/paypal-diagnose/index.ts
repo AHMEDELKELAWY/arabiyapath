@@ -103,6 +103,20 @@ serve(async (req) => {
       };
     }
 
+    // Ask PayPal to send genuinely signed test events to the registered URL.
+    if (simulateEvents) {
+      const selfUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paypal-webhook`;
+      out.simulations = [];
+      for (const name of simulateEvents as string[]) {
+        const r = await fetch(`${BASE}/v1/notifications/simulate-event`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: selfUrl, event_type: name }),
+        });
+        const b = await r.json().catch(() => null);
+        out.simulations.push({ event_type: name, status: r.status, error: r.ok ? null : b });
+      }
+    }
 
 
     if (subscriptionId) {
