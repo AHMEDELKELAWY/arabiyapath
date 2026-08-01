@@ -297,7 +297,26 @@ serve(async (req) => {
 
   try {
     const rawBody = await req.text();
-    const body = JSON.parse(rawBody);
+
+    // GET/HEAD or an empty/malformed body is never a real PayPal event.
+    // Answer 400 (permanent) instead of throwing a 500, which PayPal treats as
+    // a soft error and retries for days.
+    if (!rawBody.trim()) {
+      return new Response(
+        JSON.stringify({ error: "Empty request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     
     console.log("PayPal webhook received:", body.event_type);
     
