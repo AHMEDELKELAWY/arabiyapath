@@ -114,7 +114,14 @@ serve(async (req) => {
       const text = await res.text();
       let json: any = null;
       try { json = text ? JSON.parse(text) : null; } catch { /* PayPal returns empty body on 204 */ }
-      if (!res.ok) throw new Error(`PayPal ${path} failed: ${res.status} ${text}`);
+      if (!res.ok) {
+        let detail = text;
+        try {
+          const parsed = JSON.parse(text);
+          detail = parsed?.details?.[0]?.description || parsed?.message || text;
+        } catch { /* keep raw text */ }
+        throw new Error(`PayPal rejected this change (${res.status}): ${detail}`);
+      }
       return json;
     }
 
