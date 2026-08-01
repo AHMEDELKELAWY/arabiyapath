@@ -33,66 +33,87 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+type VerifyResult = "SUCCESS" | "FAILURE" | "UNAVAILABLE";
+
 async function verifyWebhookSignature(
   req: Request,
-  body: any,
+  _body: unknown,
   rawBody: string
-): Promise<boolean> {
+): Promise<VerifyResult> {
   const webhookId = Deno.env.get("PAYPAL_WEBHOOK_ID");
-  
+
   if (!webhookId) {
     console.error("PAYPAL_WEBHOOK_ID not configured - rejecting webhook");
-    return false;
+    return "FAILURE";
   }
-  
+
   const transmissionId = req.headers.get("PAYPAL-TRANSMISSION-ID");
   const transmissionTime = req.headers.get("PAYPAL-TRANSMISSION-TIME");
   const certUrl = req.headers.get("PAYPAL-CERT-URL");
   const authAlgo = req.headers.get("PAYPAL-AUTH-ALGO");
   const transmissionSig = req.headers.get("PAYPAL-TRANSMISSION-SIG");
-  
+
   if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
     console.error("Missing PayPal signature headers");
-    return false;
+    return "FAILURE";
   }
-  
+
+  // CRITICAL: the signature is computed over the EXACT bytes PayPal sent.
+  // Re-serializing the parsed object (JSON.stringify(body)) changes key order,
+  // number formatting ("0.0" -> 0) and unicode escaping, which makes PayPal's
+  // verify API answer FAILURE for perfectly valid deliveries. So we splice the
+  // raw body string into the verification payload untouched.
+  const verifyPayload =
+    `{"transmission_id":${JSON.stringify(transmissionId)},` +
+    `"transmission_time":${JSON.stringify(transmissionTime)},` +
+    `"cert_url":${JSON.stringify(certUrl)},` +
+    `"auth_algo":${JSON.stringify(authAlgo)},` +
+    `"transmission_sig":${JSON.stringify(transmissionSig)},` +
+    `"webhook_id":${JSON.stringify(webhookId)},` +
+    `"webhook_event":${rawBody}}`;
+
   try {
     const accessToken = await getPayPalAccessToken();
-    
-    const verifyResponse = await fetch(
-      `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          transmission_id: transmissionId,
-          transmission_time: transmissionTime,
-          cert_url: certUrl,
-          auth_algo: authAlgo,
-          transmission_sig: transmissionSig,
-          webhook_id: webhookId,
-          webhook_event: body,
-        }),
-      }
-    );
-    
-    if (!verifyResponse.ok) {
-      console.error("PayPal verification API error:", verifyResponse.status);
-      return false;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    let verifyResponse: Response;
+    try {
+      verifyResponse = await fetch(
+        `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+          },
+          body: verifyPayload,
+          signal: controller.signal,
+        }
+      );
+    } finally {
+      clearTimeout(timer);
     }
-    
+
+    if (!verifyResponse.ok) {
+      const detail = await verifyResponse.text().catch(() => "");
+      console.error("PayPal verification API error:", verifyResponse.status, detail.slice(0, 500));
+      // Transport/PayPal-side problem: ask PayPal to retry instead of
+      // permanently rejecting a possibly-valid event.
+      return verifyResponse.status >= 500 ? "UNAVAILABLE" : "FAILURE";
+    }
+
     const verification = await verifyResponse.json();
     console.log("Webhook verification result:", verification.verification_status);
-    
-    return verification.verification_status === "SUCCESS";
+
+    return verification.verification_status === "SUCCESS" ? "SUCCESS" : "FAILURE";
   } catch (error) {
     console.error("Webhook verification error:", error);
-    return false;
+    return "UNAVAILABLE";
   }
 }
+
+
 
 /**
  * Backup path: create a purchase from pending_order if the client-side capture flow failed.
@@ -280,9 +301,19 @@ serve(async (req) => {
     
     console.log("PayPal webhook received:", body.event_type);
     
-    const isValid = await verifyWebhookSignature(req, body, rawBody);
-    
-    if (!isValid) {
+    const verifyResult = await verifyWebhookSignature(req, body, rawBody);
+
+    if (verifyResult === "UNAVAILABLE") {
+      // We could not reach PayPal's verification API (network error/timeout/5xx).
+      // 503 tells PayPal to retry later rather than treating this as a rejection.
+      console.error("Webhook verification unavailable - asking PayPal to retry");
+      return new Response(
+        JSON.stringify({ error: "Verification temporarily unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (verifyResult !== "SUCCESS") {
       console.error("Invalid webhook signature - rejecting request");
       return new Response(
         JSON.stringify({ error: "Invalid webhook signature" }),
@@ -307,12 +338,18 @@ serve(async (req) => {
         const customId = body.resource.custom_id;
         const captureAmount = parseFloat(body.resource.amount?.value || "0");
         const captureCurrency = body.resource.amount?.currency_code || "USD";
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
         console.log(`Webhook CAPTURE.COMPLETED: captureId=${captureId}, orderId=${orderId}, customId=${customId}`);
 
-        if (orderId && customId) {
-          // customId is the pending_order_id
+        if (orderId && customId && UUID_RE.test(String(customId))) {
+          // customId is the pending_order_id for one-time course/pack purchases
           await ensurePurchaseExists(supabase, orderId, captureId, captureAmount, captureCurrency, customId);
+        } else if (customId && !UUID_RE.test(String(customId))) {
+          // Subscription-originated capture (custom_id = user id on the PayPal
+          // subscription) — recurring revenue is recorded by PAYMENT.SALE.COMPLETED.
+          console.log(`Webhook: capture ${captureId} is not a pending-order capture; handled elsewhere.`);
+
         } else {
           // Try to find by capture ID directly and update status
           const { data: purchase } = await supabase
