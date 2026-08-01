@@ -42,6 +42,69 @@ serve(async (req) => {
       };
     }
 
+    // Repair mode: force PayPal's registration to point at the real edge
+    // function URL and subscribe every event the handler implements.
+    if (repairWebhook) {
+      const TARGET_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paypal-webhook`;
+      const EVENTS = [
+        "BILLING.SUBSCRIPTION.CREATED",
+        "BILLING.SUBSCRIPTION.ACTIVATED",
+        "BILLING.SUBSCRIPTION.CANCELLED",
+        "BILLING.SUBSCRIPTION.SUSPENDED",
+        "BILLING.SUBSCRIPTION.EXPIRED",
+        "PAYMENT.SALE.COMPLETED",
+        "PAYMENT.SALE.DENIED",
+        "PAYMENT.SALE.REFUNDED",
+        "PAYMENT.CAPTURE.COMPLETED",
+        "PAYMENT.CAPTURE.DENIED",
+        "PAYMENT.CAPTURE.REFUNDED",
+        "CHECKOUT.ORDER.APPROVED",
+      ].map((name) => ({ name }));
+
+      const listRes = await fetch(`${BASE}/v1/notifications/webhooks`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const existing = (await listRes.json().catch(() => ({})))?.webhooks || [];
+      const steps: any[] = [];
+      let finalId: string | null = null;
+
+      // Reuse an existing hook (PayPal allows a limited number per app).
+      const reuse = existing.find((w: any) => w.url === TARGET_URL) || existing[0];
+      if (reuse) {
+        const patchRes = await fetch(`${BASE}/v1/notifications/webhooks/${reuse.id}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify([
+            { op: "replace", path: "/url", value: TARGET_URL },
+            { op: "replace", path: "/event_types", value: EVENTS },
+          ]),
+        });
+        const patched = await patchRes.json().catch(() => null);
+        steps.push({ action: "patch", status: patchRes.status, detail: patchRes.ok ? null : patched });
+        if (patchRes.ok) finalId = patched.id;
+      }
+
+      if (!finalId) {
+        const createRes = await fetch(`${BASE}/v1/notifications/webhooks`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: TARGET_URL, event_types: EVENTS }),
+        });
+        const created = await createRes.json().catch(() => null);
+        steps.push({ action: "create", status: createRes.status, detail: createRes.ok ? null : created });
+        if (createRes.ok) finalId = created.id;
+      }
+
+      out.repair = {
+        target_url: TARGET_URL,
+        steps,
+        webhook_id: finalId,
+        webhook_id_matches_secret: finalId === Deno.env.get("PAYPAL_WEBHOOK_ID"),
+      };
+    }
+
+
+
     if (subscriptionId) {
       const r = await fetch(`${BASE}/v1/billing/subscriptions/${subscriptionId}`, {
         headers: { Authorization: `Bearer ${t}` },
