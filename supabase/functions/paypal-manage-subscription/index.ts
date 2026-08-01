@@ -22,10 +22,13 @@ const corsHeaders = {
 
 const PAYPAL_API_BASE = "https://api-m.paypal.com";
 
+// Live v2 plans (must match paypal-create-subscription/index.ts).
+// The old v1 plan IDs were DEACTIVATED in PayPal, which made /revise fail with
+// 422 PLAN_STATUS_INVALID ("plan status should be active").
 const PLAN_MAP: Record<string, string> = {
-  monthly:    "P-4TD79441C9251073ENJEEFAA",
-  six_months: "P-7273220749612745YNJEEKGQ",
-  yearly:     "P-6PH57317JM699332JNJEEMVI",
+  monthly:    "P-6G937167XK6712549NJEWG5I",
+  six_months: "P-8YP45029U5368604VNJEWG5I",
+  yearly:     "P-26E640386G512542KNJEWG5Q",
 };
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -111,7 +114,14 @@ serve(async (req) => {
       const text = await res.text();
       let json: any = null;
       try { json = text ? JSON.parse(text) : null; } catch { /* PayPal returns empty body on 204 */ }
-      if (!res.ok) throw new Error(`PayPal ${path} failed: ${res.status} ${text}`);
+      if (!res.ok) {
+        let detail = text;
+        try {
+          const parsed = JSON.parse(text);
+          detail = parsed?.details?.[0]?.description || parsed?.message || text;
+        } catch { /* keep raw text */ }
+        throw new Error(`PayPal rejected this change (${res.status}): ${detail}`);
+      }
       return json;
     }
 
