@@ -35,17 +35,61 @@ async function getPayPalAccessToken(): Promise<string> {
 
 type VerifyResult = "SUCCESS" | "FAILURE" | "UNAVAILABLE";
 
+// The webhook ID used for signature verification MUST be the ID of the webhook
+// registration in PayPal that actually points at THIS endpoint. A stale
+// PAYPAL_WEBHOOK_ID secret (e.g. left over from an older registration) makes
+// PayPal's verify API return FAILURE for every otherwise-valid delivery.
+// So we resolve it from PayPal itself by matching our own URL, and only fall
+// back to the env var. Cached per isolate to avoid an extra call per event.
+let cachedWebhookId: string | null = null;
+
+async function resolveWebhookId(): Promise<string | null> {
+  if (cachedWebhookId) return cachedWebhookId;
+
+  const envId = Deno.env.get("PAYPAL_WEBHOOK_ID") || null;
+  const selfUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paypal-webhook`;
+
+  try {
+    const accessToken = await getPayPalAccessToken();
+    const res = await fetch(`${PAYPAL_API_BASE}/v1/notifications/webhooks`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (res.ok) {
+      const list = await res.json();
+      const hooks: any[] = list?.webhooks || [];
+      const match = hooks.find((w) => w.url === selfUrl);
+      if (match?.id) {
+        if (envId && envId !== match.id) {
+          console.warn(
+            `PAYPAL_WEBHOOK_ID is stale; using the live registration for ${selfUrl} instead.`
+          );
+        }
+        cachedWebhookId = match.id;
+        return cachedWebhookId;
+      }
+      console.error(`No PayPal webhook registered for ${selfUrl}`);
+    } else {
+      console.error("Could not list PayPal webhooks:", res.status);
+    }
+  } catch (e) {
+    console.error("resolveWebhookId error:", e);
+  }
+
+  return envId;
+}
+
 async function verifyWebhookSignature(
   req: Request,
   _body: unknown,
   rawBody: string
 ): Promise<VerifyResult> {
-  const webhookId = Deno.env.get("PAYPAL_WEBHOOK_ID");
+  const webhookId = await resolveWebhookId();
 
   if (!webhookId) {
-    console.error("PAYPAL_WEBHOOK_ID not configured - rejecting webhook");
+    console.error("No usable PayPal webhook ID - rejecting webhook");
     return "FAILURE";
   }
+
 
   const transmissionId = req.headers.get("PAYPAL-TRANSMISSION-ID");
   const transmissionTime = req.headers.get("PAYPAL-TRANSMISSION-TIME");
