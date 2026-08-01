@@ -36,18 +36,20 @@ async function getPayPalAccessToken(): Promise<string> {
 type VerifyResult = "SUCCESS" | "FAILURE" | "UNAVAILABLE";
 
 // The webhook ID used for signature verification MUST be the ID of the webhook
-// registration in PayPal that actually points at THIS endpoint. A stale
-// PAYPAL_WEBHOOK_ID secret (e.g. left over from an older registration) makes
-// PayPal's verify API return FAILURE for every otherwise-valid delivery.
-// So we resolve it from PayPal itself by matching our own URL, and only fall
-// back to the env var. Cached per isolate to avoid an extra call per event.
+// registration in PayPal that actually points at THIS endpoint. PAYPAL_WEBHOOK_ID
+// is now aligned with the live registration, so it is used directly with no
+// extra PayPal API call. The live lookup remains only as a safety net for the
+// case where the secret is missing entirely.
 let cachedWebhookId: string | null = null;
 
 async function resolveWebhookId(): Promise<string | null> {
+  const envId = Deno.env.get("PAYPAL_WEBHOOK_ID") || null;
+  if (envId) return envId;
+
   if (cachedWebhookId) return cachedWebhookId;
 
-  const envId = Deno.env.get("PAYPAL_WEBHOOK_ID") || null;
   const selfUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paypal-webhook`;
+  console.warn("PAYPAL_WEBHOOK_ID is not set; falling back to live registration lookup.");
 
   try {
     const accessToken = await getPayPalAccessToken();
@@ -59,11 +61,6 @@ async function resolveWebhookId(): Promise<string | null> {
       const hooks: any[] = list?.webhooks || [];
       const match = hooks.find((w) => w.url === selfUrl);
       if (match?.id) {
-        if (envId && envId !== match.id) {
-          console.warn(
-            `PAYPAL_WEBHOOK_ID is stale; using the live registration for ${selfUrl} instead.`
-          );
-        }
         cachedWebhookId = match.id;
         return cachedWebhookId;
       }
@@ -75,8 +72,9 @@ async function resolveWebhookId(): Promise<string | null> {
     console.error("resolveWebhookId error:", e);
   }
 
-  return envId;
+  return null;
 }
+
 
 async function verifyWebhookSignature(
   req: Request,
