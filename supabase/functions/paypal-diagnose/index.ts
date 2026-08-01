@@ -20,7 +20,7 @@ async function token() {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { subscriptionId, planId, webhooks } = await req.json();
+    const { subscriptionId, planId, webhooks, repairWebhook } = await req.json();
     const t = await token();
     const out: any = {};
     if (webhooks) {
