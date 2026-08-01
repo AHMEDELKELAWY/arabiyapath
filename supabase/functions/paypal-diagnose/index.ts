@@ -20,9 +20,28 @@ async function token() {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { subscriptionId, planId } = await req.json();
+    const { subscriptionId, planId, webhooks } = await req.json();
     const t = await token();
     const out: any = {};
+    if (webhooks) {
+      const configuredId = Deno.env.get("PAYPAL_WEBHOOK_ID") || null;
+      const r = await fetch(`${BASE}/v1/notifications/webhooks`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const list = await r.json().catch(() => null);
+      out.webhooks = {
+        status: r.status,
+        configured_webhook_id_present: !!configuredId,
+        configured_webhook_id_tail: configuredId ? configuredId.slice(-6) : null,
+        registered: (list?.webhooks || []).map((w: any) => ({
+          id_tail: String(w.id).slice(-6),
+          url: w.url,
+          matches_configured_secret: w.id === configuredId,
+          event_types: (w.event_types || []).map((e: any) => e.name),
+        })),
+      };
+    }
+
     if (subscriptionId) {
       const r = await fetch(`${BASE}/v1/billing/subscriptions/${subscriptionId}`, {
         headers: { Authorization: `Bearer ${t}` },
